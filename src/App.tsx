@@ -257,3 +257,4 @@ export const calculateSolarProjection = (
     year1
   };
 };
+export default App;
