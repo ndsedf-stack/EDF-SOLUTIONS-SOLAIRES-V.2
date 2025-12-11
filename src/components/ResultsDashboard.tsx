@@ -473,15 +473,22 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
         }
         
         // Inflation
-        let inflationOK = true;
-        for (let i = 1; i < details.length && i < 20; i++) {
-            if (details[i].edfBillWithoutSolar <= details[i-1].edfBillWithoutSolar) {
-                 if (inflationRate > 0) {
-                    inflationOK = false;
-                    break;
-                 }
-            }
+let inflationOK = true;
+for (let i = 1; i < details.length && i < 20; i++) {
+    if (inflationRate > 0) {
+        // Si inflation > 0, les factures DOIVENT augmenter
+        if (details[i].edfBillWithoutSolar <= details[i-1].edfBillWithoutSolar) {
+            inflationOK = false;
+            break;
         }
+    } else {
+        // Si inflation = 0, les factures DOIVENT rester constantes
+        if (Math.abs(details[i].edfBillWithoutSolar - details[i-1].edfBillWithoutSolar) > 1) {
+            inflationOK = false;
+            break;
+        }
+    }
+}
         
         if (inflationOK) {
             console.log('  ✅ Inflation appliquée (factures croissantes)');
