@@ -940,57 +940,35 @@ for (let i = 1; i < details.length && i < 20; i++) {
              <div className="absolute -left-20 -top-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-                <div className="relative w-48 h-48 flex-shrink-0 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
-                    <ResponsiveContainer width="100%" height="100%">
-                         <PieChart>
-                             <defs>
-                                <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
-                                    <feMerge>
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                             {/* Background Track Circle */}
-                             <Pie
-                                data={[{ value: 100 }]}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={70}
-                                outerRadius={85}
-                                dataKey="value"
-                                fill="#022c22"
-                                stroke="none"
-                                isAnimationActive={false}
-                             />
-                             {/* Foreground Value Circle - Neon Glow via SVG Filter */}
-                             <Pie
-                                 data={[
-                                     { value: calculationResult.savingsRatePercent },
-                                     { value: 100 - calculationResult.savingsRatePercent }
-                                 ]}
-                                 cx="50%"
-                                 cy="50%"
-                                 innerRadius={70}
-                                 outerRadius={85}
-                                 startAngle={90}
-                                 endAngle={-270}
-                                 dataKey="value"
-                                 stroke="none"
-                                 cornerRadius={10}
-                             >
-                                 <Cell fill="#34d399" style={{ filter: 'url(#neon-glow)' }} />
-                                 <Cell fill="transparent" />
-                             </Pie>
-                         </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-                        <Zap className="text-emerald-400 w-8 h-8 mb-1 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                        <span className="text-5xl font-black text-white leading-none text-shadow-neon">{calculationResult.savingsRatePercent.toFixed(0)}%</span>
-                        <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mt-1">Autonomie</span>
-                    </div>
-                </div>
+                <div className="relative w-48 h-48 flex-shrink-0">
+    {/* Cercle autonomie */}
+    <svg width="192" height="192" viewBox="0 0 192 192" className="absolute">
+        {/* Track */}
+        <circle 
+            cx="96" cy="96" r="75" 
+            fill="none" 
+            stroke="#022c22" 
+            strokeWidth="15"
+        />
+        {/* Value */}
+        <circle 
+            cx="96" cy="96" r="75" 
+            fill="none" 
+            stroke="#34d399" 
+            strokeWidth="15"
+            strokeDasharray={`${(calculationResult.savingsRatePercent / 100) * 2 * Math.PI * 75} ${2 * Math.PI * 75}`}
+            strokeDashoffset={0}
+            transform="rotate(-90 96 96)"
+            style={{ filter: 'drop-shadow(0 0 10px #34d399)', transition: 'stroke-dasharray 0.5s ease' }}
+        />
+    </svg>
+    
+    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+        <Zap className="text-emerald-400 w-8 h-8 mb-1 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+        <span className="text-5xl font-black text-white leading-none text-shadow-neon">{calculationResult.savingsRatePercent.toFixed(0)}%</span>
+        <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mt-1">Autonomie</span>
+    </div>
+</div>
 
                 <div className="flex-1 text-center md:text-left space-y-4">
                     <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tight">Autonomie Énergétique</h2>
