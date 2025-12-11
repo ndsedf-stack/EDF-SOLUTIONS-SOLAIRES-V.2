@@ -12,6 +12,8 @@ export interface SimulationParams {
   currentAnnualBill: number | string;
   yearlyConsumption: number | string;
   taxRate?: number | string;
+  creditInterestRate?: number | string;
+  insuranceRate?: number | string;
 }
 
 export interface SimulationResult {
