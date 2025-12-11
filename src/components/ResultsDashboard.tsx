@@ -1650,14 +1650,19 @@ for (let i = 1; i < details.length && i < 20; i++) {
                     </div>
                     
                     <div className="h-16 bg-[#0a101a] rounded-full border border-blue-500/20 relative overflow-hidden flex items-center px-6">
-                        <div 
-                            className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-blue-400" 
-                            style={{ width: `${((calculationResult.totalSpendNoSolar - calculationResult.totalSavingsProjected) / calculationResult.totalSpendNoSolar) * 100}%` }}
-                        ></div>
-                        <span className="relative z-10 text-3xl font-black text-white ml-auto text-shadow-sm">
-                            {formatMoney((gouffreMode === 'financement' ? calculationResult.totalSpendNoSolar : calculationResult.totalSpendNoSolarCash) - (gouffreMode === 'financement' ? calculationResult.totalSavingsProjected : calculationResult.totalSavingsProjectedCash))}
-                        </span>
-                    </div>
+    <div 
+        className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-blue-400" 
+        style={{ 
+            width: `${gouffreMode === 'financement' 
+                ? ((calculationResult.totalSpendSolar / calculationResult.totalSpendNoSolar) * 100) 
+                : ((calculationResult.totalSpendSolarCash / calculationResult.totalSpendNoSolarCash) * 100)
+            }%` 
+        }}
+    ></div>
+    <span className="relative z-10 text-3xl font-black text-white ml-auto text-shadow-sm">
+        {formatMoney(gouffreMode === 'financement' ? calculationResult.totalSpendSolar : calculationResult.totalSpendSolarCash)}
+    </span>
+</div>
                     
                     <div className="flex justify-between items-center mt-3">
                         <div className="flex items-center gap-2 text-blue-400 text-xs italic opacity-80">
