@@ -12,21 +12,21 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
   const [mode, setMode] = useState<'upload' | 'form'>('form'); 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Form State
+  // Form State initialized with "Golden Scenario" values
   const [formData, setFormData] = useState({
-    currentBillYear: '', // Facture actuelle / an
-    yearlyConsumption: '', // Nouveau champ kWh
-    inflation: '7',
-    pricePerKwh: '0.25', // Prix du kWh
+    currentBillYear: '2500', 
+    yearlyConsumption: '10000',
+    inflation: '5',
+    pricePerKwh: '0.25',
     
-    installPrice: '',
-    production: '', // kWh
-    selfConsumption: '70', // %
+    installPrice: '18799',
+    production: '7000',
+    selfConsumption: '70',
     
-    creditMonthly: '', // Mensualité
-    insuranceMonthly: '0',
-    creditDuration: '180', // mois
-    creditRate: '4.9', // Taux %
+    creditMonthly: '138.01',
+    insuranceMonthly: '4.70',
+    creditDuration: '180',
+    creditRate: '3.89',
   });
 
   const handleDrag = (e: React.DragEvent) => {
@@ -60,32 +60,31 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-const handleFormSubmit = () => {
-  // ✅ FORMAT CORRECT pour SimulationParams
-  const calculationData = {
-    // Fournisseur actuel
-    currentAnnualBill: parseFloat(formData.currentBillYear) || 0,
-    yearlyConsumption: parseFloat(formData.yearlyConsumption) || 0,
-    electricityPrice: parseFloat(formData.pricePerKwh) || 0.25,
-    inflationRate: parseFloat(formData.inflation) || 7,
+  const handleFormSubmit = () => {
+    const calculationData = {
+        // Fournisseur actuel
+        currentAnnualBill: parseFloat(formData.currentBillYear) || 0,
+        yearlyConsumption: parseFloat(formData.yearlyConsumption) || 0,
+        electricityPrice: parseFloat(formData.pricePerKwh) || 0.25,
+        inflationRate: parseFloat(formData.inflation) || 5,
+        
+        // Installation solaire
+        installCost: parseFloat(formData.installPrice) || 18799,
+        yearlyProduction: parseFloat(formData.production) || 7000,
+        selfConsumptionRate: parseFloat(formData.selfConsumption) || 70,
+        
+        // Financement
+        cashApport: 0,
+        remainingToFinance: parseFloat(formData.installPrice) || 18799,
+        creditMonthlyPayment: parseFloat(formData.creditMonthly) || 138.01,
+        insuranceMonthlyPayment: parseFloat(formData.insuranceMonthly) || 4.70,
+        creditDurationMonths: parseFloat(formData.creditDuration) || 180,
+        creditInterestRate: parseFloat(formData.creditRate) || 3.89,
+        insuranceRate: 0.30
+    };
     
-    // Installation solaire
-    installCost: parseFloat(formData.installPrice) || 20000,
-    yearlyProduction: parseFloat(formData.production) || 0,
-    selfConsumptionRate: parseFloat(formData.selfConsumption) || 70,
-    
-    // Financement
-    cashApport: 0, // ✅ Pas d'apport pour l'instant
-    remainingToFinance: parseFloat(formData.installPrice) || 20000, // ✅ Tout est financé
-    creditMonthlyPayment: parseFloat(formData.creditMonthly) || 0,
-    insuranceMonthlyPayment: parseFloat(formData.insuranceMonthly) || 0,
-    creditDurationMonths: parseFloat(formData.creditDuration) || 180,
-    creditInterestRate: parseFloat(formData.creditRate) || 4.9,
+    onTextSubmit(JSON.stringify(calculationData));
   };
-  
-  // ✅ Envoie un STRING (JSON) au lieu d'un objet
-  onTextSubmit(JSON.stringify(calculationData));
-};
 
   const isFormValid = formData.currentBillYear && formData.creditMonthly && formData.production;
 
@@ -270,7 +269,7 @@ const handleFormSubmit = () => {
                           name="creditMonthly"
                           value={formData.creditMonthly}
                           onChange={handleInputChange}
-                          placeholder="Ex: 180"
+                          placeholder="Ex: 138.01"
                           className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-emerald-400 text-lg font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-zinc-700 backdrop-blur-md"
                         />
                       </div>
@@ -281,7 +280,7 @@ const handleFormSubmit = () => {
                           name="insuranceMonthly"
                           value={formData.insuranceMonthly}
                           onChange={handleInputChange}
-                          placeholder="Ex: 15"
+                          placeholder="Ex: 4.70"
                           className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-zinc-700 backdrop-blur-md"
                         />
                       </div>
@@ -295,7 +294,7 @@ const handleFormSubmit = () => {
                            name="production"
                            value={formData.production}
                            onChange={handleInputChange}
-                           placeholder="Ex: 9000"
+                           placeholder="Ex: 7000"
                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-400 text-sm focus:text-white focus:border-zinc-600 outline-none"
                          />
                       </div>
@@ -320,7 +319,7 @@ const handleFormSubmit = () => {
                            name="installPrice"
                            value={formData.installPrice}
                            onChange={handleInputChange}
-                           placeholder="Ex: 20000"
+                           placeholder="Ex: 18799"
                            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-2 py-2 text-zinc-400 text-sm focus:text-white focus:border-zinc-600 outline-none"
                          />
                       </div>
