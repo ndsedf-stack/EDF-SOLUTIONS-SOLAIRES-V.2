@@ -2014,17 +2014,28 @@ for (let i = 1; i < details.length && i < 20; i++) {
                         />
                         <YAxis hide />
                         <RechartsTooltip 
-                             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                             contentStyle={{ 
-                                backgroundColor: '#09090b', 
-                                border: '1px solid #27272a', 
-                                borderRadius: '12px', 
-                                padding: '12px', 
-                                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
-                                color: '#fff' 
-                             }}
-                             formatter={(value: number) => [formatMoney(value), "Net Cashflow"]}
-                        />
+    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+    content={({ active, payload }) => {
+        if (!active || !payload || !payload.length) return null;
+        
+        const data = payload[0].payload;
+        const isInvestment = data.type === 'investment';
+        
+        return (
+            <div className="bg-[#09090b] border border-white/20 rounded-xl p-4 shadow-2xl">
+                <div className="text-xs font-bold text-slate-400 uppercase mb-2">
+                    Année {data.year - calculationResult.details[0].year + 1}
+                </div>
+                <div className={`text-2xl font-black mb-1 ${isInvestment ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {data.value > 0 ? '+' : ''}{formatMoney(data.value)}
+                </div>
+                <div className={`text-xs font-bold uppercase ${isInvestment ? 'text-red-300' : 'text-emerald-300'}`}>
+                    {isInvestment ? '📉 Effort d\'investissement' : '📈 Rentabilité pure'}
+                </div>
+            </div>
+        );
+    }}
+/>
                         <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                             {economyChartData.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.type === 'investment' ? '#ef4444' : '#10b981'} />
