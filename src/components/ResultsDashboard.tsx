@@ -1649,7 +1649,7 @@ for (let i = 1; i < details.length && i < 20; i++) {
                         <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">AVEC SOLAIRE (INVESTISSEMENT PATRIMONIAL)</span>
                     </div>
                     
-                    <div className="h-16 bg-[#0a101a] rounded-full border border-blue-500/20 relative overflow-hidden flex items-center px-6">
+                   <div className="h-16 bg-[#0a101a] rounded-full border border-blue-500/20 relative overflow-hidden flex items-center px-6">
     <div 
         className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-blue-400" 
         style={{ 
