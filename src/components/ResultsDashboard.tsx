@@ -1024,7 +1024,7 @@ for (let i = 1; i < details.length && i < 20; i++) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 
-                {/* NEW ACTIVITY RINGS CHART - FIXED & ANIMATED */}
+               {/* NEW ACTIVITY RINGS CHART - FIXED & ANIMATED */}
 <div className="h-[320px] w-full relative flex items-center justify-center">
     {/* Cercle Autoconsommation (extérieur) */}
     <svg width="220" height="220" viewBox="0 0 220 220" className="absolute">
@@ -1042,8 +1042,9 @@ for (let i = 1; i < details.length && i < 20; i++) {
             stroke="#f59e0b" 
             strokeWidth="15"
             strokeDasharray={`${(selfConsumptionRate / 100) * 2 * Math.PI * 95} ${2 * Math.PI * 95}`}
-            strokeDashoffset={2 * Math.PI * 95 * 0.25}
-            style={{ filter: 'drop-shadow(0 0 10px #f59e0b)' }}
+            strokeDashoffset={0}
+            transform="rotate(-90 110 110)"
+            style={{ filter: 'drop-shadow(0 0 10px #f59e0b)', transition: 'stroke-dasharray 0.5s ease' }}
         />
     </svg>
     
@@ -1063,8 +1064,9 @@ for (let i = 1; i < details.length && i < 20; i++) {
             stroke="#8b5cf6" 
             strokeWidth="15"
             strokeDasharray={`${((100 - selfConsumptionRate) / 100) * 2 * Math.PI * 70} ${2 * Math.PI * 70}`}
-            strokeDashoffset={2 * Math.PI * 70 * 0.25}
-            style={{ filter: 'drop-shadow(0 0 10px #8b5cf6)' }}
+            strokeDashoffset={0}
+            transform="rotate(-90 80 80)"
+            style={{ filter: 'drop-shadow(0 0 10px #8b5cf6)', transition: 'stroke-dasharray 0.5s ease' }}
         />
     </svg>
     
