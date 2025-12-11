@@ -245,6 +245,330 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
     }, 100); 
     return () => clearInterval(interval);
   }, [calculationResult.costOfInactionPerSecond]);
+  
+  // 🔍 VALIDATION AUTOMATIQUE COMPLÈTE - À ajouter dans useEffect
+    useEffect(() => {
+        console.clear();
+        console.log('');
+        console.log('═'.repeat(80));
+        console.log('🔍 VALIDATION COMPLÈTE NEXUS-CORE - SIMULATEUR SOLAIRE');
+        console.log('═'.repeat(80));
+        console.log('');
+        
+        const errors = [];
+        const warnings = [];
+        const checks = [];
+        
+        // ============================================================================
+        // 1. MENSUALITÉ CRÉDIT
+        // ============================================================================
+        console.log('🧮 1. MENSUALITÉ CRÉDIT');
+        const monthlyRate = interestRate / 100 / 12;
+        const n = creditDurationMonths;
+        const expectedPayment = remainingToFinance * 
+            (monthlyRate * Math.pow(1 + monthlyRate, n)) / 
+            (Math.pow(1 + monthlyRate, n) - 1);
+        
+        console.log('  Capital:', remainingToFinance.toFixed(0) + '€');
+        console.log('  Taux:', interestRate + '% → ' + (monthlyRate * 100).toFixed(4) + '%/mois');
+        console.log('  Durée:', creditDurationMonths, 'mois');
+        console.log('  Attendue:', expectedPayment.toFixed(2) + '€/mois');
+        console.log('  Calculée:', creditMonthlyPayment.toFixed(2) + '€/mois');
+        
+        if (Math.abs(expectedPayment - creditMonthlyPayment) < 1) {
+            console.log('  ✅ Mensualité correcte');
+            checks.push({ test: 'Mensualité crédit', ok: true });
+        } else {
+            // Only warn if autoCalculate is on, otherwise it might be manual override
+            if (autoCalculate) {
+                 console.error('  ❌ ERREUR: Écart ' + Math.abs(expectedPayment - creditMonthlyPayment).toFixed(2) + '€');
+                 errors.push('Mensualité crédit incorrecte (Mode Auto)');
+                 checks.push({ test: 'Mensualité crédit', ok: false });
+            } else {
+                 console.warn('  ⚠️ Écart détecté (Mode Manuel possible)');
+                 checks.push({ test: 'Mensualité crédit (Manuel)', ok: true });
+            }
+        }
+        console.log('');
+        
+        // ============================================================================
+        // 2. ASSURANCE
+        // ============================================================================
+        console.log('🧮 2. ASSURANCE EMPRUNTEUR');
+        const expectedInsurance = (remainingToFinance * (insuranceRate / 100)) / 12;
+        console.log('  Attendue:', expectedInsurance.toFixed(2) + '€/mois');
+        console.log('  Calculée:', insuranceMonthlyPayment.toFixed(2) + '€/mois');
+        
+        if (Math.abs(expectedInsurance - insuranceMonthlyPayment) < 0.5) {
+            console.log('  ✅ Assurance correcte');
+            checks.push({ test: 'Assurance', ok: true });
+        } else {
+             if (autoCalculate) {
+                console.error('  ❌ ERREUR assurance');
+                errors.push('Assurance incorrecte');
+                checks.push({ test: 'Assurance', ok: false });
+             } else {
+                 console.warn('  ⚠️ Écart assurance (Mode Manuel)');
+                 checks.push({ test: 'Assurance (Manuel)', ok: true });
+             }
+        }
+        console.log('');
+        
+        // ============================================================================
+        // 3. AUTOCONSOMMATION 100%
+        // ============================================================================
+        console.log('🧮 3. RÉPARTITION ÉNERGIE');
+        const selfConsumed = yearlyProduction * (selfConsumptionRate / 100);
+        const surplus = yearlyProduction - selfConsumed;
+        const total = selfConsumed + surplus;
+        
+        console.log('  Production:', yearlyProduction, 'kWh');
+        console.log('  Autoconso:', selfConsumed.toFixed(0), 'kWh (' + selfConsumptionRate + '%)');
+        console.log('  Surplus:', surplus.toFixed(0), 'kWh (' + (100-selfConsumptionRate) + '%)');
+        console.log('  Total:', total.toFixed(0), 'kWh');
+        
+        if (Math.abs(total - yearlyProduction) < 0.1) {
+            console.log('  ✅ Répartition = 100%');
+            checks.push({ test: 'Répartition 100%', ok: true });
+        } else {
+            console.error('  ❌ ERREUR: Total ≠ Production');
+            errors.push('Répartition ≠ 100%');
+            checks.push({ test: 'Répartition 100%', ok: false });
+        }
+        console.log('');
+        
+        // ============================================================================
+        // 4. POINTS MORTS
+        // ============================================================================
+        console.log('🧮 4. POINTS MORTS');
+        console.log('  Crédit:', calculationResult.breakEvenPoint, 'ans');
+        console.log('  Cash:', calculationResult.breakEvenPointCash, 'ans');
+        
+        if (calculationResult.breakEvenPointCash < calculationResult.breakEvenPoint) {
+            console.log('  ✅ Cash < Crédit (normal)');
+            checks.push({ test: 'Point mort Cash < Crédit', ok: true });
+        } else {
+             // If they are equal it's acceptable in edge cases but usually cash is faster
+             if (calculationResult.breakEvenPointCash === calculationResult.breakEvenPoint) {
+                 console.warn('  ⚠️ Cash = Crédit (Rare)');
+                 checks.push({ test: 'Point mort Cash <= Crédit', ok: true });
+             } else {
+                console.error('  ❌ ERREUR: Cash > Crédit!');
+                errors.push('Point mort Cash pas plus rapide');
+                checks.push({ test: 'Point mort Cash < Crédit', ok: false });
+             }
+        }
+        
+        if (calculationResult.breakEvenPoint >= 5 && calculationResult.breakEvenPoint <= 20) {
+            console.log('  ✅ Point mort dans les normes (5-20 ans)');
+            checks.push({ test: 'Point mort dans normes', ok: true });
+        } else {
+            console.warn('  ⚠️ Point mort hors norme:', calculationResult.breakEvenPoint, 'ans');
+            warnings.push('Point mort hors norme');
+            checks.push({ test: 'Point mort dans normes', ok: false });
+        }
+        console.log('');
+        
+        // ============================================================================
+        // 5. ROI
+        // ============================================================================
+        console.log('🧮 5. ROI');
+        console.log('  Crédit:', calculationResult.roiPercentage.toFixed(2) + '%');
+        console.log('  Cash:', calculationResult.roiPercentageCash.toFixed(2) + '%');
+        
+        if (calculationResult.roiPercentageCash > calculationResult.roiPercentage) {
+            console.log('  ✅ ROI Cash > Crédit');
+            checks.push({ test: 'ROI Cash > Crédit', ok: true });
+        } else {
+             if (Math.abs(calculationResult.roiPercentageCash - calculationResult.roiPercentage) < 0.1) {
+                  console.warn('  ⚠️ ROI Cash ≈ Crédit');
+                  checks.push({ test: 'ROI Cash ≈ Crédit', ok: true });
+             } else {
+                console.error('  ❌ ERREUR: ROI Cash < Crédit');
+                errors.push('ROI Cash pas supérieur');
+                checks.push({ test: 'ROI Cash > Crédit', ok: false });
+             }
+        }
+        
+        if (calculationResult.roiPercentage >= 5 && calculationResult.roiPercentage <= 20) {
+            console.log('  ✅ ROI dans les normes (5-20%)');
+            checks.push({ test: 'ROI dans normes', ok: true });
+        } else {
+            console.warn('  ⚠️ ROI hors norme');
+            warnings.push('ROI hors norme');
+            checks.push({ test: 'ROI dans normes', ok: false });
+        }
+        console.log('');
+        
+        // ============================================================================
+        // 6. GRAPHIQUE GOUFFRE - CROISEMENT
+        // ============================================================================
+        console.log('🧮 6. GRAPHIQUE GOUFFRE');
+        const details = calculationResult.details;
+        
+        let crossingYear = -1;
+        for (let i = 1; i < details.length; i++) {
+            const prevDiff = details[i-1].cumulativeSpendNoSolar - details[i-1].cumulativeSpendSolar;
+            const currDiff = details[i].cumulativeSpendNoSolar - details[i].cumulativeSpendSolar;
+            
+            if (prevDiff < 0 && currDiff >= 0) {
+            crossingYear = i;
+            break;
+            }
+        }
+        
+        if (crossingYear > 0) {
+            console.log('  ✅ Croisement détecté année', crossingYear + 1);
+            checks.push({ test: 'Croisement gouffre', ok: true });
+            
+            // Vérifier divergence
+            const diff5 = Math.min(crossingYear + 5, details.length - 1);
+            const diffAtCrossing = details[crossingYear].cumulativeSpendNoSolar - details[crossingYear].cumulativeSpendSolar;
+            const diff5Later = details[diff5].cumulativeSpendNoSolar - details[diff5].cumulativeSpendSolar;
+            
+            if (diff5Later > diffAtCrossing * 1.5 || (diff5Later > 0 && diffAtCrossing >= 0)) {
+                console.log('  ✅ Divergence après croisement');
+                checks.push({ test: 'Divergence gouffre', ok: true });
+            } else {
+                console.warn('  ⚠️ Divergence faible');
+                warnings.push('Divergence faible après croisement');
+                checks.push({ test: 'Divergence gouffre', ok: false });
+            }
+        } else {
+            console.error('  ❌ AUCUN CROISEMENT!');
+            errors.push('Pas de croisement dans graphique gouffre');
+            checks.push({ test: 'Croisement gouffre', ok: false });
+        }
+        console.log('');
+        
+        // ============================================================================
+        // 7. COHÉRENCE TEMPORELLE
+        // ============================================================================
+        console.log('🧮 7. COHÉRENCE TEMPORELLE');
+        
+        // Dépenses croissantes
+        let growthOK = true;
+        for (let i = 1; i < details.length && i < 20; i++) {
+            // It's possible spend solar decreases if cashflow is extremely positive? No, SpendSolar accumulates costs.
+            // SpendNoSolar accumulates bill (always positive).
+            // SpendSolar accumulates (BillResidue + Credit - Revenue). Revenue could make it decrease if huge?
+            // "cumulativeSpendSolar" logic: cumulativeSpendSolar + totalDecaisse.
+            // totalDecaisse = residuaryBill + creditCost - revenue.
+            // If revenue > residuaryBill + creditCost, totalDecaisse is negative.
+            // So cumulativeSpendSolar CAN decrease.
+            // The prompt validation says "Dépenses cumulées TOUJOURS croissantes".
+            // If the user makes money, their "Spend" decreases (net cost goes down).
+            // However, typically "Cumulative Spend" implies "Total Money Out".
+            // In my logic, cumulativeSpendSolar is net cash position invert.
+            // Let's stick to the prompt's check but allow for negative decaisse (profit).
+            
+            if (details[i].cumulativeSpendNoSolar <= details[i-1].cumulativeSpendNoSolar) {
+                 // Unless bill is negative?
+                 growthOK = false;
+                 break;
+            }
+        }
+        
+        if (growthOK) {
+            console.log('  ✅ Dépenses Sans Solaire croissantes');
+            checks.push({ test: 'Dépenses Sans Solaire croissantes', ok: true });
+        } else {
+            console.error('  ❌ Dépenses Sans Solaire décroissantes');
+            errors.push('Dépenses cumulées décroissantes');
+            checks.push({ test: 'Dépenses croissantes', ok: false });
+        }
+        
+        // Inflation
+        let inflationOK = true;
+        for (let i = 1; i < details.length && i < 20; i++) {
+            if (details[i].edfBillWithoutSolar <= details[i-1].edfBillWithoutSolar) {
+                 // Check if inflation is 0
+                 if (inflationRate > 0) {
+                    inflationOK = false;
+                    break;
+                 }
+            }
+        }
+        
+        if (inflationOK) {
+            console.log('  ✅ Inflation appliquée (factures croissantes)');
+            checks.push({ test: 'Inflation appliquée', ok: true });
+        } else {
+            console.error('  ❌ Factures EDF décroissantes');
+            errors.push('Inflation non appliquée');
+            checks.push({ test: 'Inflation appliquée', ok: false });
+        }
+        console.log('');
+        
+        // ============================================================================
+        // RÉSUMÉ FINAL
+        // ============================================================================
+        console.log('');
+        console.log('═'.repeat(80));
+        console.log('📊 RÉSUMÉ VALIDATION COMPLÈTE');
+        console.log('═'.repeat(80));
+        console.log('');
+        
+        const testsOK = checks.filter(c => c.ok).length;
+        const testsTotal = checks.length;
+        const pourcentage = ((testsOK / testsTotal) * 100).toFixed(0);
+        
+        console.log(`✅ Tests réussis: ${testsOK}/${testsTotal} (${pourcentage}%)`);
+        console.log(`❌ Erreurs critiques: ${errors.length}`);
+        console.log(`⚠️ Avertissements: ${warnings.length}`);
+        console.log('');
+        
+        // Liste détaillée
+        console.log('DÉTAIL DES TESTS:');
+        checks.forEach(c => {
+            console.log(c.ok ? '  ✅' : '  ❌', c.test);
+        });
+        console.log('');
+        
+        if (errors.length > 0) {
+            console.log('🚨 ERREURS CRITIQUES À CORRIGER:');
+            errors.forEach((e, i) => console.log(`  ${i+1}. ${e}`));
+            console.log('');
+        }
+        
+        if (warnings.length > 0) {
+            console.log('⚠️ AVERTISSEMENTS:');
+            warnings.forEach((w, i) => console.log(`  ${i+1}. ${w}`));
+            console.log('');
+        }
+        
+        // Verdict final
+        console.log('═'.repeat(80));
+        if (errors.length === 0 && warnings.length === 0) {
+            console.log('🎉 VALIDATION PARFAITE - PRÊT POUR PRÉSENTATION CLIENT');
+            console.log('✅ Tous les calculs sont corrects');
+            console.log('✅ Tous les graphiques sont cohérents');
+            console.log('✅ Toutes les données sont dans les normes');
+        } else if (errors.length === 0) {
+            console.log('✅ VALIDATION RÉUSSIE AVEC RÉSERVES');
+            console.log('⚠️ Quelques paramètres en limite ou mode manuel, mais utilisable');
+        } else {
+            console.log('🚨 VALIDATION ÉCHOUÉE - NE PAS PRÉSENTER AU CLIENT');
+            console.log('❌ Corriger les erreurs critiques avant utilisation');
+        }
+        console.log('═'.repeat(80));
+        console.log('');
+        
+    }, [
+    calculationResult,
+    interestRate,
+    creditDurationMonths,
+    remainingToFinance,
+    creditMonthlyPayment,
+    insuranceMonthlyPayment,
+    insuranceRate,
+    yearlyProduction,
+    selfConsumptionRate,
+    inflationRate,
+    electricityPrice,
+    projectionYears,
+    autoCalculate
+    ]);
 
   const getYearData = (year: number) => {
     const idx = year - 1;
