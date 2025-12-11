@@ -56,7 +56,10 @@ const ParamCard = ({
   disabled?: boolean
 }) => {
   return (
-    <div className={`bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/20 transition-colors ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+    <div 
+      className={`bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/20 transition-all hover-card-glow ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
+      style={{ '--glow-color': '255, 255, 255' } as React.CSSProperties}
+    >
        {/* Grid pattern background */}
       <div className="absolute inset-0 opacity-5 pointer-events-none" 
            style={{backgroundImage: 'linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '20px 20px'}}>
@@ -652,7 +655,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
             </div>
         </div>
 
-        {/* 2. SECTION AUTONOMY - UPDATED GLASS & CIRCLE */}
+        {/* 2. SECTION AUTONOMY - UPDATED GLASS & CIRCLE FIX */}
         <div 
           className="bg-emerald-950/20 backdrop-blur-2xl border border-emerald-500/20 rounded-[24px] p-8 md:p-12 relative overflow-hidden shadow-2xl hover-card-glow"
           style={{ '--glow-color': '16, 185, 129' } as React.CSSProperties}
@@ -664,35 +667,36 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 <div className="relative w-48 h-48 flex-shrink-0 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
                     <ResponsiveContainer width="100%" height="100%">
                          <PieChart>
-                             {/* Background Track Circle - More Visible */}
+                             {/* Background Track Circle */}
                              <Pie
                                 data={[{ value: 100 }]}
                                 cx="50%"
                                 cy="50%"
                                 innerRadius={70}
                                 outerRadius={85}
-                                startAngle={180}
-                                endAngle={-180}
                                 dataKey="value"
+                                fill="#064e3b"
                                 stroke="none"
                                 isAnimationActive={false}
-                             >
-                                <Cell fill="#064e3b" opacity={0.6} />
-                             </Pie>
+                             />
                              {/* Foreground Value Circle - Neon Glow via CSS */}
                              <Pie
-                                 data={[{ value: calculationResult.savingsRatePercent }]}
+                                 data={[
+                                     { value: calculationResult.savingsRatePercent },
+                                     { value: 100 - calculationResult.savingsRatePercent }
+                                 ]}
                                  cx="50%"
                                  cy="50%"
                                  innerRadius={70}
                                  outerRadius={85}
-                                 startAngle={180}
-                                 endAngle={180 - (360 * calculationResult.savingsRatePercent / 100)}
+                                 startAngle={90}
+                                 endAngle={-270}
                                  dataKey="value"
                                  stroke="none"
                                  cornerRadius={10}
                              >
                                  <Cell fill="#34d399" style={{ filter: 'drop-shadow(0 0 5px #34d399)' }} />
+                                 <Cell fill="transparent" />
                              </Pie>
                          </PieChart>
                     </ResponsiveContainer>
@@ -726,7 +730,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
              </div>
         </div>
 
-        {/* 3. SECTION REPARTITION - REPLACED CHART - RADIAL BAR */}
+        {/* 3. SECTION REPARTITION - REPLACED WITH ACTIVITY RINGS (Concentric Pies) */}
         <div 
           className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] p-8 hover-card-glow"
           style={{ '--glow-color': '139, 92, 246' } as React.CSSProperties}
@@ -738,49 +742,38 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 
-                {/* NEW RADIAL CHART - Activity Rings Style */}
-                <div className="h-[300px] w-full relative flex items-center justify-center">
+                {/* NEW ACTIVITY RINGS CHART */}
+                <div className="h-[320px] w-full relative flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
-                        <RadialBarChart 
-                            innerRadius="40%" 
-                            outerRadius="100%" 
-                            barSize={32} 
-                            data={[
-                                { name: 'Vente Surplus', value: (100 - selfConsumptionRate), fill: '#8b5cf6' },
-                                { name: 'Autoconsommation', value: selfConsumptionRate, fill: '#f59e0b' }
-                            ]}
-                            startAngle={90} 
-                            endAngle={-270}
-                        >
-                            <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                            
-                            <RadialBar
-                                background={{ fill: '#27272a' }}
+                        <PieChart>
+                            {/* OUTER RING (Autoconso) - TRACK */}
+                            <Pie data={[{value: 100}]} innerRadius={100} outerRadius={115} fill="#1a1405" stroke="none" isAnimationActive={false} />
+                            {/* OUTER RING - VALUE */}
+                            <Pie
+                                data={[{ value: selfConsumptionRate }, { value: 100 - selfConsumptionRate }]}
+                                innerRadius={100} outerRadius={115}
+                                startAngle={90} endAngle={-270}
+                                cornerRadius={10} stroke="none"
                                 dataKey="value"
-                                cornerRadius={20}
-                                label={false}
-                            />
-                             <RechartsTooltip 
-                                cursor={false}
-                                contentStyle={{ 
-                                    backgroundColor: '#09090b', 
-                                    border: '1px solid #27272a', 
-                                    borderRadius: '12px', 
-                                    color: '#fff',
-                                    boxShadow: '0 0 20px rgba(0,0,0,0.5)'
-                                }}
-                                formatter={(val: number, name: string) => {
-                                    return [`${val.toFixed(1)}%`, name];
-                                }}
-                            />
-                             <Legend 
-                                iconSize={10} 
-                                layout="vertical" 
-                                verticalAlign="middle" 
-                                align="right"
-                                wrapperStyle={{ display: 'none' }} // Hide default legend, custom below
-                             />
-                        </RadialBarChart>
+                            >
+                                <Cell fill="#f59e0b" style={{ filter: 'drop-shadow(0 0 4px #f59e0b)' }} />
+                                <Cell fill="transparent" />
+                            </Pie>
+
+                            {/* INNER RING (Vente) - TRACK */}
+                            <Pie data={[{value: 100}]} innerRadius={70} outerRadius={85} fill="#140c1f" stroke="none" isAnimationActive={false} />
+                            {/* INNER RING - VALUE */}
+                            <Pie
+                                data={[{ value: 100 - selfConsumptionRate }, { value: selfConsumptionRate }]}
+                                innerRadius={70} outerRadius={85}
+                                startAngle={90} endAngle={-270}
+                                cornerRadius={10} stroke="none"
+                                dataKey="value"
+                            >
+                                <Cell fill="#8b5cf6" style={{ filter: 'drop-shadow(0 0 4px #8b5cf6)' }} />
+                                <Cell fill="transparent" />
+                            </Pie>
+                        </PieChart>
                     </ResponsiveContainer>
                     
                     {/* Center Text */}
@@ -792,9 +785,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 </div>
 
                 <div className="space-y-4">
-                    <div className="bg-black/60 backdrop-blur-md border border-amber-500/20 p-6 rounded-2xl hover:border-amber-500/40 transition-all hover:translate-x-1">
+                    <div className="bg-black/60 backdrop-blur-md border border-amber-500/20 p-6 rounded-2xl hover:border-amber-500/40 transition-all hover:translate-x-1 group">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_#f59e0b]"></div>
+                            <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_#f59e0b] group-hover:animate-pulse"></div>
                             <span className="font-bold text-white">Autoconsommation ({selfConsumptionRate}%)</span>
                         </div>
                         <div className="text-4xl font-black text-amber-500 mb-1 text-shadow-neon">
@@ -803,9 +796,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                         <p className="text-xs text-slate-400">Énergie consommée directement chez vous. <span className="text-amber-500 font-bold">Économie maximale</span> car aucun coût réseau.</p>
                     </div>
 
-                    <div className="bg-black/60 backdrop-blur-md border border-violet-500/20 p-6 rounded-2xl hover:border-violet-500/40 transition-all hover:translate-x-1">
+                    <div className="bg-black/60 backdrop-blur-md border border-violet-500/20 p-6 rounded-2xl hover:border-violet-500/40 transition-all hover:translate-x-1 group">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="w-3 h-3 rounded-full bg-violet-500 shadow-[0_0_10px_#8b5cf6]"></div>
+                            <div className="w-3 h-3 rounded-full bg-violet-500 shadow-[0_0_10px_#8b5cf6] group-hover:animate-pulse"></div>
                             <span className="font-bold text-white">Vente surplus ({(100-selfConsumptionRate).toFixed(0)}%)</span>
                         </div>
                         <div className="text-4xl font-black text-violet-500 mb-1 text-shadow-neon">
