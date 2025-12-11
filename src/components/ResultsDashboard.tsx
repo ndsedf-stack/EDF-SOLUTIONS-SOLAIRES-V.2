@@ -1340,7 +1340,7 @@ for (let i = 1; i < details.length && i < 20; i++) {
         );
     })}
 </div>
-
+</div>
         {/* 6. COMPARISON WITH OTHER OPTIONS */}
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
              <div className="absolute top-0 right-0 p-8 opacity-10">
