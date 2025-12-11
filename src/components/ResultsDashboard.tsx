@@ -1025,83 +1025,56 @@ for (let i = 1; i < details.length && i < 20; i++) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                 
                 {/* NEW ACTIVITY RINGS CHART - FIXED & ANIMATED */}
-                <div className="h-[320px] w-full relative flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                             <defs>
-                                <filter id="glow-orange" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                                    <feMerge>
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                                <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
-                                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
-                                    <feMerge>
-                                        <feMergeNode in="blur" />
-                                        <feMergeNode in="SourceGraphic" />
-                                    </feMerge>
-                                </filter>
-                            </defs>
-                            
-                            {/* OUTER RING (Autoconso) - TRACK */}
-                            <Pie 
-                                data={[{value: 100}]} 
-                                cx="50%" cy="50%" 
-                                innerRadius={95} 
-                                outerRadius={105} 
-                                fill="#1a1405" 
-                                stroke="none" 
-                                isAnimationActive={false} 
-                            />
-                            {/* OUTER RING - VALUE */}
-                            <Pie
-                                data={[{ value: selfConsumptionRate }, { value: 100 - selfConsumptionRate }]}
-                                cx="50%" cy="50%"
-                                innerRadius={95} outerRadius={105}
-                                startAngle={90} endAngle={-270}
-                                cornerRadius={6} stroke="none"
-                                dataKey="value"
-                                isAnimationActive={true}
-                            >
-                                <Cell fill="#f59e0b" style={{ filter: 'url(#glow-orange)' }} />
-                                <Cell fill="transparent" />
-                            </Pie>
-
-                            {/* INNER RING (Vente) - TRACK */}
-                            <Pie 
-                                data={[{value: 100}]} 
-                                cx="50%" cy="50%" 
-                                innerRadius={70} 
-                                outerRadius={80} 
-                                fill="#140c1f" 
-                                stroke="none" 
-                                isAnimationActive={false} 
-                            />
-                            {/* INNER RING - VALUE */}
-                            <Pie
-                                data={[{ value: 100 - selfConsumptionRate }, { value: selfConsumptionRate }]}
-                                cx="50%" cy="50%"
-                                innerRadius={70} outerRadius={80}
-                                startAngle={90} endAngle={-270}
-                                cornerRadius={6} stroke="none"
-                                dataKey="value"
-                                isAnimationActive={true}
-                            >
-                                <Cell fill="#8b5cf6" style={{ filter: 'url(#glow-purple)' }} />
-                                <Cell fill="transparent" />
-                            </Pie>
-                        </PieChart>
-                    </ResponsiveContainer>
-                    
-                    {/* Center Text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Production</span>
-                        <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{yearlyProduction}</span>
-                        <span className="text-xs text-slate-400">kWh/an</span>
-                    </div>
-                </div>
+<div className="h-[320px] w-full relative flex items-center justify-center">
+    {/* Cercle Autoconsommation (extérieur) */}
+    <svg width="220" height="220" viewBox="0 0 220 220" className="absolute">
+        {/* Track */}
+        <circle 
+            cx="110" cy="110" r="95" 
+            fill="none" 
+            stroke="#1a1405" 
+            strokeWidth="15"
+        />
+        {/* Value */}
+        <circle 
+            cx="110" cy="110" r="95" 
+            fill="none" 
+            stroke="#f59e0b" 
+            strokeWidth="15"
+            strokeDasharray={`${(selfConsumptionRate / 100) * 2 * Math.PI * 95} ${2 * Math.PI * 95}`}
+            strokeDashoffset={2 * Math.PI * 95 * 0.25}
+            style={{ filter: 'drop-shadow(0 0 10px #f59e0b)' }}
+        />
+    </svg>
+    
+    {/* Cercle Vente (intérieur) */}
+    <svg width="160" height="160" viewBox="0 0 160 160" className="absolute">
+        {/* Track */}
+        <circle 
+            cx="80" cy="80" r="70" 
+            fill="none" 
+            stroke="#140c1f" 
+            strokeWidth="15"
+        />
+        {/* Value */}
+        <circle 
+            cx="80" cy="80" r="70" 
+            fill="none" 
+            stroke="#8b5cf6" 
+            strokeWidth="15"
+            strokeDasharray={`${((100 - selfConsumptionRate) / 100) * 2 * Math.PI * 70} ${2 * Math.PI * 70}`}
+            strokeDashoffset={2 * Math.PI * 70 * 0.25}
+            style={{ filter: 'drop-shadow(0 0 10px #8b5cf6)' }}
+        />
+    </svg>
+    
+    {/* Center Text */}
+    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Production</span>
+        <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{yearlyProduction}</span>
+        <span className="text-xs text-slate-400">kWh/an</span>
+    </div>
+</div>
 
                 <div className="space-y-4">
                     <div className="bg-black/60 backdrop-blur-md border border-amber-500/20 p-6 rounded-2xl hover:border-amber-500/40 transition-all hover:translate-x-1 group cursor-default">
