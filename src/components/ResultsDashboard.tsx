@@ -1354,68 +1354,96 @@ for (let i = 1; i < details.length && i < 20; i++) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {/* LIVRET A */}
-                    <div className="bg-black/60 backdrop-blur-md border border-blue-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-                        <div>
-                             <div className="flex items-center gap-3 mb-4">
-                                 <div className="bg-blue-900/30 p-2 rounded-lg text-blue-400"><Landmark size={20} /></div>
-                                 <div>
-                                     <h3 className="font-bold text-white text-sm">Livret A</h3>
-                                     <p className="text-[10px] text-blue-300">Capital bloqué</p>
+   {/* LIVRET A */}
+                    <div className="flex flex-col gap-3">
+                        <div className="bg-black/60 backdrop-blur-md border border-blue-900/20 p-6 rounded-2xl flex flex-col justify-between group transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+                            <div>
+                                 <div className="flex items-center gap-3 mb-4">
+                                     <div className="bg-blue-900/30 p-2 rounded-lg text-blue-400"><Landmark size={20} /></div>
+                                     <div>
+                                         <h3 className="font-bold text-white text-sm">Livret A</h3>
+                                         <p className="text-[10px] text-blue-300">Capital bloqué</p>
+                                     </div>
                                  </div>
-                             </div>
-                             <div className="text-4xl font-black text-blue-500 mb-2">2.7%</div>
-                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rendement annuel moyen</div>
+                                 <div className="text-4xl font-black text-blue-500 mb-2">2.7%</div>
+                                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rendement annuel moyen</div>
+                            </div>
+                        </div>
+                        {/* GAIN CARD */}
+                        <div className="bg-blue-950/20 border border-blue-900/30 p-4 rounded-xl">
+                            <div className="text-[10px] text-blue-400 font-bold uppercase mb-1">Gain sur 20 ans</div>
+                            <div className="text-xl font-black text-blue-400">{formatMoney(installCost * Math.pow(1.027, projectionYears) - installCost)}</div>
                         </div>
                     </div>
 
                     {/* ASSURANCE VIE */}
-                    <div className="bg-black/60 backdrop-blur-md border border-purple-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group transition-all duration-300 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
-                        <div>
-                             <div className="flex items-center gap-3 mb-4">
-                                 <div className="bg-purple-900/30 p-2 rounded-lg text-purple-400"><ShieldCheck size={20} /></div>
-                                 <div>
-                                     <h3 className="font-bold text-white text-sm">Assurance Vie</h3>
-                                     <p className="text-[10px] text-purple-300">Frais de gestion</p>
+                    <div className="flex flex-col gap-3">
+                        <div className="bg-black/60 backdrop-blur-md border border-purple-900/20 p-6 rounded-2xl flex flex-col justify-between group transition-all duration-300 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+                            <div>
+                                 <div className="flex items-center gap-3 mb-4">
+                                     <div className="bg-purple-900/30 p-2 rounded-lg text-purple-400"><ShieldCheck size={20} /></div>
+                                     <div>
+                                         <h3 className="font-bold text-white text-sm">Assurance Vie</h3>
+                                         <p className="text-[10px] text-purple-300">Frais de gestion</p>
+                                     </div>
                                  </div>
-                             </div>
-                             <div className="text-4xl font-black text-purple-500 mb-2">3.5%</div>
-                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rendement annuel moyen</div>
+                                 <div className="text-4xl font-black text-purple-500 mb-2">3.5%</div>
+                                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rendement annuel moyen</div>
+                            </div>
+                        </div>
+                        {/* GAIN CARD */}
+                        <div className="bg-purple-950/20 border border-purple-900/30 p-4 rounded-xl">
+                            <div className="text-[10px] text-purple-400 font-bold uppercase mb-1">Gain sur 20 ans</div>
+                            <div className="text-xl font-black text-purple-400">{formatMoney(installCost * Math.pow(1.035, projectionYears) - installCost)}</div>
                         </div>
                     </div>
 
                      {/* SCPI */}
-                     <div className="bg-black/60 backdrop-blur-md border border-orange-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group transition-all duration-300 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]">
-                        <div>
-                             <div className="flex items-center gap-3 mb-4">
-                                 <div className="bg-orange-900/30 p-2 rounded-lg text-orange-400"><Home size={20} /></div>
-                                 <div>
-                                     <h3 className="font-bold text-white text-sm">SCPI/Immobilier</h3>
-                                     <p className="text-[10px] text-orange-300">Illiquide</p>
+                     <div className="flex flex-col gap-3">
+                        <div className="bg-black/60 backdrop-blur-md border border-orange-900/20 p-6 rounded-2xl flex flex-col justify-between group transition-all duration-300 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]">
+                            <div>
+                                 <div className="flex items-center gap-3 mb-4">
+                                     <div className="bg-orange-900/30 p-2 rounded-lg text-orange-400"><Home size={20} /></div>
+                                     <div>
+                                         <h3 className="font-bold text-white text-sm">SCPI/Immobilier</h3>
+                                         <p className="text-[10px] text-orange-300">Illiquide</p>
+                                     </div>
                                  </div>
-                             </div>
-                             <div className="text-4xl font-black text-orange-500 mb-2">4.5%</div>
-                             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rendement annuel moyen</div>
+                                 <div className="text-4xl font-black text-orange-500 mb-2">4.5%</div>
+                                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rendement annuel moyen</div>
+                            </div>
                         </div>
-                    </div>
+                        {/* GAIN CARD */}
+                        <div className="bg-orange-950/20 border border-orange-900/30 p-4 rounded-xl">
+                            <div className="text-[10px] text-orange-400 font-bold uppercase mb-1">Gain sur 20 ans</div>
+                            <div className="text-xl font-black text-orange-400">{formatMoney(installCost * Math.pow(1.045, projectionYears) - installCost)}</div>
+                        </div>
+                     </div>
 
                     {/* SOLAIRE */}
-                    <div className="bg-[#022c22] border border-emerald-500 p-6 rounded-2xl flex flex-col justify-between h-full relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.3)] transform md:scale-105 transition-all duration-300 hover:scale-[1.07] hover:shadow-[0_0_50px_rgba(16,185,129,0.5)]">
-                         <div className="absolute top-3 right-3 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase shadow-lg">Meilleur Choix</div>
-                        <div>
-                             <div className="flex items-center gap-3 mb-4">
-                                 <div className="bg-emerald-500/20 p-2 rounded-lg text-emerald-400"><Sun size={20} /></div>
-                                 <div>
-                                     <h3 className="font-black text-white text-sm uppercase">Solaire</h3>
-                                     <p className="text-[10px] text-emerald-300">Sans bloquer de cash</p>
+                    <div className="flex flex-col gap-3">
+                        <div className="bg-[#022c22] border border-emerald-500 p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.3)] transform md:scale-105 transition-all duration-300 hover:scale-[1.07] hover:shadow-[0_0_50px_rgba(16,185,129,0.5)]">
+                             <div className="absolute top-3 right-3 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase shadow-lg">Meilleur Choix</div>
+                            <div>
+                                 <div className="flex items-center gap-3 mb-4">
+                                     <div className="bg-emerald-500/20 p-2 rounded-lg text-emerald-400"><Sun size={20} /></div>
+                                     <div>
+                                         <h3 className="font-black text-white text-sm uppercase">Solaire</h3>
+                                         <p className="text-[10px] text-emerald-300">Sans bloquer de cash</p>
+                                     </div>
                                  </div>
-                             </div>
-                             <div className="text-4xl font-black text-emerald-400 mb-2 text-shadow-neon">{calculationResult.roiPercentage}%</div>
-                             <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-4">Rendement annuel moyen</div>
-                             <div className="border-t border-emerald-500/30 pt-3 text-xs font-bold text-white flex items-center gap-2">
-                                 <CheckCircle2 size={14} className="text-emerald-400"/>
-                                 + Vous produisez votre propre énergie
-                             </div>
+                                 <div className="text-4xl font-black text-emerald-400 mb-2 text-shadow-neon">{calculationResult.roiPercentage}%</div>
+                                 <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-4">Rendement annuel moyen</div>
+                                 <div className="border-t border-emerald-500/30 pt-3 text-xs font-bold text-white flex items-center gap-2">
+                                     <CheckCircle2 size={14} className="text-emerald-400"/>
+                                     + Vous produisez votre propre énergie
+                                 </div>
+                            </div>
+                        </div>
+                        {/* GAIN CARD */}
+                        <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                            <div className="text-[10px] text-emerald-400 font-bold uppercase mb-1">Gain sur 20 ans</div>
+                            <div className="text-xl font-black text-emerald-400">{formatMoney(calculationResult.totalSavingsProjected)}</div>
                         </div>
                     </div>
                 </div>
