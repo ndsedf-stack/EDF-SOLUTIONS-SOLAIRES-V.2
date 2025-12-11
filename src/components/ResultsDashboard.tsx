@@ -1229,66 +1229,117 @@ for (let i = 1; i < details.length && i < 20; i++) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {yearsToDisplay.map((year, idx) => {
-                    const data = getYearData(year);
-                    const noSolarSpend = -data.credit.cumulativeSpendNoSolar;
-                    
-                    let headerColor = "text-orange-500";
-                    let borderColor = "border-orange-500/30";
-                    let shadowColor = "hover:shadow-[0_0_30px_rgba(249,115,22,0.3)]";
-                    
-                    if (year === 10) {
-                        headerColor = "text-blue-500";
-                        borderColor = "border-blue-500/30";
-                        shadowColor = "hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]";
-                    } else if (year === 20) {
-                        headerColor = "text-emerald-500";
-                        borderColor = "border-emerald-500/30";
-                        shadowColor = "hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]";
-                    }
+    {yearsToDisplay.map((year, idx) => {
+        const data = getYearData(year);
+        const noSolarSpend = -data.credit.cumulativeSpendNoSolar;
+        
+        let headerColor = "text-orange-500";
+        let borderColor = "border-orange-500/30";
+        let shadowColor = "hover:shadow-[0_0_30px_rgba(249,115,22,0.3)]";
+        
+        if (year === 10) {
+            headerColor = "text-blue-500";
+            borderColor = "border-blue-500/30";
+            shadowColor = "hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]";
+        } else if (year === 20) {
+            headerColor = "text-emerald-500";
+            borderColor = "border-emerald-500/30";
+            shadowColor = "hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]";
+        }
 
-                    return (
-                        <div 
-                            key={year} 
-                            className={`relative bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 overflow-hidden group transition-all duration-300 hover:border-white/20 ${shadowColor}`}
-                        >
-                            <div className="absolute top-4 right-4 text-[140px] font-black text-white opacity-[0.03] leading-none pointer-events-none select-none">
-                                {year}
-                            </div>
-                            
-                            <h3 className={`${headerColor} font-bold text-sm uppercase mb-8 tracking-wider`}>DANS {year} ANS</h3>
-                            
-                            <div className="space-y-6 relative z-10">
-                                <div>
-                                    <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Avec Solaire (Crédit)</div>
-                                    <div className={`text-2xl font-black ${year === 20 ? 'text-emerald-400' : 'text-orange-400'}`}>
-                                        {formatMoney(data.credit.cumulativeSavings)}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-[10px] text-slate-500 font-bold uppercase mb-1">Avec Solaire (Cash)</div>
-                                     <div className={`text-2xl font-black ${year === 20 ? 'text-emerald-400' : 'text-orange-400'}`}>
-                                        {formatMoney(data.cash.cumulativeSavings)}
-                                    </div>
-                                </div>
-                                <div className="bg-[#2a0505] border border-red-900/30 p-4 rounded-xl -mx-2">
-                                    <div className="text-[10px] text-red-400 font-bold uppercase mb-1">Sans rien faire</div>
-                                    <div className="text-2xl font-black text-red-500">
-                                        {formatMoney(noSolarSpend)}
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className={`mt-6 pt-6 border-t border-white/5 text-[10px] italic ${year === 20 ? 'text-emerald-400' : year === 10 ? 'text-blue-400' : 'text-orange-400'}`}>
-                                {year === 5 && "Vous commencez à voir la différence"}
-                                {year === 10 && "L'écart se creuse significativement"}
-                                {year === 20 && "C'est un capital transmissible"}
+        return (
+            <div 
+                key={year} 
+                className={`relative bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 overflow-hidden group transition-all duration-300 hover:border-white/20 ${shadowColor}`}
+            >
+                <div className="absolute top-4 right-4 text-[140px] font-black text-white opacity-[0.03] leading-none pointer-events-none select-none">
+                    {year}
+                </div>
+                
+                <h3 className={`${headerColor} font-bold text-sm uppercase mb-8 tracking-wider`}>DANS {year} ANS</h3>
+                
+                <div className="space-y-6 relative z-10">
+                    {/* AVEC SOLAIRE CRÉDIT */}
+                    <div className="group/tooltip relative">
+                        <div className="text-[10px] text-slate-500 font-bold uppercase mb-1 flex items-center gap-1">
+                            Avec Solaire (Crédit)
+                            <HelpCircle size={12} className="text-slate-600" />
+                        </div>
+                        <div className={`text-2xl font-black ${year === 20 ? 'text-emerald-400' : 'text-orange-400'}`}>
+                            {formatMoney(data.credit.cumulativeSavings)}
+                        </div>
+                        
+                        {/* TOOLTIP */}
+                        <div className="absolute left-0 top-full mt-2 w-64 bg-[#1e293b] border border-blue-500/30 p-3 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                            <div className="text-xs text-blue-300 font-bold mb-2">💡 CALCUL :</div>
+                            <div className="text-[10px] text-slate-300 space-y-1 font-mono">
+                                <div>Facture sans panneaux</div>
+                                <div className="text-slate-600">MOINS</div>
+                                <div>(Mensualité crédit + Reste facture)</div>
+                                <div className="text-slate-600">ÉGALE</div>
+                                <div className="text-emerald-400 font-bold">Votre gain net</div>
                             </div>
                         </div>
-                    );
-                })}
+                    </div>
+
+                    {/* AVEC SOLAIRE CASH */}
+                    <div className="group/tooltip relative">
+                        <div className="text-[10px] text-slate-500 font-bold uppercase mb-1 flex items-center gap-1">
+                            Avec Solaire (Cash)
+                            <HelpCircle size={12} className="text-slate-600" />
+                        </div>
+                        <div className={`text-2xl font-black ${year === 20 ? 'text-emerald-400' : 'text-orange-400'}`}>
+                            {formatMoney(data.cash.cumulativeSavings)}
+                        </div>
+                        
+                        {/* TOOLTIP */}
+                        <div className="absolute left-0 top-full mt-2 w-64 bg-[#1e293b] border border-emerald-500/30 p-3 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                            <div className="text-xs text-emerald-300 font-bold mb-2">💡 CALCUL :</div>
+                            <div className="text-[10px] text-slate-300 space-y-1 font-mono">
+                                <div>Facture sans panneaux</div>
+                                <div className="text-slate-600">MOINS</div>
+                                <div>Reste facture réduite</div>
+                                <div className="text-slate-600">MOINS</div>
+                                <div>Apport initial ({formatMoney(installCost)})</div>
+                                <div className="text-slate-600">ÉGALE</div>
+                                <div className="text-emerald-400 font-bold">Votre gain net</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SANS RIEN FAIRE */}
+                    <div className="bg-[#2a0505] border border-red-900/30 p-4 rounded-xl -mx-2 group/tooltip relative">
+                        <div className="text-[10px] text-red-400 font-bold uppercase mb-1 flex items-center gap-1">
+                            Sans rien faire
+                            <HelpCircle size={12} className="text-red-600" />
+                        </div>
+                        <div className="text-2xl font-black text-red-500">
+                            {formatMoney(noSolarSpend)}
+                        </div>
+                        
+                        {/* TOOLTIP */}
+                        <div className="absolute left-0 top-full mt-2 w-64 bg-[#1e293b] border border-red-500/30 p-3 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
+                            <div className="text-xs text-red-300 font-bold mb-2">💡 CALCUL :</div>
+                            <div className="text-[10px] text-slate-300 space-y-1 font-mono">
+                                <div>Facture annuelle × {year} ans</div>
+                                <div className="text-slate-600">AVEC</div>
+                                <div>Inflation {inflationRate}% par an</div>
+                                <div className="text-slate-600">ÉGALE</div>
+                                <div className="text-red-400 font-bold">Argent définitivement perdu</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className={`mt-6 pt-6 border-t border-white/5 text-[10px] italic ${year === 20 ? 'text-emerald-400' : year === 10 ? 'text-blue-400' : 'text-orange-400'}`}>
+                    {year === 5 && "Vous commencez à voir la différence"}
+                    {year === 10 && "L'écart se creuse significativement"}
+                    {year === 20 && "C'est un capital transmissible"}
+                </div>
             </div>
-        </div>
+        );
+    })}
+</div>
 
         {/* 6. COMPARISON WITH OTHER OPTIONS */}
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
