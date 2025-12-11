@@ -1,3 +1,4 @@
+
 * {
   margin: 0;
   padding: 0;
@@ -8,6 +9,44 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: #020202;
   color: white;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Chart Glow Effects */
+.recharts-sector {
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+/* Neon Text Shadow */
+.text-shadow-neon {
+  text-shadow: 0 0 10px currentColor;
+}
+
+/* Card Hover Glow Transition */
+.hover-card-glow {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.hover-card-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px -10px rgba(var(--glow-color), 0.3);
+  border-color: rgba(var(--glow-color), 0.5);
 }
 
 /* Custom Scan Animation */
