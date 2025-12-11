@@ -1,3 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
   margin: 0;
@@ -43,6 +46,7 @@ body {
 .hover-card-glow {
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .hover-card-glow:hover {
   transform: translateY(-2px);
   box-shadow: 0 0 40px -10px rgba(var(--glow-color), 0.3);
