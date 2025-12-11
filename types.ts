@@ -29,6 +29,7 @@ export interface YearlyDetail {
   cumulativeSpendNoSolar: number;
   cumulativeSpendSolar: number;
   cashflowDiff: number;
+  solarSavingsValue: number; // Valeur générée (Économie + Revente)
 }
 
 export interface CalculationOutput {
@@ -71,7 +72,6 @@ export interface CalculationOutput {
   year1: YearlyDetail;
 }
 
-// New types to fix errors
 export interface AmortizationPoint {
   year: number;
   balance: number;
