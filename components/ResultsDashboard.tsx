@@ -15,7 +15,12 @@ interface ResultsDashboardProps {
   onReset: () => void;
 }
 
-// Custom Toggle Component
+// --- UTILS FORMATTING ---
+const formatMoney = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
+const formatNum = (val: number) => new Intl.NumberFormat('fr-FR').format(val);
+
+// --- CUSTOM COMPONENTS ---
+
 const Toggle = ({ checked, onChange, labelOn, labelOff }: { checked: boolean, onChange: (v: boolean) => void, labelOn: string, labelOff: string }) => (
   <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md p-1 rounded-full border border-white/10">
     <button 
@@ -33,7 +38,6 @@ const Toggle = ({ checked, onChange, labelOn, labelOff }: { checked: boolean, on
   </div>
 );
 
-// Custom Input Card Component for Parameters
 const ParamCard = ({ 
   label, 
   value, 
@@ -57,8 +61,7 @@ const ParamCard = ({
 }) => {
   return (
     <div 
-      className={`bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group hover:border-white/20 transition-all hover-card-glow ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
-      style={{ '--glow-color': '255, 255, 255' } as React.CSSProperties}
+      className={`bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
     >
        {/* Grid pattern background */}
       <div className="absolute inset-0 opacity-5 pointer-events-none" 
@@ -97,29 +100,27 @@ const ParamCard = ({
   );
 };
 
-// Warranty Card Component
 const WarrantyCard = ({ years, label, tag, icon: Icon, description, isFr }: { years: number, label: string, tag: string, icon: any, description: string, isFr?: boolean }) => (
     <div 
-      className="bg-black/40 backdrop-blur-xl border border-blue-500/20 p-6 rounded-2xl group hover-card-glow transition-all relative overflow-hidden h-full"
-      style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}
+      className="bg-black/40 backdrop-blur-xl border border-blue-500/20 p-6 rounded-2xl group transition-all duration-300 hover:scale-[1.02] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:border-blue-500/50 relative overflow-hidden h-full"
     >
          {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 pointer-events-none"></div>
         
         {/* Normal Content */}
         <div className="relative z-10 transition-all duration-300 group-hover:opacity-0 group-hover:scale-95 transform">
-            <div className="w-10 h-10 rounded-full bg-blue-900/20 text-blue-400 flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-full bg-blue-900/20 text-blue-400 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(59,130,246,0.2)]">
                 <Icon size={20} />
             </div>
             <div className="text-3xl font-black text-white mb-1">{years} ANS</div>
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-4">{label}</div>
-            <div className="inline-block px-2 py-1 bg-blue-900/30 text-blue-300 text-[10px] font-bold rounded">
+            <div className="inline-block px-2 py-1 bg-blue-900/30 text-blue-300 text-[10px] font-bold rounded border border-blue-500/20">
                 {tag}
             </div>
             
             {/* French Flag badge */}
             {isFr && (
-                <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#1a2e35] px-2 py-1 rounded border border-emerald-500/20">
+                <div className="absolute top-4 right-4 flex items-center gap-1 bg-[#1a2e35] px-2 py-1 rounded border border-emerald-500/20 shadow-sm">
                     <span className="text-[8px]">🇫🇷</span>
                     <span className="text-[8px] font-bold text-emerald-400">FRANÇAIS</span>
                 </div>
@@ -128,7 +129,7 @@ const WarrantyCard = ({ years, label, tag, icon: Icon, description, isFr }: { ye
 
         {/* Hover Overlay */}
         <div className="absolute inset-0 bg-black/95 p-6 flex flex-col items-center justify-center text-center opacity-0 group-hover:opacity-100 transition-all duration-300 backdrop-blur-sm z-20">
-            <Icon size={24} className="text-blue-400 mb-3" />
+            <Icon size={24} className="text-blue-400 mb-3 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
             <h4 className="text-white font-bold text-sm mb-2 uppercase">{label} {years} ANS</h4>
             <p className="text-xs text-slate-200 font-medium leading-relaxed">
                 {description}
@@ -137,6 +138,8 @@ const WarrantyCard = ({ years, label, tag, icon: Icon, description, isFr }: { ye
     </div>
 );
 
+
+// --- MAIN COMPONENT ---
 
 export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onReset }) => {
   // --- STATE ---
@@ -174,6 +177,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
   // --- INITIALIZATION ---
   useEffect(() => {
     setInflationRate(safeParseFloat(data.params.inflationRate, 5));
+    // Load initial data from params
+    setElectricityPrice(safeParseFloat(data.params.electricityPrice, 0.25));
+    setYearlyProduction(safeParseFloat(data.params.yearlyProduction, 7000));
+    setSelfConsumptionRate(safeParseFloat(data.params.selfConsumptionRate, 70));
+    setInstallCost(safeParseFloat(data.params.installCost, 18799));
+    setCreditMonthlyPayment(safeParseFloat(data.params.creditMonthlyPayment, 147.8));
+    setInsuranceMonthlyPayment(safeParseFloat(data.params.insuranceMonthlyPayment, 4.7));
+    setCreditDurationMonths(safeParseFloat(data.params.creditDurationMonths, 180));
+    setCashApport(safeParseFloat(data.params.cashApport, 0));
   }, [data]);
 
   useEffect(() => {
@@ -234,9 +246,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
     return () => clearInterval(interval);
   }, [calculationResult.costOfInactionPerSecond]);
 
-  const formatMoney = (val: number) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(val);
-  const formatNum = (val: number) => new Intl.NumberFormat('fr-FR').format(val);
-
   const getYearData = (year: number) => {
     const idx = year - 1;
     if (!calculationResult.details[idx]) return { credit: calculationResult.year1, cash: calculationResult.year1 };
@@ -251,15 +260,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
   // ECONOMY CHART DATA - NET CASHFLOW
   const economyChartData = useMemo(() => {
     const sourceDetails = economyChartMode === 'financement' ? calculationResult.details : calculationResult.detailsCash;
-    
-    // Slice data to match current projection years (e.g., 20)
     const viewData = sourceDetails.slice(0, projectionYears);
 
     return viewData.map((detail, index) => {
-        // Is credit active this year?
         const isCreditActive = index * 12 < creditDurationMonths && economyChartMode === 'financement';
-        
-        // We use 'cashflowDiff' which is the Net Gain (Bill Savings - Loan Payment)
         const netCashflow = detail.cashflowDiff;
 
         return {
@@ -580,17 +584,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
         
         {/* INFO NOTICE IF NO MODAL */}
         {!showParamsEditor && (
-             <div className="bg-black/40 backdrop-blur-xl border border-blue-900/30 p-4 rounded-xl flex items-center gap-3 text-blue-200 text-sm hover-card-glow" style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}>
+             <div className="bg-black/40 backdrop-blur-xl border border-blue-900/30 p-4 rounded-xl flex items-center gap-3 text-blue-200 text-sm hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all duration-500">
                 <Info size={18} />
                 <span>Les graphiques et calculs se mettent à jour automatiquement.</span>
              </div>
         )}
 
         {/* 1. SECTION INACTION */}
-        <div 
-          className="bg-gradient-to-br from-[#2a0505] via-[#1a0303] to-black border border-red-900/30 rounded-[24px] p-8 relative overflow-hidden group shadow-2xl shadow-red-900/10 backdrop-blur-sm hover-card-glow"
-          style={{ '--glow-color': '239, 68, 68' } as React.CSSProperties}
-        >
+        <div className="bg-gradient-to-br from-[#2a0505] via-[#1a0303] to-black border border-red-900/30 rounded-[24px] p-8 relative overflow-hidden group shadow-2xl shadow-red-900/10 backdrop-blur-sm transition-all duration-500 hover:border-red-500/40 hover:shadow-[0_0_30px_rgba(239,68,68,0.2)]">
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ef4444_1px,transparent_1px)] [background-size:20px_20px]"></div>
             
             <div className="relative z-10 flex flex-col xl:flex-row gap-8 items-stretch">
@@ -655,11 +656,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
             </div>
         </div>
 
-        {/* 2. SECTION AUTONOMY - UPDATED GLASS & CIRCLE FIX */}
-        <div 
-          className="bg-emerald-950/20 backdrop-blur-2xl border border-emerald-500/20 rounded-[24px] p-8 md:p-12 relative overflow-hidden shadow-2xl hover-card-glow"
-          style={{ '--glow-color': '16, 185, 129' } as React.CSSProperties}
-        >
+        {/* 2. SECTION AUTONOMY - FIXED DESIGN & VISIBILITY */}
+        <div className="bg-black/40 backdrop-blur-xl border border-emerald-500/20 rounded-[24px] p-8 md:p-12 relative overflow-hidden shadow-2xl transition-all duration-500 hover:border-emerald-500/40 hover:shadow-[0_0_40px_rgba(16,185,129,0.2)]">
              {/* Subtle ambient light behind */}
              <div className="absolute -left-20 -top-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
@@ -667,6 +665,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 <div className="relative w-48 h-48 flex-shrink-0 drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]">
                     <ResponsiveContainer width="100%" height="100%">
                          <PieChart>
+                             <defs>
+                                <filter id="neon-glow" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
                              {/* Background Track Circle */}
                              <Pie
                                 data={[{ value: 100 }]}
@@ -675,11 +682,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                                 innerRadius={70}
                                 outerRadius={85}
                                 dataKey="value"
-                                fill="#064e3b"
+                                fill="#022c22"
                                 stroke="none"
                                 isAnimationActive={false}
                              />
-                             {/* Foreground Value Circle - Neon Glow via CSS */}
+                             {/* Foreground Value Circle - Neon Glow via SVG Filter */}
                              <Pie
                                  data={[
                                      { value: calculationResult.savingsRatePercent },
@@ -695,12 +702,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                                  stroke="none"
                                  cornerRadius={10}
                              >
-                                 <Cell fill="#34d399" style={{ filter: 'drop-shadow(0 0 5px #34d399)' }} />
+                                 <Cell fill="#34d399" style={{ filter: 'url(#neon-glow)' }} />
                                  <Cell fill="transparent" />
                              </Pie>
                          </PieChart>
                     </ResponsiveContainer>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                         <Zap className="text-emerald-400 w-8 h-8 mb-1 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                         <span className="text-5xl font-black text-white leading-none text-shadow-neon">{calculationResult.savingsRatePercent.toFixed(0)}%</span>
                         <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mt-1">Autonomie</span>
@@ -730,11 +737,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
              </div>
         </div>
 
-        {/* 3. SECTION REPARTITION - REPLACED WITH ACTIVITY RINGS (Concentric Pies) */}
-        <div 
-          className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] p-8 hover-card-glow"
-          style={{ '--glow-color': '139, 92, 246' } as React.CSSProperties}
-        >
+        {/* 3. SECTION REPARTITION - ACTIVITY RINGS STYLE */}
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] p-8 transition-all duration-500 hover:border-violet-500/40 hover:shadow-[0_0_40px_rgba(139,92,246,0.2)]">
             <div className="flex items-center gap-3 mb-8">
                 <Zap className="text-yellow-500" />
                 <h2 className="text-xl font-bold uppercase tracking-wide">Répartition Énergie</h2>
@@ -746,31 +750,48 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 <div className="h-[320px] w-full relative flex items-center justify-center">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
+                             <defs>
+                                <filter id="glow-orange" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                                <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
+                                    <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                                    <feMerge>
+                                        <feMergeNode in="blur" />
+                                        <feMergeNode in="SourceGraphic" />
+                                    </feMerge>
+                                </filter>
+                            </defs>
+                            
                             {/* OUTER RING (Autoconso) - TRACK */}
-                            <Pie data={[{value: 100}]} innerRadius={100} outerRadius={115} fill="#1a1405" stroke="none" isAnimationActive={false} />
+                            <Pie data={[{value: 100}]} innerRadius={100} outerRadius={112} fill="#1a1405" stroke="none" isAnimationActive={false} />
                             {/* OUTER RING - VALUE */}
                             <Pie
                                 data={[{ value: selfConsumptionRate }, { value: 100 - selfConsumptionRate }]}
-                                innerRadius={100} outerRadius={115}
+                                innerRadius={100} outerRadius={112}
                                 startAngle={90} endAngle={-270}
-                                cornerRadius={10} stroke="none"
+                                cornerRadius={6} stroke="none"
                                 dataKey="value"
                             >
-                                <Cell fill="#f59e0b" style={{ filter: 'drop-shadow(0 0 4px #f59e0b)' }} />
+                                <Cell fill="#f59e0b" style={{ filter: 'url(#glow-orange)' }} />
                                 <Cell fill="transparent" />
                             </Pie>
 
                             {/* INNER RING (Vente) - TRACK */}
-                            <Pie data={[{value: 100}]} innerRadius={70} outerRadius={85} fill="#140c1f" stroke="none" isAnimationActive={false} />
+                            <Pie data={[{value: 100}]} innerRadius={70} outerRadius={82} fill="#140c1f" stroke="none" isAnimationActive={false} />
                             {/* INNER RING - VALUE */}
                             <Pie
                                 data={[{ value: 100 - selfConsumptionRate }, { value: selfConsumptionRate }]}
-                                innerRadius={70} outerRadius={85}
+                                innerRadius={70} outerRadius={82}
                                 startAngle={90} endAngle={-270}
-                                cornerRadius={10} stroke="none"
+                                cornerRadius={6} stroke="none"
                                 dataKey="value"
                             >
-                                <Cell fill="#8b5cf6" style={{ filter: 'drop-shadow(0 0 4px #8b5cf6)' }} />
+                                <Cell fill="#8b5cf6" style={{ filter: 'url(#glow-purple)' }} />
                                 <Cell fill="transparent" />
                             </Pie>
                         </PieChart>
@@ -785,7 +806,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 </div>
 
                 <div className="space-y-4">
-                    <div className="bg-black/60 backdrop-blur-md border border-amber-500/20 p-6 rounded-2xl hover:border-amber-500/40 transition-all hover:translate-x-1 group">
+                    <div className="bg-black/60 backdrop-blur-md border border-amber-500/20 p-6 rounded-2xl hover:border-amber-500/40 transition-all hover:translate-x-1 group cursor-default">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_#f59e0b] group-hover:animate-pulse"></div>
                             <span className="font-bold text-white">Autoconsommation ({selfConsumptionRate}%)</span>
@@ -796,7 +817,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                         <p className="text-xs text-slate-400">Énergie consommée directement chez vous. <span className="text-amber-500 font-bold">Économie maximale</span> car aucun coût réseau.</p>
                     </div>
 
-                    <div className="bg-black/60 backdrop-blur-md border border-violet-500/20 p-6 rounded-2xl hover:border-violet-500/40 transition-all hover:translate-x-1 group">
+                    <div className="bg-black/60 backdrop-blur-md border border-violet-500/20 p-6 rounded-2xl hover:border-violet-500/40 transition-all hover:translate-x-1 group cursor-default">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="w-3 h-3 rounded-full bg-violet-500 shadow-[0_0_10px_#8b5cf6] group-hover:animate-pulse"></div>
                             <span className="font-bold text-white">Vente surplus ({(100-selfConsumptionRate).toFixed(0)}%)</span>
@@ -830,10 +851,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  {/* Card Financement */}
-                 <div 
-                    className="bg-black/60 backdrop-blur-md border border-blue-900/30 rounded-2xl p-6 relative overflow-hidden group hover-card-glow transition-all"
-                    style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}
-                 >
+                 <div className="bg-black/60 backdrop-blur-md border border-blue-900/30 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
                     {/* Header */}
                     <div className="flex items-center gap-4 mb-6">
                         <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-400">
@@ -885,10 +903,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                  </div>
 
                  {/* Card Cash */}
-                 <div 
-                    className="bg-black/60 backdrop-blur-md border border-emerald-900/30 rounded-2xl p-6 relative overflow-hidden group hover-card-glow transition-all"
-                    style={{ '--glow-color': '16, 185, 129' } as React.CSSProperties}
-                 >
+                 <div className="bg-black/60 backdrop-blur-md border border-emerald-900/30 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                      {/* Header */}
                     <div className="flex items-center gap-4 mb-6">
                         <div className="w-12 h-12 bg-emerald-900/20 rounded-xl flex items-center justify-center text-emerald-400">
@@ -941,7 +956,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
             </div>
 
             {/* Verdict */}
-            <div className="mt-8 bg-black/60 backdrop-blur-md border border-purple-900/30 rounded-2xl p-6 relative overflow-hidden hover-card-glow" style={{ '--glow-color': '168, 85, 247' } as React.CSSProperties}>
+            <div className="mt-8 bg-black/60 backdrop-blur-md border border-purple-900/30 rounded-2xl p-6 relative overflow-hidden transition-all duration-300 hover:border-purple-500/50 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]">
                 <div className="flex items-center gap-3 mb-4">
                    <Target className="text-purple-400 w-6 h-6" />
                    <Lightbulb className="text-yellow-400 w-6 h-6" />
@@ -968,21 +983,23 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                     const noSolarSpend = -data.credit.cumulativeSpendNoSolar;
                     
                     let headerColor = "text-orange-500";
-                    let glowColor = "249, 115, 22";
+                    let borderColor = "border-orange-500/30";
+                    let shadowColor = "hover:shadow-[0_0_30px_rgba(249,115,22,0.3)]";
                     
                     if (year === 10) {
                         headerColor = "text-blue-500";
-                        glowColor = "59, 130, 246";
+                        borderColor = "border-blue-500/30";
+                        shadowColor = "hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]";
                     } else if (year === 20) {
                         headerColor = "text-emerald-500";
-                        glowColor = "16, 185, 129";
+                        borderColor = "border-emerald-500/30";
+                        shadowColor = "hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]";
                     }
 
                     return (
                         <div 
                             key={year} 
-                            className={`relative bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 overflow-hidden group transition-all hover-card-glow`}
-                            style={{ '--glow-color': glowColor } as React.CSSProperties}
+                            className={`relative bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 overflow-hidden group transition-all duration-300 hover:border-white/20 ${shadowColor}`}
                         >
                             <div className="absolute top-4 right-4 text-[140px] font-black text-white opacity-[0.03] leading-none pointer-events-none select-none">
                                 {year}
@@ -1036,7 +1053,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* LIVRET A */}
-                    <div className="bg-black/60 backdrop-blur-md border border-blue-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group hover-card-glow" style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}>
+                    <div className="bg-black/60 backdrop-blur-md border border-blue-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]">
                         <div>
                              <div className="flex items-center gap-3 mb-4">
                                  <div className="bg-blue-900/30 p-2 rounded-lg text-blue-400"><Landmark size={20} /></div>
@@ -1051,7 +1068,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                     </div>
 
                     {/* ASSURANCE VIE */}
-                    <div className="bg-black/60 backdrop-blur-md border border-purple-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group hover-card-glow" style={{ '--glow-color': '168, 85, 247' } as React.CSSProperties}>
+                    <div className="bg-black/60 backdrop-blur-md border border-purple-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group transition-all duration-300 hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(168,85,247,0.2)]">
                         <div>
                              <div className="flex items-center gap-3 mb-4">
                                  <div className="bg-purple-900/30 p-2 rounded-lg text-purple-400"><ShieldCheck size={20} /></div>
@@ -1066,7 +1083,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                     </div>
 
                      {/* SCPI */}
-                     <div className="bg-black/60 backdrop-blur-md border border-orange-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group hover-card-glow" style={{ '--glow-color': '249, 115, 22' } as React.CSSProperties}>
+                     <div className="bg-black/60 backdrop-blur-md border border-orange-900/20 p-6 rounded-2xl flex flex-col justify-between h-full group transition-all duration-300 hover:border-orange-500/50 hover:shadow-[0_0_20px_rgba(249,115,22,0.2)]">
                         <div>
                              <div className="flex items-center gap-3 mb-4">
                                  <div className="bg-orange-900/30 p-2 rounded-lg text-orange-400"><Home size={20} /></div>
@@ -1081,7 +1098,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                     </div>
 
                     {/* SOLAIRE */}
-                    <div className="bg-[#022c22] border border-emerald-500 p-6 rounded-2xl flex flex-col justify-between h-full relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.3)] transform md:scale-105 hover-card-glow" style={{ '--glow-color': '16, 185, 129' } as React.CSSProperties}>
+                    <div className="bg-[#022c22] border border-emerald-500 p-6 rounded-2xl flex flex-col justify-between h-full relative overflow-hidden shadow-[0_0_30px_rgba(16,185,129,0.3)] transform md:scale-105 transition-all duration-300 hover:scale-[1.07] hover:shadow-[0_0_50px_rgba(16,185,129,0.5)]">
                          <div className="absolute top-3 right-3 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded uppercase shadow-lg">Meilleur Choix</div>
                         <div>
                              <div className="flex items-center gap-3 mb-4">
@@ -1113,7 +1130,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
         {/* 7. CAPITAL PATRIMONIAL & SIDE CARDS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
             {/* LEFT: CAPITAL PATRIMONIAL */}
-            <div className="lg:col-span-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden shadow-2xl flex flex-col justify-between hover-card-glow" style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}>
+            <div className="lg:col-span-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden shadow-2xl flex flex-col justify-between transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.15)]">
                 {/* Background elements */}
                 <div className="absolute top-0 right-0 p-8 opacity-40 pointer-events-none">
                      <Wallet size={200} className="text-blue-500/20" />
@@ -1174,8 +1191,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                             <div className="text-[10px] text-slate-500 mt-1">Pouvoir d'achat</div>
                         </div>
 
-                        <div className="bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-xl relative group">
-                            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase mb-1 cursor-help">
+                        <div className="bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-xl relative group cursor-help">
+                            <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase mb-1">
                                 POINT MORT <HelpCircle size={10}/>
                             </div>
                             <div className="text-2xl font-black text-white">{calculationResult.breakEvenPoint} ans</div>
@@ -1213,7 +1230,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
             {/* RIGHT: SIDE CARDS */}
             <div className="space-y-6 flex flex-col">
                 {/* 1. EQUIVALENT BANCAIRE */}
-                <div className="flex-1 bg-black/40 backdrop-blur-xl border border-blue-900/30 rounded-[32px] p-8 flex flex-col justify-center shadow-lg shadow-blue-900/10 hover-card-glow" style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}>
+                <div className="flex-1 bg-black/40 backdrop-blur-xl border border-blue-900/30 rounded-[32px] p-8 flex flex-col justify-center shadow-lg shadow-blue-900/10 transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
                     <div className="flex items-center gap-3 mb-6">
                          <Landmark className="text-blue-500 w-6 h-6" />
                          <h3 className="text-sm font-bold text-blue-100 uppercase tracking-widest">ÉQUIVALENT BANCAIRE</h3>
@@ -1238,7 +1255,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 </div>
 
                 {/* 2. EFFORT D'EPARGNE */}
-                <div className="bg-black/40 backdrop-blur-xl border border-orange-900/30 rounded-[32px] p-8 flex flex-col justify-center shadow-lg shadow-orange-900/10 hover-card-glow" style={{ '--glow-color': '249, 115, 22' } as React.CSSProperties}>
+                <div className="bg-black/40 backdrop-blur-xl border border-orange-900/30 rounded-[32px] p-8 flex flex-col justify-center shadow-lg shadow-orange-900/10 transition-all duration-300 hover:border-orange-500/50 hover:shadow-[0_0_30px_rgba(249,115,22,0.3)]">
                     <div className="flex items-center justify-between mb-4">
                          <div className="flex items-center gap-3">
                             <div className="w-6 h-6 rounded-full border-2 border-orange-500 flex items-center justify-center">
@@ -1359,7 +1376,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
         {/* 9. LOCATAIRE VS PROPRIETAIRE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
             {/* Locataire */}
-            <div className="bg-black/40 backdrop-blur-xl border border-red-900/30 rounded-[24px] p-8 relative overflow-hidden hover-card-glow" style={{ '--glow-color': '239, 68, 68' } as React.CSSProperties}>
+            <div className="bg-black/40 backdrop-blur-xl border border-red-900/30 rounded-[24px] p-8 relative overflow-hidden transition-all duration-300 hover:border-red-500/40 hover:shadow-[0_0_30px_rgba(239,68,68,0.2)]">
                 <div className="absolute top-4 right-4 bg-red-950/50 text-red-500 text-[10px] font-bold px-3 py-1 rounded border border-red-900/50 uppercase">
                     Modèle Dépassé
                 </div>
@@ -1405,7 +1422,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
             </div>
 
             {/* Proprietaire */}
-            <div className="bg-black/40 backdrop-blur-xl border border-blue-600/30 rounded-[24px] p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10 hover-card-glow" style={{ '--glow-color': '37, 99, 235' } as React.CSSProperties}>
+            <div className="bg-black/40 backdrop-blur-xl border border-blue-600/30 rounded-[24px] p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10 transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.3)]">
                 <div className="absolute top-4 right-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded shadow-lg uppercase">
                     Votre Liberté
                 </div>
@@ -1626,7 +1643,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
         </div>
 
         {/* 11. STRUCTURE DU BUDGET (MENSUEL) */}
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 mt-8 hover-card-glow" style={{ '--glow-color': '59, 130, 246' } as React.CSSProperties}>
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 mt-8 transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
             <div className="flex items-center justify-between mb-8">
                  <div className="flex items-center gap-3">
                     <Scale className="text-slate-400 w-6 h-6" />
@@ -1962,7 +1979,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
         {/* 15. AI & CALL TO ACTION */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
             {/* AI Analysis */}
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 flex flex-col justify-between hover-card-glow" style={{ '--glow-color': '168, 85, 247' } as React.CSSProperties}>
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 flex flex-col justify-between transition-all duration-300 hover:border-purple-500/30 hover:shadow-[0_0_30px_rgba(168,85,247,0.15)]">
                 <div>
                     <div className="flex items-center gap-3 mb-6">
                         <div className="bg-purple-500/20 p-2 rounded-lg text-purple-400">
