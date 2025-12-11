@@ -60,32 +60,32 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFormSubmit = () => {
-    // ✅ FORMAT CORRECT pour SimulationParams
-    const calculationData = {
-      // Fournisseur actuel
-      currentAnnualBill: parseFloat(formData.currentBillYear) || 0,
-      yearlyConsumption: parseFloat(formData.yearlyConsumption) || 0,
-      electricityPrice: parseFloat(formData.pricePerKwh) || 0.25,
-      inflationRate: parseFloat(formData.inflation) || 7,
-      
-      // Installation solaire
-      installCost: parseFloat(formData.installPrice) || 20000,
-      yearlyProduction: parseFloat(formData.production) || 0,
-      selfConsumptionRate: parseFloat(formData.selfConsumption) || 70,
-      
-      // Financement
-      cashApport: 0, // ✅ Pas d'apport pour l'instant
-      remainingToFinance: parseFloat(formData.installPrice) || 20000, // ✅ Tout est financé
-      creditMonthlyPayment: parseFloat(formData.creditMonthly) || 0,
-      insuranceMonthlyPayment: parseFloat(formData.insuranceMonthly) || 0,
-      creditDurationMonths: parseFloat(formData.creditDuration) || 180,
-      creditInterestRate: parseFloat(formData.creditRate) || 4.9,
-    };
+const handleFormSubmit = () => {
+  // ✅ FORMAT CORRECT pour SimulationParams
+  const calculationData = {
+    // Fournisseur actuel
+    currentAnnualBill: parseFloat(formData.currentBillYear) || 0,
+    yearlyConsumption: parseFloat(formData.yearlyConsumption) || 0,
+    electricityPrice: parseFloat(formData.pricePerKwh) || 0.25,
+    inflationRate: parseFloat(formData.inflation) || 7,
     
-    // ✅ Envoie un STRING (JSON) au lieu d'un objet
-    onTextSubmit(JSON.stringify(calculationData));
+    // Installation solaire
+    installCost: parseFloat(formData.installPrice) || 20000,
+    yearlyProduction: parseFloat(formData.production) || 0,
+    selfConsumptionRate: parseFloat(formData.selfConsumption) || 70,
+    
+    // Financement
+    cashApport: 0, // ✅ Pas d'apport pour l'instant
+    remainingToFinance: parseFloat(formData.installPrice) || 20000, // ✅ Tout est financé
+    creditMonthlyPayment: parseFloat(formData.creditMonthly) || 0,
+    insuranceMonthlyPayment: parseFloat(formData.insuranceMonthly) || 0,
+    creditDurationMonths: parseFloat(formData.creditDuration) || 180,
+    creditInterestRate: parseFloat(formData.creditRate) || 4.9,
   };
+  
+  // ✅ Envoie un STRING (JSON) au lieu d'un objet
+  onTextSubmit(JSON.stringify(calculationData));
+};
 
   const isFormValid = formData.currentBillYear && formData.creditMonthly && formData.production;
 
@@ -113,13 +113,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
       <div className="flex justify-center gap-4 mb-8">
         <button 
           onClick={() => setMode('form')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${mode === 'form' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-zinc-900 text-zinc-500 hover:text-white border border-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${mode === 'form' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-black/60 backdrop-blur-md text-zinc-500 hover:text-white border border-white/10'}`}
         >
           <PenTool className="w-4 h-4" /> Saisie Manuelle
         </button>
         <button 
           onClick={() => setMode('upload')}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${mode === 'upload' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-zinc-900 text-zinc-500 hover:text-white border border-white/5'}`}
+          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm transition-all duration-300 ${mode === 'upload' ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.4)]' : 'bg-black/60 backdrop-blur-md text-zinc-500 hover:text-white border border-white/10'}`}
         >
           <FileSpreadsheet className="w-4 h-4" /> Fichier Excel
         </button>
@@ -146,7 +146,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
             className={`relative aspect-[16/9] md:aspect-[21/9] flex flex-col items-center justify-center transition-all duration-500 border border-dashed rounded-[32px] cursor-pointer overflow-hidden group backdrop-blur-sm ${
               dragActive 
                 ? "border-blue-500 bg-blue-500/10 scale-[1.02]" 
-                : "border-zinc-800 bg-black/40 hover:border-zinc-600 hover:bg-zinc-900/40"
+                : "border-white/10 bg-black/40 hover:border-white/20 hover:bg-black/60"
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -174,7 +174,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
             </div>
           </div>
         ) : (
-          <div className="bg-black/40 border border-zinc-800 rounded-[32px] p-6 md:p-10 backdrop-blur-sm">
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-6 md:p-10 backdrop-blur-xl">
              
              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                 
@@ -199,7 +199,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
                               value={formData.currentBillYear}
                               onChange={handleInputChange}
                               placeholder="2500"
-                              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all placeholder-zinc-700"
+                              className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all placeholder-zinc-700 backdrop-blur-md"
                             />
                             {formData.currentBillYear && (
                               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 font-mono">
@@ -218,7 +218,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
                               value={formData.yearlyConsumption}
                               onChange={handleInputChange}
                               placeholder="10000"
-                              className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-yellow-400 text-lg font-bold focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 outline-none transition-all placeholder-zinc-700"
+                              className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-yellow-400 text-lg font-bold focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500 outline-none transition-all placeholder-zinc-700 backdrop-blur-md"
                            />
                         </div>
                       </div>
@@ -232,7 +232,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
                             name="inflation"
                             value={formData.inflation}
                             onChange={handleInputChange}
-                            className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                            className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all backdrop-blur-md"
                           />
                         </div>
                         <div>
@@ -243,7 +243,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
                             step="0.01"
                             value={formData.pricePerKwh}
                             onChange={handleInputChange}
-                            className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                            className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition-all backdrop-blur-md"
                           />
                         </div>
                       </div>
@@ -271,7 +271,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
                           value={formData.creditMonthly}
                           onChange={handleInputChange}
                           placeholder="Ex: 180"
-                          className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-emerald-400 text-lg font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-zinc-700"
+                          className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-emerald-400 text-lg font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-zinc-700 backdrop-blur-md"
                         />
                       </div>
                       <div>
@@ -282,7 +282,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, onTextSubm
                           value={formData.insuranceMonthly}
                           onChange={handleInputChange}
                           placeholder="Ex: 15"
-                          className="w-full bg-zinc-900/80 border border-zinc-700 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-zinc-700"
+                          className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-3 text-white text-lg font-bold focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder-zinc-700 backdrop-blur-md"
                         />
                       </div>
                    </div>
