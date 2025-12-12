@@ -9,6 +9,7 @@ import {
   Lock, Target, Wrench, Bot, LayoutDashboard, ThumbsUp, Timer, Shield, Award
 } from 'lucide-react';
 import { InputSlider } from './InputSlider';
+import { PDFExport } from './PDFExport';
 
 interface ResultsDashboardProps {
   data: SimulationResult;
@@ -376,6 +377,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
              <button onClick={onReset} className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider hover:text-white transition-colors">
                 <TrendingUp size={14} /> Nouvelle Analyse
              </button>
+         <PDFExport 
+   data={data}
+   calculationResult={calculationResult}
+   projectionYears={projectionYears}
+/>
         </div>
       </nav>
 
