@@ -686,19 +686,19 @@ export const PDFExport: React.FC<PDFExportProps> = ({
       <button
         onClick={() => setShowModal(true)}
         disabled={generating}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider"
+        className="w-full bg-white text-black hover:bg-slate-200 py-4 px-8 rounded-full font-black uppercase tracking-wider flex items-center justify-center gap-2 transform transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {generating ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Génération...</span>
-          </>
-        ) : (
-          <>
-            <FileText className="w-4 h-4" />
-            <span>Exporter PDF</span>
-          </>
-        )}
+  <>
+    <Loader2 className="w-6 h-6 animate-spin" />
+    <span>GÉNÉRATION EN COURS...</span>
+  </>
+) : (
+  <>
+    <FileText className="w-6 h-6" />
+    <span>GÉNÉRER MON ÉTUDE PDF</span>
+  </>
+)}
       </button>
 
       {showModal && (
