@@ -359,29 +359,26 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
       {/* NAVBAR */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-black/60 backdrop-blur-md border-b border-white/10 h-16 flex items-center justify-between px-6">
         <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-orange-400 to-orange-600 p-1.5 rounded-lg shadow-[0_0_15px_rgba(249,115,22,0.5)]">
-                <Sun className="w-5 h-5 text-white fill-white" />
-            </div>
-            <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent leading-none">Solutions Solaires</h1>
-                <p className="text-[10px] text-slate-500 font-bold tracking-widest uppercase">EDF - Analyse Premium</p>
-            </div>
+            {/* ... logo ... */}
         </div>
         <div className="flex items-center gap-4">
-             <button 
-                onClick={() => setShowParamsEditor(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold uppercase tracking-wider rounded border border-white/10 transition-colors"
-             >
-                <Settings size={14} /> Modifier
-             </button>
-             <button onClick={onReset} className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider hover:text-white transition-colors">
-                <TrendingUp size={14} /> Nouvelle Analyse
-             </button>
-         <PDFExport 
-   data={data}
-   calculationResult={calculationResult}
-   projectionYears={projectionYears}
-/>
+          <button 
+            onClick={() => setShowParamsEditor(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold uppercase tracking-wider rounded border border-white/10 transition-colors"
+          >
+            <Settings size={14} /> Modifier
+          </button>
+          
+          <button onClick={onReset} className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-wider hover:text-white transition-colors">
+            <TrendingUp size={14} /> Nouvelle Analyse
+          </button>
+          
+          {/* BOUTON PDF EXPORT - UTILISATION CORRECTE */}
+          <PDFExport 
+            data={pdfData}
+            calculationResult={calculationResult}
+            projectionYears={projectionYears}
+          />
         </div>
       </nav>
 
