@@ -268,21 +268,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                          [8, 17, 25];  // pour 25 ans
 
   // ECONOMY CHART DATA - NET CASHFLOW
-  const economyChartData = useMemo(() => {
+ const economyChartData = useMemo(() => {
     const sourceDetails = economyChartMode === 'financement' ? calculationResult.details : calculationResult.detailsCash;
     const viewData = sourceDetails.slice(0, projectionYears);
 
     return viewData.map((detail, index) => {
-        const isCreditActive = index * 12 < creditDurationMonths && economyChartMode === 'financement';
         const netCashflow = detail.cashflowDiff;
 
         return {
             year: detail.year,
             value: netCashflow,
-            type: isCreditActive ? 'investment' : 'profit'
+            type: netCashflow < 0 ? 'investment' : 'profit'  // ✅ BASÉ SUR LE SIGNE !
         };
     });
-  }, [calculationResult, economyChartMode, creditDurationMonths, projectionYears]);
+}, [calculationResult, economyChartMode, projectionYears]);
 
   const gouffreChartData = useMemo(() => {
       const source = gouffreMode === 'financement' ? calculationResult.details : calculationResult.detailsCash;
