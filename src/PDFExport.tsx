@@ -35,28 +35,19 @@ export const PDFExport: React.FC<PDFExportProps> = ({
       }
 
       const today = new Date().toLocaleDateString('fr-FR');
-      const formattedCost = new Intl.NumberFormat('fr-FR', { 
+      // Helper function for currency formatting
+      const formatMoney = (val: number) => new Intl.NumberFormat('fr-FR', { 
         style: 'currency', 
         currency: 'EUR',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-      }).format(data.totalCost);
+      }).format(val);
 
-      const totalGain = calculationResult.details[projectionYears - 1]?.cashflowCumulative || 0;
-      const formattedGain = new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'EUR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }).format(totalGain);
+      const formattedCost = formatMoney(Number(data.params?.installCost || 0));
+      const totalGain = calculationResult.totalSavingsProjected || 0;
+      const formattedGain = formatMoney(totalGain);
 
-      let roiYears = 0;
-      for (let i = 0; i < calculationResult.details.length; i++) {
-        if (calculationResult.details[i].cashflowCumulative > 0) {
-          roiYears = i + 1;
-          break;
-        }
-      }
+      let roiYears = calculationResult.breakEvenPoint || 0;
 
       function generateTablePages(result: any, years: number, date: string) {
         const rowsPerPage = 18;
@@ -86,8 +77,8 @@ export const PDFExport: React.FC<PDFExportProps> = ({
                         <th>SANS SOLAIRE</th>
                         <th>CRÉDIT</th>
                         <th>RESTE FACTURE</th>
-                        <th>TOTAL</th>
-                        <th>TRÉSORERIE</th>
+                        <th>TOTAL AVEC SOLAIRE</th>
+                        <th>CUMUL ÉCONOMIES</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -103,16 +94,17 @@ export const PDFExport: React.FC<PDFExportProps> = ({
               minimumFractionDigits: 0
             }).format(val);
 
-            const cashflowColor = detail.cashflowCumulative < 0 ? '#dc2626' : '#16a34a';
+            const cashflowColor = detail.cumulativeSavings < 0 ? '#dc2626' : '#16a34a';
+            const creditCost = (detail.creditPayment || 0);
 
             html += `
                     <tr>
                         <td><strong>${detail.year}</strong></td>
-                        <td>${formatter(detail.costWithoutSolar)}</td>
-                        <td>${formatter(detail.creditPayment)}</td>
-                        <td>${formatter(detail.remainingBill)}</td>
-                        <td><strong>${formatter(detail.costWithSolar)}</strong></td>
-                        <td style="color: ${cashflowColor}; font-weight: bold;">${formatter(detail.cashflowCumulative)}</td>
+                        <td>${formatter(detail.edfBillWithoutSolar)}</td>
+                        <td>${formatter(creditCost)}</td>
+                        <td>${formatter(detail.edfResidue)}</td>
+                        <td><strong>${formatter(detail.totalWithSolar)}</strong></td>
+                        <td style="color: ${cashflowColor}; font-weight: bold;">${formatter(detail.cumulativeSavings)}</td>
                     </tr>
             `;
           }
@@ -121,8 +113,8 @@ export const PDFExport: React.FC<PDFExportProps> = ({
                 </tbody>
             </table>
             <div class="table-note">
-                📌 <strong>Note importante :</strong> Les valeurs incluent une inflation de 5% sur le prix de l'électricité. 
-                Le crédit se termine à l'année ${result.details.find((d: any) => d.creditPayment === 0)?.year || 15}.
+                📌 <strong>Note importante :</strong> Les valeurs incluent une inflation de ${data.params?.inflationRate || 5}% sur le prix de l'électricité. 
+                Le crédit se termine à l'année ${Math.ceil(Number(data.params?.creditDurationMonths || 180)/12)}.
                 Cette étude est non contractuelle et soumise aux fluctuations de consommation, production et d'inflation.
             </div>
         </div>
@@ -520,7 +512,7 @@ export const PDFExport: React.FC<PDFExportProps> = ({
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Production annuelle</div>
-                        <div class="summary-value">${data.annualProduction.toLocaleString('fr-FR')} kWh</div>
+                        <div class="summary-value">${Number(data.params?.yearlyProduction || 0).toLocaleString('fr-FR')} kWh</div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">Retour investissement</div>
@@ -561,9 +553,9 @@ export const PDFExport: React.FC<PDFExportProps> = ({
                     <span class="badge blue">CRÉDIT</span>
                     <div class="scenario-title">💳 Avec Financement</div>
                     <div class="scenario-data">
-                        Apport initial <span class="value">0 €</span><br>
-                        Mensualité crédit <span class="value">${(data.monthlyPayment || 0).toFixed(2)} €</span><br>
-                        Durée financement <span class="value">${data.creditDuration} ans</span><br>
+                        Apport initial <span class="value">${formatMoney(Number(data.params?.cashApport || 0))}</span><br>
+                        Mensualité crédit <span class="value">${formatMoney(Number(data.params?.creditMonthlyPayment || 0))}</span><br>
+                        Durée financement <span class="value">${Number(data.params?.creditDurationMonths || 180)/12} ans</span><br>
                         <br>
                         Gain total <span class="value highlight">${formattedGain}</span><br>
                         ROI <span class="value">${roiYears} ans</span>
@@ -575,21 +567,17 @@ export const PDFExport: React.FC<PDFExportProps> = ({
                     <div class="scenario-data">
                         Investissement <span class="value">${formattedCost}</span><br>
                         Mensualité <span class="value">0 €</span><br>
-                        Rentable dès <span class="value">Année 1</span><br>
+                        Rentable dès <span class="value">Année ${calculationResult.breakEvenPointCash || 1}</span><br>
                         <br>
-                        Gain total <span class="value highlight">${new Intl.NumberFormat('fr-FR', { 
-                          style: 'currency', 
-                          currency: 'EUR',
-                          minimumFractionDigits: 0
-                        }).format(calculationResult.detailsCash[projectionYears - 1]?.cashflowCumulative || 0)}</span><br>
-                        ROI <span class="value">${Math.ceil(data.totalCost / (data.annualProduction * 0.25))} ans</span>
+                        Gain total <span class="value highlight">${formatMoney(calculationResult.totalSavingsProjectedCash || 0)}</span><br>
+                        ROI <span class="value">${calculationResult.roiPercentageCash || 0}%</span>
                     </div>
                 </div>
             </div>
             <div class="recommendation">
                 <h3>💡 NOTRE RECOMMANDATION</h3>
                 <p>
-                    Le financement permet de préserver votre trésorerie (${formattedCost}) tout en bénéficiant 
+                    Le financement permet de préserver votre trésorerie tout en bénéficiant 
                     immédiatement des économies d'énergie. C'est la solution la plus flexible pour démarrer sans 
                     impacter votre épargne.
                 </p>
@@ -714,7 +702,7 @@ export const PDFExport: React.FC<PDFExportProps> = ({
       </button>
 
       {showModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 border border-white/10 rounded-2xl shadow-2xl max-w-md w-full p-6 relative">
             <button
               onClick={() => setShowModal(false)}
@@ -724,7 +712,7 @@ export const PDFExport: React.FC<PDFExportProps> = ({
             </button>
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-lg shadow-blue-500/20">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -778,14 +766,14 @@ export const PDFExport: React.FC<PDFExportProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg transition-all font-medium"
+                  className="flex-1 px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg transition-all font-medium border border-white/5"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={!clientName.trim()}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg transition-all font-medium shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   <FileText className="w-4 h-4" />
                   Générer PDF
