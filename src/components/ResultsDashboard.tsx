@@ -373,12 +373,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
             <TrendingUp size={14} /> Nouvelle Analyse
           </button>
           
-          {/* BOUTON PDF EXPORT - UTILISATION CORRECTE */}
-          <PDFExport
-            data={data}
-            calculationResult={calculationResult}
-            projectionYears={projectionYears}
-          />
         </div>
       </nav>
 
@@ -705,9 +699,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                         Vous avez les chiffres. Vous avez les garanties. Vous avez la preuve mathématique. <br/><br/>
                         <span className="text-white font-bold">Préférez-vous enrichir votre fournisseur ou vous enrichir vous-même ?</span>
                     </p>
-                    <button className="w-full bg-white text-black hover:bg-slate-200 py-4 px-8 rounded-full font-black uppercase tracking-wider flex items-center justify-center gap-2 transform transition-all hover:scale-105 shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                        <CheckCircle2 size={24} /> JE VEUX MA PROPRE CENTRALE
-                    </button>
+                    <PDFExport 
+                      data={data}
+                      calculationResult={calculationResult}
+                      projectionYears={projectionYears}
+                    />
                     <p className="text-[10px] text-slate-500 mt-4 uppercase tracking-widest">Étude gratuite et sans engagement</p>
                 </div>
             </div>
