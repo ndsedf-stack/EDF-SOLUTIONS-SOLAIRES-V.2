@@ -573,13 +573,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
                 </div>
                  <div className="flex items-center gap-4">
                      <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
-                        <button 
-                            onClick={() => setTableScenario('financement')}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${tableScenario === 'financement' ? 'bg
-                                                                                                            -blue-600 text-white' : 'text-slate-500 hover:text-white'}`}
-                        >
-                            Financement
-                        </button>
+                       <button 
+    onClick={() => setTableScenario('financement')}
+    className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${tableScenario === 'financement' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-white'}`}
+>
+    Financement
+</button>
                         <button 
                             onClick={() => setTableScenario('cash')}
                             className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${tableScenario === 'cash' ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:text-white'}`}
