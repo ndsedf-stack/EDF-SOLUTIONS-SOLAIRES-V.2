@@ -374,7 +374,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({ data, onRese
           </button>
           
           {/* BOUTON PDF EXPORT - UTILISATION CORRECTE */}
-          <PDFExport 
+          <PDFExport
             data={data}
             calculationResult={calculationResult}
             projectionYears={projectionYears}
