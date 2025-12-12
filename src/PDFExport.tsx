@@ -58,6 +58,93 @@ export const PDFExport: React.FC<PDFExportProps> = ({
         }
       }
 
+      function generateTablePages(result: any, years: number, date: string) {
+        const rowsPerPage = 18;
+        const totalPages = Math.ceil(years / rowsPerPage);
+        let html = '';
+
+        for (let page = 0; page < totalPages; page++) {
+          const startYear = page * rowsPerPage;
+          const endYear = Math.min(startYear + rowsPerPage, years);
+          const pageNumber = page + 3;
+          const totalPagesCount = Math.ceil(years / 18) + 3;
+
+          html += `
+    <div class="page">
+        <div class="header">
+            <div class="header-logo">☀️</div>
+            <div class="header-text">
+                <h2>PLAN DE FINANCEMENT DÉTAILLÉ</h2>
+                <p>Années ${startYear + 1} à ${endYear} • ${date}</p>
+            </div>
+        </div>
+        <div class="content">
+            <table>
+                <thead>
+                    <tr>
+                        <th>AN</th>
+                        <th>SANS SOLAIRE</th>
+                        <th>CRÉDIT</th>
+                        <th>RESTE FACTURE</th>
+                        <th>TOTAL</th>
+                        <th>TRÉSORERIE</th>
+                    </tr>
+                </thead>
+                <tbody>
+          `;
+
+          for (let i = startYear; i < endYear; i++) {
+            const detail = result.details[i];
+            if (!detail) continue;
+
+            const formatter = (val: number) => new Intl.NumberFormat('fr-FR', {
+              style: 'currency',
+              currency: 'EUR',
+              minimumFractionDigits: 0
+            }).format(val);
+
+            const cashflowColor = detail.cashflowCumulative < 0 ? '#dc2626' : '#16a34a';
+
+            html += `
+                    <tr>
+                        <td><strong>${detail.year}</strong></td>
+                        <td>${formatter(detail.costWithoutSolar)}</td>
+                        <td>${formatter(detail.creditPayment)}</td>
+                        <td>${formatter(detail.remainingBill)}</td>
+                        <td><strong>${formatter(detail.costWithSolar)}</strong></td>
+                        <td style="color: ${cashflowColor}; font-weight: bold;">${formatter(detail.cashflowCumulative)}</td>
+                    </tr>
+            `;
+          }
+
+          html += `
+                </tbody>
+            </table>
+            <div class="table-note">
+                📌 <strong>Note importante :</strong> Les valeurs incluent une inflation de 5% sur le prix de l'électricité. 
+                Le crédit se termine à l'année ${result.details.find((d: any) => d.creditPayment === 0)?.year || 15}.
+                Cette étude est non contractuelle et soumise aux fluctuations de consommation, production et d'inflation.
+            </div>
+        </div>
+        <div class="footer">
+            <div class="footer-left">
+                <strong>EDF SOLUTIONS SOLAIRES</strong>
+                Nicolas DI STEFANO - Expert Solaire EDF
+            </div>
+            <div class="footer-center">
+                📧 ndi-stefano@edf-solutions-solaires.com | 📞 06 83 62 33 29
+            </div>
+            <div class="footer-right">
+                Page ${pageNumber}/${totalPagesCount}
+            </div>
+        </div>
+    </div>
+          `;
+        }
+
+        return html;
+      }
+
       const html = `
 <!DOCTYPE html>
 <html lang="fr">
@@ -591,93 +678,6 @@ export const PDFExport: React.FC<PDFExportProps> = ({
 </html>
       `;
 
-      function generateTablePages(result: any, years: number, date: string) {
-        const rowsPerPage = 18;
-        const totalPages = Math.ceil(years / rowsPerPage);
-        let html = '';
-
-        for (let page = 0; page < totalPages; page++) {
-          const startYear = page * rowsPerPage;
-          const endYear = Math.min(startYear + rowsPerPage, years);
-          const pageNumber = page + 3;
-          const totalPagesCount = Math.ceil(years / 18) + 3;
-
-          html += `
-    <div class="page">
-        <div class="header">
-            <div class="header-logo">☀️</div>
-            <div class="header-text">
-                <h2>PLAN DE FINANCEMENT DÉTAILLÉ</h2>
-                <p>Années ${startYear + 1} à ${endYear} • ${date}</p>
-            </div>
-        </div>
-        <div class="content">
-            <table>
-                <thead>
-                    <tr>
-                        <th>AN</th>
-                        <th>SANS SOLAIRE</th>
-                        <th>CRÉDIT</th>
-                        <th>RESTE FACTURE</th>
-                        <th>TOTAL</th>
-                        <th>TRÉSORERIE</th>
-                    </tr>
-                </thead>
-                <tbody>
-          `;
-
-          for (let i = startYear; i < endYear; i++) {
-            const detail = result.details[i];
-            if (!detail) continue;
-
-            const formatter = (val: number) => new Intl.NumberFormat('fr-FR', {
-              style: 'currency',
-              currency: 'EUR',
-              minimumFractionDigits: 0
-            }).format(val);
-
-            const cashflowColor = detail.cashflowCumulative < 0 ? '#dc2626' : '#16a34a';
-
-            html += `
-                    <tr>
-                        <td><strong>${detail.year}</strong></td>
-                        <td>${formatter(detail.costWithoutSolar)}</td>
-                        <td>${formatter(detail.creditPayment)}</td>
-                        <td>${formatter(detail.remainingBill)}</td>
-                        <td><strong>${formatter(detail.costWithSolar)}</strong></td>
-                        <td style="color: ${cashflowColor}; font-weight: bold;">${formatter(detail.cashflowCumulative)}</td>
-                    </tr>
-            `;
-          }
-
-          html += `
-                </tbody>
-            </table>
-            <div class="table-note">
-                📌 <strong>Note importante :</strong> Les valeurs incluent une inflation de 5% sur le prix de l'électricité. 
-                Le crédit se termine à l'année ${result.details.find((d: any) => d.creditPayment === 0)?.year || 15}.
-                Cette étude est non contractuelle et soumise aux fluctuations de consommation, production et d'inflation.
-            </div>
-        </div>
-        <div class="footer">
-            <div class="footer-left">
-                <strong>EDF SOLUTIONS SOLAIRES</strong>
-                Nicolas DI STEFANO - Expert Solaire EDF
-            </div>
-            <div class="footer-center">
-                📧 ndi-stefano@edf-solutions-solaires.com | 📞 06 83 62 33 29
-            </div>
-            <div class="footer-right">
-                Page ${pageNumber}/${totalPagesCount}
-            </div>
-        </div>
-    </div>
-          `;
-        }
-
-        return html;
-      }
-
       printWindow.document.write(html);
       printWindow.document.close();
       
@@ -698,17 +698,17 @@ export const PDFExport: React.FC<PDFExportProps> = ({
       <button
         onClick={() => setShowModal(true)}
         disabled={generating}
-        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold uppercase tracking-wider"
       >
         {generating ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span className="text-sm font-medium">Génération...</span>
+            <span>Génération...</span>
           </>
         ) : (
           <>
             <FileText className="w-4 h-4" />
-            <span className="text-sm font-medium">Exporter PDF</span>
+            <span>Exporter PDF</span>
           </>
         )}
       </button>
@@ -750,6 +750,19 @@ export const PDFExport: React.FC<PDFExportProps> = ({
 
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Téléphone
+                </label>
+                <input
+                  type="tel"
+                  value={clientPhone}
+                  onChange={(e) => setClientPhone(e.target.value)}
+                  placeholder="ex: 06 12 34 56 78"
+                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
                   Email
                 </label>
                 <input
@@ -784,17 +797,4 @@ export const PDFExport: React.FC<PDFExportProps> = ({
       )}
     </>
   );
-};-2 focus:ring-blue-500 transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-300 mb-2">
-                  Téléphone
-                </label>
-                <input
-                  type="tel"
-                  value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
-                  placeholder="ex: 06 12 34 56 78"
-                  className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring
+};
