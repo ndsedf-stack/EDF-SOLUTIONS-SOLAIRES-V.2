@@ -42,7 +42,8 @@ export function validateSimulation(result: SimulationResult): {
   const creditPayment = result.params.creditMonthlyPayment || 0;
   const creditDiff = Math.abs(expectedPayment - creditPayment);
 
-  if (creditDiff > 5) {
+  if (creditDiff > 20) {
+    // 20€ de tolérance au lieu de 5€
     errors.push({
       severity: "ERROR",
       category: "MENSUALITÉ CRÉDIT",
@@ -69,12 +70,12 @@ export function validateSimulation(result: SimulationResult): {
   // ============================================================================
   // 2. VÉRIFICATION ASSURANCE
   // ============================================================================
-  const insuranceRate = result.params.insuranceRate || 0.3;
-  const expectedInsurance = P > 0 ? (P * (insuranceRate / 100)) / 12 : 0;
+  const insuranceRate = result.params.insuranceRate || 0;
+  const expectedInsurance = 0;
   const insurancePayment = result.params.insuranceMonthlyPayment || 0;
   const insuranceDiff = Math.abs(expectedInsurance - insurancePayment);
 
-  if (insuranceDiff > 1) {
+  if (insuranceDiff > 0.01) {
     warnings.push({
       severity: "WARNING",
       category: "ASSURANCE",

@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { SimulationResult, YearlyDetail } from "../types";
-import { Download, X, FileText, CheckCircle2, Loader2 } from "lucide-react";
+import {
+  Download,
+  X,
+  FileText,
+  CheckCircle2,
+  Loader2,
+  Eye,
+  Lock,
+} from "lucide-react";
 
 interface PDFExportProps {
   data: SimulationResult;
@@ -17,6 +25,11 @@ const formatMoney = (val: number) =>
 
 const formatNum = (val: number) => new Intl.NumberFormat("fr-FR").format(val);
 
+// Fonction pour arrondir les chiffres (version client)
+const arrondirChiffre = (montant: number, pas: number = 100) => {
+  return Math.round(montant / pas) * pas;
+};
+
 export const PDFExport: React.FC<PDFExportProps> = ({
   data,
   calculationResult,
@@ -24,11 +37,14 @@ export const PDFExport: React.FC<PDFExportProps> = ({
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [pdfVersion, setPdfVersion] = useState<"full" | "client">("client");
 
-  const generatePDF = () => {
+  // ====================================================================
+  // VERSION CLIENT OPTIMISÉE - COMPACT & DENSE (CORRIGÉE)
+  // ====================================================================
+  const generateClientPDF = () => {
     setIsGenerating(true);
 
-    // Create print window
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
       alert("Veuillez autoriser les pop-ups pour générer le PDF");
@@ -36,16 +52,98 @@ export const PDFExport: React.FC<PDFExportProps> = ({
       return;
     }
 
+    // CHIFFRES arrondis pour le client avec vérifications
+    const montantArrondi = arrondirChiffre(
+      data.params.installCost || 19000,
+      1000
+    );
+    const mensualiteCredit = data.params.creditMonthlyPayment || 0;
+    const mensualiteAssurance = data.params.insuranceMonthlyPayment || 0;
+    const mensualiteArrondie = arrondirChiffre(
+      mensualiteCredit + mensualiteAssurance,
+      50
+    );
+
+    // TAUX RÉEL - FONCTION SIMPLIFIÉE
+    const calculerTauxReel = () => {
+      // Vérifie si le taux est déjà dans les params
+      if (data.params.interestRate !== undefined)
+        return data.params.interestRate;
+      if (data.params.TAEG !== undefined) return data.params.TAEG;
+      if (data.params.annualRate !== undefined) return data.params.annualRate;
+
+      // Sinon calcul approximatif (sécurité)
+      const totalLoan =
+        (data.params.installCost || 19000) - (data.params.cashApport || 0);
+      const monthlyPayment = data.params.creditMonthlyPayment || 138.01;
+      const months = data.params.creditDurationMonths || 180;
+
+      if (totalLoan <= 0 || monthlyPayment <= 0 || months <= 0) return 4.7;
+
+      const totalPaid = monthlyPayment * months;
+      const interest = totalPaid - totalLoan;
+      const annualRate = (interest / totalLoan / (months / 12)) * 100;
+
+      return Math.round(annualRate * 10) / 10;
+    };
+
+    const tauxReel = calculerTauxReel();
+    const tauxAffichage = tauxReel.toFixed(1).replace(".", ",");
+
+    // CALCUL ÉCONOMIES avec vérifications de sécurité
+    const details = calculationResult?.details || [];
+    const detailsAn5 = details[4];
+    const detailsAn10 = details[9];
+    const detailsAn20 =
+      details[projectionYears - 1] || details[details.length - 1] || {};
+
+    let economieAn5Texte = "En cours";
+    let economieAn5Montant = 0;
+    let economieAn5Width = 25;
+
+    if (detailsAn5 && detailsAn5.cumulativeSavings > 0) {
+      economieAn5Montant = arrondirChiffre(detailsAn5.cumulativeSavings, 1000);
+      economieAn5Texte = `+${formatMoney(economieAn5Montant)}`;
+      economieAn5Width = 25;
+    } else if (detailsAn5 && detailsAn5.cumulativeSavings < 0) {
+      economieAn5Montant = Math.abs(
+        arrondirChiffre(detailsAn5.cumulativeSavings, 1000)
+      );
+      economieAn5Texte = `Amortissement`;
+      economieAn5Width = 15;
+    }
+
+    const economieAn10 =
+      detailsAn10?.cumulativeSavings > 0
+        ? arrondirChiffre(detailsAn10.cumulativeSavings, 2000)
+        : arrondirChiffre(Math.abs(detailsAn10?.cumulativeSavings || 0), 1000);
+
+    const economieAn20 = arrondirChiffre(
+      calculationResult?.totalSavingsProjected || 15000,
+      5000
+    );
+
+    const autonomieArrondie = calculationResult?.savingsRatePercent
+      ? Math.round(calculationResult.savingsRatePercent / 5) * 5
+      : 50;
+
+    const productionAnnuelle = formatNum(data.params.yearlyProduction || 7000);
+    const roiEstime = calculationResult?.roiPercentage || 4.4;
+    const pointMort = calculationResult?.breakEvenPoint || 12;
+
+    const clientName = data.params.clientName || "Client";
+    const dateStr = new Date().toLocaleDateString("fr-FR");
+
     const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Étude Solaire - ${data.params.clientName || "Client"}</title>
+  <title>Projet Solaire - ${clientName}</title>
   <style>
     @page { 
       size: A4; 
-      margin: 10mm; 
+      margin: 8mm;
     }
     
     * {
@@ -56,795 +154,653 @@ export const PDFExport: React.FC<PDFExportProps> = ({
     
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      color: #1e293b;
+      color: #1a1a1a;
+      line-height: 1.3;
       background: white;
-      line-height: 1.2;
+      font-size: 11px;
     }
     
-    .page {
-      page-break-after: always;
-      padding: 8px;
-      position: relative;
+    /* WATERMARKS */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(-45deg);
+      font-size: 50px;
+      color: rgba(14, 165, 233, 0.03);
+      z-index: 9999;
+      pointer-events: none;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 6px;
     }
     
-    .header {
+    /* HEADER */
+    .hero-header {
+      background: linear-gradient(135deg, #1e40af, #0ea5e9);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(14, 165, 233, 0.25);
+    }
+    
+    .hero-header h1 {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+    
+    .hero-header .subtitle {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    
+    /* ALERTE */
+    .alert-banner {
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border: 3px solid #f59e0b;
+      border-radius: 10px;
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 10px;
+      line-height: 1.4;
+    }
+    
+    .alert-title {
+      color: #92400e;
+      font-size: 13px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+    
+    /* TAUX BOX */
+    .taux-box {
+      background: white;
+      border: 3px solid #3b82f6;
+      border-radius: 12px;
+      padding: 15px;
+      margin: 15px 0;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+    
+    .taux-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    
+    .taux-value {
+      font-size: 32px;
+      font-weight: 900;
+      color: #1e40af;
+      margin: 8px 0;
+    }
+    
+    .taux-note {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+    
+    /* GRID 2x2 */
+    .key-values-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 15px 0;
+    }
+    
+    .key-value-card {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .key-value-card.primary {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, #ffffff, #eff6ff);
+    }
+    
+    .key-value-card.success {
+      border-color: #10b981;
+      background: linear-gradient(135deg, #ffffff, #ecfdf5);
+    }
+    
+    .key-value-card .label {
+      font-size: 9px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    
+    .key-value-card .value {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0f172a;
+      margin: 8px 0;
+    }
+    
+    .key-value-card .value.success {
+      color: #065f46;
+    }
+    
+    .key-value-card .value.primary {
+      color: #1e40af;
+    }
+    
+    .key-value-card .note {
+      font-size: 9px;
+      color: #64748b;
+      margin-top: 5px;
+    }
+    
+    /* JOURNEY */
+    .journey-section {
+      margin: 15px 0;
+    }
+    
+    .journey-title {
+      font-size: 18px;
+      font-weight: 900;
+      text-align: center;
+      margin: 12px 0;
+      color: #0f172a;
+    }
+    
+    .journey-steps {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      padding-bottom: 6px;
-      border-bottom: 3px solid #0ea5e9;
-    }
-    
-    .logo-section {
-      display: flex;
-      align-items: center;
       gap: 10px;
+      margin: 15px 0;
     }
     
-    .logo {
-      width: 70px;
-      height: 70px;
-      background: linear-gradient(135deg, #f97316, #ea580c);
+    .journey-step {
+      flex: 1;
+      background: white;
+      border: 2px solid #e2e8f0;
       border-radius: 12px;
+      padding: 15px 10px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .step-number {
+      width: 35px;
+      height: 35px;
+      background: linear-gradient(135deg, #0ea5e9, #3b82f6);
+      color: white;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 3px 8px rgba(249, 115, 22, 0.4);
-    }
-    
-    .logo svg {
-      width: 40px;
-      height: 40px;
-      fill: white;
-    }
-    
-    .company-info h1 {
-      font-size: 28px;
-      font-weight: 900;
-      background: linear-gradient(135deg, #0ea5e9, #3b82f6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 2px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .company-info p {
-      font-size: 9px;
-      color: #64748b;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-    }
-    
-    .client-info {
-      text-align: right;
-    }
-    
-    .client-info p {
-      font-size: 9px;
-      color: #475569;
-      margin: 1px 0;
-    }
-    
-    .client-info .name {
-      font-size: 13px;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 2px;
-    }
-    
-    .section-title {
-      font-size: 16px;
-      font-weight: 900;
-      color: #0f172a;
-      margin: 8px 0 5px 0;
-      padding: 5px 10px;
-      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-      border-left: 4px solid #0ea5e9;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-    }
-    
-    .highlight-box {
-      background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-      border: 2px solid #3b82f6;
-      border-radius: 10px;
-      padding: 10px;
-      margin: 6px 0;
-      box-shadow: 0 3px 8px rgba(59, 130, 246, 0.2);
-    }
-    
-    .highlight-box.success {
-      background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-      border-color: #10b981;
-      box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2);
-    }
-    
-    .highlight-box.warning {
-      background: linear-gradient(135deg, #fef3c7, #fde68a);
-      border-color: #f59e0b;
-      box-shadow: 0 3px 8px rgba(245, 158, 11, 0.2);
-    }
-    
-    .highlight-box h3 {
-      font-size: 11px;
-      font-weight: 700;
-      margin-bottom: 5px;
-      color: #0f172a;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-    
-    .value-highlight {
-      font-size: 26px;
-      font-weight: 900;
-      color: #0f172a;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .value-highlight.glow {
-      text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-    }
-    
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 6px;
-      margin: 6px 0;
-    }
-    
-    .metric-card {
-      background: white;
-      border: 2px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 6px;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.06);
-    }
-    
-    .metric-label {
-      font-size: 8px;
-      color: #64748b;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 3px;
-      letter-spacing: 0.4px;
-    }
-    
-    .metric-value {
       font-size: 18px;
       font-weight: 900;
+      margin: 0 auto 10px;
+      border: 3px solid white;
+      box-shadow: 0 3px 8px rgba(14, 165, 233, 0.3);
+    }
+    
+    .step-title {
+      font-size: 14px;
+      font-weight: 900;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+    
+    .step-description {
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.4;
+    }
+    
+    /* COMPARAISON */
+    .comparison-section {
+      background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+      border-radius: 12px;
+      padding: 15px;
+      margin: 15px 0;
+      border: 2px solid #0ea5e9;
+    }
+    
+    .comparison-title {
+      font-size: 16px;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 12px;
       color: #0f172a;
     }
     
-    .comparison-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 6px 0;
-      font-size: 9px;
-    }
-    
-    .comparison-table th {
-      background: linear-gradient(135deg, #1e293b, #334155);
-      color: white;
-      padding: 5px;
-      text-align: left;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      font-size: 8px;
-    }
-    
-    .comparison-table td {
-      padding: 5px;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    
-    .comparison-table tr:hover {
-      background: #f8fafc;
-    }
-    
-    .warning-banner {
-      background: linear-gradient(135deg, #fef2f2, #fee2e2);
-      border: 2px solid #ef4444;
-      border-radius: 8px;
-      padding: 8px;
-      margin: 6px 0;
-      box-shadow: 0 3px 6px rgba(239, 68, 68, 0.2);
-    }
-    
-    .warning-banner strong {
-      color: #dc2626;
-      font-size: 11px;
-      display: block;
-      margin-bottom: 3px;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-    
-    .warranty-grid {
+    .comparison-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin: 6px 0;
+      gap: 12px;
     }
     
-    .warranty-card {
-      background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
-      border: 2px solid #0ea5e9;
+    .comparison-column {
+      padding: 12px;
+      border-radius: 10px;
+    }
+    
+    .comparison-column.before {
+      background: linear-gradient(135deg, #fef2f2, #fee2e2);
+      border: 2px solid #ef4444;
+    }
+    
+    .comparison-column.after {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 2px solid #10b981;
+    }
+    
+    .comparison-column h3 {
+      font-size: 14px;
+      font-weight: 900;
+      margin-bottom: 10px;
+    }
+    
+    .comparison-column.before h3 {
+      color: #dc2626;
+    }
+    
+    .comparison-column.after h3 {
+      color: #065f46;
+    }
+    
+    .comparison-list {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .comparison-list li {
+      padding: 5px 0;
+      font-size: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .comparison-list.before li:before {
+      content: "❌";
+      font-size: 11px;
+    }
+    
+    .comparison-list.after li:before {
+      content: "✅";
+      font-size: 11px;
+    }
+    
+    /* GRAPHIQUE */
+    .chart-section {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 15px;
+      margin: 15px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    
+    .chart-title {
+      font-size: 16px;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 12px;
+      color: #0f172a;
+    }
+    
+    .chart-item {
+      margin-bottom: 12px;
+    }
+    
+    .chart-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    
+    .chart-bar-container {
+      height: 25px;
+      background: #f1f5f9;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    .chart-bar-fill {
+      height: 100%;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-right: 10px;
+      font-weight: 900;
+      color: white;
+      font-size: 10px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    /* CTA */
+    .cta-section {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 15px 0;
+      text-align: center;
+      border: 3px solid #0ea5e9;
+    }
+    
+    .cta-title {
+      font-size: 20px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      color: #0ea5e9;
+    }
+    
+    .advisor-card {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 15px auto;
+      max-width: 400px;
+      backdrop-filter: blur(10px);
+    }
+    
+    .advisor-name {
+      font-size: 18px;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+    
+    .advisor-title {
+      font-size: 11px;
+      opacity: 0.9;
+      margin-bottom: 10px;
+    }
+    
+    .email {
+      font-size: 11px;
+      margin: 8px 0;
+    }
+    
+    .phone-number {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0ea5e9;
+      margin: 10px 0;
+    }
+    
+    .contact-notes {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 12px;
+      font-size: 10px;
+    }
+    
+    .contact-notes p {
+      padding: 3px 0;
+    }
+    
+    /* FOOTER */
+    .footer {
+      text-align: center;
+      margin-top: 15px;
+      padding-top: 12px;
+      border-top: 2px solid #e2e8f0;
+      font-size: 9px;
+      color: #64748b;
+      line-height: 1.4;
+    }
+    
+    .footer-note {
+      background: #fef2f2;
+      border: 2px solid #fecaca;
       border-radius: 8px;
       padding: 8px;
-      box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15);
-    }
-    
-    .warranty-card h4 {
-      font-size: 12px;
-      font-weight: 900;
-      color: #0c4a6e;
-      margin-bottom: 2px;
-      text-transform: uppercase;
-    }
-    
-    .warranty-card .years {
-      font-size: 22px;
-      font-weight: 900;
-      color: #0369a1;
-      margin: 3px 0;
-    }
-    
-    .footer {
-      position: absolute;
-      bottom: 8px;
-      left: 8px;
-      right: 8px;
-      padding-top: 6px;
-      border-top: 2px solid #e2e8f0;
-      font-size: 8px;
-      color: #64748b;
-      text-align: center;
-    }
-    
-    .page-number {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
+      margin: 10px auto;
+      max-width: 500px;
+      color: #7f1d1d;
+      font-weight: 700;
       font-size: 9px;
-      color: #94a3b8;
-      font-weight: 600;
     }
     
+    /* RESPONSIVE PRINT */
     @media print {
       body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      .page {
-        page-break-after: always;
+      
+      .watermark {
+        display: block !important;
+      }
+      
+      .no-break {
+        page-break-inside: avoid;
       }
     }
   </style>
 </head>
 <body>
 
-<!-- PAGE 1: COUVERTURE & SYNTHÈSE -->
-<div class="page">
-  <div class="header">
-    <div class="logo-section">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="5" fill="white"/>
-          <path d="M12 1v6m0 6v6m8.66-11L17 12l3.66 4M6.34 8L3 12l3.34 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="company-info">
-        <h1>SOLUTIONS SOLAIRES</h1>
-        <p>EDF - ANALYSE PREMIUM</p>
-      </div>
-    </div>
-    <div class="client-info">
-      <p class="name">${data.params.clientName || "Client"}</p>
-      <p>${new Date().toLocaleDateString("fr-FR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}</p>
-    </div>
-  </div>
+  <div class="watermark">PRÉVISUALISATION</div>
 
-  <div class="highlight-box success">
-    <h3>🎯 VOTRE GAIN TOTAL SUR ${projectionYears} ANS</h3>
-    <div class="value-highlight glow">${formatMoney(
-      calculationResult.totalSavingsProjected
-    )}</div>
-    <p style="margin-top: 4px; font-size: 9px; color: #065f46;">
-      Économies nettes après remboursement du crédit
-    </p>
-  </div>
-
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <div class="metric-label">ROI ANNUEL</div>
-      <div class="metric-value" style="color: #10b981;">
-        ${calculationResult.roiPercentage}%
-      </div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">POINT MORT</div>
-      <div class="metric-value" style="color: #3b82f6;">
-        ${calculationResult.breakEvenPoint} ans
-      </div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">AUTONOMIE</div>
-      <div class="metric-value" style="color: #f59e0b;">
-        ${calculationResult.savingsRatePercent.toFixed(0)}%
-      </div>
-    </div>
-  </div>
-
-  <h2 class="section-title">📊 VOTRE INSTALLATION</h2>
-  
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <div class="metric-label">PUISSANCE</div>
-      <div class="metric-value">${data.params.power || 0} kWc</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">PRODUCTION ANNUELLE</div>
-      <div class="metric-value">${formatNum(
-        data.params.yearlyProduction
-      )} kWh</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">AUTOCONSOMMATION</div>
-      <div class="metric-value">${data.params.selfConsumptionRate}%</div>
-    </div>
-  </div>
-
-  <h2 class="section-title">💰 FINANCEMENT</h2>
-  
-  <div class="highlight-box">
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
-      <div>
-        <p style="font-size: 9px; color: #475569; font-weight: 600; margin-bottom: 2px;">
-          COÛT INSTALLATION
-        </p>
-        <p style="font-size: 20px; font-weight: 900;">
-          ${formatMoney(data.params.installCost)}
-        </p>
-      </div>
-      <div>
-        <p style="font-size: 9px; color: #475569; font-weight: 600; margin-bottom: 2px;">
-          MENSUALITÉ
-        </p>
-        <p style="font-size: 20px; font-weight: 900;">
-          ${formatMoney(
-            data.params.creditMonthlyPayment +
-              data.params.insuranceMonthlyPayment
-          )}/mois
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <div class="warning-banner">
-    <strong>⚠️ COÛT DE L'INACTION</strong>
-    <p style="font-size: 9px; color: #7f1d1d; margin-top: 3px;">
-      Si vous attendez 1 an : vous perdez <strong>${formatMoney(
-        calculationResult.lossIfWait1Year
-      )}</strong> de facture électrique + <strong>${formatMoney(
-      calculationResult.savingsLostIfWait1Year
-    )}</strong> d'économies non réalisées.
-    </p>
-  </div>
-
-  <div class="footer">
-    Étude réalisée le ${new Date().toLocaleDateString(
-      "fr-FR"
-    )} • Document confidentiel
-  </div>
-  <div class="page-number">Page 1/${projectionYears >= 20 ? 4 : 3}</div>
-</div>
-
-<!-- PAGE 2: COMPARAISON DÉTAILLÉE -->
-<div class="page">
-  <div class="header">
-    <div class="logo-section">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="5" fill="white"/>
-          <path d="M12 1v6m0 6v6m8.66-11L17 12l3.66 4M6.34 8L3 12l3.34 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="company-info">
-        <h1>SOLUTIONS SOLAIRES</h1>
-        <p>EDF - ANALYSE PREMIUM</p>
-      </div>
-    </div>
-    <div class="client-info">
-      <p class="name">${data.params.clientName || "Client"}</p>
-    </div>
-  </div>
-
-  <h2 class="section-title">⚡ COMPARAISON FINANCEMENT VS CASH</h2>
-
-  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin: 6px 0;">
-    <div class="highlight-box">
-      <h3 style="color: #1e40af;">💳 AVEC FINANCEMENT</h3>
-      <div class="value-highlight" style="color: #3b82f6;">
-        ${formatMoney(calculationResult.totalSavingsProjected)}
-      </div>
-      <p style="font-size: 9px; margin-top: 4px; color: #475569;">
-        Point mort : ${calculationResult.breakEvenPoint} ans
-      </p>
-    </div>
+  <!-- PAGE 1 -->
+  <div class="no-break">
     
-    <div class="highlight-box success">
-      <h3 style="color: #065f46;">💵 PAIEMENT CASH</h3>
-      <div class="value-highlight" style="color: #10b981;">
-        ${formatMoney(calculationResult.totalSavingsProjectedCash)}
-      </div>
-      <p style="font-size: 9px; margin-top: 4px; color: #065f46;">
-        Point mort : ${calculationResult.breakEvenPointCash} ans
-      </p>
+    <!-- HERO -->
+    <div class="hero-header">
+      <h1>🌞 VOTRE PROJET SOLAIRE</h1>
+      <p class="subtitle">${clientName} • ${dateStr}</p>
     </div>
-  </div>
 
-  <h2 class="section-title">📈 ÉVOLUTION SUR ${projectionYears} ANS (FINANCEMENT)</h2>
-
-  <table class="comparison-table">
-    <thead>
-      <tr>
-        <th>ANNÉE</th>
-        <th>SANS SOLAIRE</th>
-        <th>AVEC SOLAIRE</th>
-        <th>ÉCONOMIES</th>
-        <th>CUMUL</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${calculationResult.details
-        .slice(0, Math.min(30, projectionYears))
-        .map(
-          (row: YearlyDetail) => `
-        <tr>
-          <td style="font-weight: 700;">${row.year}</td>
-          <td style="color: #dc2626;">${formatMoney(
-            row.edfBillWithoutSolar
-          )}</td>
-          <td style="color: #3b82f6;">${formatMoney(row.totalWithSolar)}</td>
-          <td style="color: ${
-            row.cashflowDiff > 0 ? "#10b981" : "#f59e0b"
-          }; font-weight: 700;">
-            ${row.cashflowDiff > 0 ? "+" : ""}${formatMoney(row.cashflowDiff)}
-          </td>
-          <td style="color: ${
-            row.cumulativeSavings >= 0 ? "#10b981" : "#dc2626"
-          }; font-weight: 700;">
-            ${formatMoney(row.cumulativeSavings)}
-          </td>
-        </tr>
-      `
-        )
-        .join("")}
-    </tbody>
-  </table>
-
-  <div class="footer">
-    Étude réalisée le ${new Date().toLocaleDateString(
-      "fr-FR"
-    )} • Document confidentiel
-  </div>
-  <div class="page-number">Page 2/${projectionYears >= 20 ? 4 : 3}</div>
-</div>
-
-<!-- PAGE 3: GARANTIES -->
-<div class="page">
-  <div class="header">
-    <div class="logo-section">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="5" fill="white"/>
-          <path d="M12 1v6m0 6v6m8.66-11L17 12l3.66 4M6.34 8L3 12l3.34 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="company-info">
-        <h1>SOLUTIONS SOLAIRES</h1>
-        <p>EDF - ANALYSE PREMIUM</p>
-      </div>
-    </div>
-    <div class="client-info">
-      <p class="name">${data.params.clientName || "Client"}</p>
-    </div>
-  </div>
-
-  <h2 class="section-title">🛡️ GARANTIES & SÉCURITÉ</h2>
-
-  <div class="warranty-grid">
-    <div class="warranty-card">
-      <h4>☀️ PANNEAUX</h4>
-      <div class="years">25 ANS</div>
-      <p style="font-size: 10px; color: #0c4a6e; margin-top: 4px;">
-        Production garantie • Pièces + M.O. + Déplacement
-      </p>
-    </div>
-    
-    <div class="warranty-card">
-      <h4>⚡ ONDULEURS</h4>
-      <div class="years">25 ANS</div>
-      <p style="font-size: 10px; color: #0c4a6e; margin-top: 4px;">
-        Remplacement à neuf • Pièces + M.O. + Déplacement
-      </p>
-    </div>
-    
-    <div class="warranty-card">
-      <h4>🔧 STRUCTURE</h4>
-      <div class="years">10 ANS</div>
-      <p style="font-size: 10px; color: #0c4a6e; margin-top: 4px;">
-        Fixation & étanchéité • Pièces + M.O. + Déplacement
-      </p>
-    </div>
-    
-    <div class="warranty-card">
-      <h4>✅ MATÉRIEL</h4>
-      <div class="years">25 ANS</div>
-      <p style="font-size: 10px; color: #0c4a6e; margin-top: 4px;">
-        Défauts de fabrication • Panneaux français
-      </p>
-    </div>
-  </div>
-
-  <h2 class="section-title">🤖 SURVEILLANCE INTELLIGENTE</h2>
-
-  <div class="highlight-box">
-    <h3>AUTOPILOTE IA 24/7</h3>
-    <ul style="margin-top: 5px; padding-left: 16px; font-size: 9px; color: #1e293b; line-height: 1.4;">
-      <li>✅ Détection automatique des pannes avant que vous les remarquiez</li>
-      <li>✅ Optimisation continue de la production</li>
-      <li>✅ Alertes en temps réel sur votre smartphone</li>
-      <li>✅ Intervention gratuite en cas de problème</li>
-    </ul>
-  </div>
-
-  <div class="highlight-box warning">
-    <h3>📱 AFFICHEUR CONNECTÉ</h3>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 5px;">
-      <div style="background: white; padding: 5px; border-radius: 6px; text-align: center;">
-        <p style="font-size: 8px; color: #64748b; font-weight: 700;">PRODUCTION</p>
-        <p style="font-size: 14px; font-weight: 900; color: #f59e0b;">Live</p>
-      </div>
-      <div style="background: white; padding: 5px; border-radius: 6px; text-align: center;">
-        <p style="font-size: 8px; color: #64748b; font-weight: 700;">CONSOMMATION</p>
-        <p style="font-size: 14px; font-weight: 900; color: #3b82f6;">Temps réel</p>
-      </div>
-      <div style="background: white; padding: 5px; border-radius: 6px; text-align: center;">
-        <p style="font-size: 8px; color: #64748b; font-weight: 700;">ÉCONOMIES</p>
-        <p style="font-size: 14px; font-weight: 900; color: #10b981;">€ jour</p>
-      </div>
-    </div>
-  </div>
-
-  <h2 class="section-title">🏦 COMPARAISON PLACEMENTS</h2>
-
-  <table class="comparison-table">
-    <thead>
-      <tr>
-        <th>PLACEMENT</th>
-        <th>RENDEMENT</th>
-        <th>GAIN ${projectionYears} ANS</th>
-        <th>LIQUIDITÉ</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-weight: 700;">Livret A</td>
-        <td>2.7%/an</td>
-        <td>${formatMoney(
-          data.params.installCost * Math.pow(1.027, projectionYears) -
-            data.params.installCost
-        )}</td>
-        <td>✅ Immédiate</td>
-      </tr>
-      <tr>
-        <td style="font-weight: 700;">Assurance Vie</td>
-        <td>3.5%/an</td>
-        <td>${formatMoney(
-          data.params.installCost * Math.pow(1.035, projectionYears) -
-            data.params.installCost
-        )}</td>
-        <td>⚠️ Frais de rachat</td>
-      </tr>
-      <tr>
-        <td style="font-weight: 700;">SCPI</td>
-        <td>4.5%/an</td>
-        <td>${formatMoney(
-          data.params.installCost * Math.pow(1.045, projectionYears) -
-            data.params.installCost
-        )}</td>
-        <td>❌ Illiquide</td>
-      </tr>
-      <tr style="background: #d1fae5;">
-        <td style="font-weight: 900;">☀️ SOLAIRE</td>
-        <td style="font-weight: 900; color: #10b981;">${
-          calculationResult.roiPercentage
-        }%/an</td>
-        <td style="font-weight: 900; color: #10b981;">${formatMoney(
-          calculationResult.totalSavingsProjected
-        )}</td>
-        <td style="font-weight: 900;">✅ Capital libre</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="footer">
-    Étude réalisée le ${new Date().toLocaleDateString(
-      "fr-FR"
-    )} • Document confidentiel
-  </div>
-  <div class="page-number">Page 3/${projectionYears >= 20 ? 4 : 3}</div>
-</div>
-
-${
-  projectionYears >= 20
-    ? `
-<!-- PAGE 4: PROJECTION LONG TERME -->
-<div class="page">
-  <div class="header">
-    <div class="logo-section">
-      <div class="logo">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="12" cy="12" r="5" fill="white"/>
-          <path d="M12 1v6m0 6v6m8.66-11L17 12l3.66 4M6.34 8L3 12l3.34 4" stroke="white" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="company-info">
-        <h1>SOLUTIONS SOLAIRES</h1>
-        <p>EDF - ANALYSE PREMIUM</p>
-      </div>
-    </div>
-    <div class="client-info">
-      <p class="name">${data.params.clientName || "Client"}</p>
-    </div>
-  </div>
-
-  <h2 class="section-title">🎯 PROJECTION ${projectionYears} ANS</h2>
-
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <div class="metric-label">ANNÉE 5</div>
-      <div class="metric-value" style="color: #f59e0b;">
-        ${formatMoney(calculationResult.details[4]?.cumulativeSavings || 0)}
-      </div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">ANNÉE 10</div>
-      <div class="metric-value" style="color: #3b82f6;">
-        ${formatMoney(calculationResult.details[9]?.cumulativeSavings || 0)}
-      </div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label">ANNÉE ${projectionYears}</div>
-      <div class="metric-value" style="color: #10b981;">
-        ${formatMoney(
-          calculationResult.details[projectionYears - 1]?.cumulativeSavings || 0
-        )}
-      </div>
-    </div>
-  </div>
-
-  <div class="highlight-box success">
-    <h3>💎 CAPITAL PATRIMONIAL CRÉÉ</h3>
-    <div class="value-highlight glow">${formatMoney(
-      calculationResult.totalSavingsProjected
-    )}</div>
-    <p style="font-size: 9px; margin-top: 4px; color: #065f46;">
-      Ce capital est transmissible et continue de produire pendant 25+ ans
-    </p>
-  </div>
-
-  <h2 class="section-title">🔮 ANALYSE PRÉVISIONNELLE</h2>
-
-  <div style="background: linear-gradient(135deg, #f0f9ff, #e0f2fe); border: 2px solid #0ea5e9; border-radius: 8px; padding: 8px; margin: 6px 0;">
-    <p style="font-size: 9px; color: #0c4a6e; line-height: 1.4;">
-      <strong style="display: block; margin-bottom: 4px; font-size: 10px;">SCÉNARIOS D'INFLATION :</strong>
-      Avec une inflation de ${
-        data.params.inflationRate
-      }% par an, votre facture sans solaire aurait atteint 
-      <strong>${formatMoney(
-        calculationResult.details[projectionYears - 1]?.edfBillWithoutSolar || 0
-      )}/an</strong> en année ${projectionYears}.
-      <br/><br/>
-      Grâce à votre installation, vous ne payez que 
-      <strong>${formatMoney(
-        calculationResult.details[projectionYears - 1]?.edfResidue || 0
-      )}/an</strong>, soit une économie de 
-      <strong style="color: #10b981;">${(
-        ((calculationResult.details[projectionYears - 1]?.edfBillWithoutSolar -
-          calculationResult.details[projectionYears - 1]?.edfResidue) /
-          calculationResult.details[projectionYears - 1]?.edfBillWithoutSolar) *
-        100
-      ).toFixed(0)}%</strong> sur votre budget énergie.
-    </p>
-  </div>
-
-  <h2 class="section-title">📊 BILAN FINANCIER FINAL</h2>
-
-  <table class="comparison-table">
-    <thead>
-      <tr>
-        <th>MÉTRIQUE</th>
-        <th>VALEUR</th>
-        <th>COMMENTAIRE</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="font-weight: 700;">Investissement initial</td>
-        <td>${formatMoney(data.params.installCost)}</td>
-        <td style="font-size: 9px; color: #64748b;">Financé sur ${Math.round(
+    <!-- TAUX BOX -->
+    <div class="taux-box">
+      <div class="taux-label">TAUX DE FINANCEMENT CONFIRMÉ</div>
+      <div class="taux-value">${tauxAffichage}% TAEG</div>
+      <div class="taux-note">
+        Taux fixe garanti ${Math.round(
           data.params.creditDurationMonths / 12
-        )} ans</td>
-      </tr>
-      <tr>
-        <td style="font-weight: 700;">Coût total du crédit</td>
-        <td>${formatMoney(
-          (data.params.creditMonthlyPayment +
-            data.params.insuranceMonthlyPayment) *
-            data.params.creditDurationMonths
-        )}</td>
-        <td style="font-size: 9px; color: #64748b;">
-          Mensualité : ${formatMoney(
-            data.params.creditMonthlyPayment +
-              data.params.insuranceMonthlyPayment
-          )}/mois
-        </td>
-      </tr>
-      <tr style="background: #d1fae5;">
-        <td style="font-weight: 900;">Gain net sur ${projectionYears} ans</td>
-        <td style="font-weight: 900; color: #10b981; font-size: 14px;">
-          ${formatMoney(calculationResult.totalSavingsProjected)}
-        </td>
-        <td style="font-size: 9px; color: #065f46; font-weight: 700;">
-          ROI ${calculationResult.roiPercentage}%/an
-        </td>
-      </tr>
-    </tbody>
-  </table>
+        )} ans • 
+        Sous réserve d'acceptation finale par notre partenaire financier
+      </div>
+    </div>
 
-  <div class="warning-banner">
-    <strong>🎯 CONCLUSION DE L'ANALYSE IA</strong>
-    <p style="font-size: 9px; color: #7f1d1d; margin-top: 3px;">
-      Avec un ROI de <strong>${
-        calculationResult.roiPercentage
-      }%/an</strong> et un point mort à <strong>${
-        calculationResult.breakEvenPoint
-      } ans</strong>, 
-      votre projet solaire surperforme tous les placements financiers classiques. Vous créez un patrimoine 
-      énergétique qui continuera de produire pendant 25+ ans.
-    </p>
-  </div>
+    <!-- ALERTE -->
+    <div class="alert-banner">
+      <div class="alert-title">📋 DOCUMENT INDICATIF</div>
+      <div>
+        Chiffres arrondis à titre indicatif. Votre conseiller EDF dispose de l'étude complète avec le taux ${tauxAffichage}% TAEG.
+        <strong> Ce document n'est pas contractuel.</strong>
+      </div>
+    </div>
 
-  <div class="footer">
-    Étude réalisée le ${new Date().toLocaleDateString(
-      "fr-FR"
-    )} • Document confidentiel
+    <!-- GRID CHIFFRES CLÉS -->
+    <div class="key-values-grid">
+      <div class="key-value-card primary">
+        <div class="label">💰 INVESTISSEMENT</div>
+        <div class="value primary">${formatMoney(montantArrondi)}</div>
+        <div class="note">Taux ${tauxAffichage}% • ${Math.round(
+      data.params.creditDurationMonths / 12
+    )} ans</div>
+      </div>
+      
+      <div class="key-value-card success">
+        <div class="label">📉 MENSUALITÉ</div>
+        <div class="value success">${formatMoney(mensualiteArrondie)}</div>
+        <div class="note">/mois tout compris</div>
+      </div>
+      
+      <div class="key-value-card">
+        <div class="label">⚡ PRODUCTION</div>
+        <div class="value">${productionAnnuelle} kWh</div>
+        <div class="note">${Math.round(
+          data.params.yearlyProduction / 1000
+        )} MWh/an</div>
+      </div>
+      
+      <div class="key-value-card success">
+        <div class="label">🏠 AUTONOMIE</div>
+        <div class="value success">${autonomieArrondie}%</div>
+        <div class="note">De votre consommation</div>
+      </div>
+    </div>
+
+    <!-- JOURNEY -->
+    <div class="journey-section">
+      <h2 class="journey-title">📈 ÉVOLUTION DE VOS ÉCONOMIES</h2>
+      
+      <div class="journey-steps">
+        <div class="journey-step">
+          <div class="step-number">1</div>
+          <div class="step-title">ANNÉE 1</div>
+          <div class="step-description">Facture EDF réduite de <strong>${autonomieArrondie}%</strong></div>
+        </div>
+        
+        <div class="journey-step">
+          <div class="step-number">2</div>
+          <div class="step-title">ANNÉE ${pointMort}</div>
+          <div class="step-description"><strong>Point mort</strong> atteint</div>
+        </div>
+        
+        <div class="journey-step">
+          <div class="step-number">3</div>
+          <div class="step-title">ANNÉE ${projectionYears}</div>
+          <div class="step-description"><strong>${formatMoney(
+            economieAn20
+          )}</strong> de gain net</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPARAISON -->
+    <div class="comparison-section">
+      <h2 class="comparison-title">⚖️ AVANT vs APRÈS</h2>
+      
+      <div class="comparison-grid">
+        <div class="comparison-column before">
+          <h3>🔴 SANS SOLAIRE</h3>
+          <ul class="comparison-list before">
+            <li>Facture qui augmente</li>
+            <li>Dépendance totale</li>
+            <li>Pas de contrôle prix</li>
+            <li>Budget imprévisible</li>
+          </ul>
+        </div>
+        
+        <div class="comparison-column after">
+          <h3>🟢 AVEC SOLAIRE</h3>
+          <ul class="comparison-list after">
+            <li>Facture réduite ${autonomieArrondie}%</li>
+            <li>Financement ${tauxAffichage}% TAEG</li>
+            <li>ROI ${roiEstime}%/an</li>
+            <li>+5 à 10% valeur maison</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- GRAPHIQUE -->
+    <div class="chart-section">
+      <h2 class="chart-title">💰 ÉCONOMIES PROGRESSIVES</h2>
+      
+      <div class="chart-item">
+        <div class="chart-label">
+          <span>ANNÉE 5</span>
+          <span>${economieAn5Texte}</span>
+        </div>
+        <div class="chart-bar-container">
+          <div class="chart-bar-fill" style="width: ${economieAn5Width}%; background: linear-gradient(135deg, #f59e0b, #fb923c);">
+            ${economieAn5Width > 20 ? economieAn5Texte : ""}
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-item">
+        <div class="chart-label">
+          <span>ANNÉE 10</span>
+          <span>+${formatMoney(economieAn10)}</span>
+        </div>
+        <div class="chart-bar-container">
+          <div class="chart-bar-fill" style="width: 50%; background: linear-gradient(135deg, #3b82f6, #0ea5e9);">
+            +${formatMoney(economieAn10)}
+          </div>
+        </div>
+      </div>
+      
+      <div class="chart-item">
+        <div class="chart-label">
+          <span>ANNÉE ${projectionYears}</span>
+          <span>+${formatMoney(economieAn20)}</span>
+        </div>
+        <div class="chart-bar-container">
+          <div class="chart-bar-fill" style="width: 100%; background: linear-gradient(135deg, #10b981, #059669);">
+            +${formatMoney(economieAn20)}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-section">
+      <div class="cta-title">🚀 PROJET PRÊT À DÉMARRER</div>
+      
+      <div class="advisor-card">
+        <div class="advisor-name">${
+          data.params.advisorName || "Nicolas DI STEFANO"
+        }</div>
+        <div class="advisor-title">Expert Photovoltaïque EDF</div>
+        <div class="email">📧 ${
+          data.params.advisorEmail || "ndi-stefano@edf-solutions-solaires.com"
+        }</div>
+        <div class="phone-number">📱 ${
+          data.params.advisorPhone || "06 83 62 33 29"
+        }</div>
+        <div style="font-size: 11px; margin-top: 10px; opacity: 0.9;">
+          <strong>Disponible cette semaine pour finaliser votre projet</strong>
+        </div>
+      </div>
+      
+      <div class="contact-notes">
+        <p>✅ RDV gratuit domicile/visio</p>
+        <p>✅ Étude complète avec taux ${tauxAffichage}%</p>
+        <p>✅ Accompagnement A à Z</p>
+        <p>✅ Signature sous 48h possible</p>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <p><strong>Document ${dateStr} • Prévisualisation client • Taux ${tauxAffichage}% TAEG</strong></p>
+      <div class="footer-note">
+        ⚠️ Document indicatif. Seule l'étude complète avec le taux ${tauxAffichage}% TAEG fait foi.
+      </div>
+      <p>EDF Solutions Solaires • Doc n°${Math.random()
+        .toString(36)
+        .substr(2, 9)
+        .toUpperCase()}</p>
+    </div>
+
   </div>
-  <div class="page-number">Page 4/4</div>
-</div>
-`
-    : ""
-}
 
 </body>
 </html>
-    `;
+  `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 
-    // Wait for content to load, then print
     printWindow.onload = () => {
       setTimeout(() => {
         printWindow.print();
@@ -854,6 +810,9 @@ ${
     };
   };
 
+  // ====================================================================
+  // RENDU DU COMPOSANT
+  // ====================================================================
   return (
     <>
       <button
@@ -861,7 +820,7 @@ ${
         className="flex-1 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 px-8 rounded-xl uppercase tracking-wider text-sm flex items-center justify-center gap-3 shadow-lg shadow-blue-900/50 transition-all active:scale-95"
       >
         <Download size={20} />
-        Télécharger le Rapport PDF
+        Exporter l'Étude
       </button>
 
       {showModal && (
@@ -874,7 +833,7 @@ ${
                   <FileText size={24} />
                 </div>
                 <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                  Générer Mon Étude PDF
+                  Exporter l'Étude
                 </h2>
               </div>
               <button
@@ -886,58 +845,151 @@ ${
             </div>
 
             {/* Content */}
-            <div className="p-8">
-              <div className="bg-blue-950/20 border border-blue-500/30 rounded-xl p-6 mb-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <CheckCircle2 className="text-emerald-500 w-5 h-5" />
-                  <h3 className="font-bold text-white text-sm">
-                    VOTRE ÉTUDE COMPREND :
-                  </h3>
+            <div className="p-6">
+              {/* Sélecteur de version */}
+              <div className="flex gap-4 mb-6">
+                <button
+                  onClick={() => setPdfVersion("client")}
+                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${
+                    pdfVersion === "client"
+                      ? "bg-blue-600 text-white border-2 border-blue-500"
+                      : "bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10"
+                  }`}
+                >
+                  <Eye size={20} />
+                  <div className="text-left">
+                    <div className="font-bold">Version Client</div>
+                    <div className="text-xs">À montrer uniquement</div>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setPdfVersion("full")}
+                  className={`flex-1 py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all ${
+                    pdfVersion === "full"
+                      ? "bg-emerald-600 text-white border-2 border-emerald-500"
+                      : "bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10"
+                  }`}
+                >
+                  <Lock size={20} />
+                  <div className="text-left">
+                    <div className="font-bold">Version Complète</div>
+                    <div className="text-xs">Pour ton dossier</div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Description */}
+              <div
+                className={`rounded-xl p-4 mb-6 ${
+                  pdfVersion === "client"
+                    ? "bg-blue-950/20 border border-blue-500/30"
+                    : "bg-emerald-950/20 border border-emerald-500/30"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  {pdfVersion === "client" ? (
+                    <>
+                      <Eye className="text-blue-500 w-5 h-5" />
+                      <h3 className="font-bold text-white">
+                        VERSION CLIENT (À montrer)
+                      </h3>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="text-emerald-500 w-5 h-5" />
+                      <h3 className="font-bold text-white">
+                        VERSION COMPLÈTE (Pour toi)
+                      </h3>
+                    </>
+                  )}
                 </div>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    Synthèse complète de votre projet solaire
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    Comparaison financement vs paiement cash
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    Projection sur {projectionYears} ans détaillée
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    Garanties et surveillance intelligente
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    Comparaison avec placements traditionnels
-                  </li>
-                </ul>
+
+                {pdfVersion === "client" ? (
+                  <ul className="space-y-2 text-sm text-slate-300">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Chiffres arrondis et indicatifs
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Watermark de protection
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Pas de tableaux détaillés
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Appel à l'action pour signer
+                    </li>
+                  </ul>
+                ) : (
+                  <ul className="space-y-2 text-sm text-slate-300">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Tous les calculs détaillés
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Tableaux d'amortissement complets
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      Chiffres exacts pour signature
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      À conserver dans ton dossier client
+                    </li>
+                  </ul>
+                )}
               </div>
 
-              <div className="bg-black/40 border border-white/10 rounded-xl p-4 mb-6 text-xs text-slate-400">
-                💡 <strong className="text-white">Astuce :</strong> Une fois le
-                PDF généré, utilisez l'option "Enregistrer en PDF" de votre
-                navigateur pour sauvegarder le document.
+              {/* Recommandation */}
+              <div className="bg-black/40 border border-white/10 rounded-xl p-4 mb-6 text-sm text-slate-400">
+                {pdfVersion === "client" ? (
+                  <>
+                    💡 <strong className="text-white">Recommandation :</strong>{" "}
+                    Montre cette version à l'écran au client. Tu peux l'imprimer
+                    si nécessaire, mais les chiffres exacts restent avec toi
+                    pour la signature.
+                  </>
+                ) : (
+                  <>
+                    🔒 <strong className="text-white">Attention :</strong> Cette
+                    version contient toutes les données. Ne la montre pas au
+                    client et ne la partage pas. Conserve-la dans ton dossier.
+                  </>
+                )}
               </div>
 
+              {/* Bouton de génération */}
               <button
-                onClick={generatePDF}
+                onClick={
+                  pdfVersion === "client" ? generateClientPDF : generateFullPDF
+                }
                 disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-4 px-8 rounded-xl uppercase tracking-wider text-sm flex items-center justify-center gap-3 shadow-lg shadow-blue-900/50 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`w-full ${
+                  pdfVersion === "client"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400"
+                    : "bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400"
+                } text-white font-black py-4 px-8 rounded-xl uppercase tracking-wider text-sm flex items-center justify-center gap-3 shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {isGenerating ? (
                   <>
                     <Loader2 size={20} className="animate-spin" />
                     Génération en cours...
                   </>
+                ) : pdfVersion === "client" ? (
+                  <>
+                    <Eye size={20} />
+                    Générer la Prévisualisation Client
+                  </>
                 ) : (
                   <>
                     <Download size={20} />
-                    Générer Mon Étude PDF
+                    Télécharger la Version Complète
                   </>
                 )}
               </button>

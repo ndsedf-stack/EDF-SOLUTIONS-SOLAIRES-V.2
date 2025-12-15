@@ -427,7 +427,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   // --- CALCULATION ENGINE ---
   const calculationResult = useMemo(() => {
-    return calculateSolarProjection(data.params, {
+    const result = calculateSolarProjection(data.params, {
       inflationRate,
       projectionYears,
       electricityPrice,
@@ -440,8 +440,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       insuranceMonthlyPayment,
       creditDurationMonths,
       taxRate,
-      buybackRate, // ✅ AJOUTÉ
+      buybackRate,
     });
+
+    return result;
   }, [
     inflationRate,
     projectionYears,
@@ -455,7 +457,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     insuranceMonthlyPayment,
     creditDurationMonths,
     taxRate,
-    buybackRate, // ✅ AJOUTÉ
+    buybackRate,
     data.params,
   ]);
 
@@ -518,7 +520,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     return viewData.map((detail, index) => {
       const isCreditActive =
         index * 12 < creditDurationMonths && economyChartMode === "financement";
-      const netCashflow = detail.cashflowDiff;
+
+      // ⚠️ REMPLACE CE CALCUL :
+      // const netCashflow = detail.cashflowDiff; // ANCIEN (donne -404€)
+
+      // ✅ PAR CE CALCUL (le même que le tableau) :
+      const netCashflow = detail.totalWithSolar - detail.edfBillWithoutSolar;
+      // Ça donne +34€ pour l'année 1 (cohérent avec le tableau)
 
       return {
         year: detail.year,
@@ -532,7 +540,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     creditDurationMonths,
     projectionYears,
   ]);
-
   // Warranty Data - VERSION FINALE CORRIGÉE COMPLÈTE
   const warranties = useMemo(() => {
     return warrantyMode
@@ -2805,30 +2812,32 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
         </div>
 
-        {/* 12. ÉCONOMIES ANNUELLES CHART */}
+        {/* 12. SURCOÛT MENSUEL CHART */}
         <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 mt-8 border border-white/10">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
               <TrendingUp className="text-emerald-500 w-6 h-6" />
               <div>
+                {/* TITRE CORRIGÉ */}
                 <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  ÉCONOMIES ANNUELLES ({projectionYears} ans)
+                  SURCOÛT MENSUEL ({projectionYears} ans)
                 </h2>
                 <p className="text-slate-500 text-sm">
-                  Votre cashflow année par année sur {projectionYears} ans
+                  Différence mensuelle vs situation sans panneaux
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-4">
+              {/* LÉGENDE CORRIGÉE */}
               <div className="flex items-center gap-4 text-[10px] font-bold uppercase mr-4">
                 <div className="flex items-center gap-1 text-slate-400">
-                  <div className="w-3 h-3 bg-red-500 rounded-sm"></div> Barres
-                  rouges = Effort d'investissement
+                  <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                  Surcoût
                 </div>
                 <div className="flex items-center gap-1 text-slate-400">
-                  <div className="w-3 h-3 bg-emerald-500 rounded-sm"></div>{" "}
-                  Barres vertes = Phase d'économies nettes
+                  <div className="w-3 h-3 bg-emerald-500 rounded-sm"></div>
+                  Économie
                 </div>
               </div>
               <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
@@ -2840,7 +2849,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       : "text-slate-500 hover:text-white"
                   }`}
                 >
-                  <Wallet size={12} className="inline mr-1 mb-0.5" />{" "}
+                  <Wallet size={12} className="inline mr-1 mb-0.5" />
                   Financement
                 </button>
                 <button
@@ -2851,7 +2860,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       : "text-slate-500 hover:text-white"
                   }`}
                 >
-                  <Coins size={12} className="inline mr-1 mb-0.5" /> Cash
+                  <Coins size={12} className="inline mr-1 mb-0.5" />
+                  Cash
                 </button>
               </div>
             </div>
@@ -2891,7 +2901,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     if (!active || !payload || !payload.length) return null;
 
                     const data = payload[0].payload;
-                    const isInvestment = data.type === "investment";
+                    // LOGIQUE CORRIGÉE : + = surcoût, - = économie
+                    const isSurcout = data.value > 0;
 
                     return (
                       <div className="bg-[#09090b] border border-white/20 rounded-xl p-4 shadow-2xl">
@@ -2901,44 +2912,47 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         </div>
                         <div
                           className={`text-2xl font-black mb-1 ${
-                            isInvestment ? "text-red-400" : "text-emerald-400"
+                            isSurcout ? "text-red-400" : "text-emerald-400"
                           }`}
                         >
                           {data.value > 0 ? "+" : ""}
                           {formatMoney(data.value)}
                         </div>
+                        {/* TEXTE CORRIGÉ */}
                         <div
                           className={`text-xs font-bold uppercase ${
-                            isInvestment ? "text-red-300" : "text-emerald-300"
+                            isSurcout ? "text-red-300" : "text-emerald-300"
                           }`}
                         >
-                          {isInvestment
-                            ? "📉 Effort d'investissement"
-                            : "📈 Phase d'économies nettes"}
+                          {isSurcout
+                            ? "📉 Surcoût mensuel"
+                            : "📈 Économie mensuelle"}
                         </div>
                       </div>
                     );
                   }}
                 />
                 <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                  {economyChartData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.type === "investment" ? "#ef4444" : "#10b981"}
-                    />
-                  ))}
+                  {/* COULEURS : rouge = surcoût, vert = économie */}
+                  {economyChartData.map((entry, index) => {
+                    const color = entry.value > 0 ? "#ef4444" : "#10b981";
+                    return <Cell key={`cell-${index}`} fill={color} />;
+                  })}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
 
+          {/* TEXTE D'AIDE CORRIGÉ */}
           <div className="mt-4 bg-black/60 backdrop-blur-md p-4 rounded-xl border border-white/10 flex gap-3 text-xs text-slate-400">
             <Lightbulb size={16} className="text-yellow-500 flex-shrink-0" />
             <p>
               <strong className="text-white">Les barres rouges</strong>{" "}
-              représentent les années où vous investissez (mensualités crédit).{" "}
-              <strong className="text-white">Les barres vertes</strong> sont les
-              années de profit pur (après fin du crédit).
+              représentent les mois où vous avez un <strong>surcoût</strong> par
+              rapport à votre ancienne facture.{" "}
+              <strong className="text-white">Les barres vertes</strong>{" "}
+              représentent les mois où vous réalisez des{" "}
+              <strong>économies</strong>.
             </p>
           </div>
         </div>
@@ -3217,6 +3231,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   </th>
                   <th className="py-4 px-4 text-emerald-400 text-right">
                     Trésorerie Cumulée
+                    {/* ✅ Supprimé "(annuel/mensuel)" car c'est toujours annuel */}
                   </th>
                 </tr>
               </thead>
@@ -3309,6 +3324,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                               : "text-red-500"
                           }`}
                         >
+                          {/* ✅ CORRECTION: Ne plus diviser par 12 la trésorerie cumulée */}
                           {formatMoney(row.cumulativeSavings)}
                         </td>
                       </tr>
@@ -3318,7 +3334,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </table>
           </div>
         </div>
-
         {/* 3. SECTION "ÉCART DU SCÉNARIO PAR DÉFAUT" (ex "Et si je ne fais rien ?") */}
         <div className="bg-gradient-to-br from-red-950/40 via-orange-950/40 to-black border border-red-500/20 rounded-[32px] p-8 mt-8">
           <div className="flex items-center gap-3 mb-6">

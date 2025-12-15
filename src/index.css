@@ -9,10 +9,84 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
   background-color: #020202;
   color: white;
 }
+
+/* === FIX PERMANENT POUR REACHARTS (THÈME SOMBRE) === */
+.recharts-line path {
+  stroke: #60a5fa !important; /* Bleu clair visible sur fond noir */
+  stroke-width: 3px !important;
+}
+
+.recharts-line-dots circle {
+  fill: #60a5fa !important;
+  stroke: #1e40af !important;
+}
+
+.recharts-area path {
+  fill: rgba(96, 165, 250, 0.2) !important; /* Bleu très transparent */
+}
+
+.recharts-bar-rectangle {
+  fill: #34d399 !important; /* Vert émeraude clair */
+}
+
+.recharts-text {
+  fill: #e5e7eb !important; /* Gris très clair (presque blanc) */
+  font-family: "Inter", sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 14px !important;
+}
+
+.recharts-cartesian-axis-line {
+  stroke: rgba(229, 231, 235, 0.3) !important; /* Gris clair pour axes */
+}
+
+.recharts-cartesian-grid line {
+  stroke: rgba(229, 231, 235, 0.1) !important; /* Grille très discrète */
+}
+
+.recharts-tooltip-wrapper {
+  background-color: rgba(17, 24, 39, 0.95) !important; /* Fond tooltip sombre */
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.recharts-tooltip-label {
+  color: #60a5fa !important; /* Bleu pour les labels */
+  font-weight: 600 !important;
+}
+
+.recharts-tooltip-item {
+  color: #e5e7eb !important;
+}
+
+.recharts-legend-item-text {
+  fill: #e5e7eb !important;
+  font-size: 14px !important;
+}
+
+.recharts-default-legend {
+  color: #e5e7eb !important;
+}
+
+/* Assure la visibilité des légendes */
+.recharts-legend-item {
+  color: white !important;
+}
+
+/* Pour les graphiques en secteur (pie) */
+.recharts-pie-sector {
+  stroke: #020202 !important;
+  stroke-width: 2px !important;
+}
+
+/* === TES STYLES EXISTANTS (conservés) === */
 
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
@@ -34,7 +108,12 @@ body {
 
 /* Chart Glow Effects */
 .recharts-sector {
-  filter: drop-shadow(0 0 6px currentColor);
+  filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* Améliore le glow pour thème sombre */
+.recharts-line path {
+  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
 }
 
 /* Neon Text Shadow */
@@ -55,8 +134,18 @@ body {
 
 /* Custom Scan Animation */
 @keyframes scan {
-  0% { transform: translateY(-100%); opacity: 0; }
-  15% { opacity: 1; }
-  85% { opacity: 1; }
-  100% { transform: translateY(300%); opacity: 0; }
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(300%);
+    opacity: 0;
+  }
 }

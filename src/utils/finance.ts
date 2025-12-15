@@ -76,11 +76,13 @@ export const calculateSolarProjection = (
   );
   const surplusKwh = round2(yearlyProduction - selfConsumedKwh);
 
-  // Tax calculation on surplus revenue
-  const grossSurplusRevenue = surplusKwh * buybackRate;
-  const netSurplusRevenue = grossSurplusRevenue * (1 - taxRate / 100);
+  // ✅ CORRECTION 1: Calculer la revente de BASE (sera indexée dans la boucle)
+  // Note: La taxe n'est PAS appliquée sur la revente
+  const surplusRevenueBase = round2(surplusKwh * buybackRate);
 
-  const surplusRevenuePerYear = round2(netSurplusRevenue);
+  // ⚠️ SUPPRIMÉ: const surplusRevenuePerYear = round2(netSurplusRevenue);
+  // Cette valeur sera calculée dans la boucle avec l'inflation
+
   const savingsRatePercent =
     baseConsumptionKwh > 0
       ? round2((selfConsumedKwh / baseConsumptionKwh) * 100)
@@ -91,13 +93,13 @@ export const calculateSolarProjection = (
 
   // Storage for Credit Scenario
   const details: YearlyDetail[] = [];
-  let cumulativeSpendNoSolar = 0;
-  let cumulativeSpendSolar = cashApport; // On commence avec l'apport initial
+  let cumulativeSpendNoSolar = 0; // Pas d'arrondi intermédiaire
+  let cumulativeSpendSolar = cashApport; // Commence à 0 pour financement
 
   // Storage for Cash Scenario
   const detailsCash: YearlyDetail[] = [];
-  let cumulativeSpendNoSolarCash = 0;
-  let cumulativeSpendSolarCash = localInstallCost; // Investissement cash initial
+  let cumulativeSpendNoSolarCash = 0; // Pas d'arrondi intermédiaire
+  let cumulativeSpendSolarCash = localInstallCost; // Investissement initial
 
   // Run projection for 30 years (standard lifetime)
   for (let i = 0; i < 30; i++) {
@@ -106,6 +108,9 @@ export const calculateSolarProjection = (
     // Inflation factor
     const priceMultiplier = Math.pow(1 + localInflation / 100, i);
     const currentPrice = round2(electricityPrice * priceMultiplier);
+
+    // ✅ CORRECTION 1b: Appliquer l'inflation à la revente
+    const surplusRevenuePerYear = round2(surplusRevenueBase * priceMultiplier);
 
     // A. SCENARIO: NO SOLAR
     const billWithoutSolar = round2(baseConsumptionKwh * currentPrice);
@@ -145,55 +150,49 @@ export const calculateSolarProjection = (
     );
     const yearlyCashflow = round2(billWithoutSolar - totalDecaisse);
 
-    // ✅ NOUVEAU CALCUL VENDEUR: Cumul = Ce qu'on aurait payé SANS solaire - Ce qu'on paye AVEC solaire
-    cumulativeSpendNoSolar = round2(cumulativeSpendNoSolar + billWithoutSolar);
-    cumulativeSpendSolar = round2(cumulativeSpendSolar + totalDecaisse);
+    // ✅ CORRECTION 2 & 3: Cumuls sans round2() intermédiaire
+    cumulativeSpendNoSolar = cumulativeSpendNoSolar + billWithoutSolar;
+    cumulativeSpendSolar = cumulativeSpendSolar + totalDecaisse;
 
-    // Le vrai gain = différence entre les deux
-    const cumulativeSavings = round2(
-      cumulativeSpendNoSolar - cumulativeSpendSolar
-    );
+    // ✅ CORRECTION 2b: Simplification du calcul
+    const cumulativeSavings = cumulativeSpendNoSolar - cumulativeSpendSolar;
 
     details.push({
       year,
-      edfBillWithoutSolar: billWithoutSolar,
-      creditPayment: creditCostYearly,
-      edfResidue: residuaryBill,
-      totalWithSolar: totalDecaisse,
-      cumulativeSavings,
-      cumulativeSpendNoSolar,
-      cumulativeSpendSolar,
-      cashflowDiff: yearlyCashflow,
-      solarSavingsValue,
+      edfBillWithoutSolar: round2(billWithoutSolar),
+      creditPayment: round2(creditCostYearly),
+      edfResidue: round2(residuaryBill),
+      totalWithSolar: round2(totalDecaisse),
+      cumulativeSavings: round2(cumulativeSavings), // ✅ Arrondi à l'affichage uniquement
+      cumulativeSpendNoSolar: round2(cumulativeSpendNoSolar),
+      cumulativeSpendSolar: round2(cumulativeSpendSolar),
+      cashflowDiff: round2(yearlyCashflow),
+      solarSavingsValue: round2(solarSavingsValue),
     });
 
     // D. CASH SPECIFICS
     const totalDecaisseCash = round2(residuaryBill - surplusRevenuePerYear);
     const yearlyCashflowCash = round2(billWithoutSolar - totalDecaisseCash);
 
-    // ✅ CASH: Même logique vendeur
-    cumulativeSpendNoSolarCash = round2(
-      cumulativeSpendNoSolarCash + billWithoutSolar
-    );
-    cumulativeSpendSolarCash = round2(
-      cumulativeSpendSolarCash + totalDecaisseCash
-    );
+    // ✅ CORRECTION 2 & 3: Même logique pour le cash
+    cumulativeSpendNoSolarCash = cumulativeSpendNoSolarCash + billWithoutSolar;
+    cumulativeSpendSolarCash = cumulativeSpendSolarCash + totalDecaisseCash;
 
-    const cumulativeSavingsCash = round2(
-      cumulativeSpendNoSolarCash - cumulativeSpendSolarCash
-    );
+    // ✅ CORRECTION 2b: Simplification
+    const cumulativeSavingsCash =
+      cumulativeSpendNoSolarCash - cumulativeSpendSolarCash;
 
     detailsCash.push({
       year,
-      edfBillWithoutSolar: billWithoutSolar,
+      edfBillWithoutSolar: round2(billWithoutSolar),
       creditPayment: 0,
-      edfResidue: residuaryBill,
-      totalWithSolar: totalDecaisseCash,
-      cumulativeSavings: cumulativeSavingsCash,
-      cumulativeSpendNoSolar: cumulativeSpendNoSolarCash,
-      cumulativeSpendSolar: cumulativeSpendSolarCash,
-      cashflowDiff: yearlyCashflowCash,
-      solarSavingsValue,
+      edfResidue: round2(residuaryBill),
+      totalWithSolar: round2(totalDecaisseCash),
+      cumulativeSavings: round2(cumulativeSavingsCash), // ✅ Arrondi à l'affichage
+      cumulativeSpendNoSolar: round2(cumulativeSpendNoSolarCash),
+      cumulativeSpendSolar: round2(cumulativeSpendSolarCash),
+      cashflowDiff: round2(yearlyCashflowCash),
+      solarSavingsValue: round2(solarSavingsValue),
     });
   }
 
@@ -273,15 +272,12 @@ export const calculateSolarProjection = (
 
   const effectiveCost = localInstallCost > 0 ? localInstallCost : 20000;
 
-  // ✅ ROI FINANCEMENT: Basé sur le gain réel moyen / coût projet
-  // Note: Pour le financement, ce ROI est peu pertinent car il n'y a pas d'apport
-  // Il est conservé pour les comparaisons mais ne devrait pas être affiché au client
+  // ROI calculations (conservés pour compatibilité)
   const roiPercentage =
     effectiveCost > 0
       ? Math.round((averageYearlyGain / effectiveCost) * 1000) / 10
       : 0;
 
-  // ✅ CORRECTION CRITIQUE: ROI CASH doit utiliser le vrai investissement cash
   const roiPercentageCash =
     localInstallCost > 0
       ? Math.round((averageYearlyGainCash / localInstallCost) * 1000) / 10
@@ -296,6 +292,11 @@ export const calculateSolarProjection = (
   );
   const lossIfWait1Year = round2(baseConsumptionKwh * priceNextYear);
   const savingsLostIfWait1Year = round2(selfConsumedKwh * priceNextYear);
+
+  // ✅ NOUVEAU: Calculer surplusRevenuePerYear pour l'année 1 (pour compatibilité avec les autres composants)
+  const surplusRevenuePerYearOutput = round2(
+    surplusRevenueBase * Math.pow(1 + localInflation / 100, 0)
+  );
 
   return {
     details,
@@ -332,10 +333,11 @@ export const calculateSolarProjection = (
     baseConsumptionKwh,
     lossIfWait1Year,
     savingsLostIfWait1Year,
-    surplusRevenuePerYear,
+    surplusRevenuePerYear: surplusRevenuePerYearOutput, // ✅ Valeur pour année 1
     year1,
   };
 };
+
 export const printSimpleReport = (result: CalculationOutput) => {
   console.log("");
   console.log("📋 RAPPORT SIMPLE (Résumé Rapide)");
@@ -361,5 +363,20 @@ export const printSimpleReport = (result: CalculationOutput) => {
     formatCurrency(result.averageYearlyGainCash)
   );
   console.log("─".repeat(50));
+  console.log("Année 1 données:");
+  console.log(
+    "- Facture sans solaire:",
+    formatCurrency(result.year1.edfBillWithoutSolar)
+  );
+  console.log(
+    "- Total avec solaire:",
+    formatCurrency(result.year1.totalWithSolar)
+  );
+  console.log(
+    "- solarSavingsValue:",
+    formatCurrency(result.year1.solarSavingsValue)
+  );
+  console.log("- cashflowDiff:", formatCurrency(result.year1.cashflowDiff));
+  console.log("- monthlyEffort:", formatCurrency(result.monthlyEffortYear1));
   console.log("");
 };
