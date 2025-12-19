@@ -350,7 +350,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     data.params?.interestRate || 3.89
   );
   const [insuranceRate, setInsuranceRate] = useState<number>(
-    data.params?.insuranceRate || 0.3
+    data.params?.insuranceRate || 0
   );
   const [buybackRate, setBuybackRate] = useState<number>(
     data.params?.buybackRate || 0.04
@@ -368,6 +368,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     "financement"
   );
   const [gouffreMode, setGouffreMode] = useState<"financement" | "cash">(
+    "financement"
+  );
+  const [whereMoneyMode, setWhereMoneyMode] = useState<"financement" | "cash">(
     "financement"
   );
 
@@ -394,7 +397,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     if (data.params.creditInterestRate)
       setInterestRate(safeParseFloat(data.params.creditInterestRate, 3.89));
     if (data.params.insuranceRate)
-      setInsuranceRate(safeParseFloat(data.params.insuranceRate, 0.3));
+      setInsuranceRate(safeParseFloat(data.params.insuranceRate, 0));
   }, [data]);
 
   useEffect(() => {
@@ -629,8 +632,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   // Gouffre Financier Data - Calcul dynamique
   const gouffreChartData = useMemo(() => {
     let cumulativeNoSolar = 0;
-    let cumulativeSolarCredit = 0;
-    let cumulativeSolarCash = cashApport;
+    let cumulativeSolarCredit = cashApport; // ✅ MODIFIÉ
+    let cumulativeSolarCash = installCost; // ✅ MODIFIÉ
 
     return calculationResult.details.slice(0, projectionYears).map((detail) => {
       // Cumul Sans Solaire
@@ -661,6 +664,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     calculationResult.detailsCash,
     gouffreMode,
     cashApport,
+    installCost,
     projectionYears,
   ]);
 
@@ -1004,7 +1008,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                               className="text-orange-400"
                             />
                           }
-                          sublabel="Taux annuel (ex: 0.3%)"
+                          sublabel="Taux annuel (ex: 0%)"
                         />
                       </div>
 
@@ -1337,25 +1341,32 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
         </div>
 
-        {/* 4. FINANCEMENT VS CASH - VERSION EDF */}
+        {/* 4. FINANCEMENT VS CASH - VERSION CORRIGÉE */}
         <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/10 mt-8">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-4">
             <div className="text-emerald-500">
               <Coins size={24} />
             </div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-              FINANCEMENT VS PAIEMENT CASH
-            </h2>
+            <div>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                FINANCEMENT VS PAIEMENT CASH
+              </h2>
+              <p className="text-slate-500 text-sm mt-1">
+                Quel mode de paiement optimise votre écart économique ?
+              </p>
+            </div>
           </div>
-          <p className="text-slate-500 text-sm mb-8 -mt-6 ml-9">
-            Quel mode de paiement optimise votre écart économique ?
-          </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Card Financement - OVERFLOW-HIDDEN RETIRÉ */}
-            <div className="bg-black/60 backdrop-blur-md border border-blue-900/30 rounded-2xl p-6 relative group transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            {/* Card Financement */}
+            <div className="bg-black/60 backdrop-blur-md border border-blue-900/30 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]">
+              {/* Icône background subtile */}
+              <div className="absolute top-4 right-4 opacity-5 pointer-events-none">
+                <Wallet size={120} className="text-blue-500" />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-4 mb-6 relative z-10">
                 <div className="w-12 h-12 bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-400">
                   <Wallet size={24} />
                 </div>
@@ -1367,14 +1378,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     Réallocation budgétaire
                   </p>
                 </div>
-                {/* Card visual */}
-                <div className="absolute top-4 right-4 opacity-10 pointer-events-none">
-                  <Wallet size={80} className="text-blue-500" />
-                </div>
               </div>
 
               {/* Metrics */}
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 mb-8 relative z-10">
                 <div className="flex justify-between items-center p-3 bg-black/40 rounded-lg border border-white/5">
                   <span className="text-[10px] font-bold text-slate-500 uppercase">
                     ÉCART TOTAL ({projectionYears} ANS)
@@ -1404,7 +1411,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </div>
 
               {/* Avantages */}
-              <div className="bg-blue-950/10 border border-blue-900/20 rounded-xl p-4">
+              <div className="bg-blue-950/10 border border-blue-900/20 rounded-xl p-4 relative z-10">
                 <div className="flex items-center gap-2 mb-3 text-blue-400 text-xs font-bold uppercase">
                   <CheckCircle2 size={14} /> AVANTAGES
                 </div>
@@ -1429,10 +1436,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </div>
             </div>
 
-            {/* Card Cash - OVERFLOW-HIDDEN RETIRÉ */}
-            <div className="bg-black/60 backdrop-blur-md border border-emerald-900/30 rounded-2xl p-6 relative group transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+            {/* Card Cash */}
+            <div className="bg-black/60 backdrop-blur-md border border-emerald-900/30 rounded-2xl p-6 relative overflow-hidden group transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+              {/* Icône background subtile */}
+              <div className="absolute top-4 right-4 opacity-5 pointer-events-none">
+                <Coins size={120} className="text-emerald-500" />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-4 mb-6 relative z-10">
                 <div className="w-12 h-12 bg-emerald-900/20 rounded-xl flex items-center justify-center text-emerald-400">
                   <Coins size={24} />
                 </div>
@@ -1444,14 +1456,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     Performance maximale
                   </p>
                 </div>
-                {/* Card visual */}
-                <div className="absolute top-4 right-4 opacity-10 pointer-events-none">
-                  <Coins size={80} className="text-emerald-500" />
-                </div>
               </div>
 
               {/* Metrics */}
-              <div className="space-y-3 mb-8">
+              <div className="space-y-3 mb-8 relative z-10">
                 <div className="flex justify-between items-center p-3 bg-black/40 rounded-lg border border-white/5">
                   <span className="text-[10px] font-bold text-slate-500 uppercase">
                     ÉCART TOTAL ({projectionYears} ANS)
@@ -1482,7 +1490,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </div>
 
               {/* Avantages */}
-              <div className="bg-emerald-950/10 border border-emerald-900/20 rounded-xl p-4">
+              <div className="bg-emerald-950/10 border border-emerald-900/20 rounded-xl p-4 relative z-10">
                 <div className="flex items-center gap-2 mb-3 text-emerald-400 text-xs font-bold uppercase">
                   <CheckCircle2 size={14} /> AVANTAGES
                 </div>
@@ -1511,62 +1519,130 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
 
-          {/* Verdict */}
-          <div className="mt-8 bg-indigo-950/20 border-l-4 border-indigo-500 p-4 rounded">
-            <p className="text-sm text-gray-300 mb-2">
-              <strong>Cash optimal</strong> si vous disposez du capital (+
-              {formatMoney(
-                calculationResult.totalSavingsProjectedCash -
-                  calculationResult.totalSavingsProjected
-              )}{" "}
-              d'écart sur {projectionYears} ans).
-            </p>
-            <p className="text-sm text-gray-300 mb-2 flex items-center gap-2">
-              <strong>Financement structuré</strong> si vous préférez conserver
-              votre capital disponible.
-              <InfoPopup title="Pourquoi le financement ne coûte pas plus cher ?">
-                <p className="mb-3">
-                  Le financement permet d'<strong>étaler dans le temps</strong>{" "}
-                  une dépense énergétique déjà existante (votre facture
-                  actuelle).
+          {/* ✅ Badge "Différence" APRÈS les cards (pas superposé) */}
+          <div className="flex justify-center mt-8 mb-8">
+            <div className="bg-gradient-to-r from-emerald-950/60 to-emerald-900/60 border border-emerald-500/40 px-8 py-4 rounded-2xl backdrop-blur-md shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:shadow-[0_0_40px_rgba(16,185,129,0.5)] transition-all duration-300">
+              <div className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider mb-1 text-center flex items-center gap-2 justify-center">
+                <Lock size={12} /> ÉCART CASH VS FINANCEMENT
+              </div>
+              <div className="text-4xl font-black text-emerald-400 text-center">
+                +
+                {formatMoney(
+                  calculationResult.totalSavingsProjectedCash -
+                    calculationResult.totalSavingsProjected
+                )}
+              </div>
+              <div className="text-xs text-emerald-300 mt-1 text-center">
+                sur {projectionYears} ans
+              </div>
+            </div>
+          </div>
+
+          {/* ✅ Verdict en 2 blocs - BON ORDRE CETTE FOIS BORDEL */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* GAUCHE = FINANCEMENT STRUCTURÉ (BLEU) */}
+            <div className="bg-blue-950/20 border border-blue-500/30 rounded-xl p-4 flex items-start gap-3 transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_20px_rgba(59,130,246,0.2)]">
+              <div className="p-2 bg-blue-500/20 rounded-lg flex-shrink-0">
+                <Wallet className="text-blue-400" size={20} />
+              </div>
+              <div>
+                <h4 className="text-blue-400 font-bold text-sm mb-2 uppercase tracking-wider">
+                  FINANCEMENT STRUCTURÉ
+                </h4>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  Si vous préférez{" "}
+                  <strong className="text-white">
+                    conserver votre capital disponible
+                  </strong>{" "}
+                  (0€ immobilisé).
                 </p>
-                <p className="mb-3">
-                  Il ne crée pas un coût nouveau : il{" "}
-                  <strong>modifie la structure temporelle des flux</strong>. Au
-                  lieu de payer 100% au fournisseur, vous payez : mensualité
-                  crédit + facture résiduelle - revente surplus.
+              </div>
+            </div>
+
+            {/* DROITE = CASH OPTIMAL (VERT) */}
+            <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-4 flex items-start gap-3 transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+              <div className="p-2 bg-emerald-500/20 rounded-lg flex-shrink-0">
+                <CheckCircle2 className="text-emerald-400" size={20} />
+              </div>
+              <div>
+                <h4 className="text-emerald-400 font-bold text-sm mb-2 uppercase tracking-wider">
+                  CASH OPTIMAL
+                </h4>
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  Si vous disposez du capital :{" "}
+                  <strong className="text-white">
+                    +
+                    {formatMoney(
+                      calculationResult.totalSavingsProjectedCash -
+                        calculationResult.totalSavingsProjected
+                    )}
+                  </strong>{" "}
+                  d'écart sur {projectionYears} ans.
                 </p>
-                <p className="text-blue-300 text-xs">
-                  L'effort mensuel année 1 (+
-                  {Math.round(calculationResult.monthlyEffortYear1)}€) décroît
-                  progressivement avec l'inflation. Après remboursement, vous
-                  économisez 100% de la production.
-                </p>
-              </InfoPopup>
-            </p>
-            <p className="text-sm text-gray-400">
-              Les deux scénarios génèrent un écart économique positif. Le
-              scénario par défaut (ne rien faire) correspond à une dépense non
-              optimisée.
-            </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Message final */}
+          <div className="mt-6 bg-black/40 border border-white/10 rounded-xl p-4 text-xs text-slate-400 text-center">
+            Les deux scénarios génèrent un écart économique positif. Le scénario
+            par défaut (ne rien faire) correspond à une dépense non optimisée.
           </div>
         </div>
 
-        {/* 5. WHERE WILL YOUR MONEY BE */}
+        {/* 5. WHERE WILL YOUR MONEY BE - VERSION PERSUASIVE */}
         <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-4 md:p-8">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="text-blue-500">
-              <HelpCircle size={28} />
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="text-blue-500">
+                <HelpCircle size={28} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                  Votre argent dans {projectionYears} ans
+                </h2>
+                <p className="text-slate-500 text-sm mt-1">
+                  Où finira chaque euro que vous dépensez aujourd'hui ?
+                </p>
+              </div>
             </div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-              Où sera votre argent ?
-            </h2>
+
+            <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
+              <button
+                onClick={() => setWhereMoneyMode("financement")}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  whereMoneyMode === "financement"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-500 hover:text-white"
+                }`}
+              >
+                Financement
+              </button>
+              <button
+                onClick={() => setWhereMoneyMode("cash")}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  whereMoneyMode === "cash"
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-500 hover:text-white"
+                }`}
+              >
+                Cash
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {yearsToDisplay.map((year, idx) => {
               const data = getYearData(year);
-              const noSolarSpend = -data.credit.cumulativeSpendNoSolar;
+              const selectedData =
+                whereMoneyMode === "financement" ? data.credit : data.cash;
+
+              // Calculs clairs
+              const youPaid = Math.abs(selectedData.cumulativeSpendSolar);
+              const youWouldHavePaid = Math.abs(
+                selectedData.cumulativeSpendNoSolar
+              );
+              const difference = youWouldHavePaid - youPaid;
 
               let headerColor = "text-orange-500";
               let borderColor = "border-orange-500/30";
@@ -1585,113 +1661,115 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               return (
                 <div
                   key={year}
-                  className={`relative bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 overflow-hidden group transition-all duration-300 hover:border-white/20 ${shadowColor}`}
+                  className={`relative bg-black/60 backdrop-blur-md border ${borderColor} rounded-2xl p-6 overflow-hidden group transition-all duration-300 hover:border-white/30 ${shadowColor}`}
                 >
+                  {/* Background année */}
                   <div className="absolute top-4 right-4 text-[140px] font-black text-white opacity-[0.03] leading-none pointer-events-none select-none">
                     {year}
                   </div>
 
                   <h3
-                    className={`${headerColor} font-bold text-sm uppercase mb-8 tracking-wider`}
+                    className={`${headerColor} font-bold text-sm uppercase mb-6 tracking-wider`}
                   >
                     DANS {year} ANS
                   </h3>
 
                   <div className="space-y-6 relative z-10">
-                    {/* AVEC SOLAIRE CRÉDIT */}
-                    <div className="group/tooltip relative">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase mb-1 flex items-center gap-1">
-                        Avec Solaire (Crédit)
-                        <HelpCircle size={12} className="text-slate-600" />
-                      </div>
-                      <div
-                        className={`text-2xl font-black ${
-                          year === 20 ? "text-emerald-400" : "text-orange-400"
-                        }`}
-                      >
-                        {formatMoney(data.credit.cumulativeSavings)}
+                    {/* ✅ SCÉNARIO SOLAIRE */}
+                    <div className="bg-gradient-to-br from-blue-950/40 to-blue-900/20 border border-blue-500/20 p-4 rounded-xl">
+                      <div className="flex items-center gap-2 mb-3">
+                        <CheckCircle2 size={14} className="text-blue-400" />
+                        <div className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                          AVEC INSTALLATION SOLAIRE
+                        </div>
                       </div>
 
-                      {/* TOOLTIP */}
-                      <div className="absolute left-0 top-full mt-2 w-64 bg-[#1e293b] border border-blue-500/30 p-3 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
-                        <div className="text-xs text-blue-300 font-bold mb-2">
-                          💡 CALCUL :
-                        </div>
-                        <div className="text-[10px] text-slate-300 space-y-1 font-mono">
-                          <div>Facture sans panneaux</div>
-                          <div className="text-slate-600">MOINS</div>
-                          <div>(Mensualité crédit + Reste facture)</div>
-                          <div className="text-slate-600">ÉGALE</div>
-                          <div className="text-emerald-400 font-bold">
-                            Votre gain net
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-[9px] text-slate-500 uppercase mb-1">
+                            Vous aurez payé
+                          </div>
+                          <div className="text-xl font-black text-white">
+                            {formatMoney(youPaid)}
                           </div>
                         </div>
+
+                        {difference > 0 ? (
+                          <div className="bg-emerald-950/40 border border-emerald-500/30 p-3 rounded-lg">
+                            <div className="text-[9px] text-emerald-400 uppercase mb-1">
+                              💰 Économie réalisée
+                            </div>
+                            <div className="text-2xl font-black text-emerald-400">
+                              {formatMoney(difference)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-orange-950/40 border border-orange-500/30 p-3 rounded-lg">
+                            <div className="text-[9px] text-orange-400 uppercase mb-1">
+                              ⏳ Phase d'investissement
+                            </div>
+                            <div className="text-lg font-black text-orange-400">
+                              Rentable dans{" "}
+                              {calculationResult.breakEvenPoint - year} ans
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    {/* AVEC SOLAIRE CASH */}
-                    <div className="group/tooltip relative">
-                      <div className="text-[10px] text-slate-500 font-bold uppercase mb-1 flex items-center gap-1">
-                        Avec Solaire (Cash)
-                        <HelpCircle size={12} className="text-slate-600" />
-                      </div>
-                      <div
-                        className={`text-2xl font-black ${
-                          year === 20 ? "text-emerald-400" : "text-orange-400"
-                        }`}
-                      >
-                        {formatMoney(data.cash.cumulativeSavings)}
+                    {/* ❌ SCÉNARIO SANS RIEN FAIRE */}
+                    <div className="bg-gradient-to-br from-red-950/40 to-red-900/20 border border-red-500/20 p-4 rounded-xl relative overflow-hidden">
+                      <div className="absolute top-0 right-0 -mr-8 -mt-8">
+                        <div className="w-24 h-24 bg-red-500/10 rounded-full blur-xl"></div>
                       </div>
 
-                      {/* TOOLTIP */}
-                      <div className="absolute left-0 top-full mt-2 w-64 bg-[#1e293b] border border-emerald-500/30 p-3 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
-                        <div className="text-xs text-emerald-300 font-bold mb-2">
-                          💡 CALCUL :
+                      <div className="flex items-center gap-2 mb-3 relative z-10">
+                        <AlertTriangle size={14} className="text-red-400" />
+                        <div className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                          SANS RIEN FAIRE (STATU QUO)
                         </div>
-                        <div className="text-[10px] text-slate-300 space-y-1 font-mono">
-                          <div>Facture sans panneaux</div>
-                          <div className="text-slate-600">MOINS</div>
-                          <div>Reste facture réduite</div>
-                          <div className="text-slate-600">MOINS</div>
-                          <div>Apport initial ({formatMoney(installCost)})</div>
-                          <div className="text-slate-600">ÉGALE</div>
-                          <div className="text-emerald-400 font-bold">
-                            Votre gain net
+                      </div>
+
+                      <div className="relative z-10">
+                        <div className="text-[9px] text-red-300 uppercase mb-1">
+                          Argent définitivement perdu
+                        </div>
+                        <div className="text-2xl font-black text-red-400">
+                          {formatMoney(youWouldHavePaid)}
+                        </div>
+                      </div>
+
+                      {difference > 0 && (
+                        <div className="mt-3 pt-3 border-t border-red-900/30 relative z-10">
+                          <div className="text-[9px] text-red-500 uppercase mb-1">
+                            💸 Manque à gagner
+                          </div>
+                          <div className="text-xl font-black text-red-500">
+                            {formatMoney(difference)}
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
-                    {/* SANS RIEN FAIRE */}
-                    <div className="bg-[#2a0505] border border-red-900/30 p-4 rounded-xl -mx-2 group/tooltip relative">
-                      <div className="text-[10px] text-red-400 font-bold uppercase mb-1 flex items-center gap-1">
-                        Sans rien faire
-                        <HelpCircle size={12} className="text-red-600" />
-                      </div>
-                      <div className="text-2xl font-black text-red-500">
-                        {formatMoney(noSolarSpend)}
-                      </div>
-
-                      {/* TOOLTIP */}
-                      <div className="absolute left-0 top-full mt-2 w-64 bg-[#1e293b] border border-red-500/30 p-3 rounded-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50">
-                        <div className="text-xs text-red-300 font-bold mb-2">
-                          💡 CALCUL :
+                    {/* ✅ COMPARAISON VISUELLE CLAIRE */}
+                    {year === 20 && difference > 0 && (
+                      <div className="bg-gradient-to-r from-emerald-500/20 to-emerald-600/20 border border-emerald-500/40 p-4 rounded-xl backdrop-blur-md">
+                        <div className="text-[10px] text-emerald-400 font-bold uppercase mb-2 text-center">
+                          🎯 RÉSULTAT FINAL
                         </div>
-                        <div className="text-[10px] text-slate-300 space-y-1 font-mono">
-                          <div>Facture annuelle × {year} ans</div>
-                          <div className="text-slate-600">AVEC</div>
-                          <div>Inflation {inflationRate}% par an</div>
-                          <div className="text-slate-600">ÉGALE</div>
-                          <div className="text-red-400 font-bold">
-                            Argent définitivement perdu
-                          </div>
+                        <div className="text-3xl font-black text-emerald-400 text-center">
+                          +{formatMoney(difference)}
+                        </div>
+                        <div className="text-[9px] text-emerald-300 text-center mt-1">
+                          dans votre patrimoine au lieu de 0€
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
+                  {/* Message psychologique */}
                   <div
-                    className={`mt-6 pt-6 border-t border-white/5 text-[10px] italic ${
+                    className={`mt-6 pt-6 border-t border-white/5 text-xs font-medium ${
                       year === 20
                         ? "text-emerald-400"
                         : year === 10
@@ -1699,13 +1777,39 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         : "text-orange-400"
                     }`}
                   >
-                    {year === 5 && "Vous commencez à voir la différence"}
-                    {year === 10 && "L'écart se creuse significativement"}
-                    {year === 20 && "C'est un capital transmissible"}
+                    {year === 5 &&
+                      "⏱️ Chaque mois compte - l'écart commence à se creuser"}
+                    {year === 10 && "📈 L'effet boule de neige est lancé"}
+                    {year === 20 && "🏆 Un capital transmissible à vos enfants"}
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* ⚠️ URGENCE PSYCHOLOGIQUE */}
+          <div className="mt-8 bg-gradient-to-r from-orange-950/40 to-red-950/40 border-l-4 border-orange-500 p-6 rounded-xl">
+            <div className="flex items-start gap-4">
+              <Clock className="text-orange-400 flex-shrink-0 mt-1" size={24} />
+              <div>
+                <h4 className="text-orange-400 font-bold text-lg mb-2">
+                  ⏰ Chaque mois d'attente coûte{" "}
+                  {formatMoney(calculationResult.oldMonthlyBillYear1)}
+                </h4>
+                <p className="text-slate-300 text-sm leading-relaxed">
+                  Pendant que vous réfléchissez, votre compteur tourne.{" "}
+                  <strong className="text-white">Attendre 1 an</strong> ={" "}
+                  <strong className="text-red-400">
+                    {formatMoney(calculationResult.lossIfWait1Year)}
+                  </strong>{" "}
+                  partis définitivement. Ces euros auraient pu{" "}
+                  <strong className="text-emerald-400">
+                    travailler pour vous pendant {projectionYears} ans
+                  </strong>
+                  .
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1990,61 +2094,113 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   <TrendingUp size={12} /> 0€ D'APPORT
                 </div>
               </div>
-
               <h2 className="text-xl text-slate-400 font-medium mb-1">
                 Écart Économique Cumulé
               </h2>
               <div className="text-7xl font-black text-white tracking-tighter mb-8">
                 {formatMoney(calculationResult.totalSavingsProjected)}
               </div>
-
-              {/* Info Box */}
-              <div className="bg-[#1e293b]/50 border border-blue-500/20 rounded-xl p-6 mb-8 backdrop-blur-sm">
-                <div className="flex items-center gap-2 mb-3 text-white font-bold text-sm">
-                  <Info size={16} className="text-blue-400" />
-                  <Lightbulb size={16} className="text-yellow-400" />
-                  Comment est calculé cet écart ?
-                </div>
-                <p className="text-xs text-blue-200 mb-4 leading-relaxed">
-                  C'est la différence entre{" "}
-                  <span className="text-red-400 font-bold">
-                    la dépense énergétique sans installation
-                  </span>{" "}
-                  et{" "}
-                  <span className="text-blue-400 font-bold">
-                    la réallocation budgétaire avec installation
-                  </span>{" "}
-                  (crédit + facture résiduelle).
-                </p>
-
-                <div className="bg-black/40 p-4 rounded-lg font-mono text-[10px] text-slate-400 space-y-2 border border-white/5">
-                  <div className="text-slate-500 uppercase tracking-widest mb-2">
-                    FORMULE :
+              {/* Info Box - VERSION ÉPURÉE ET VISUELLE */}
+              <div className="bg-gradient-to-br from-slate-900/60 to-slate-800/40 border border-slate-700/50 rounded-2xl p-6 mb-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
                   </div>
-                  <div className="text-red-400">
-                    Dépense énergétique sans installation
-                  </div>
-                  <div className="text-slate-600 text-[9px] pl-2">MOINS</div>
-                  <div className="text-blue-400">
-                    Réallocation budgétaire avec installation
-                  </div>
-                  <div className="text-slate-600 text-[9px] pl-2">ÉGALE</div>
-                  <div className="text-emerald-400 font-bold text-xs">
-                    Écart économique net
-                  </div>
+                  <h3 className="text-base font-bold text-white">
+                    Comment est calculé cet écart ?
+                  </h3>
                 </div>
 
-                <div className="mt-3 flex items-center gap-2 text-[10px] text-yellow-500/80 italic">
-                  <AlertTriangle size={12} />
-                  Les premières années correspondent à une phase de réallocation
-                  budgétaire. Dès l'année{" "}
-                  {Math.ceil(creditDurationMonths / 12 / 2)}, vous commencez à
-                  économiser. Après remboursement (
-                  {Math.ceil(creditDurationMonths / 12)} ans), les économies
-                  deviennent massives et permanentes.
+                {/* Visuel simple avec 3 cartes */}
+                <div className="space-y-3">
+                  {/* Carte 1 : Sans solaire */}
+                  <div className="bg-red-950/30 border border-red-500/20 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-5 h-5 text-red-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs text-red-400 font-bold uppercase">
+                          Scénario sans solaire
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          Dépense énergétique totale sur {projectionYears} ans
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-red-400">
+                      {Math.round(calculationResult.totalSpendNoSolar / 1000)}k€
+                    </div>
+                  </div>
+
+                  {/* Flèche MOINS */}
+                  <div className="flex items-center justify-center">
+                    <div className="text-slate-500 text-sm font-bold">
+                      MOINS
+                    </div>
+                  </div>
+
+                  {/* Carte 2 : Avec solaire */}
+                  <div className="bg-blue-950/30 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs text-blue-400 font-bold uppercase">
+                          Scénario avec solaire
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          Réorganisation budget + facture résiduelle
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-black text-blue-400">
+                      {Math.round(calculationResult.totalSpendSolar / 1000)}k€
+                    </div>
+                  </div>
+
+                  {/* Flèche ÉGALE */}
+                  <div className="flex items-center justify-center">
+                    <div className="text-slate-500 text-sm font-bold">=</div>
+                  </div>
+
+                  {/* Carte 3 : Résultat */}
+                  <div className="bg-emerald-950/30 border-2 border-emerald-500/40 rounded-xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Award className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs text-emerald-400 font-bold uppercase">
+                          Votre gain net
+                        </div>
+                        <div className="text-xs text-slate-300">
+                          Écart économique cumulé
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-3xl font-black text-emerald-400">
+                      +
+                      {Math.round(
+                        calculationResult.totalSavingsProjected / 1000
+                      )}
+                      k€
+                    </div>
+                  </div>
+                </div>
+
+                {/* Note en bas */}
+                <div className="mt-4 bg-yellow-950/20 border-l-4 border-yellow-500 rounded p-3 flex items-start gap-2">
+                  <AlertTriangle
+                    size={14}
+                    className="text-yellow-400 flex-shrink-0 mt-0.5"
+                  />
+                  <p className="text-xs text-yellow-200/90 leading-relaxed">
+                    <span className="font-bold">Les premières années</span>{" "}
+                    correspondent à une phase de réorganisation budgétaire. Dès
+                    l'année {Math.ceil(creditDurationMonths / 12 / 2)}, vous
+                    commencez à économiser. Après remboursement (
+                    {Math.ceil(creditDurationMonths / 12)} ans), les économies
+                    deviennent massives et permanentes.
+                  </p>
                 </div>
               </div>
-
+              {/* AJOUTE CES IMPORTS EN HAUT DU FICHIER SI PAS DÉJÀ PRÉSENTS */}
               {/* Metrics Grid */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-black/60 backdrop-blur-md border border-white/10 p-4 rounded-xl">
@@ -2227,17 +2383,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
         </div>
 
-        {/* 8. BILAN TOTAL SUR 20 ANS */}
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 mt-8">
+        {/* 8. BILAN TOTAL SUR 20 ANS - VERSION BARRES 3D MASSIVES */}
+        <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 mt-8 border border-white/10">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
-              <Scale className="text-white w-8 h-8" />
+              <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
+                <Scale className="text-slate-400 w-5 h-5" />
+              </div>
               <div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                <h2 className="text-xl font-black text-white uppercase tracking-tight">
                   BILAN TOTAL SUR {projectionYears} ANS
                 </h2>
-                <div className="flex items-center gap-2 text-slate-500 text-sm mt-1">
-                  <Lightbulb size={14} className="text-yellow-500" />
+                <div className="flex items-center gap-2 text-slate-500 text-xs mt-1">
+                  <Lightbulb size={12} className="text-yellow-500/70" />
                   Imaginez ces barres comme deux comptes bancaires...
                 </div>
               </div>
@@ -2267,20 +2425,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
 
           <div className="space-y-12">
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  SANS SOLAIRE (DÉPENSE NON VALORISÉE)
-                </span>
-              </div>
-
-              <div className="h-16 bg-[#1a0a0a] rounded-full border border-red-500/20 relative overflow-hidden flex items-center px-6">
-                <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-red-600 to-red-500"
-                  style={{ width: "100%" }}
-                ></div>
-                <span className="relative z-10 text-3xl font-black text-white ml-auto text-shadow-sm">
+            {/* BARRE ROUGE - Sans Solaire */}
+            <div className="relative group">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_12px_#ef4444] animate-pulse"></div>
+                  <span className="text-sm font-bold text-slate-300 uppercase tracking-widest">
+                    Sans Solaire (Dépense non valorisée)
+                  </span>
+                </div>
+                <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                   {formatMoney(
                     gouffreMode === "financement"
                       ? calculationResult.totalSpendNoSolar
@@ -2289,22 +2443,63 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mt-3 text-red-400 text-xs italic opacity-80">
-                <Coins size={12} /> Cet argent est parti pour toujours.
+              {/* BARRE MASSIVE 3D - ROUGE */}
+              <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
+                {/* Barre de progression avec gradient vertical */}
+                <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
+                  {/* Effet shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+
+                  {/* Highlight top */}
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* Shadow bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-3 text-red-400/70 text-sm italic">
+                <Flame size={14} />
+                Cet argent est parti pour toujours.
               </div>
             </div>
 
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  AVEC SOLAIRE (INVESTISSEMENT PATRIMONIAL)
+            {/* BARRE BLEUE/VERTE - Avec Solaire */}
+            <div className="relative group">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-3 h-3 rounded-full shadow-[0_0_12px] animate-pulse ${
+                      gouffreMode === "cash"
+                        ? "bg-emerald-500 shadow-emerald-500"
+                        : "bg-blue-500 shadow-blue-500"
+                    }`}
+                  ></div>
+                  <span className="text-sm font-bold text-slate-300 uppercase tracking-widest">
+                    Avec Solaire (Investissement patrimonial)
+                  </span>
+                </div>
+                <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                  {formatMoney(
+                    gouffreMode === "financement"
+                      ? calculationResult.totalSpendSolar
+                      : calculationResult.totalSpendSolarCash
+                  )}
                 </span>
               </div>
 
-              <div className="h-16 bg-[#0a101a] rounded-full border border-blue-500/20 relative overflow-hidden flex items-center px-6">
+              {/* BARRE MASSIVE 3D - BLEUE/VERTE PROPORTIONNELLE */}
+              <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+                {/* Fond grisé pour la partie vide */}
+                <div className="absolute inset-0 bg-gradient-to-b from-slate-800/30 to-slate-900/30"></div>
+
+                {/* Barre de progression proportionnelle avec gradient vertical */}
                 <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-600 to-blue-400"
+                  className={`absolute inset-y-0 left-0 rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ${
+                    gouffreMode === "cash"
+                      ? "bg-gradient-to-b from-emerald-500 via-emerald-600 to-emerald-700"
+                      : "bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700"
+                  }`}
                   style={{
                     width: `${
                       gouffreMode === "financement"
@@ -2316,30 +2511,65 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                           100
                     }%`,
                   }}
-                ></div>
-                <span className="relative z-10 text-3xl font-black text-white ml-auto text-shadow-sm">
-                  {formatMoney(
-                    gouffreMode === "financement"
-                      ? calculationResult.totalSpendSolar
-                      : calculationResult.totalSpendSolarCash
-                  )}
-                </span>
+                >
+                  {/* Effet shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+
+                  {/* Highlight top */}
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* Shadow bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                </div>
               </div>
 
               <div className="flex justify-between items-center mt-3">
-                <div className="flex items-center gap-2 text-blue-400 text-xs italic opacity-80">
-                  <Zap size={12} /> Cette dépense génère un actif qui produit
-                  pendant 25+ ans.
+                <div
+                  className={`flex items-center gap-2 text-sm italic ${
+                    gouffreMode === "cash"
+                      ? "text-emerald-400/70"
+                      : "text-blue-400/70"
+                  }`}
+                >
+                  <Zap size={14} />
+                  Cette dépense génère un actif qui produit pendant 25+ ans.
                 </div>
-                <div className="bg-[#062c1e] text-emerald-400 px-4 py-2 rounded-lg border border-emerald-500/20 text-sm font-bold flex items-center gap-2 shadow-lg shadow-emerald-900/50">
-                  💰 Différence :{" "}
-                  {formatMoney(
-                    gouffreMode === "financement"
-                      ? calculationResult.totalSavingsProjected
-                      : calculationResult.totalSavingsProjectedCash
-                  )}
+
+                {/* Badge différence - style cohérent */}
+                <div className="bg-black/60 backdrop-blur-md border border-emerald-500/30 px-5 py-3 rounded-xl flex items-center gap-3 transition-all duration-300 hover:border-emerald-500/50 hover:shadow-[0_0_25px_rgba(16,185,129,0.3)] hover:scale-105">
+                  <Coins size={16} className="text-emerald-400" />
+                  <span className="text-xs text-emerald-400/70 font-bold uppercase tracking-wider">
+                    Différence :
+                  </span>
+                  <span className="text-2xl font-black text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
+                    {formatMoney(
+                      gouffreMode === "financement"
+                        ? calculationResult.totalSavingsProjected
+                        : calculationResult.totalSavingsProjectedCash
+                    )}
+                  </span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Message explicatif - style cohérent */}
+          <div className="mt-8 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 flex items-start gap-4">
+            <div className="p-2 bg-white/5 rounded-lg border border-white/10 flex-shrink-0">
+              <Info size={16} className="text-slate-400" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm mb-2 uppercase tracking-wider">
+                Pourquoi cette différence ?
+              </h3>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Le scénario{" "}
+                <strong className="text-red-400">sans solaire</strong>{" "}
+                représente une dépense pure qui n'a aucune contrepartie. Le
+                scénario <strong className="text-blue-400">avec solaire</strong>{" "}
+                transforme cette dépense en investissement patrimonial qui
+                génère de la valeur pendant plus de 25 ans.
+              </p>
             </div>
           </div>
         </div>
@@ -2732,7 +2962,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
         </div>
 
-        {/* 11. STRUCTURE DU BUDGET (MENSUEL) - FIXED DIVIDER LOGIC */}
+        {/* 11. STRUCTURE DU BUDGET (MENSUEL) - VERSION DYNAMIQUE 3D */}
         <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 mt-8 transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
@@ -2746,66 +2976,118 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-12">
             {/* Situation Actuelle */}
             <div>
-              <div className="flex justify-between text-xs font-bold uppercase text-slate-500 mb-2">
+              <div className="flex justify-between text-sm font-bold uppercase text-slate-400 mb-6">
                 <span>SITUATION ACTUELLE</span>
-                <span className="text-red-500">
+                <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                   {formatMoney(calculationResult.oldMonthlyBillYear1)} /mois
                 </span>
               </div>
-              <div className="h-16 bg-red-600 rounded-lg flex items-center justify-between px-6 shadow-lg shadow-red-900/20 relative overflow-hidden group">
-                <span className="relative z-10 text-white font-black text-lg uppercase tracking-wider">
-                  FACTURE ACTUELLE
-                </span>
-                <span className="relative z-10 text-white/20 font-black text-4xl uppercase tracking-tighter group-hover:text-white/30 transition-colors">
-                  100% PERTE
-                </span>
+
+              {/* BARRE ROUGE MASSIVE 3D */}
+              <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
+                  {/* Effet shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+
+                  {/* Highlight top */}
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* Shadow bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                  {/* Texte à l'intérieur */}
+                  <div className="absolute inset-0 flex items-center justify-between px-8">
+                    <span className="text-white font-black text-2xl uppercase tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                      FACTURE ACTUELLE
+                    </span>
+                    <span className="text-white/30 font-black text-5xl uppercase tracking-tighter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                      100% PERTE
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Projet Solaire */}
             <div>
-              <div className="flex justify-between text-xs font-bold uppercase text-slate-500 mb-2">
+              <div className="flex justify-between text-sm font-bold uppercase text-slate-400 mb-6">
                 <span>PROJET SOLAIRE</span>
-                <span className="text-white">
-                  {(
-                    creditMonthlyPayment +
-                    insuranceMonthlyPayment +
-                    calculationResult.year1.edfResidue / 12
-                  )
-                    .toFixed(2)
-                    .replace(".", ",")}{" "}
-                  € /mois
+                <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                  {formatMoney(calculationResult.year1.totalWithSolar / 12)}{" "}
+                  /mois
                 </span>
               </div>
-              <div className="h-16 flex rounded-lg overflow-hidden shadow-lg shadow-blue-900/20">
-                {/* Credit Part */}
+
+              {/* BARRE DOUBLE MASSIVE 3D - CRÉDIT + RESTE - PROPORTIONS DYNAMIQUES */}
+              <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
+                {/* PARTIE CRÉDIT (BLEUE) - LARGEUR DYNAMIQUE */}
                 <div
-                  className="bg-blue-600 h-full flex flex-col justify-center px-4 relative group"
-                  style={{ flex: "1.5" }}
+                  className="relative bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
+                  style={{
+                    width: `${
+                      (calculationResult.year1.creditPayment /
+                        12 /
+                        (calculationResult.year1.totalWithSolar / 12)) *
+                      100
+                    }%`,
+                  }}
                 >
-                  <span className="text-[10px] font-bold text-blue-200 uppercase">
-                    CRÉDIT
-                  </span>
-                  <span className="text-white font-bold text-lg">
-                    {formatMoney(
-                      creditMonthlyPayment + insuranceMonthlyPayment
-                    )}
-                  </span>
+                  {/* Effet shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+
+                  {/* Highlight top */}
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* Shadow bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                  {/* Texte */}
+                  <div className="absolute inset-0 flex flex-col justify-center px-6">
+                    <span className="text-xs font-bold text-blue-100 uppercase tracking-wider mb-1">
+                      CRÉDIT
+                    </span>
+                    <span className="text-white font-black text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                      {formatMoney(calculationResult.year1.creditPayment / 12)}
+                    </span>
+                  </div>
                 </div>
-                {/* Reste Part */}
+
+                {/* SÉPARATEUR */}
+                <div className="w-1 bg-black/40"></div>
+
+                {/* PARTIE RESTE (ORANGE) - LARGEUR DYNAMIQUE */}
                 <div
-                  className="bg-amber-500 h-full flex flex-col justify-center px-4 relative group"
-                  style={{ flex: "1" }}
+                  className="relative bg-gradient-to-b from-amber-400 via-amber-500 to-amber-600 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
+                  style={{
+                    width: `${
+                      (calculationResult.year1.edfResidue /
+                        12 /
+                        (calculationResult.year1.totalWithSolar / 12)) *
+                      100
+                    }%`,
+                  }}
                 >
-                  <span className="text-[10px] font-bold text-amber-900 uppercase">
-                    RESTE
-                  </span>
-                  <span className="text-amber-950 font-bold text-lg">
-                    {formatMoney(calculationResult.year1.edfResidue / 12)}
-                  </span>
+                  {/* Effet shimmer */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+
+                  {/* Highlight top */}
+                  <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+
+                  {/* Shadow bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                  {/* Texte */}
+                  <div className="absolute inset-0 flex flex-col justify-center px-6">
+                    <span className="text-xs font-bold text-amber-950 uppercase tracking-wider mb-1">
+                      RESTE
+                    </span>
+                    <span className="text-amber-950 font-black text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]">
+                      {formatMoney(calculationResult.year1.edfResidue / 12)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2964,7 +3246,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <Flame className="text-orange-500 w-6 h-6" />
               <div>
                 <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  LE GOUFFRE FINANCIER
+                  ÉCART DE DÉPENSES ÉNERGÉTIQUES
                 </h2>
                 <p className="text-slate-500 text-sm">
                   Visualisez l'écart sur {projectionYears} ans entre agir
@@ -3143,20 +3425,115 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </ResponsiveContainer>
           </div>
 
-          <div className="mt-6 bg-black/60 backdrop-blur-md border border-emerald-900/30 p-4 rounded-xl flex items-start gap-3">
-            <Target size={20} className="text-emerald-500 flex-shrink-0" />
-            <p className="text-sm text-slate-300">
-              <strong className="text-white">Le point de croisement</strong>{" "}
-              marque votre{" "}
-              <span className="text-emerald-400 font-bold">
-                retour sur investissement
-              </span>
-              . Après ce point, chaque euro économisé correspond à des{" "}
-              <span className="text-emerald-400 font-bold">
-                économies nettes
-              </span>
-              . Plus vous attendez, plus le gouffre se creuse.
-            </p>
+          {/* ✅ TEXTE CORRIGÉ - 3 BLOCS BIEN SÉPARÉS */}
+          <div className="mt-6 space-y-4">
+            {/* BLOC 1 : Point de croisement */}
+            <div className="bg-black/60 backdrop-blur-md border border-emerald-900/30 p-4 rounded-xl flex items-start gap-3">
+              <Target
+                size={20}
+                className="text-emerald-500 flex-shrink-0 mt-1"
+              />
+              <p className="text-sm text-slate-300">
+                <strong className="text-white">Le point de croisement</strong>{" "}
+                marque votre{" "}
+                <span className="text-emerald-400 font-bold">
+                  retour sur investissement
+                </span>
+                . Après ce point, chaque euro économisé correspond à des{" "}
+                <span className="text-emerald-400 font-bold">
+                  économies nettes
+                </span>
+                .
+              </p>
+            </div>
+
+            {/* BLOC 2 : Important avec barre orange */}
+            <div className="bg-orange-950/20 border-l-4 border-orange-500 p-4 rounded-xl">
+              <div className="flex items-start gap-3 mb-3">
+                <AlertTriangle
+                  size={18}
+                  className="text-orange-400 flex-shrink-0 mt-1"
+                />
+                <p className="text-sm text-slate-300">
+                  <strong className="text-orange-400">Important :</strong>{" "}
+                  L'investissement initial (ligne bleue/verte) crée un{" "}
+                  <strong className="text-white">actif patrimonial</strong> qui
+                  produit pendant 30 ans. La dépense sans solaire (ligne rouge)
+                  n'a{" "}
+                  <strong className="text-red-400">aucune contrepartie</strong>.
+                </p>
+              </div>
+
+              {/* BLOC 3 : Les 2 InfoPopup en bas */}
+              <div className="flex items-center gap-4 ml-9">
+                <InfoPopup title="Robustesse du scénario">
+                  <p className="mb-3">
+                    Ce graphique est basé sur une hypothèse d'inflation
+                    énergétique de <strong>{inflationRate}%</strong>.
+                  </p>
+                  <div className="bg-blue-950/30 border border-blue-500/20 rounded-lg p-3 mb-3">
+                    <p className="text-xs text-blue-200 mb-2 font-bold">
+                      📊 DONNÉES HISTORIQUES :
+                    </p>
+                    <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside">
+                      <li>2019-2024 : +40% (soit ~7%/an)</li>
+                      <li>2022-2023 : +25% en un an</li>
+                      <li>Hypothèse {inflationRate}% = prudente</li>
+                    </ul>
+                  </div>
+                  <p className="mb-3 text-sm">
+                    <strong>Même avec une inflation énergétique nulle</strong>,
+                    l'installation reste pertinente car elle remplace une
+                    dépense par une autoproduction à coût marginal quasi nul.
+                  </p>
+                  <div className="bg-emerald-950/30 border border-emerald-500/20 rounded-lg p-3">
+                    <p className="text-xs text-emerald-200 mb-2 font-bold">
+                      ✅ SCÉNARIO INFLATION 0% :
+                    </p>
+                    <p className="text-xs text-slate-300">
+                      Écart réduit mais toujours positif. Vous économisez dès
+                      l'année 1 grâce à l'autoconsommation (
+                      {Math.round(
+                        yearlyProduction * (selfConsumptionRate / 100)
+                      )}{" "}
+                      kWh/an).
+                    </p>
+                  </div>
+                </InfoPopup>
+
+                <InfoPopup title="Et si je déménage ?">
+                  <p className="mb-3">
+                    L'installation solaire est un{" "}
+                    <strong>actif immobilier valorisable</strong>.
+                  </p>
+                  <div className="bg-emerald-950/30 border border-emerald-500/20 rounded-lg p-3 mb-3">
+                    <p className="text-xs text-emerald-200 mb-2 font-bold">
+                      💰 VALORISATION À LA REVENTE :
+                    </p>
+                    <ul className="text-xs text-slate-300 space-y-1 list-disc list-inside">
+                      <li>DPE amélioré (étiquette énergétique)</li>
+                      <li>
+                        Facture d'électricité réduite = argument commercial
+                      </li>
+                      <li>
+                        Installation récente = plus-value immobilière estimée à
+                        5-15k€
+                      </li>
+                    </ul>
+                  </div>
+                  <p className="text-sm mb-3">
+                    Selon l'étude NotairesdefFrance (2021), les maisons avec
+                    installation solaire se vendent{" "}
+                    <strong>+3% à +8% plus cher</strong>.
+                  </p>
+                  <p className="text-blue-300 text-xs">
+                    En cas de déménagement avant remboursement, le crédit peut
+                    être transféré au nouveau propriétaire ou soldé par
+                    anticipation.
+                  </p>
+                </InfoPopup>
+              </div>
+            </div>
           </div>
         </div>
 

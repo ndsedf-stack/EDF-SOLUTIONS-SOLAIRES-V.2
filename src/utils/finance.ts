@@ -89,7 +89,11 @@ export const calculateSolarProjection = (
       : 0;
 
   // --- SIMULATION LOOPS ---
-  const startYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const projectStartYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+  const startYear = projectStartYear;
 
   // Storage for Credit Scenario
   const details: YearlyDetail[] = [];
@@ -290,7 +294,7 @@ export const calculateSolarProjection = (
   const priceNextYear = round2(
     electricityPrice * Math.pow(1 + localInflation / 100, 1)
   );
-  const lossIfWait1Year = round2(baseConsumptionKwh * priceNextYear);
+  const lossIfWait1Year = round2(baseConsumptionKwh * electricityPrice);
   const savingsLostIfWait1Year = round2(selfConsumedKwh * priceNextYear);
 
   // ✅ NOUVEAU: Calculer surplusRevenuePerYear pour l'année 1 (pour compatibilité avec les autres composants)
