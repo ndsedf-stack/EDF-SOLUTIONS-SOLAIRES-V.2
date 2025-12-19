@@ -448,34 +448,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 {/* Effet glassmorphism */}
                 <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                {/* Croix jaune */}
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="relative z-10"
-                >
-                  <line
-                    x1="4"
-                    y1="4"
-                    x2="20"
-                    y2="20"
-                    stroke="#FCD34D"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1="20"
-                    y1="4"
-                    x2="4"
-                    y2="20"
-                    stroke="#FCD34D"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-
                 <span className="relative z-10">LANCER L'ANALYSE</span>
                 <ArrowRight className="w-5 h-5 relative z-10" />
               </button>
