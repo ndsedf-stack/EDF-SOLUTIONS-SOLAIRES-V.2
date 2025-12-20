@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 import { FileUpload } from "./components/FileUpload";
 import { GuestView } from "./components/GuestView";
@@ -113,66 +113,14 @@ const MainApp: React.FC = () => {
   );
 };
 
-// --- COMPOSANT CLIENT CORRIGÉ ---
-const ClientRoute = () => {
-  const { encodedData } = useParams();
-  const [data, setData] = useState<any>(null);
-  const [isValid, setIsValid] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (encodedData) {
-      try {
-        // Décodage sécurisé UTF-8 (Le miroir du bouton QR Code)
-        const decoded = JSON.parse(
-          decodeURIComponent(escape(atob(encodedData)))
-        );
-        setData(decoded);
-        setIsValid(true);
-      } catch (e) {
-        try {
-          // Fallback ancien format
-          const decodedFallback = JSON.parse(atob(encodedData));
-          setData(decodedFallback);
-          setIsValid(true);
-        } catch (err) {
-          console.error("Lien mort");
-          setIsValid(false);
-        }
-      }
-    }
-  }, [encodedData]);
-
-  if (isValid === null) {
-    return (
-      <div className="bg-black min-h-screen flex items-center justify-center text-blue-500 font-black italic uppercase animate-pulse text-2xl">
-        Vérification de l'accès...
-      </div>
-    );
-  }
-
-  if (isValid === false) {
-    return (
-      <div className="bg-black min-h-screen flex flex-col items-center justify-center text-center p-6">
-        <h1 className="text-red-500 font-black text-6xl mb-4 italic uppercase tracking-tighter text-center">
-          Lien Invalide
-        </h1>
-        <p className="text-slate-500 text-lg max-w-md">
-          Ce lien est expiré. Veuillez générer un nouveau QR Code.
-        </p>
-      </div>
-    );
-  }
-
-  // On injecte enfin les données dans la vue client
-  return <GuestView data={data} />;
-};
+// ✅ SUPPRIMÉ : ClientRoute (remplacé par GuestView direct)
 
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<MainApp />} />
-        <Route path="/guest/:encodedData" element={<ClientRoute />} />
+        <Route path="/guest/:studyId" element={<GuestView />} />
       </Routes>
     </BrowserRouter>
   );

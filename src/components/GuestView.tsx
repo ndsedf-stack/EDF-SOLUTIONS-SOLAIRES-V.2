@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 import {
   Lock,
   Phone,
@@ -14,22 +16,19 @@ import {
   Shield,
   AlertCircle,
   Table2,
+  Loader,
 } from "lucide-react";
 
-interface GuestViewProps {
-  data: any;
-  projectionYears?: number; // ✅ AJOUTÉ
-}
-
-export const GuestView: React.FC<GuestViewProps> = ({
-  data,
-  projectionYears = 20,
-}) => {
-  // ✅ MODIFIÉ
+export const GuestView: React.FC = () => {
+  // ✅ 1. TOUS LES useState
+  const { studyId } = useParams<{ studyId: string }>();
+  const [data, setData] = useState<any>(null);
+  const [study, setStudy] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [wastedCash, setWastedCash] = useState(() => {
-    return 0.5;
-  });
+  const [wastedCash, setWastedCash] = useState(0.5);
   const [showAmortissement, setShowAmortissement] = useState(false);
   const [copyAttempts, setCopyAttempts] = useState(0);
   const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("annuel");
@@ -37,46 +36,65 @@ export const GuestView: React.FC<GuestViewProps> = ({
     "financement"
   );
 
-  const safeData = data
-    ? {
-        n: data.n || data.clientName || "Client",
-        e: data.e || 32202,
-        a: data.a || 70,
-        m: data.m || 139,
-        t: data.t || 3.89,
-        d: data.d || 180,
-        prod: data.prod || data.yearlyProduction || data.production || 7000,
-        conso:
-          data.conso || data.yearlyConsumption || data.consumption || 10000,
-        selfCons:
-          data.selfCons ||
-          data.selfConsumptionRate ||
-          data.selfConsumption ||
-          70,
-        installCost: data.installCost || 18799,
-        cashApport: data.cashApport || 0,
-        elecPrice:
-          data.elecPrice || data.electricityPrice || data.pricePerKwh || 0.25,
-        mode: data.mode || "financement",
-        exp: data.exp || Date.now() + 7 * 24 * 60 * 60 * 1000,
-        installedPower: data.installedPower || data.puissanceInstallee || 3.5,
-        projectionYears: data.projectionYears || projectionYears || 20, // ✅ AJOUTÉ
-        ga:
-          data.ga ||
-          (data.warrantyMode === "performance"
-            ? [
-                "🏆 Garantie Performance 30 ans (matériel + production)",
-                "Garantie main d'œuvre À VIE",
-                "SAV et maintenance inclus",
-                "Extension de garantie premium",
-              ]
-            : [
-                "✅ Garantie Essentiel 25 ans (matériel + production)",
-                "SAV et maintenance inclus",
-              ]),
-      }
-    : null;
+  // ✅ 2. TOUS LES useEffect ENSEMBLE (AVANT LES EARLY RETURNS)
 
+  // useEffect 1 : Chargement Supabase
+  useEffect(() => {
+    const loadStudy = async () => {
+      if (!studyId) {
+        setError("ID d'étude manquant");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log("📥 Chargement étude:", studyId);
+
+        const { data: studyData, error: fetchError } = await supabase
+          .from("studies")
+          .select("*")
+          .eq("id", studyId)
+          .single();
+
+        if (fetchError) {
+          console.error("❌ Erreur:", fetchError);
+          throw new Error("Étude introuvable");
+        }
+
+        console.log("✅ Étude chargée:", studyData);
+
+        const now = new Date();
+        const expiresAt = new Date(studyData.expires_at);
+
+        if (now > expiresAt || !studyData.is_active) {
+          setIsExpired(true);
+          setLoading(false);
+          return;
+        }
+
+        await supabase
+          .from("studies")
+          .update({
+            opened_at: studyData.opened_at || now.toISOString(),
+            last_opened_at: now.toISOString(),
+            opened_count: (studyData.opened_count || 0) + 1,
+          })
+          .eq("id", studyId);
+
+        setStudy(studyData);
+        setData(studyData.study_data);
+        setLoading(false);
+      } catch (err: any) {
+        console.error("❌ Erreur chargement:", err);
+        setError(err.message || "Erreur lors du chargement");
+        setLoading(false);
+      }
+    };
+
+    loadStudy();
+  }, [studyId]);
+
+  // useEffect 2 : Block context menu
   useEffect(() => {
     const blockContext = (e: MouseEvent) => {
       e.preventDefault();
@@ -101,13 +119,13 @@ export const GuestView: React.FC<GuestViewProps> = ({
     };
   }, []);
 
-  // ✅ COUNTDOWN
+  // useEffect 3 : Countdown
   useEffect(() => {
-    if (!safeData?.exp) return;
+    if (!data?.exp) return;
 
     const calculateTimeLeft = () => {
       const now = Date.now();
-      const difference = safeData.exp - now;
+      const difference = data.exp - now;
       return Math.max(0, Math.floor(difference / 1000));
     };
 
@@ -118,27 +136,109 @@ export const GuestView: React.FC<GuestViewProps> = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [safeData?.exp]);
+  }, [data?.exp]);
 
-  // ✅ COMPTEUR ARGENT PERDU
+  // useEffect 4 : Compteur argent perdu
   useEffect(() => {
-    if (!data) return;
+    if (!data?.conso || !data?.elecPrice) return;
 
-    const conso =
-      data.conso || data.yearlyConsumption || data.consumption || 10000;
-    const price =
-      data.elecPrice || data.electricityPrice || data.pricePerKwh || 0.25;
-    const costPerSecond = (conso * price) / 365 / 24 / 3600;
+    const costPerSecond = (data.conso * data.elecPrice) / 365 / 24 / 3600;
 
     const interval = setInterval(() => {
       setWastedCash((prev) => prev + costPerSecond);
     }, 100);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [data?.conso, data?.elecPrice]);
 
-  if (!data || !safeData) return <div className="bg-black min-h-screen" />;
+  // ✅ 3. EARLY RETURNS (APRÈS TOUS LES HOOKS)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <Loader
+            size={48}
+            className="text-blue-500 animate-spin mx-auto mb-4"
+          />
+          <p className="text-white text-xl">Chargement de votre étude...</p>
+        </div>
+      </div>
+    );
+  }
 
+  if (isExpired) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="bg-red-950/60 border-2 border-red-500/40 rounded-3xl p-8 max-w-md text-center">
+          <AlertTriangle size={64} className="text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-white mb-4">
+            ⏰ ÉTUDE EXPIRÉE
+          </h2>
+          <p className="text-red-200 mb-6">
+            Cette étude a expiré (durée : 15 jours).
+          </p>
+          <p className="text-red-300 text-sm">
+            Contactez votre commercial pour obtenir une nouvelle simulation.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="bg-red-950/60 border-2 border-red-500/40 rounded-3xl p-8 max-w-md text-center">
+          <X size={64} className="text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-black text-white mb-4">
+            ❌ ÉTUDE INTROUVABLE
+          </h2>
+          <p className="text-red-200">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return <div className="bg-black min-h-screen" />;
+  }
+
+  // ✅ 4. VARIABLES CALCULÉES
+  const safeData = {
+    n: data.n || data.clientName || "Client",
+    e: data.e || 32202,
+    a: data.a || 70,
+    m: data.m || 139,
+    t: data.t || 3.89,
+    d: data.d || 180,
+    prod: data.prod || data.yearlyProduction || data.production || 7000,
+    conso: data.conso || data.yearlyConsumption || data.consumption || 10000,
+    selfCons:
+      data.selfCons || data.selfConsumptionRate || data.selfConsumption || 70,
+    installCost: data.installCost || 18799,
+    cashApport: data.cashApport || 0,
+    elecPrice:
+      data.elecPrice || data.electricityPrice || data.pricePerKwh || 0.25,
+    mode: data.mode || "financement",
+    exp: data.exp || Date.now() + 7 * 24 * 60 * 60 * 1000,
+    installedPower: data.installedPower || data.puissanceInstallee || 3.5,
+    projectionYears: data.projectionYears || 20,
+    ga:
+      data.ga ||
+      (data.warrantyMode === "performance"
+        ? [
+            "🏆 Garantie Performance 30 ans (matériel + production)",
+            "Garantie main d'œuvre À VIE",
+            "SAV et maintenance inclus",
+            "Extension de garantie premium",
+          ]
+        : [
+            "✅ Garantie Essentiel 25 ans (matériel + production)",
+            "SAV et maintenance inclus",
+          ]),
+  };
+
+  // ✅ 5. FONCTIONS UTILITAIRES
   const handleCall = () => {
     window.location.href = "tel:0683623329";
   };
@@ -172,36 +272,26 @@ export const GuestView: React.FC<GuestViewProps> = ({
     const result = [];
     let cumulativeSavings =
       scenario === "financement" ? -safeData.cashApport : -safeData.installCost;
-
-    const years = safeData.projectionYears || 20; // ✅ AJOUTÉ
+    const years = safeData.projectionYears || 20;
 
     for (let year = 1; year <= years; year++) {
-      // ✅ MODIFIÉ
       const isCreditActive =
         year <= creditDurationMonths / 12 && scenario === "financement";
-
       const priceWithInflation =
         safeData.elecPrice * Math.pow(1 + elecInflation, year - 1);
-
       const edfBillWithoutSolar = safeData.conso * priceWithInflation;
-
       const creditAmountYearly = isCreditActive
         ? (creditMonthlyPayment + insuranceMonthlyPayment) * 12
         : 0;
-
       const selfConsumedKwh = (safeData.prod * safeData.selfCons) / 100;
       const savingsInEuros = selfConsumedKwh * priceWithInflation;
       const edfResidue = Math.max(0, edfBillWithoutSolar - savingsInEuros);
-
-      // ✅ AJOUT revente surplus
       const surplusKwh = safeData.prod - selfConsumedKwh;
       const buybackRate = 0.04;
       const surplusRevenue =
         surplusKwh * buybackRate * Math.pow(1 + elecInflation, year - 1);
-
-      const totalWithSolar = creditAmountYearly + edfResidue - surplusRevenue; // ✅ MODIFIÉ
+      const totalWithSolar = creditAmountYearly + edfResidue - surplusRevenue;
       const yearlyFlow = totalWithSolar - edfBillWithoutSolar;
-
       cumulativeSavings -= yearlyFlow;
 
       result.push({

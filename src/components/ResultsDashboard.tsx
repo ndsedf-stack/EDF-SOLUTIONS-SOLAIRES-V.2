@@ -4,6 +4,8 @@ import { InfoPopup } from "./InfoPopup";
 import { calculateSolarProjection, safeParseFloat } from "../utils/finance";
 import { PDFExport } from "./PDFExport";
 import { printValidationReport } from "../utils/validateCalculations";
+import { supabase } from "../lib/supabase";
+import QRCode from "qrcode";
 import {
   PieChart,
   Pie,
@@ -292,6 +294,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [projectionYears, setProjectionYears] = useState(
     initialProjectionYears || 20
   );
+  const [commercialEmail, setCommercialEmail] = useState(
+    import.meta.env.VITE_COMMERCIAL_EMAIL || ""
+  );
+  const [commercialName, setCommercialName] = useState(
+    import.meta.env.VITE_COMMERCIAL_NAME || ""
+  );
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
 
   // Tech & Finance Params
   const [electricityPrice, setElectricityPrice] = useState<number>(
@@ -337,6 +347,102 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [buybackRate, setBuybackRate] = useState<number>(0.04);
   const [showQRCode, setShowQRCode] = useState(false);
   const [encodedUrl, setEncodedUrl] = useState("");
+  const [qrCodeUrl, setQrCodeUrl] = useState(""); // ✅ AJOUTE CETTE LIGNE
+  const handleGenerateStudy = async () => {
+    // Vérifications
+    if (!clientName.trim()) {
+      alert("⚠️ Veuillez entrer le nom du client");
+      return;
+    }
+
+    if (!commercialEmail) {
+      alert("⚠️ Email commercial manquant");
+      return;
+    }
+
+    try {
+      console.log("🚀 Génération de l'étude...");
+
+      // Prépare le payload
+      const payload = {
+        n: clientName,
+        e: Math.round(calculationResult.totalSavingsProjected || 0),
+        a: Math.round(selfConsumptionRate || 70),
+        m: Math.round(
+          (creditMonthlyPayment || 0) + (insuranceMonthlyPayment || 0)
+        ),
+        t: interestRate || 3.89,
+        d: creditDurationMonths || 180,
+        prod: yearlyProduction || 7000,
+        conso: yearlyConsumption || 10000,
+        selfCons: selfConsumptionRate || 70,
+        installCost: installCost || 18799,
+        cashApport: cashApport || 0,
+        elecPrice: electricityPrice || 0.25,
+        installedPower: installedPower || 3.5,
+        projectionYears: projectionYears,
+        mode: "financement",
+        warrantyMode: warrantyMode ? "performance" : "essential",
+      };
+
+      console.log("📦 PAYLOAD GÉNÉRÉ:");
+      console.log("payload.t (taux) =", payload.t);
+      console.log("payload.m (mensualité) =", payload.m);
+      console.log("payload.e (gain) =", payload.e);
+      console.log("payload.projectionYears =", payload.projectionYears);
+      console.log("════════════════════════════════════");
+
+      // Calcule la date d'expiration (15 jours)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 15);
+
+      console.log("📤 Sauvegarde dans Supabase...");
+
+      // Sauvegarde dans Supabase
+      const { data: study, error } = await supabase
+        .from("studies")
+        .insert({
+          study_data: payload,
+          expires_at: expiresAt.toISOString(),
+          client_name: clientName,
+          client_email: clientEmail || null,
+          client_phone: clientPhone || null,
+          commercial_email: commercialEmail,
+          commercial_name: commercialName || null,
+          is_active: true,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ Erreur Supabase:", error);
+        throw error;
+      }
+
+      console.log("✅ Étude sauvegardée:", study.id);
+      console.log("📅 Expire le:", expiresAt.toLocaleDateString("fr-FR"));
+
+      // Génère l'URL avec l'ID Supabase
+      const guestUrl = `https://edf-solutions-solaires-v-2-4yiz-fzqtp3mrk.vercel.app/guest/${study.id}`;
+      console.log("🔗 URL générée:", guestUrl);
+
+      // Met à jour l'état
+      setEncodedUrl(guestUrl);
+      setShowNamePopup(false);
+      setShowQRCode(true);
+
+      // Message de succès
+      alert(
+        `✅ Étude générée avec succès !\n\nID: ${
+          study.id
+        }\nExpire le: ${expiresAt.toLocaleDateString("fr-FR")}`
+      );
+    } catch (error: any) {
+      console.error("❌ Erreur:", error);
+      alert(`❌ Erreur lors de la génération de l'étude.\n\n${error.message}`);
+      setShowNamePopup(false);
+    }
+  };
 
   // --- LE CODE QUI FORCE LA MISE À JOUR (NE PAS OUBLIER) ---
   useEffect(() => {
@@ -4545,70 +4651,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && clientName.trim()) {
-                    // 🔍 DEBUG COMPLET
-                    console.log("════════════════════════════════════");
-                    console.log("🔍 DEBUG PAYLOAD GENERATION");
-                    console.log("════════════════════════════════════");
-                    console.log("interestRate (state) =", interestRate);
-                    console.log(
-                      "params.creditInterestRate =",
-                      data?.params?.creditInterestRate
-                    );
-                    console.log("creditMonthlyPayment =", creditMonthlyPayment);
-                    console.log(
-                      "insuranceMonthlyPayment =",
-                      insuranceMonthlyPayment
-                    );
-                    console.log("selfConsumptionRate =", selfConsumptionRate);
-                    console.log(
-                      "totalSavingsProjected =",
-                      calculationResult.totalSavingsProjected
-                    );
-                    console.log("projectionYears =", projectionYears);
-                    console.log("════════════════════════════════════");
-                    const payload = {
-                      n: clientName,
-                      e: Math.round(
-                        calculationResult.totalSavingsProjected || 0
-                      ),
-                      a: Math.round(selfConsumptionRate || 70),
-                      m: Math.round(
-                        (creditMonthlyPayment || 0) +
-                          (insuranceMonthlyPayment || 0)
-                      ),
-                      t: interestRate || 3.89,
-                      d: creditDurationMonths || 180,
-                      prod: yearlyProduction || 7000,
-                      conso: yearlyConsumption || 10000,
-                      selfCons: selfConsumptionRate || 70,
-                      installCost: installCost || 18799,
-                      cashApport: cashApport || 0,
-                      elecPrice: electricityPrice || 0.25,
-                      installedPower: installedPower || 3.5,
-                      projectionYears: projectionYears,
-                      mode: "financement",
-                      exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
-                      warrantyMode: warrantyMode ? "performance" : "essential",
-                    };
-                    console.log("📦 PAYLOAD GÉNÉRÉ:");
-                    console.log("payload.t (taux) =", payload.t);
-                    console.log("payload.m (mensualité) =", payload.m);
-                    console.log("payload.e (gain) =", payload.e);
-                    console.log(
-                      "payload.projectionYears =",
-                      payload.projectionYears
-                    );
-                    console.log("════════════════════════════════════");
-
-                    const jsonString = JSON.stringify(payload);
-                    const encoded = btoa(
-                      decodeURIComponent(encodeURIComponent(jsonString))
-                    );
-                    const guestUrl = `${window.location.origin}/guest/${encoded}`;
-
-                    setEncodedUrl(guestUrl);
-                    setShowNamePopup(false);
-                    setShowQRCode(true);
+                    e.preventDefault();
+                    // Désactivé - utilisez le bouton
                   }
                 }}
               />
@@ -4624,76 +4668,142 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   Annuler
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (!clientName.trim()) {
                       alert("⚠️ Veuillez saisir un nom");
                       return;
                     }
-                    // 🔍 DEBUG COMPLET
-                    console.log("════════════════════════════════════");
-                    console.log("🔍 DEBUG PAYLOAD GENERATION");
-                    console.log("════════════════════════════════════");
-                    console.log("interestRate (state) =", interestRate);
-                    console.log(
-                      "params.creditInterestRate =",
-                      data?.params?.creditInterestRate
-                    );
-                    console.log("creditMonthlyPayment =", creditMonthlyPayment);
-                    console.log(
-                      "insuranceMonthlyPayment =",
-                      insuranceMonthlyPayment
-                    );
-                    console.log("selfConsumptionRate =", selfConsumptionRate);
-                    console.log(
-                      "totalSavingsProjected =",
-                      calculationResult.totalSavingsProjected
-                    );
-                    console.log("projectionYears =", projectionYears);
-                    console.log("════════════════════════════════════");
 
-                    const payload = {
-                      n: clientName,
-                      e: Math.round(
-                        calculationResult.totalSavingsProjected || 0
-                      ),
-                      a: Math.round(selfConsumptionRate || 70),
-                      m: Math.round(
-                        (creditMonthlyPayment || 0) +
-                          (insuranceMonthlyPayment || 0)
-                      ),
-                      t: interestRate || 3.89,
-                      d: creditDurationMonths || 180,
-                      prod: yearlyProduction || 7000,
-                      conso: yearlyConsumption || 10000,
-                      selfCons: selfConsumptionRate || 70,
-                      installCost: installCost || 18799,
-                      cashApport: cashApport || 0,
-                      elecPrice: electricityPrice || 0.25,
-                      installedPower: installedPower || 3.5,
-                      projectionYears: projectionYears,
-                      mode: "financement",
-                      exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
-                      warrantyMode: warrantyMode ? "performance" : "essential",
-                    };
-                    console.log("📦 PAYLOAD GÉNÉRÉ:");
-                    console.log("payload.t (taux) =", payload.t);
-                    console.log("payload.m (mensualité) =", payload.m);
-                    console.log("payload.e (gain) =", payload.e);
-                    console.log(
-                      "payload.projectionYears =",
-                      payload.projectionYears
-                    );
-                    console.log("════════════════════════════════════");
+                    if (!commercialEmail) {
+                      alert("⚠️ Email commercial manquant");
+                      return;
+                    }
 
-                    const jsonString = JSON.stringify(payload);
-                    const encoded = btoa(
-                      decodeURIComponent(encodeURIComponent(jsonString))
-                    );
-                    const guestUrl = `${window.location.origin}/guest/${encoded}`;
+                    try {
+                      // 🔍 DEBUG COMPLET (garde tes logs)
+                      console.log("════════════════════════════════════");
+                      console.log("🔍 DEBUG PAYLOAD GENERATION");
+                      console.log("════════════════════════════════════");
+                      console.log("interestRate (state) =", interestRate);
+                      console.log(
+                        "params.creditInterestRate =",
+                        data?.params?.creditInterestRate
+                      );
+                      console.log(
+                        "creditMonthlyPayment =",
+                        creditMonthlyPayment
+                      );
+                      console.log(
+                        "insuranceMonthlyPayment =",
+                        insuranceMonthlyPayment
+                      );
+                      console.log("selfConsumptionRate =", selfConsumptionRate);
+                      console.log(
+                        "totalSavingsProjected =",
+                        calculationResult.totalSavingsProjected
+                      );
+                      console.log("projectionYears =", projectionYears);
+                      console.log("════════════════════════════════════");
 
-                    setEncodedUrl(guestUrl);
-                    setShowNamePopup(false);
-                    setShowQRCode(true);
+                      const payload = {
+                        n: clientName,
+                        e: Math.round(
+                          calculationResult.totalSavingsProjected || 0
+                        ),
+                        a: Math.round(selfConsumptionRate || 70),
+                        m: Math.round(
+                          (creditMonthlyPayment || 0) +
+                            (insuranceMonthlyPayment || 0)
+                        ),
+                        t: interestRate || 3.89,
+                        d: creditDurationMonths || 180,
+                        prod: yearlyProduction || 7000,
+                        conso: yearlyConsumption || 10000,
+                        selfCons: selfConsumptionRate || 70,
+                        installCost: installCost || 18799,
+                        cashApport: cashApport || 0,
+                        elecPrice: electricityPrice || 0.25,
+                        installedPower: installedPower || 3.5,
+                        projectionYears: projectionYears,
+                        mode: "financement",
+                        warrantyMode: warrantyMode
+                          ? "performance"
+                          : "essential",
+                      };
+
+                      console.log("📦 PAYLOAD GÉNÉRÉ:");
+                      console.log("payload.t (taux) =", payload.t);
+                      console.log("payload.m (mensualité) =", payload.m);
+                      console.log("payload.e (gain) =", payload.e);
+                      console.log(
+                        "payload.projectionYears =",
+                        payload.projectionYears
+                      );
+                      console.log("════════════════════════════════════");
+
+                      // ✅ CALCULE LA DATE D'EXPIRATION (15 jours)
+                      const expiresAt = new Date();
+                      expiresAt.setDate(expiresAt.getDate() + 15);
+
+                      console.log("📤 Sauvegarde dans Supabase...");
+
+                      // ✅ SAUVEGARDE DANS SUPABASE
+                      const { data: study, error } = await supabase
+                        .from("studies")
+                        .insert({
+                          study_data: payload,
+                          expires_at: expiresAt.toISOString(),
+                          client_name: clientName,
+                          client_email: clientEmail || null,
+                          client_phone: clientPhone || null,
+                          commercial_email: commercialEmail,
+                          commercial_name: commercialName || null,
+                          is_active: true,
+                        })
+                        .select()
+                        .single();
+
+                      if (error) {
+                        console.error("❌ Erreur Supabase:", error);
+                        throw error;
+                      }
+
+                      console.log("✅ Étude sauvegardée:", study.id);
+                      console.log(
+                        "📅 Expire le:",
+                        expiresAt.toLocaleDateString("fr-FR")
+                      );
+
+                      // ✅ GÉNÈRE L'URL AVEC L'ID SUPABASE
+                      const guestUrl = `https://edf-solutions-solaires-v-2-4yiz-7abu5rtw9.vercel.app/guest/${study.id}`;
+                      console.log("🔗 URL générée:", guestUrl);
+
+                      const qrCodeDataUrl = await QRCode.toDataURL(guestUrl, {
+                        width: 300,
+                        margin: 2,
+                        color: {
+                          dark: "#000000",
+                          light: "#FFFFFF",
+                        },
+                      });
+
+                      setQrCodeUrl(qrCodeDataUrl);
+
+                      // ✅ MET À JOUR L'ÉTAT
+                      setEncodedUrl(guestUrl);
+                      setShowNamePopup(false);
+                      setShowQRCode(true);
+
+                      // ✅ MESSAGE DE SUCCÈS
+                      alert(
+                        `✅ Étude générée avec succès !\n\nID: ${
+                          study.id
+                        }\nExpire le: ${expiresAt.toLocaleDateString("fr-FR")}`
+                      );
+                    } catch (error: any) {
+                      console.error("❌ Erreur:", error);
+                      alert(`❌ Erreur: ${error.message}`);
+                    }
                   }}
                   disabled={!clientName.trim()}
                   className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-colors"
@@ -4741,13 +4851,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               {/* Zone QR Code - AVEC API EXTERNE (pas de lib) */}
               <div className="px-10 pb-10 text-center">
                 <div className="bg-white p-7 rounded-[40px] inline-block shadow-[0_0_50px_rgba(168,85,247,0.4)] border-4 border-purple-500/20">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-                      encodedUrl
-                    )}`}
-                    alt="QR Code"
-                    className="w-[200px] h-[200px]"
-                  />
+                  {qrCodeUrl ? (
+                    <img
+                      src={qrCodeUrl}
+                      alt="QR Code"
+                      className="w-[200px] h-[200px]"
+                    />
+                  ) : (
+                    <div className="w-[200px] h-[200px] bg-slate-800 rounded flex items-center justify-center">
+                      <div className="text-slate-500 text-xs">
+                        Génération...
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Footer avec bouton test et cadenas */}
