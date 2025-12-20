@@ -119,24 +119,29 @@ export const GuestView: React.FC = () => {
     };
   }, []);
 
-  // useEffect 3 : Countdown
+  // ✅ useEffect 3 : Countdown (CORRIGÉ - utilise study.expires_at)
   useEffect(() => {
-    if (!data?.exp) return;
+    if (!study?.expires_at) return;
 
     const calculateTimeLeft = () => {
       const now = Date.now();
-      const difference = data.exp - now;
+      const expirationTime = new Date(study.expires_at).getTime();
+      const difference = expirationTime - now;
       return Math.max(0, Math.floor(difference / 1000));
     };
 
     setTimeLeft(calculateTimeLeft());
 
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      const remaining = calculateTimeLeft();
+      setTimeLeft(remaining);
+      if (remaining === 0) {
+        setIsExpired(true);
+      }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [data?.exp]);
+  }, [study?.expires_at]);
 
   // useEffect 4 : Compteur argent perdu
   useEffect(() => {
@@ -470,8 +475,9 @@ export const GuestView: React.FC = () => {
               </div>
             </div>
 
+            {/* ✅ CHIFFRES RÉDUITS SUR MOBILE */}
             <div className="flex items-baseline gap-2 mb-6 justify-center">
-              <span className="text-7xl font-black tracking-tighter bg-gradient-to-r from-emerald-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-r from-emerald-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 {safeData.e >= 0 ? "+" : ""}
                 {Number(safeData.e).toLocaleString("fr-FR")}€
               </span>
@@ -662,7 +668,7 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* 🔥 COMPARAISON X ANS */}
+        {/* 🔥 COMPARAISON X ANS - CHIFFRES RÉDUITS SUR MOBILE */}
         <div className="bg-gradient-to-br from-orange-950/60 to-red-950/40 border-2 border-orange-500/40 rounded-[32px] p-6 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl"></div>
 
@@ -686,7 +692,8 @@ export const GuestView: React.FC = () => {
                 <div className="text-[10px] text-red-300 uppercase mb-1">
                   Argent Parti
                 </div>
-                <div className="text-3xl font-black text-red-500">
+                {/* ✅ RÉDUIT SUR MOBILE */}
+                <div className="text-2xl md:text-3xl font-black text-red-500">
                   -
                   {(() => {
                     const calcul = Math.round(
@@ -730,7 +737,8 @@ export const GuestView: React.FC = () => {
                 <div className="text-[10px] text-emerald-300 uppercase mb-1">
                   Patrimoine Créé
                 </div>
-                <div className="text-3xl font-black text-emerald-400">
+                {/* ✅ RÉDUIT SUR MOBILE */}
+                <div className="text-2xl md:text-3xl font-black text-emerald-400">
                   {(() => {
                     const patrimoine =
                       detailsFinancement[safeData.projectionYears - 1]
@@ -763,13 +771,13 @@ export const GuestView: React.FC = () => {
             </div>
           </div>
 
-          {/* Écart total */}
+          {/* Écart total - RÉDUIT SUR MOBILE */}
           <div className="mt-6 bg-black/60 backdrop-blur-md border border-orange-500/30 p-4 rounded-xl relative z-10">
             <div className="flex items-center justify-between">
               <span className="text-orange-300 font-bold text-sm uppercase">
                 Écart total :
               </span>
-              <span className="text-4xl font-black text-orange-400">
+              <span className="text-3xl md:text-4xl font-black text-orange-400">
                 {formatMoney(
                   Math.round(
                     Math.abs(
@@ -790,12 +798,12 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* ✅ TABLEAU DÉTAILLÉ */}
-        <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 mb-8 border border-white/10 overflow-hidden">
+        {/* ✅ TABLEAU DÉTAILLÉ - OPTIMISÉ */}
+        <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-4 md:p-8 mb-8 border border-white/10 overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
               <Table2 className="text-slate-400 w-6 h-6" />
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+              <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">
                 Plan de Financement Détaillé
               </h2>
             </div>
@@ -847,47 +855,39 @@ export const GuestView: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          {/* ✅ TABLEAU OPTIMISÉ POUR MOBILE */}
+          <div className="overflow-x-auto -mx-4 md:mx-0">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr className="border-b border-white/10 text-[10px] uppercase text-slate-500 font-bold tracking-wider">
-                  <th className="py-4 px-2 w-[40px]">An</th>
-                  {/* ✅ w-[40px] au lieu de px-4 */}
-                  <th className="py-4 px-2 text-red-400">Sans Sol.</th>
-                  {/* ✅ Abrégé */}
-                  <th className="py-4 px-2 text-blue-400">Crédit</th>
-                  <th className="py-4 px-2 text-yellow-400">Reste</th>
-                  <th className="py-4 px-2 text-white">Total</th>
-                  <th className="py-4 px-2 text-slate-300">Effort</th>
-                  <th className="py-4 px-2 text-emerald-400 text-right">
+                <tr className="border-b border-white/10 text-[9px] md:text-[10px] uppercase text-slate-500 font-bold tracking-wider">
+                  <th className="py-3 px-2 w-[50px]">An</th>
+                  <th className="py-3 px-2 text-red-400">Sans</th>
+                  <th className="py-3 px-2 text-blue-400">Crédit</th>
+                  <th className="py-3 px-2 text-yellow-400">Reste</th>
+                  <th className="py-3 px-2 text-white">Total</th>
+                  <th className="py-3 px-2 text-slate-300">Effort</th>
+                  <th className="py-3 px-2 text-emerald-400 text-right">
                     Cumul
                   </th>
                 </tr>
               </thead>
-              <tbody className="text-sm font-mono text-slate-300">
+              <tbody className="text-xs md:text-sm font-mono text-slate-300">
                 <tr className="border-b border-white/5 bg-[#1a1505]/30">
-                  <td className="py-4 px-4 text-yellow-500 font-bold">
-                    Année 0
+                  <td className="py-3 px-2 text-yellow-500 font-bold">An 0</td>
+                  <td className="py-3 px-2 opacity-50">-</td>
+                  <td className="py-3 px-2 opacity-50">-</td>
+                  <td className="py-3 px-2 opacity-50">-</td>
+                  <td className="py-3 px-2 text-yellow-400 font-bold text-xs">
+                    APPORT
                   </td>
-                  <td className="py-4 px-4 opacity-50">-</td>
-                  <td className="py-4 px-4 opacity-50">-</td>
-                  <td className="py-4 px-4 opacity-50">-</td>
-                  <td className="py-4 px-4 text-yellow-400 font-bold uppercase">
-                    APPORT :{" "}
+                  <td className="py-3 px-2 text-red-400 font-bold">
                     {formatMoney(
                       tableScenario === "financement"
                         ? safeData.cashApport
                         : safeData.installCost
                     )}
                   </td>
-                  <td className="py-4 px-4 text-red-400 font-bold">
-                    {formatMoney(
-                      tableScenario === "financement"
-                        ? safeData.cashApport
-                        : safeData.installCost
-                    )}
-                  </td>
-                  <td className="py-4 px-4 text-right text-red-500 font-bold">
+                  <td className="py-3 px-2 text-right text-red-500 font-bold">
                     -
                     {formatMoney(
                       tableScenario === "financement"
@@ -912,21 +912,21 @@ export const GuestView: React.FC = () => {
                       key={row.year}
                       className="border-b border-white/5 hover:bg-white/5 transition-colors"
                     >
-                      <td className="py-4 px-4 text-slate-500">{row.year}</td>
-                      <td className="py-4 px-4 text-red-400/80">
+                      <td className="py-3 px-2 text-slate-500">{row.year}</td>
+                      <td className="py-3 px-2 text-red-400/80">
                         {formatMoney(displayNoSolar)}
                       </td>
-                      <td className="py-4 px-4 text-blue-400/80">
+                      <td className="py-3 px-2 text-blue-400/80">
                         {formatMoney(displayCredit)}
                       </td>
-                      <td className="py-4 px-4 text-yellow-400/80">
+                      <td className="py-3 px-2 text-yellow-400/80">
                         {formatMoney(displayResidue)}
                       </td>
-                      <td className="py-4 px-4 font-bold text-white">
+                      <td className="py-3 px-2 font-bold text-white">
                         {formatMoney(displayTotalWithSolar)}
                       </td>
                       <td
-                        className={`py-4 px-4 font-bold ${
+                        className={`py-3 px-2 font-bold ${
                           displayEffort > 0 ? "text-white" : "text-emerald-400"
                         }`}
                       >
@@ -934,7 +934,7 @@ export const GuestView: React.FC = () => {
                         {formatMoney(displayEffort)}
                       </td>
                       <td
-                        className={`py-4 px-4 text-right font-bold ${
+                        className={`py-3 px-2 text-right font-bold ${
                           row.cumulativeSavings >= 0
                             ? "text-emerald-500"
                             : "text-red-500"
