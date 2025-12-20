@@ -4775,7 +4775,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       );
 
                       // ✅ GÉNÈRE L'URL AVEC L'ID SUPABASE
-                      const guestUrl = `https://edf-solutions-solaires-v-2-4yiz-7abu5rtw9.vercel.app/guest/${study.id}`;
+                      const guestUrl = `https://edf-solutions-solaires.vercel.app/guest/${study.id}`;
                       console.log("🔗 URL générée:", guestUrl);
 
                       const qrCodeDataUrl = await QRCode.toDataURL(guestUrl, {
