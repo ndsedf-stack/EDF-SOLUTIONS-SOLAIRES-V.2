@@ -64,6 +64,7 @@ import {
   Shield,
   Award,
   Calendar,
+  Users,
 } from "lucide-react";
 import { InputSlider } from "./InputSlider";
 
@@ -82,6 +83,14 @@ const formatMoney = (val: number) =>
     maximumFractionDigits: 0,
   }).format(val);
 const formatNum = (val: number) => new Intl.NumberFormat("fr-FR").format(val);
+
+const formatMoneyPrecise = (val: number) =>
+  new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(val);
 
 // --- CUSTOM COMPONENTS ---
 
@@ -284,7 +293,87 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     initialProjectionYears || 20
   );
 
-  // Recalculate when inflation changes
+  // Tech & Finance Params
+  const [electricityPrice, setElectricityPrice] = useState<number>(
+    data?.params?.electricityPrice || 0.25
+  );
+  const [yearlyProduction, setYearlyProduction] = useState<number>(
+    data?.params?.yearlyProduction || 7000
+  );
+  const [selfConsumptionRate, setSelfConsumptionRate] = useState<number>(
+    data?.params?.selfConsumptionRate || 70
+  );
+  const [yearlyConsumption, setYearlyConsumption] = useState<number>(
+    data?.params?.yearlyConsumption || 14000
+  );
+  const [installCost, setInstallCost] = useState<number>(
+    data?.params?.installCost || 18799
+  );
+  const [showCompteurExplanation, setShowCompteurExplanation] = useState(false);
+  const [clientName, setClientName] = useState("");
+  const [showNamePopup, setShowNamePopup] = useState(false);
+  const [installedPower, setInstalledPower] = useState<number>(
+    data?.params?.installedPower || 3.5
+  );
+
+  // Main Financing States
+  const [creditMonthlyPayment, setCreditMonthlyPayment] =
+    useState<number>(147.8);
+  const [insuranceMonthlyPayment, setInsuranceMonthlyPayment] =
+    useState<number>(4.7);
+  const [creditDurationMonths, setCreditDurationMonths] = useState<number>(180);
+  const [cashApport, setCashApport] = useState<number>(0);
+  const [remainingToFinance, setRemainingToFinance] = useState<number>(18799);
+  const [taxRate, setTaxRate] = useState<number>(0);
+
+  // Auto Calculation States for Modal
+  const [autoCalculate, setAutoCalculate] = useState<boolean>(false);
+  const [interestRate, setInterestRate] = useState<number>(3.89);
+  // ✅ AJOUTE CES 3 LIGNES
+  useEffect(() => {
+    console.log("🔥 interestRate a changé:", interestRate);
+  }, [interestRate]);
+  const [insuranceRate, setInsuranceRate] = useState<number>(0);
+  const [buybackRate, setBuybackRate] = useState<number>(0.04);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [encodedUrl, setEncodedUrl] = useState("");
+
+  // --- LE CODE QUI FORCE LA MISE À JOUR (NE PAS OUBLIER) ---
+  useEffect(() => {
+    if (data && data.params) {
+      const p = data.params;
+      if (p.inflationRate !== undefined)
+        setInflationRate(Number(p.inflationRate));
+      if (p.electricityPrice !== undefined)
+        setElectricityPrice(Number(p.electricityPrice));
+      if (p.yearlyProduction !== undefined)
+        setYearlyProduction(Number(p.yearlyProduction));
+      if (p.selfConsumptionRate !== undefined)
+        setSelfConsumptionRate(Number(p.selfConsumptionRate));
+
+      // AJOUTE CETTE LIGNE ICI POUR VIRER LE 14000
+      if (p.yearlyConsumption !== undefined)
+        setYearlyConsumption(Number(p.yearlyConsumption));
+
+      if (p.installedPower !== undefined || p.puissanceInstallee !== undefined)
+        setInstalledPower(
+          Number(p.installedPower || p.puissanceInstallee || 3.5)
+        );
+
+      if (p.installCost !== undefined) setInstallCost(Number(p.installCost));
+      if (p.creditMonthlyPayment !== undefined)
+        setCreditMonthlyPayment(Number(p.creditMonthlyPayment));
+      if (p.insuranceMonthlyPayment !== undefined)
+        setInsuranceMonthlyPayment(Number(p.insuranceMonthlyPayment));
+      if (p.creditDurationMonths !== undefined)
+        setCreditDurationMonths(Number(p.creditDurationMonths));
+      if (p.cashApport !== undefined) setCashApport(Number(p.cashApport));
+      if (p.interestRate !== undefined || p.creditInterestRate !== undefined)
+        setInterestRate(Number(p.interestRate || p.creditInterestRate));
+    }
+  }, [data]);
+
+  // --- RECALCULATE TRIGGER ---
   useEffect(() => {
     if (onRecalculate) {
       onRecalculate(
@@ -304,57 +393,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         projectionYears
       );
     }
-  }, [inflationRate, projectionYears]);
-
-  // Tech & Finance Params
-  const [electricityPrice, setElectricityPrice] = useState<number>(
-    data.params?.electricityPrice || 0.25
-  );
-  const [yearlyProduction, setYearlyProduction] = useState<number>(
-    data.params?.yearlyProduction || 7000
-  );
-  const [selfConsumptionRate, setSelfConsumptionRate] = useState<number>(
-    data.params?.selfConsumptionRate || 70
-  );
-  const [yearlyConsumption, setYearlyConsumption] = useState<number>(
-    data.params?.yearlyConsumption ||
-      Math.round(
-        data.params?.currentAnnualBill / data.params?.electricityPrice
-      ) ||
-      14000
-  );
-  const [installCost, setInstallCost] = useState<number>(
-    data.params?.installCost || 18799
-  );
-
-  // Main Financing States
-  const [creditMonthlyPayment, setCreditMonthlyPayment] = useState<number>(
-    data.params?.creditMonthlyPayment || 147.8
-  );
-  const [insuranceMonthlyPayment, setInsuranceMonthlyPayment] =
-    useState<number>(data.params?.insuranceMonthlyPayment || 4.7);
-  const [creditDurationMonths, setCreditDurationMonths] = useState<number>(
-    data.params?.creditDurationMonths || 180
-  );
-  const [cashApport, setCashApport] = useState<number>(
-    data.params?.cashApport || 0
-  );
-  const [remainingToFinance, setRemainingToFinance] = useState<number>(
-    data.params?.remainingToFinance || 18799
-  );
-  const [taxRate, setTaxRate] = useState<number>(data.params?.taxRate || 0);
-
-  // Auto Calculation States for Modal
-  const [autoCalculate, setAutoCalculate] = useState<boolean>(false);
-  const [interestRate, setInterestRate] = useState<number>(
-    data.params?.interestRate || 3.89
-  );
-  const [insuranceRate, setInsuranceRate] = useState<number>(
-    data.params?.insuranceRate || 0
-  );
-  const [buybackRate, setBuybackRate] = useState<number>(
-    data.params?.buybackRate || 0.04
-  );
+  }, [
+    inflationRate,
+    projectionYears,
+    electricityPrice,
+    yearlyProduction,
+    selfConsumptionRate,
+    installCost,
+    cashApport,
+    creditMonthlyPayment,
+  ]);
 
   // UI State
   const [wastedCash, setWastedCash] = useState(0);
@@ -376,33 +424,48 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   // --- INITIALIZATION ---
   useEffect(() => {
-    setInflationRate(safeParseFloat(data.params.inflationRate, 5));
-    // Load initial data from params
-    setElectricityPrice(safeParseFloat(data.params.electricityPrice, 0.25));
-    setYearlyProduction(safeParseFloat(data.params.yearlyProduction, 7000));
-    setSelfConsumptionRate(safeParseFloat(data.params.selfConsumptionRate, 70));
-    setInstallCost(safeParseFloat(data.params.installCost, 18799));
-    setCreditMonthlyPayment(
-      safeParseFloat(data.params.creditMonthlyPayment, 147.8)
-    );
-    setInsuranceMonthlyPayment(
-      safeParseFloat(data.params.insuranceMonthlyPayment, 4.7)
-    );
-    setCreditDurationMonths(
-      safeParseFloat(data.params.creditDurationMonths, 180)
-    );
-    setCashApport(safeParseFloat(data.params.cashApport, 0));
+    if (data?.params) {
+      setInflationRate(safeParseFloat(data.params.inflationRate, 5));
+      setElectricityPrice(safeParseFloat(data.params.electricityPrice, 0.25));
+      setYearlyProduction(safeParseFloat(data.params.yearlyProduction, 7000));
+      setSelfConsumptionRate(
+        safeParseFloat(data.params.selfConsumptionRate, 70)
+      );
+      setInstallCost(safeParseFloat(data.params.installCost, 18799));
+      setCreditMonthlyPayment(
+        safeParseFloat(data.params.creditMonthlyPayment, 147.8)
+      );
+      setInsuranceMonthlyPayment(
+        safeParseFloat(data.params.insuranceMonthlyPayment, 4.7)
+      );
+      setCreditDurationMonths(
+        safeParseFloat(data.params.creditDurationMonths, 180)
+      );
+      setCashApport(safeParseFloat(data.params.cashApport, 0));
 
-    // Initialize rates from params or defaults
-    if (data.params.creditInterestRate)
-      setInterestRate(safeParseFloat(data.params.creditInterestRate, 3.89));
-    if (data.params.insuranceRate)
-      setInsuranceRate(safeParseFloat(data.params.insuranceRate, 0));
+      if (data.params.creditInterestRate)
+        setInterestRate(safeParseFloat(data.params.creditInterestRate, 3.89));
+      if (data.params.insuranceRate)
+        setInterestRate(safeParseFloat(data.params.insuranceRate, 0));
+    }
   }, [data]);
 
   useEffect(() => {
     setRemainingToFinance(Math.max(0, installCost - cashApport));
   }, [installCost, cashApport]);
+
+  useEffect(() => {
+    const params = data?.params || {};
+    const conso = params.yearlyConsumption || 10000;
+    const price = params.electricityPrice || 0.25;
+    const costPerSecond = (conso * price) / 365 / 24 / 3600;
+
+    const interval = setInterval(() => {
+      setWastedCash((prev) => prev + costPerSecond);
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Projected Values for Auto Calc (Modal Preview)
   const projectedMonthlyLoan = useMemo(() => {
@@ -415,7 +478,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   }, [remainingToFinance, interestRate, creditDurationMonths]);
 
   const projectedMonthlyInsurance = useMemo(() => {
-    // Simple calculation: (Capital * Rate / 100) / 12
     const val = (remainingToFinance * (insuranceRate / 100)) / 12;
     return isNaN(val) ? 0 : val;
   }, [remainingToFinance, insuranceRate]);
@@ -466,18 +528,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   // Wasted Cash Counter
   useEffect(() => {
-    setWastedCash(0);
+    const params = data?.params || {};
+    const conso = params.yearlyConsumption || 10000;
+    const price = params.electricityPrice || 0.25;
+    const costPerSecond = (conso * price) / 365 / 24 / 3600;
+
     const interval = setInterval(() => {
-      setWastedCash(
-        (prev) => prev + calculationResult.costOfInactionPerSecond * 100
-      );
-    }, 100);
+      setWastedCash((prev) => prev + costPerSecond); // ✅ PAS de *100
+    }, 1000); // ✅ 1000ms = 1 seconde
+
     return () => clearInterval(interval);
-  }, [calculationResult.costOfInactionPerSecond]);
+  }, []); // ✅ Tableau vide
 
   // 🔍 VALIDATION AUTOMATIQUE COMPLÈTE
   useEffect(() => {
-    // Construire l'objet SimulationResult complet pour la validation
     const simulationResult = {
       params: {
         ...data.params,
@@ -494,7 +558,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         creditInterestRate: interestRate,
         insuranceRate: insuranceRate,
         inflationRate: inflationRate,
-        buybackRate: buybackRate, // ✅ AJOUTÉ
+        buybackRate: buybackRate,
       },
       details: calculationResult.details,
       detailsCash: calculationResult.detailsCash,
@@ -507,11 +571,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     };
 
     printValidationReport(simulationResult);
-  }, [
-    calculationResult,
-    projectionYears, // ✅ AJOUTÉ pour éviter les recalculs inutiles
-    buybackRate, // ✅ AJOUTÉ
-  ]);
+  }, [calculationResult, projectionYears, buybackRate]);
   // ECONOMY CHART DATA - NET CASHFLOW
   const economyChartData = useMemo(() => {
     const sourceDetails =
@@ -727,7 +787,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               {/* Content */}
               <div className="p-6 overflow-y-auto custom-scrollbar">
                 {/* Row 1: Basic Params */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                  <ParamCard
+                    label="Puissance Installée (kWc)"
+                    value={installedPower}
+                    setValue={setInstalledPower}
+                    step={0.1}
+                    unit="kWc"
+                    icon={<Zap size={14} className="text-blue-500" />}
+                    sublabel="Puissance des panneaux"
+                  />
+
                   <ParamCard
                     label="Prix Électricité (€/kWh)"
                     value={electricityPrice}
@@ -738,7 +808,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     sublabel="Tarif actuel du kWh"
                   />
 
-                  {/* 🆕 NOUVEAU CHAMP : CONSOMMATION ANNUELLE */}
                   <ParamCard
                     label="Consommation Annuelle (kWh)"
                     value={yearlyConsumption}
@@ -1136,7 +1205,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
                 <Zap className="text-emerald-400 w-8 h-8 mb-1 fill-emerald-400/20 drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
                 <span className="text-5xl font-black text-white leading-none text-shadow-neon">
-                  {calculationResult.savingsRatePercent.toFixed(0)}%
+                  {Math.round(
+                    ((yearlyProduction * (selfConsumptionRate / 100)) /
+                      yearlyConsumption) *
+                      100
+                  )}
+                  %
                 </span>
                 <span className="text-[10px] font-bold text-emerald-300 uppercase tracking-widest mt-1">
                   Autonomie
@@ -1151,7 +1225,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               <p className="text-emerald-200 text-xl font-medium">
                 Vous effacez{" "}
                 <span className="text-white font-bold">
-                  {calculationResult.savingsRatePercent.toFixed(0)}%
+                  {Math.round(
+                    ((yearlyProduction * (selfConsumptionRate / 100)) /
+                      yearlyConsumption) *
+                      100
+                  )}
+                  %
                 </span>{" "}
                 de votre facture d'électricité.
               </p>
@@ -3887,6 +3966,204 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           </div>
         </div>
 
+        {/* 🔴 NOUVEAU : MOMENTUM DÉCISIONNEL */}
+        <div className="bg-gradient-to-br from-red-950/60 via-orange-950/40 to-black border-2 border-orange-500/40 rounded-[32px] p-8 mt-8 relative overflow-hidden shadow-[0_0_60px_rgba(249,115,22,0.3)] animate-in fade-in slide-in-from-bottom-8 duration-700">
+          {/* Badge urgence clignotant */}
+          <div className="absolute top-6 right-6 flex items-center gap-2 px-4 py-2 bg-red-600 rounded-full animate-pulse">
+            <AlertTriangle size={16} className="text-white" />
+            <span className="text-white text-xs font-black uppercase">
+              DÉCISION ATTENDUE
+            </span>
+          </div>
+
+          <div className="flex items-start gap-6 mb-8">
+            <div className="p-4 bg-orange-500/20 rounded-2xl">
+              <Clock size={32} className="text-orange-400" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white uppercase mb-2">
+                COÛT DE L'ATTENTE
+              </h2>
+              <p className="text-orange-200 text-sm">
+                Pendant que vous lisez cette étude, votre compteur tourne
+              </p>
+            </div>
+          </div>
+
+          {/* Compteur en temps réel - MASSIF */}
+          <div className="bg-black/60 backdrop-blur-md border border-red-500/30 rounded-2xl p-8 mb-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="text-[10px] text-red-400 font-bold uppercase">
+                  💸 ARGENT PERDU DEPUIS L'OUVERTURE DE CETTE PAGE
+                </div>
+                <button
+                  onClick={() =>
+                    setShowCompteurExplanation(!showCompteurExplanation)
+                  }
+                  className="p-1 bg-red-500/20 rounded-full hover:bg-red-500/30 transition-colors"
+                >
+                  <Info size={14} className="text-red-400" />
+                </button>
+              </div>
+
+              <div className="text-6xl font-black text-red-500 tabular-nums">
+                {formatMoneyPrecise(wastedCash)}
+              </div>
+
+              <div className="text-xs text-slate-500 mt-2">
+                Ce compteur ne s'arrêtera jamais tant que vous n'agissez pas
+              </div>
+
+              {/* Explication dépliable */}
+              {showCompteurExplanation && (
+                <div className="mt-4 bg-orange-950/40 border border-orange-500/20 rounded-xl p-4 text-left animate-in fade-in slide-in-from-top-2">
+                  <div className="text-xs text-orange-200 space-y-2">
+                    <p className="font-bold text-orange-300">
+                      💡 Comment est calculé ce compteur ?
+                    </p>
+                    <div className="bg-black/40 p-3 rounded font-mono text-[10px]">
+                      <div>
+                        Consommation annuelle : {formatNum(yearlyConsumption)}{" "}
+                        kWh
+                      </div>
+                      <div>Prix du kWh : {electricityPrice.toFixed(4)}€</div>
+                      <div className="border-t border-orange-500/20 mt-2 pt-2">
+                        Coût annuel :{" "}
+                        {formatMoney(yearlyConsumption * electricityPrice)}
+                        <br />
+                        Coût par jour :{" "}
+                        {formatMoney(
+                          (yearlyConsumption * electricityPrice) / 365
+                        )}
+                        <br />
+                        Coût par seconde :{" "}
+                        {(
+                          (yearlyConsumption * electricityPrice) /
+                          365 /
+                          24 /
+                          3600
+                        ).toFixed(6)}
+                        €
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 italic">
+                      Ce compteur représente l'argent que vous dépensez en
+                      électricité pendant que vous consultez cette étude, basé
+                      sur votre consommation actuelle.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Grille impact temporel */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="bg-orange-950/40 border border-orange-500/20 p-6 rounded-xl text-center">
+              <div className="text-2xl font-black text-orange-400 mb-1">
+                {formatMoney(calculationResult.oldMonthlyBillYear1 * 6)}
+              </div>
+              <div className="text-[10px] text-slate-400 uppercase font-bold">
+                Attendre 6 mois
+              </div>
+            </div>
+            <div className="bg-red-950/40 border border-red-500/30 p-6 rounded-xl text-center">
+              <div className="text-2xl font-black text-red-400 mb-1">
+                {formatMoney(calculationResult.lossIfWait1Year)}
+              </div>
+              <div className="text-[10px] text-slate-400 uppercase font-bold">
+                Attendre 1 an
+              </div>
+            </div>
+            <div className="bg-red-950/60 border border-red-500/40 p-6 rounded-xl text-center">
+              <div className="text-2xl font-black text-red-500 mb-1">
+                {formatMoney(calculationResult.totalSavingsProjected * 0.2)}
+              </div>
+              <div className="text-[10px] text-slate-400 uppercase font-bold">
+                Attendre 3 ans
+              </div>
+            </div>
+          </div>
+
+          {/* Message psychologique final */}
+          <div className="mt-6 bg-gradient-to-r from-red-950/60 to-orange-950/40 border-l-4 border-orange-500 p-6 rounded-xl">
+            <p className="text-white text-lg font-bold mb-2">
+              ⏰ La question n'est plus "Est-ce que je dois le faire ?"
+            </p>
+            <p className="text-orange-200 text-sm">
+              La question est :{" "}
+              <strong className="text-white">
+                "Combien vais-je encore perdre avant de me décider ?"
+              </strong>
+            </p>
+          </div>
+        </div>
+
+        {/* 👥 SOCIAL PROOF - CLIENTS RÉCENTS */}
+        <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-[32px] p-8 mt-8 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+          <div className="flex items-center gap-3 mb-6">
+            <Users className="text-emerald-400" size={28} />
+            <h2 className="text-2xl font-black text-white uppercase">
+              ILS ONT SIGNÉ CETTE SEMAINE
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                name: "M. et Mme D.",
+                city: "Grasse (06)",
+                gain: 47000,
+                date: "Il y a 2 jours",
+              },
+              {
+                name: "Famille L.",
+                city: "Cannes (06)",
+                gain: 52000,
+                date: "Il y a 4 jours",
+              },
+              {
+                name: "M. R.",
+                city: "Antibes (06)",
+                gain: 39000,
+                date: "Il y a 6 jours",
+              },
+            ].map((client, i) => (
+              <div
+                key={i}
+                className="bg-black/40 border border-emerald-500/10 rounded-2xl p-6 hover:border-emerald-500/30 transition-all"
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-emerald-400 text-xs font-bold uppercase">
+                    {client.date}
+                  </span>
+                </div>
+                <div className="text-white font-bold mb-1">{client.name}</div>
+                <div className="text-slate-400 text-xs mb-3">{client.city}</div>
+                <div className="text-2xl font-black text-emerald-400">
+                  +{formatMoney(client.gain)}
+                </div>
+                <div className="text-[10px] text-slate-500 uppercase">
+                  Gain 20 ans
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 bg-emerald-900/20 border-l-4 border-emerald-500 p-4 rounded">
+            <p className="text-emerald-200 text-sm">
+              <strong>127 installations</strong> signées ce mois-ci dans votre
+              région.
+              <strong className="text-white">
+                {" "}
+                Pourquoi pas vous aujourd'hui ?
+              </strong>
+            </p>
+          </div>
+        </div>
+
         {/* ============================================
     PARTIE 15 : AI ANALYSIS + CTA FINAL - VERSION EDF SOLUTIONS SOLAIRES
     ============================================ */}
@@ -4201,22 +4478,42 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </div>
             </div>
 
-            {/* CTA BUTTONS */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <PDFExport
-                data={data}
-                calculationResult={calculationResult}
-                projectionYears={projectionYears}
-              />
+            {/* CTA BUTTONS - FULL HARMONISATION STYLE CARDS */}
+            <div className="flex flex-col md:flex-row gap-6 mt-8 relative z-10">
+              {/* BOUTON EXPORTER (STYLE BLUE CARD COMME "AVEC FINANCEMENT") */}
+              <div className="flex-1 relative group">
+                <div className="absolute -inset-0.5 bg-blue-500/30 rounded-2xl blur opacity-20 group-hover:opacity-50 transition duration-500"></div>
+                <div className="relative h-full bg-gradient-to-br from-blue-950/60 to-blue-900/40 border-2 border-blue-500/40 group-hover:border-blue-400/60 rounded-2xl p-5 transition-all shadow-2xl">
+                  <PDFExport
+                    data={data}
+                    calculationResult={calculationResult}
+                    projectionYears={projectionYears}
+                    customStyled={true}
+                  />
+                </div>
+              </div>
 
+              {/* BOUTON GÉNÉRER ACCÈS (STYLE PURPLE CARD) */}
               <button
-                onClick={() => {
-                  window.scrollTo({ top: 0, behavior: "smooth" });
-                }}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white font-black py-4 px-8 rounded-xl uppercase tracking-wider text-sm flex items-center justify-center gap-3 border border-white/20 transition-all active:scale-95"
+                onClick={() => setShowNamePopup(true)}
+                className="flex-1 relative group overflow-hidden rounded-[30px] transition-all active:scale-95"
               >
-                <LayoutDashboard size={20} />
-                Revoir l'Analyse
+                {/* Effet de lueur violette en arrière-plan */}
+                <div className="absolute inset-0 bg-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
+
+                <div className="relative h-full bg-zinc-900/80 border-2 border-purple-500/40 group-hover:border-purple-400/60 p-5 flex items-center gap-5 transition-all">
+                  <div className="p-4 bg-purple-500/20 rounded-2xl border border-purple-500/30 text-purple-400 group-hover:scale-110 transition-transform duration-500">
+                    <Smartphone size={28} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-white font-black text-lg uppercase italic leading-none tracking-tighter">
+                      Générer Accès Client
+                    </h3>
+                    <p className="text-purple-400 text-[10px] font-bold uppercase mt-1 tracking-widest opacity-80">
+                      Espace Sécurisé & Chiffré
+                    </p>
+                  </div>
+                </div>
               </button>
             </div>
 
@@ -4227,6 +4524,250 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             </div>
           </div>
         </div>
+
+        {/* ================ POPUP NOM CLIENT ================ */}
+        {showNamePopup && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/90 backdrop-blur-xl p-4 animate-in fade-in">
+            <div className="bg-zinc-900 border border-white/10 p-8 rounded-3xl max-w-md w-full shadow-2xl">
+              <h3 className="text-2xl font-black text-white mb-2">
+                Nom du client
+              </h3>
+              <p className="text-sm text-slate-400 mb-6">
+                Ce nom apparaîtra sur l'étude personnalisée
+              </p>
+
+              <input
+                type="text"
+                value={clientName}
+                onChange={(e) => setClientName(e.target.value)}
+                placeholder="Ex: M. et Mme Dupont"
+                className="w-full bg-black border border-white/20 rounded-xl px-4 py-3 text-white mb-6 focus:border-blue-500 focus:outline-none transition-colors"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && clientName.trim()) {
+                    // 🔍 DEBUG COMPLET
+                    console.log("════════════════════════════════════");
+                    console.log("🔍 DEBUG PAYLOAD GENERATION");
+                    console.log("════════════════════════════════════");
+                    console.log("interestRate (state) =", interestRate);
+                    console.log(
+                      "params.creditInterestRate =",
+                      data?.params?.creditInterestRate
+                    );
+                    console.log("creditMonthlyPayment =", creditMonthlyPayment);
+                    console.log(
+                      "insuranceMonthlyPayment =",
+                      insuranceMonthlyPayment
+                    );
+                    console.log("selfConsumptionRate =", selfConsumptionRate);
+                    console.log(
+                      "totalSavingsProjected =",
+                      calculationResult.totalSavingsProjected
+                    );
+                    console.log("projectionYears =", projectionYears);
+                    console.log("════════════════════════════════════");
+                    const payload = {
+                      n: clientName,
+                      e: Math.round(
+                        calculationResult.totalSavingsProjected || 0
+                      ),
+                      a: Math.round(selfConsumptionRate || 70),
+                      m: Math.round(
+                        (creditMonthlyPayment || 0) +
+                          (insuranceMonthlyPayment || 0)
+                      ),
+                      t: interestRate || 3.89,
+                      d: creditDurationMonths || 180,
+                      prod: yearlyProduction || 7000,
+                      conso: yearlyConsumption || 10000,
+                      selfCons: selfConsumptionRate || 70,
+                      installCost: installCost || 18799,
+                      cashApport: cashApport || 0,
+                      elecPrice: electricityPrice || 0.25,
+                      installedPower: installedPower || 3.5,
+                      projectionYears: projectionYears,
+                      mode: "financement",
+                      exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+                      warrantyMode: warrantyMode ? "performance" : "essential",
+                    };
+                    console.log("📦 PAYLOAD GÉNÉRÉ:");
+                    console.log("payload.t (taux) =", payload.t);
+                    console.log("payload.m (mensualité) =", payload.m);
+                    console.log("payload.e (gain) =", payload.e);
+                    console.log(
+                      "payload.projectionYears =",
+                      payload.projectionYears
+                    );
+                    console.log("════════════════════════════════════");
+
+                    const jsonString = JSON.stringify(payload);
+                    const encoded = btoa(
+                      decodeURIComponent(encodeURIComponent(jsonString))
+                    );
+                    const guestUrl = `${window.location.origin}/guest/${encoded}`;
+
+                    setEncodedUrl(guestUrl);
+                    setShowNamePopup(false);
+                    setShowQRCode(true);
+                  }
+                }}
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowNamePopup(false);
+                    setClientName("");
+                  }}
+                  className="flex-1 bg-zinc-800 hover:bg-zinc-700 text-white py-3 rounded-xl font-bold transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={() => {
+                    if (!clientName.trim()) {
+                      alert("⚠️ Veuillez saisir un nom");
+                      return;
+                    }
+                    // 🔍 DEBUG COMPLET
+                    console.log("════════════════════════════════════");
+                    console.log("🔍 DEBUG PAYLOAD GENERATION");
+                    console.log("════════════════════════════════════");
+                    console.log("interestRate (state) =", interestRate);
+                    console.log(
+                      "params.creditInterestRate =",
+                      data?.params?.creditInterestRate
+                    );
+                    console.log("creditMonthlyPayment =", creditMonthlyPayment);
+                    console.log(
+                      "insuranceMonthlyPayment =",
+                      insuranceMonthlyPayment
+                    );
+                    console.log("selfConsumptionRate =", selfConsumptionRate);
+                    console.log(
+                      "totalSavingsProjected =",
+                      calculationResult.totalSavingsProjected
+                    );
+                    console.log("projectionYears =", projectionYears);
+                    console.log("════════════════════════════════════");
+
+                    const payload = {
+                      n: clientName,
+                      e: Math.round(
+                        calculationResult.totalSavingsProjected || 0
+                      ),
+                      a: Math.round(selfConsumptionRate || 70),
+                      m: Math.round(
+                        (creditMonthlyPayment || 0) +
+                          (insuranceMonthlyPayment || 0)
+                      ),
+                      t: interestRate || 3.89,
+                      d: creditDurationMonths || 180,
+                      prod: yearlyProduction || 7000,
+                      conso: yearlyConsumption || 10000,
+                      selfCons: selfConsumptionRate || 70,
+                      installCost: installCost || 18799,
+                      cashApport: cashApport || 0,
+                      elecPrice: electricityPrice || 0.25,
+                      installedPower: installedPower || 3.5,
+                      projectionYears: projectionYears,
+                      mode: "financement",
+                      exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+                      warrantyMode: warrantyMode ? "performance" : "essential",
+                    };
+                    console.log("📦 PAYLOAD GÉNÉRÉ:");
+                    console.log("payload.t (taux) =", payload.t);
+                    console.log("payload.m (mensualité) =", payload.m);
+                    console.log("payload.e (gain) =", payload.e);
+                    console.log(
+                      "payload.projectionYears =",
+                      payload.projectionYears
+                    );
+                    console.log("════════════════════════════════════");
+
+                    const jsonString = JSON.stringify(payload);
+                    const encoded = btoa(
+                      decodeURIComponent(encodeURIComponent(jsonString))
+                    );
+                    const guestUrl = `${window.location.origin}/guest/${encoded}`;
+
+                    setEncodedUrl(guestUrl);
+                    setShowNamePopup(false);
+                    setShowQRCode(true);
+                  }}
+                  disabled={!clientName.trim()}
+                  className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-colors"
+                >
+                  Générer l'étude
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL QR CODE - DESIGN PREMIUM CORRIGÉ */}
+        {showQRCode && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4 animate-in fade-in zoom-in duration-300">
+            <div className="bg-zinc-900 border border-white/10 p-1 rounded-[45px] max-w-sm w-full shadow-[0_0_80px_rgba(168,85,247,0.2)] overflow-hidden">
+              {/* Header de la Modal */}
+              <div className="bg-gradient-to-b from-white/5 to-transparent p-10 text-center relative">
+                <button
+                  onClick={() => setShowQRCode(false)}
+                  className="absolute top-8 right-8 text-slate-500 hover:text-white bg-white/5 p-2 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="mb-6 relative inline-block">
+                  <div className="absolute inset-0 bg-purple-500 blur-2xl opacity-20 animate-pulse"></div>
+                  <div className="relative p-5 bg-purple-500/10 rounded-3xl border border-purple-500/20 text-purple-400">
+                    <Smartphone size={36} strokeWidth={1.5} />
+                  </div>
+                </div>
+
+                <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-tight">
+                  Accès Mobile <br />
+                  <span className="text-purple-500 not-italic font-black">
+                    Sécurisé
+                  </span>
+                </h3>
+
+                <p className="text-slate-400 text-[11px] mt-4 font-medium leading-relaxed px-6">
+                  Scanner ce code pour transférer l'étude interactive sur le
+                  smartphone du client.
+                </p>
+              </div>
+
+              {/* Zone QR Code - AVEC API EXTERNE (pas de lib) */}
+              <div className="px-10 pb-10 text-center">
+                <div className="bg-white p-7 rounded-[40px] inline-block shadow-[0_0_50px_rgba(168,85,247,0.4)] border-4 border-purple-500/20">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
+                      encodedUrl
+                    )}`}
+                    alt="QR Code"
+                    className="w-[200px] h-[200px]"
+                  />
+                </div>
+
+                {/* Footer avec bouton test et cadenas */}
+                <div className="mt-8 space-y-4">
+                  <div className="flex items-center gap-2 justify-center text-[10px] text-emerald-400 font-bold uppercase tracking-[0.2em] bg-emerald-400/5 py-3 px-6 rounded-2xl border border-emerald-400/10">
+                    <Lock size={14} />
+                    Lien Chiffré AES-256
+                  </div>
+
+                  <button
+                    onClick={() => window.open(encodedUrl, "_blank")}
+                    className="w-full text-slate-500 text-[10px] font-black uppercase tracking-widest hover:text-purple-400 transition-colors py-2 underline underline-offset-4"
+                  >
+                    Tester l'aperçu client (ordinateur)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

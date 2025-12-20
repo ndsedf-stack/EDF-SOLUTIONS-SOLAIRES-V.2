@@ -355,7 +355,9 @@ export function validateSimulation(result: SimulationResult): {
   // ============================================================================
   // 10. VÉRIFICATION AUTONOMIE (SANS .toFixed() QUI PLANTE)
   // ============================================================================
-  const autonomy = result.savingsRatePercent || 0;
+  const autonomy =
+    result.savingsRatePercent || result.params.selfConsumptionRate || 0;
+  console.log(`✅ Autonomie: ${autonomy}%`);
   if (autonomy < 0 || autonomy > 100) {
     warnings.push({
       severity: "WARNING",

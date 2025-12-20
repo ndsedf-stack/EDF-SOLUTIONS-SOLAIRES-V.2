@@ -219,3 +219,9 @@ body {
   box-shadow: 0 0 30px rgba(16, 185, 129, 0.5), 0 0 60px rgba(16, 185, 129, 0.2),
     inset 0 0 30px rgba(16, 185, 129, 0.1);
 }
+
+/* Effet de brillance au survol pour les boutons de validation */
+.btn-premium-glow:hover {
+  box-shadow: 0 0 25px rgba(var(--btn-rgb), 0.4);
+  filter: brightness(1.1);
+}

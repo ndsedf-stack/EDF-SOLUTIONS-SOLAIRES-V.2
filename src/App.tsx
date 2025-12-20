@@ -1,14 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 import { FileUpload } from "./components/FileUpload";
+import { GuestView } from "./components/GuestView";
 import { SimulationResult, SimulationParams } from "./types";
 
-// SCENARIO "GOLDEN" VALIDÉ - VALEURS EXACTES
-// Capital: 18799€
-// Taux: 3.89%
-// Durée: 180 mois
-// Mensualité calculée: 138.01€ (avec formule PMT)
-// Assurance: 4.70€ (0.3% de 18799 / 12)
 const DEFAULT_PARAMS: SimulationParams = {
   inflationRate: 5,
   electricityPrice: 0.25,
@@ -26,7 +22,7 @@ const DEFAULT_PARAMS: SimulationParams = {
   insuranceRate: 0.3,
 };
 
-const App: React.FC = () => {
+const MainApp: React.FC = () => {
   const [simulationData, setSimulationData] = useState<SimulationResult>({
     params: DEFAULT_PARAMS,
     salesPitch: "Analyse standard",
@@ -36,33 +32,56 @@ const App: React.FC = () => {
 
   const handleTextSubmit = (jsonText: string) => {
     setLoading(true);
-    // Simulate a small delay for "Analysis" effect
     setTimeout(() => {
       try {
-        const parsed = JSON.parse(jsonText);
+        const formData = JSON.parse(jsonText);
         const newParams: SimulationParams = {
           ...DEFAULT_PARAMS,
-          ...parsed,
+          inflationRate:
+            parseFloat(formData.inflation) || DEFAULT_PARAMS.inflationRate,
+          electricityPrice:
+            parseFloat(formData.pricePerKwh) || DEFAULT_PARAMS.electricityPrice,
+          yearlyProduction:
+            parseFloat(formData.production) || DEFAULT_PARAMS.yearlyProduction,
+          selfConsumptionRate:
+            parseFloat(formData.selfConsumption) ||
+            DEFAULT_PARAMS.selfConsumptionRate,
+          installCost:
+            parseFloat(formData.installPrice) || DEFAULT_PARAMS.installCost,
+          creditMonthlyPayment:
+            parseFloat(formData.creditMonthly) ||
+            DEFAULT_PARAMS.creditMonthlyPayment,
+          insuranceMonthlyPayment:
+            parseFloat(formData.insuranceMonthly) ||
+            DEFAULT_PARAMS.insuranceMonthlyPayment,
+          creditDurationMonths:
+            parseInt(formData.creditDuration) ||
+            DEFAULT_PARAMS.creditDurationMonths,
+          yearlyConsumption:
+            parseFloat(formData.yearlyConsumption) ||
+            DEFAULT_PARAMS.yearlyConsumption,
+          creditInterestRate:
+            parseFloat(formData.creditRate) ||
+            DEFAULT_PARAMS.creditInterestRate,
+          currentAnnualBill:
+            parseFloat(formData.currentBillYear) ||
+            DEFAULT_PARAMS.currentAnnualBill,
+          remainingToFinance:
+            parseFloat(formData.installPrice) || DEFAULT_PARAMS.installCost,
+          clientName: formData.clientName || "Client",
         };
+
         setSimulationData({
           params: newParams,
           salesPitch: "Analyse personnalisée",
         });
         setHasData(true);
       } catch (e) {
-        console.error("Error parsing submission", e);
+        alert("Erreur lors de l'analyse.");
       } finally {
         setLoading(false);
       }
     }, 1500);
-  };
-
-  const handleFileSelect = (file: File) => {
-    // For now, we'll just acknowledge the file but not process it deeply as the logic wasn't provided for Excel parsing in the prompt.
-    // We can fallback to manual or mock it.
-    alert(
-      "L'import fichier est en cours de développement. Veuillez utiliser la saisie manuelle pour le moment."
-    );
   };
 
   const handleReset = () => {
@@ -71,28 +90,17 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white font-sans selection:bg-yellow-500 selection:text-black relative overflow-hidden">
-      {/* Fixed Background Blur Gradients */}
+    <div className="min-h-screen bg-[#020202] text-white relative overflow-hidden">
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[150px]"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-yellow-900/10 rounded-full blur-[150px]"></div>
-        <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[800px] h-[800px] bg-blue-900/5 rounded-full blur-[120px]"></div>
       </div>
-
-      {/* Noise Texture Overlay - 3% opacity */}
-      <div
-        className="fixed inset-0 z-[1] pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-          backgroundSize: "200px 200px",
-        }}
-      ></div>
 
       <div className="relative z-10">
         {!hasData ? (
           <div className="min-h-screen flex items-center justify-center">
             <FileUpload
-              onFileSelect={handleFileSelect}
+              onFileSelect={() => {}}
               onTextSubmit={handleTextSubmit}
               isLoading={loading}
             />
@@ -102,6 +110,71 @@ const App: React.FC = () => {
         )}
       </div>
     </div>
+  );
+};
+
+// --- COMPOSANT CLIENT CORRIGÉ ---
+const ClientRoute = () => {
+  const { encodedData } = useParams();
+  const [data, setData] = useState<any>(null);
+  const [isValid, setIsValid] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (encodedData) {
+      try {
+        // Décodage sécurisé UTF-8 (Le miroir du bouton QR Code)
+        const decoded = JSON.parse(
+          decodeURIComponent(escape(atob(encodedData)))
+        );
+        setData(decoded);
+        setIsValid(true);
+      } catch (e) {
+        try {
+          // Fallback ancien format
+          const decodedFallback = JSON.parse(atob(encodedData));
+          setData(decodedFallback);
+          setIsValid(true);
+        } catch (err) {
+          console.error("Lien mort");
+          setIsValid(false);
+        }
+      }
+    }
+  }, [encodedData]);
+
+  if (isValid === null) {
+    return (
+      <div className="bg-black min-h-screen flex items-center justify-center text-blue-500 font-black italic uppercase animate-pulse text-2xl">
+        Vérification de l'accès...
+      </div>
+    );
+  }
+
+  if (isValid === false) {
+    return (
+      <div className="bg-black min-h-screen flex flex-col items-center justify-center text-center p-6">
+        <h1 className="text-red-500 font-black text-6xl mb-4 italic uppercase tracking-tighter text-center">
+          Lien Invalide
+        </h1>
+        <p className="text-slate-500 text-lg max-w-md">
+          Ce lien est expiré. Veuillez générer un nouveau QR Code.
+        </p>
+      </div>
+    );
+  }
+
+  // On injecte enfin les données dans la vue client
+  return <GuestView data={data} />;
+};
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/guest/:encodedData" element={<ClientRoute />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
 
