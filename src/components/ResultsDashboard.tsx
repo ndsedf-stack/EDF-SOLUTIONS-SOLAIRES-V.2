@@ -423,7 +423,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       console.log("📅 Expire le:", expiresAt.toLocaleDateString("fr-FR"));
 
       // Génère l'URL avec l'ID Supabase
-      const guestUrl = `https://edf-solutions-solaires-v-2-4yiz-fzqtp3mrk.vercel.app/guest/${study.id}`;
+      const guestUrl = `https://edf-solutions-solaires.vercel.app/guest/${study.id}`;
       console.log("🔗 URL générée:", guestUrl);
 
       // Met à jour l'état
