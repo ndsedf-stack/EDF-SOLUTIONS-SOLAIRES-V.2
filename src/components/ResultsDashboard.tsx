@@ -770,8 +770,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       const isCreditActive =
         index * 12 < creditDurationMonths && economyChartMode === "financement";
 
-      // ✅ CORRECTION : Utiliser la valeur déjà calculée dans Finance
-      const netCashflow = detail.cashflowDiff;
+      // ✅ INVERSION : Surcoût = Avec Solaire - Sans Solaire
+      // Si positif = surcoût (rouge), si négatif = économie (vert)
+      const netCashflow = -detail.cashflowDiff; // 🆕 AJOUT DU SIGNE MOINS
 
       return {
         year: detail.year,
@@ -5122,10 +5123,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       const displayCredit = creditAmountYearly / divider;
                       const displayResidue = row.edfResidue / divider;
                       const displayTotalWithSolar =
-                        row.totalWithSolar / divider;
+                        displayCredit + displayResidue;
 
                       // ✅ CORRECTION : Utiliser cashflowDiff de Finance (déjà calculé correctement)
-                      const displayEffort = -row.cashflowDiff / divider;
+                      const displayEffort =
+                        displayTotalWithSolar - displayNoSolar;
 
                       return (
                         <tr
