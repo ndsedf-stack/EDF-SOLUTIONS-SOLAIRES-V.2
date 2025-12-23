@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ResultsDashboard } from "./components/ResultsDashboard";
 import { FileUpload } from "./components/FileUpload";
 import { GuestView } from "./components/GuestView";
-import { SimulationResult, SimulationParams } from "./types";
 
-const DEFAULT_PARAMS: SimulationParams = {
+// Valeurs de secours pour éviter le NaN
+const DEFAULT_PARAMS = {
   inflationRate: 5,
   electricityPrice: 0.25,
   yearlyProduction: 7000,
@@ -18,112 +18,112 @@ const DEFAULT_PARAMS: SimulationParams = {
   remainingToFinance: 18799,
   currentAnnualBill: 2500,
   yearlyConsumption: 10000,
-  creditInterestRate: 3.89,
+  creditInterestRate: 4.45,
   insuranceRate: 0.3,
 };
 
 const MainApp: React.FC = () => {
-  const [simulationData, setSimulationData] = useState<SimulationResult>({
-    params: DEFAULT_PARAMS,
-    salesPitch: "Analyse standard",
-  });
   const [hasData, setHasData] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [simulationData, setSimulationData] = useState<any>(null);
 
-  const handleTextSubmit = (jsonText: string) => {
-    setLoading(true);
-    setTimeout(() => {
-      try {
-        const formData = JSON.parse(jsonText);
-        const newParams: SimulationParams = {
-          ...DEFAULT_PARAMS,
-          inflationRate:
-            parseFloat(formData.inflation) || DEFAULT_PARAMS.inflationRate,
-          electricityPrice:
-            parseFloat(formData.pricePerKwh) || DEFAULT_PARAMS.electricityPrice,
-          yearlyProduction:
-            parseFloat(formData.production) || DEFAULT_PARAMS.yearlyProduction,
-          selfConsumptionRate:
-            parseFloat(formData.selfConsumption) ||
-            DEFAULT_PARAMS.selfConsumptionRate,
-          installCost:
-            parseFloat(formData.installPrice) || DEFAULT_PARAMS.installCost,
-          creditMonthlyPayment:
-            parseFloat(formData.creditMonthly) ||
-            DEFAULT_PARAMS.creditMonthlyPayment,
-          insuranceMonthlyPayment:
-            parseFloat(formData.insuranceMonthly) ||
-            DEFAULT_PARAMS.insuranceMonthlyPayment,
-          creditDurationMonths:
-            parseInt(formData.creditDuration) ||
-            DEFAULT_PARAMS.creditDurationMonths,
-          yearlyConsumption:
-            parseFloat(formData.yearlyConsumption) ||
-            DEFAULT_PARAMS.yearlyConsumption,
-          creditInterestRate:
-            parseFloat(formData.creditRate) ||
-            DEFAULT_PARAMS.creditInterestRate,
-          currentAnnualBill:
-            parseFloat(formData.currentBillYear) ||
-            DEFAULT_PARAMS.currentAnnualBill,
-          remainingToFinance:
-            parseFloat(formData.installPrice) || DEFAULT_PARAMS.installCost,
-          clientName: formData.clientName || "Client",
-        };
+  // --- MOTEUR DE CALCUL SÉCURISÉ ---
+  const getComputedData = (params: any) => {
+    const p = params || DEFAULT_PARAMS;
 
-        setSimulationData({
-          params: newParams,
-          salesPitch: "Analyse personnalisée",
-        });
-        setHasData(true);
-      } catch (e) {
-        alert("Erreur lors de l'analyse.");
-      } finally {
-        setLoading(false);
-      }
-    }, 1500);
+    // On force la conversion en nombre pour éviter le NaN€
+    const bill =
+      Number(p.currentAnnualBill) || DEFAULT_PARAMS.currentAnnualBill;
+    const selfRate =
+      Number(p.selfConsumptionRate) || DEFAULT_PARAMS.selfConsumptionRate;
+    const loan =
+      Number(p.creditMonthlyPayment) || DEFAULT_PARAMS.creditMonthlyPayment;
+    const insurance =
+      Number(p.insuranceMonthlyPayment) ||
+      DEFAULT_PARAMS.insuranceMonthlyPayment;
+
+    return {
+      monthlyBill: bill / 12,
+      projectedMonthlyLoan: loan + insurance,
+      monthlySavings: (bill / 12) * (selfRate / 100),
+      remainingBill: (bill / 12) * (1 - selfRate / 100),
+      totalWithSolar: loan + insurance + (bill / 12) * (1 - selfRate / 100),
+      totalCost20Years: bill * 33,
+      totalCost40Years: bill * 120,
+      totalSavings20Years: bill * 0.7 * 20,
+      breakEvenYear: 8,
+    };
   };
 
-  const handleReset = () => {
-    setHasData(false);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const handleUploadSuccess = (rawData: any) => {
+    const cleanParams = rawData?.params || rawData;
+    setSimulationData({
+      params: cleanParams,
+      computed: getComputedData(cleanParams), // Si ça c'est vide, le coach affichera 0
+      profile: "standard",
+    });
+    setHasData(true);
+  };
+
+  const handleProfileChange = (newProfile: string) => {
+    const p = newProfile.toLowerCase().trim();
+
+    // Utiliser une fonction de mise à jour (prev) garantit qu'on travaille
+    // sur la version la plus fraîche de tes données de simulation.
+    setSimulationData((prev: any) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        profile: p,
+      };
+    });
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white relative overflow-hidden">
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-900/10 rounded-full blur-[150px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-yellow-900/10 rounded-full blur-[150px]"></div>
-      </div>
-
-      <div className="relative z-10">
-        {!hasData ? (
-          <div className="min-h-screen flex items-center justify-center">
-            <FileUpload
-              onFileSelect={() => {}}
-              onTextSubmit={handleTextSubmit}
-              isLoading={loading}
-            />
-          </div>
-        ) : (
-          <ResultsDashboard data={simulationData} onReset={handleReset} />
-        )}
-      </div>
+    <div className="min-h-screen bg-[#020202] text-white">
+      {!hasData ? (
+        <FileUpload
+          onTextSubmit={(jsonString: string) => {
+            try {
+              const data =
+                typeof jsonString === "string"
+                  ? JSON.parse(jsonString)
+                  : jsonString;
+              handleUploadSuccess(data);
+            } catch (e) {
+              handleUploadSuccess(jsonString);
+            }
+          }}
+        />
+      ) : (
+        /* ON N'AFFICHE QUE LE DASHBOARD ICI */
+        /* ResultsDashboard gère lui-même l'affichage du CoachRouter ou du SpeechView */
+        <ResultsDashboard
+          data={{
+            ...simulationData,
+            params: {
+              ...simulationData.params,
+              // On force le passage de la valeur 4.45
+              interestRate:
+                simulationData.params.interestRate ||
+                simulationData.params.creditInterestRate ||
+                4.45,
+            },
+          }}
+          onReset={() => setHasData(false)}
+          onProfileChange={handleProfileChange}
+        />
+      )}
     </div>
   );
 };
 
-// ✅ SUPPRIMÉ : ClientRoute (remplacé par GuestView direct)
-
-const App = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/guest/:studyId" element={<GuestView />} />
-      </Routes>
-    </BrowserRouter>
-  );
-};
+const App = () => (
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<MainApp />} />
+      <Route path="/guest/:studyId" element={<GuestView />} />
+    </Routes>
+  </BrowserRouter>
+);
 
 export default App;

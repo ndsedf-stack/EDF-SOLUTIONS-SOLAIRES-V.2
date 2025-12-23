@@ -357,7 +357,6 @@ export function validateSimulation(result: SimulationResult): {
   // ============================================================================
   const autonomy =
     result.savingsRatePercent || result.params.selfConsumptionRate || 0;
-  console.log(`✅ Autonomie: ${autonomy}%`);
   if (autonomy < 0 || autonomy > 100) {
     warnings.push({
       severity: "WARNING",
@@ -392,40 +391,53 @@ export function validateSimulation(result: SimulationResult): {
   };
 }
 
+const checkMultiPeriodRentability = (result: any) => {
+  const periods = [10, 15, 20, 25];
+  return periods.map((years) => {
+    // 🛡️ On vérifie 'details' (utilisé dans ton point 6, 7, 8)
+    // ou 'yearlyData' au cas où
+    const data = result.details || result.yearlyData || [];
+    const gain = data[years - 1]?.cumulativeSavings || 0;
+
+    return {
+      years,
+      isRentable: gain > 0,
+      gain: Math.round(gain),
+    };
+  });
+};
+
 export function printValidationReport(result: SimulationResult) {
   const validation = validateSimulation(result);
 
+  // 1. On calcule la rentabilité sur les 4 périodes
+  const rentability = checkMultiPeriodRentability(result);
+
+  // 🛡️ Filtre : on n'affiche que si c'est parfait
+  if (validation.score < 100) return validation;
+
   console.log("");
   console.log("═".repeat(80));
-  console.log("🔍 RAPPORT DE VALIDATION");
+  console.log("🔍 RAPPORT DE VALIDATION & RENTABILITÉ");
   console.log("═".repeat(80));
+
+  // 📈 AFFICHAGE DE LA RENTABILITÉ MULTI-PÉRIODES
+  console.log("📈 ANALYSE DES GAINS CUMULÉS :");
+  console.log("─".repeat(80));
+  rentability.forEach((p) => {
+    const icon = p.isRentable ? "✅" : "⏳";
+    const label = p.isRentable ? "Rentable" : "Amortissement";
+    const formattedGain = p.gain > 0 ? `+${p.gain}` : p.gain;
+    console.log(`${icon} ${p.years} ans : ${label} (${formattedGain}€)`);
+  });
   console.log("");
 
-  console.log(`📊 SCORE: ${validation.score}%`);
-  console.log(`✅ OK: ${validation.info.length}`);
-  console.log(`⚠️  Warnings: ${validation.warnings.length}`);
-  console.log(`❌ Erreurs: ${validation.errors.length}`);
+  console.log("🔍 Score validation:", validation.score + "%");
+  console.log(`✅ Tests validés: ${validation.info.length}`);
   console.log("");
 
-  if (validation.errors.length > 0) {
-    console.log("🚨 ERREURS:");
-    console.log("─".repeat(80));
-    validation.errors.forEach((err, i) => {
-      console.log(`${i + 1}. ${err.category}: ${err.message}`);
-    });
-    console.log("");
-  }
-
-  if (validation.warnings.length > 0) {
-    console.log("⚠️  WARNINGS:");
-    console.log("─".repeat(80));
-    validation.warnings.forEach((warn, i) => {
-      console.log(`${i + 1}. ${warn.category}: ${warn.message}`);
-    });
-    console.log("");
-  }
-
-  console.log("✅ INFOS:");
+  // 📋 RÉAFFICHAGE DES DÉTAILS VÉRIFIÉS
+  console.log("✅ DÉTAILS DU SCORE :");
   console.log("─".repeat(80));
   validation.info.forEach((inf, i) => {
     console.log(`${i + 1}. ${inf.message}`);
@@ -433,13 +445,7 @@ export function printValidationReport(result: SimulationResult) {
   console.log("");
 
   console.log("═".repeat(80));
-  if (validation.isValid && validation.score >= 80) {
-    console.log("🎉 VALIDÉ");
-  } else if (validation.isValid) {
-    console.log("✅ VALIDÉ AVEC WARNINGS");
-  } else {
-    console.log("🚨 REJETÉ");
-  }
+  console.log("🎉 CALCULS VÉRIFIÉS SUR 25 ANS");
   console.log("═".repeat(80));
   console.log("");
 

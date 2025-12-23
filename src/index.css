@@ -225,3 +225,45 @@ body {
   box-shadow: 0 0 25px rgba(var(--btn-rgb), 0.4);
   filter: brightness(1.1);
 }
+/* ============================================================
+   FORCE HIDE : SUPPRESSION RADICALE DU BOUTON DROITE & COACH
+   ============================================================ */
+
+/* 1. ON TUE LE BOUTON À DROITE (L'input Standard de la photo) */
+/* On cible la classe exacte que tu as trouvée dans l'inspecteur */
+.absolute.top-4.right-4.text-xs,
+div[class*="top-4"][class*="right-4"] select,
+select.bg-black.border-white\/20 {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* 2. GESTION DU MASQUAGE DU COACH (MODE PRÉSENTATION) */
+/* Par défaut, on cache le coach pour le client (Plein écran / HDMI) */
+.presenter-only-view {
+  display: none !important;
+}
+
+/* On ne l'affiche QUE si la fenêtre est réduite (Ton écran PC de contrôle) */
+/* J'ai mis 1450px pour être large : au-dessus de ça, il disparaît */
+@media screen and (max-width: 1450px) {
+  .presenter-only-view {
+    display: block !important;
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 999999 !important; /* On le met tout en haut */
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

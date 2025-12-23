@@ -39,11 +39,11 @@ export interface CalculationOutput {
   slicedDetails: YearlyDetail[];
   detailsCash: YearlyDetail[];
   slicedDetailsCash: YearlyDetail[];
-  
+
   totalSavingsProjected: number;
   totalSpendNoSolar: number;
   totalSpendSolar: number;
-  
+
   totalSavingsProjectedCash: number;
   totalSpendNoSolarCash: number;
   totalSpendSolarCash: number;
@@ -61,7 +61,7 @@ export interface CalculationOutput {
 
   roiPercentage: number;
   roiPercentageCash: number;
-  
+
   bankEquivalentCapital: number;
   bankEquivalentCapitalCash: number;
 
@@ -70,7 +70,8 @@ export interface CalculationOutput {
   lossIfWait1Year: number;
   savingsLostIfWait1Year: number;
   surplusRevenuePerYear: number;
-  
+  interestRate: number;
+
   year1: YearlyDetail;
 }
 

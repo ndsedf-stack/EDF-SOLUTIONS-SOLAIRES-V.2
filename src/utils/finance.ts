@@ -307,80 +307,38 @@ export const calculateSolarProjection = (
     slicedDetails,
     detailsCash,
     slicedDetailsCash,
-
     totalSavingsProjected,
     totalSpendNoSolar,
     totalSpendSolar,
-
     totalSavingsProjectedCash,
     totalSpendNoSolarCash,
     totalSpendSolarCash,
-
     breakEvenPoint,
     breakEvenPointCash,
-
     costOfInactionPerSecond,
     averageYearlyGain,
     averageYearlyGainCash,
-
     newMonthlyBillYear1,
     oldMonthlyBillYear1,
     monthlyEffortYear1,
-
     roiPercentage,
     roiPercentageCash,
-
     bankEquivalentCapital,
     bankEquivalentCapitalCash,
-
     savingsRatePercent,
     baseConsumptionKwh,
     lossIfWait1Year,
     savingsLostIfWait1Year,
-    surplusRevenuePerYear: surplusRevenuePerYearOutput, // ✅ Valeur pour année 1
+    surplusRevenuePerYear: surplusRevenuePerYearOutput,
+    interestRate: safeParseFloat(
+      params["interestRate" as keyof typeof params] ||
+        params.creditInterestRate ||
+        0
+    ),
     year1,
   };
 };
 
 export const printSimpleReport = (result: CalculationOutput) => {
-  console.log("");
-  console.log("📋 RAPPORT SIMPLE (Résumé Rapide)");
-  console.log("─".repeat(50));
-  console.log("Break-even Point (Financing):", result.breakEvenPoint, "years");
-  console.log("Break-even Point (Cash):", result.breakEvenPointCash, "years");
-  console.log(
-    "Total Savings (15 years - Financing):",
-    formatCurrency(result.totalSavingsProjected)
-  );
-  console.log(
-    "Total Savings (15 years - Cash):",
-    formatCurrency(result.totalSavingsProjectedCash)
-  );
-  console.log("ROI % (Financing):", result.roiPercentage + "%");
-  console.log("ROI % (Cash):", result.roiPercentageCash + "%");
-  console.log(
-    "Average Yearly Gain (Financing):",
-    formatCurrency(result.averageYearlyGain)
-  );
-  console.log(
-    "Average Yearly Gain (Cash):",
-    formatCurrency(result.averageYearlyGainCash)
-  );
-  console.log("─".repeat(50));
-  console.log("Année 1 données:");
-  console.log(
-    "- Facture sans solaire:",
-    formatCurrency(result.year1.edfBillWithoutSolar)
-  );
-  console.log(
-    "- Total avec solaire:",
-    formatCurrency(result.year1.totalWithSolar)
-  );
-  console.log(
-    "- solarSavingsValue:",
-    formatCurrency(result.year1.solarSavingsValue)
-  );
-  console.log("- cashflowDiff:", formatCurrency(result.year1.cashflowDiff));
-  console.log("- monthlyEffort:", formatCurrency(result.monthlyEffortYear1));
-  console.log("");
+  // Silence radio : le validateur s'occupe de tout désormais.
 };

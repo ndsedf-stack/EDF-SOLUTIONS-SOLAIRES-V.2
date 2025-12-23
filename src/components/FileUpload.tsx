@@ -5,13 +5,21 @@ import {
   ArrowRight,
   MapPin,
   Loader2,
-  ShieldCheck,
   Zap,
-  Euro,
-  Percent,
   Calendar,
   Shield,
+  UploadCloud,
 } from "lucide-react";
+
+// --- TES FONCTIONS DE CALCUL INJECTÉES ---
+const round2 = (num: number): number => Math.round(num * 100) / 100;
+
+const safeParseFloat = (val: any, defaultVal: number = 0): number => {
+  if (val === undefined || val === null || val === "") return defaultVal;
+  const str = String(val).replace(",", ".").replace(/\s/g, "");
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? defaultVal : parsed;
+};
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -26,6 +34,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [isPvgisLoading, setIsPvgisLoading] = useState(false);
   const [formData, setFormData] = useState({
     currentBillYear: "2500",
+    houseSize: "120",
     yearlyConsumption: "10000",
     inflation: "5",
     pricePerKwh: "0.2500",
@@ -43,17 +52,42 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     creditRate: "5.89",
   });
 
-  // Calcul automatique du coût du kWh
+  // --- TON CALCUL DE MENSUALITÉ AUTO ---
   useEffect(() => {
-    const facture = parseFloat(formData.currentBillYear);
-    const conso = parseFloat(formData.yearlyConsumption);
-    if (facture > 0 && conso > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        pricePerKwh: (facture / conso).toFixed(4),
-      }));
+    const bill = safeParseFloat(formData.currentBillYear);
+    const conso = safeParseFloat(formData.yearlyConsumption);
+    const capital = safeParseFloat(formData.installPrice);
+    const rateAnnuel = safeParseFloat(formData.creditRate);
+    const duration = safeParseFloat(formData.creditDuration);
+
+    // Calcul Prix kWh
+    const newPriceKwh =
+      bill > 0 && conso > 0 ? (bill / conso).toFixed(4) : "0.0000";
+
+    // Calcul Mensualité (Ta logique de prêt amortissable)
+    let newMonthly = 0;
+    if (capital > 0 && duration > 0) {
+      if (rateAnnuel > 0) {
+        const rateMensuel = rateAnnuel / 100 / 12;
+        newMonthly =
+          (capital * rateMensuel) / (1 - Math.pow(1 + rateMensuel, -duration));
+      } else {
+        newMonthly = capital / duration;
+      }
     }
-  }, [formData.currentBillYear, formData.yearlyConsumption]);
+
+    setFormData((prev) => ({
+      ...prev,
+      pricePerKwh: newPriceKwh,
+      creditMonthly: round2(newMonthly).toString(),
+    }));
+  }, [
+    formData.currentBillYear,
+    formData.yearlyConsumption,
+    formData.installPrice,
+    formData.creditRate,
+    formData.creditDuration,
+  ]);
 
   const fetchProductionAuto = async () => {
     if (!formData.address || formData.address.length < 5) return;
@@ -96,7 +130,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           ...prev,
           production: correctedProd.toString(),
           ratioLocal: (
-            correctedProd / parseFloat(prev.puissanceInstallee)
+            correctedProd / safeParseFloat(prev.puissanceInstallee)
           ).toFixed(0),
         }));
       }
@@ -112,85 +146,169 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-6 pb-12 pt-8 bg-black min-h-screen text-white font-sans">
-      {/* HEADER AVEC LOGO EDF AGRANDI */}
+    <div className="w-full max-w-[1400px] mx-auto px-8 py-6 bg-black min-h-screen text-white font-sans selection:bg-blue-500/30">
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-10">
-        <img
-          src="/edf-logo.png"
-          alt="EDF solutions solaires"
-          className="h-32 w-auto object-contain"
-        />
-        <div className="bg-zinc-900/80 border border-zinc-800 px-5 py-2 rounded-2xl flex items-center gap-3">
-          <ShieldCheck className="text-blue-500 w-5 h-5" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
-            OFFICIEL PVGIS SARAH-3 v5.3
+        <div className="flex flex-col">
+          <img
+            src="/edf-logo.png"
+            alt="EDF"
+            className="h-12 w-auto object-contain mb-1"
+          />
+          <span className="text-[10px] text-blue-500 font-black uppercase tracking-tighter">
+            Solutions Solaires
+          </span>
+        </div>
+        <div className="bg-zinc-900/40 border border-zinc-800 px-6 py-2 rounded-full flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
+          <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 italic">
+            PVGIS SARAH-3 V5.3 CONNECTED
           </span>
         </div>
       </div>
 
-      <div className="space-y-6">
-        {/* LIGNE 1 : BLOCS PRINCIPAUX */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-[32px] p-8 shadow-2xl">
-            <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 flex items-center gap-3 text-red-500">
-              <TrendingDown /> Consommation & Coût
+      <div className="grid grid-cols-12 gap-8">
+        {/* COLONNE GAUCHE */}
+        <div className="col-span-12 lg:col-span-7 space-y-8">
+          {/* PROFIL ÉNERGÉTIQUE */}
+          <div className="bg-[#0a0a0a] border border-zinc-800/60 rounded-[32px] p-8 shadow-2xl">
+            <h3 className="text-sm font-black uppercase italic tracking-wider mb-8 flex items-center gap-3 text-red-500">
+              <TrendingDown size={18} /> Profil Énergétique
             </h3>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="col-span-1">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block">
-                  Facture Annuelle (€)
+            <div className="grid grid-cols-2 gap-8 mb-10">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block ml-1">
+                  Facture (€)
                 </label>
                 <input
                   type="number"
                   name="currentBillYear"
                   value={formData.currentBillYear}
                   onChange={handleInputChange}
-                  className="w-full bg-black border-2 border-zinc-900 rounded-2xl px-6 py-4 text-4xl font-black focus:border-red-600 outline-none"
+                  className="w-full bg-[#111] border border-zinc-800 rounded-2xl px-6 py-6 text-6xl font-black focus:border-red-500/50 outline-none transition-all"
                 />
               </div>
-              <div className="col-span-1">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block">
-                  Coût du kWh (€)
+              <div className="space-y-3 text-right">
+                <label className="text-[10px] font-bold text-emerald-500 uppercase block tracking-widest mr-1">
+                  Prix kWh (€)
                 </label>
-                <div className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-2xl px-6 py-4 text-4xl font-black text-emerald-500">
+                <div className="w-full bg-[#111] border border-zinc-800 rounded-2xl px-6 py-6 text-6xl font-black text-emerald-500 tracking-tighter tabular-nums">
                   {formData.pricePerKwh}
                 </div>
               </div>
-              <div className="col-span-1">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block tracking-tighter">
-                  Conso annuelle (kWh)
+            </div>
+
+            <div className="grid grid-cols-3 gap-6 pt-6 border-t border-zinc-800/30">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-zinc-500 uppercase block italic">
+                  Surface (m²)
                 </label>
                 <input
                   type="number"
-                  name="yearlyConsumption"
-                  value={formData.yearlyConsumption}
+                  name="houseSize"
+                  value={formData.houseSize}
                   onChange={handleInputChange}
-                  className="w-full bg-black border-2 border-zinc-900 rounded-2xl px-4 py-3 text-2xl font-bold text-yellow-400 outline-none"
+                  className="w-full bg-transparent text-4xl font-black text-blue-400 outline-none"
                 />
               </div>
-              <div className="col-span-1">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase mb-2 block flex items-center gap-1">
-                  <Percent size={10} /> Inflation (%)
+              <div className="space-y-1 border-l border-zinc-800/50 pl-6">
+                <label className="text-[9px] font-bold text-zinc-500 uppercase block italic">
+                  Conso (kWh)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    name="yearlyConsumption"
+                    value={formData.yearlyConsumption}
+                    onChange={handleInputChange}
+                    className="w-full bg-transparent text-4xl font-black text-yellow-500 outline-none"
+                  />
+                  <button className="bg-blue-600 p-2 rounded-full hover:scale-110 transition-transform shadow-lg shadow-blue-600/20">
+                    <UploadCloud size={14} className="text-white" />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1 border-l border-zinc-800/50 pl-6 text-right">
+                <label className="text-[9px] font-bold text-zinc-500 uppercase block italic">
+                  Inflation %
                 </label>
                 <input
                   type="number"
                   name="inflation"
                   value={formData.inflation}
                   onChange={handleInputChange}
-                  className="w-full bg-black border-2 border-zinc-900 rounded-2xl px-4 py-3 text-2xl font-bold text-white outline-none"
+                  className="w-full bg-transparent text-4xl font-black text-white outline-none text-right"
                 />
               </div>
             </div>
           </div>
 
-          <div className="bg-zinc-950 border border-zinc-800 rounded-[32px] p-8 shadow-2xl">
-            <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 flex items-center gap-3 text-blue-500">
-              <Sun /> Simulation PVGIS Sarah-3 v5.3
+          {/* FINANCEMENT (Calculé via ton code) */}
+          <div className="bg-[#0a0a0a] border border-zinc-800/60 rounded-[32px] p-8 shadow-2xl">
+            <h3 className="text-sm font-black uppercase italic tracking-wider mb-8 flex items-center gap-3 text-purple-500">
+              <Calendar size={18} /> Financement & Investissement
             </h3>
-            <div className="space-y-6">
-              <div>
-                <label className="text-[10px] font-bold text-blue-500 uppercase mb-2 block flex items-center gap-2">
-                  <MapPin size={12} /> Adresse du projet
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-[#111] border border-zinc-800 p-5 rounded-2xl">
+                <label className="text-[9px] font-bold text-zinc-600 uppercase block mb-2">
+                  Prix Inst. (€)
+                </label>
+                <input
+                  type="number"
+                  name="installPrice"
+                  value={formData.installPrice}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent text-2xl font-black text-white outline-none"
+                />
+              </div>
+              <div className="bg-[#111] border-2 border-purple-500/30 p-5 rounded-2xl bg-purple-500/5">
+                <label className="text-[9px] font-bold text-purple-400 uppercase block mb-2 italic">
+                  Mensualité (€)
+                </label>
+                <div className="text-3xl font-black text-purple-400 tabular-nums">
+                  {formData.creditMonthly}
+                </div>
+              </div>
+              <div className="bg-[#111] border border-zinc-800 p-5 rounded-2xl">
+                <label className="text-[9px] font-bold text-zinc-600 uppercase block mb-2">
+                  Durée (m)
+                </label>
+                <input
+                  type="number"
+                  name="creditDuration"
+                  value={formData.creditDuration}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent text-2xl font-black outline-none"
+                />
+              </div>
+              <div className="bg-[#111] border border-zinc-800 p-5 rounded-2xl">
+                <label className="text-[9px] font-bold text-zinc-600 uppercase block mb-2 italic">
+                  Taux %
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="creditRate"
+                  value={formData.creditRate}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent text-2xl font-black text-white outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* COLONNE DROITE EXPERTISE */}
+        <div className="col-span-12 lg:col-span-5">
+          <div className="bg-[#0a0a0a] border border-zinc-800/60 rounded-[32px] p-8 flex flex-col h-full shadow-2xl">
+            <h3 className="text-sm font-black uppercase italic tracking-wider mb-8 flex items-center gap-3 text-blue-500">
+              <Sun size={20} /> Expertise PVGIS
+            </h3>
+
+            <div className="space-y-8 flex-grow">
+              <div className="relative">
+                <label className="text-[10px] font-bold text-blue-400 uppercase mb-3 block flex items-center gap-2 tracking-[0.1em]">
+                  <MapPin size={12} /> Localisation
                 </label>
                 <input
                   type="text"
@@ -198,13 +316,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   value={formData.address}
                   onChange={handleInputChange}
                   placeholder="Saisir l'adresse..."
-                  className="w-full bg-zinc-900 border-2 border-zinc-800 rounded-2xl px-6 py-3 text-lg font-bold outline-none focus:border-blue-500"
+                  className="w-full bg-[#111] border border-zinc-800 rounded-2xl px-6 py-5 text-sm font-bold outline-none focus:border-blue-500/40 transition-all shadow-lg"
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-black border border-zinc-800 p-4 rounded-2xl">
-                  <label className="text-[9px] font-bold text-zinc-500 uppercase mb-1 block">
-                    Puissance (kWc)
+                <div className="bg-black/40 border border-zinc-800 p-5 rounded-2xl">
+                  <label className="text-[9px] font-bold text-zinc-600 uppercase block mb-1">
+                    Puissance (KWC)
                   </label>
                   <input
                     type="number"
@@ -212,159 +331,101 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                     name="puissanceInstallee"
                     value={formData.puissanceInstallee}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent text-2xl font-black text-blue-500 outline-none"
+                    className="w-full bg-transparent text-3xl font-black text-blue-500 outline-none"
                   />
                 </div>
-                <div className="bg-black border border-zinc-800 p-4 rounded-2xl relative">
-                  <label className="text-[9px] font-bold text-zinc-500 uppercase mb-1 block">
-                    Production (kWh)
+                <div className="bg-black/40 border border-zinc-800 p-5 rounded-2xl">
+                  <label className="text-[9px] font-bold text-emerald-500 uppercase block mb-1 italic">
+                    Autocons %
                   </label>
                   <input
                     type="number"
-                    name="production"
-                    value={formData.production}
+                    name="selfConsumption"
+                    value={formData.selfConsumption}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent text-2xl font-black text-white outline-none"
+                    className="w-full bg-transparent text-3xl font-black text-emerald-500 outline-none"
                   />
+                </div>
+              </div>
+
+              <div className="bg-[#111] border border-zinc-800 rounded-2xl p-8 relative overflow-hidden group">
+                <span className="text-[9px] font-black text-zinc-500 uppercase italic block mb-3 tracking-widest">
+                  Production Estimée
+                </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-6xl font-black text-white tabular-nums tracking-tighter">
+                      {formData.production}
+                    </span>
+                    <span className="text-sm font-black text-zinc-700 uppercase">
+                      kWh
+                    </span>
+                  </div>
                   <button
                     onClick={fetchProductionAuto}
-                    disabled={isPvgisLoading}
-                    className="absolute right-2 top-2 bg-emerald-500 text-black p-1.5 rounded-lg hover:bg-emerald-400"
+                    className="bg-emerald-500 p-3 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 transition-all"
                   >
                     {isPvgisLoading ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Loader2 className="animate-spin w-6 h-6 text-black" />
                     ) : (
-                      <Zap className="w-3 h-3" />
+                      <Zap
+                        size={24}
+                        className="text-black"
+                        fill="currentColor"
+                      />
                     )}
                   </button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* LIGNE 2 : INPUTS DU BAS AVEC LÉGENDES CLAIRES */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-[32px] p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-6 text-emerald-500 border-b border-zinc-900 pb-3 uppercase text-[10px] font-black italic">
-              <Euro size={16} /> Budget & Usage
-            </div>
-            <div className="space-y-4">
-              <div>
-                <span className="text-[9px] text-zinc-500 font-bold uppercase block mb-1">
-                  Prix de l'installation (€)
+            <div className="mt-8 pt-6 border-t border-zinc-800/50 flex justify-between items-end">
+              <div className="space-y-1">
+                <span className="text-[9px] text-zinc-600 font-bold uppercase italic block tracking-widest">
+                  Rendement de zone
                 </span>
-                <input
-                  type="number"
-                  name="installPrice"
-                  value={formData.installPrice}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-xl font-black text-white outline-none"
-                />
+                <div className="text-2xl font-black text-blue-500 tabular-nums">
+                  {formData.ratioLocal || "—"}{" "}
+                  <span className="text-[10px] text-zinc-700">kWh/kWc</span>
+                </div>
               </div>
-              <div>
-                <span className="text-[9px] text-zinc-500 font-bold uppercase block mb-1">
-                  Part d'autoconsommation (%)
+              <div className="text-right space-y-1">
+                <span className="text-[9px] text-orange-500 font-bold uppercase flex items-center justify-end gap-2 italic tracking-widest">
+                  <Shield size={12} /> Maintenance
                 </span>
-                <input
-                  type="number"
-                  name="selfConsumption"
-                  value={formData.selfConsumption}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-xl font-black text-white outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-zinc-950 border border-zinc-800 rounded-[32px] p-6 shadow-xl">
-            <div className="flex items-center gap-2 mb-6 text-purple-500 border-b border-zinc-900 pb-3 uppercase text-[10px] font-black italic">
-              <Calendar size={16} /> Financement
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <span className="text-[9px] text-zinc-500 font-bold uppercase block mb-1">
-                  Mensualité du crédit (€)
-                </span>
-                <input
-                  type="number"
-                  name="creditMonthly"
-                  value={formData.creditMonthly}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-xl font-black outline-none"
-                />
-              </div>
-              <div>
-                <span className="text-[9px] text-zinc-500 font-bold uppercase block mb-1">
-                  Durée (mois)
-                </span>
-                <input
-                  type="number"
-                  name="creditDuration"
-                  value={formData.creditDuration}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-lg font-bold outline-none"
-                />
-              </div>
-              <div>
-                <span className="text-[9px] text-zinc-500 font-bold uppercase block mb-1">
-                  Taux (%)
-                </span>
-                <input
-                  type="number"
-                  name="creditRate"
-                  value={formData.creditRate}
-                  onChange={handleInputChange}
-                  className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-lg font-bold outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-zinc-950 border border-zinc-800 rounded-[32px] p-6 shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-6 text-orange-500 border-b border-zinc-900 pb-3 uppercase text-[10px] font-black italic">
-                <Shield size={16} /> Maintenance & Ratio
-              </div>
-              <span className="text-[9px] text-zinc-500 font-bold uppercase block mb-1">
-                Assurance annuelle (€/mois)
-              </span>
-              <input
-                type="number"
-                name="insuranceMonthly"
-                value={formData.insuranceMonthly}
-                onChange={handleInputChange}
-                className="w-full bg-black border border-zinc-900 rounded-xl px-4 py-3 text-xl font-black outline-none"
-              />
-            </div>
-            <div className="bg-zinc-900/50 p-3 rounded-xl border border-zinc-800 mt-4">
-              <span className="text-[9px] text-zinc-600 font-bold uppercase block">
-                Rendement local
-              </span>
-              <div className="text-xl font-black text-blue-500">
-                {formData.ratioLocal || "—"}{" "}
-                <span className="text-[10px]">kWh/kWc</span>
+                <div className="flex items-center justify-end gap-2">
+                  <input
+                    type="number"
+                    name="insuranceMonthly"
+                    value={formData.insuranceMonthly}
+                    onChange={handleInputChange}
+                    className="bg-transparent text-3xl font-black text-white text-right outline-none w-16"
+                  />
+                  <span className="text-sm font-bold text-zinc-700 italic">
+                    €/m
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* BOUTON LANCER L'ANALYSE GLASSMORPHISM TRANSPARENT */}
-        <div className="pt-8 flex justify-center">
-          <button
-            onClick={() => onTextSubmit(JSON.stringify(formData))}
-            className="group relative backdrop-blur-md bg-white/5 hover:bg-white/10 border border-white/20 px-16 py-6 rounded-2xl flex items-center gap-6 transition-all duration-300 hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.05)]"
-          >
-            <span className="uppercase tracking-[0.4em] text-xl font-black italic text-white/90 group-hover:text-white">
-              Lancer l'analyse
+      {/* BOUTON D'ANALYSE STEALTH BLACK */}
+      <div className="mt-12 flex flex-col items-center gap-6">
+        <button
+          onClick={() => onTextSubmit(JSON.stringify(formData))}
+          className="group relative bg-[#111] border border-zinc-800 hover:border-zinc-700 w-full max-w-[700px] py-4 px-6 rounded-full transition-all duration-300 shadow-2xl flex items-center justify-between"
+        >
+          <div className="flex-1 text-center">
+            <span className="uppercase tracking-[0.4em] text-lg font-black italic text-zinc-300 group-hover:text-white transition-colors">
+              Lancer l'analyse technique
             </span>
-            <div className="bg-blue-600/20 p-2 rounded-lg group-hover:bg-blue-600/40 transition-colors">
-              <ArrowRight className="w-6 h-6 text-blue-400" />
-            </div>
-            {/* Lueur subtile sous le bouton */}
-            <div className="absolute inset-0 rounded-2xl bg-blue-500/10 blur-xl -z-10 group-hover:bg-blue-500/20 transition-all"></div>
-          </button>
-        </div>
+          </div>
+          <div className="bg-white rounded-full p-2 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+            <ArrowRight className="w-5 h-5 text-black" />
+          </div>
+        </button>
       </div>
     </div>
   );

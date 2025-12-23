@@ -48,8 +48,6 @@ export const GuestView: React.FC = () => {
       }
 
       try {
-        console.log("📥 Chargement étude:", studyId);
-
         const { data: studyData, error: fetchError } = await supabase
           .from("studies")
           .select("*")
@@ -60,8 +58,6 @@ export const GuestView: React.FC = () => {
           console.error("❌ Erreur:", fetchError);
           throw new Error("Étude introuvable");
         }
-
-        console.log("✅ Étude chargée:", studyData);
 
         const now = new Date();
         const expiresAt = new Date(studyData.expires_at);
