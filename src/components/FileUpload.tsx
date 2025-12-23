@@ -180,13 +180,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block ml-1">
                   Facture (€)
                 </label>
-                <input
-                  type="number"
-                  name="currentBillYear"
-                  value={formData.currentBillYear}
-                  onChange={handleInputChange}
-                  className="w-full bg-[#111] border border-zinc-800 rounded-2xl px-6 py-6 text-6xl font-black focus:border-red-500/50 outline-none transition-all"
-                />
+                <div className="w-full bg-[#111] border border-zinc-800 rounded-2xl px-6 py-6 focus-within:border-red-500/50 transition-all">
+                  <input
+                    type="number"
+                    name="currentBillYear"
+                    value={formData.currentBillYear}
+                    onChange={handleInputChange}
+                    className="w-full bg-transparent text-6xl font-black outline-none"
+                  />
+                  <div className="text-sm text-purple-400/60 font-bold mt-2">
+                    {formData.creditMonthly}€/mois
+                  </div>
+                </div>
               </div>
               <div className="space-y-3 text-right">
                 <label className="text-[10px] font-bold text-emerald-500 uppercase block tracking-widest mr-1">
