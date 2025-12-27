@@ -394,23 +394,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   <span className="text-[10px] text-zinc-700">kWh/kWc</span>
                 </div>
               </div>
-              <div className="text-right space-y-1">
-                <span className="text-[9px] text-orange-500 font-bold uppercase flex items-center justify-end gap-2 italic tracking-widest">
-                  <Shield size={12} /> Maintenance
-                </span>
-                <div className="flex items-center justify-end gap-2">
-                  <input
-                    type="number"
-                    name="insuranceMonthly"
-                    value={formData.insuranceMonthly}
-                    onChange={handleInputChange}
-                    className="bg-transparent text-3xl font-black text-white text-right outline-none w-16"
-                  />
-                  <span className="text-sm font-bold text-zinc-700 italic">
-                    €/m
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
         </div>

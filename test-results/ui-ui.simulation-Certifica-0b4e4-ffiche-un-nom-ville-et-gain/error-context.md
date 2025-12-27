@@ -1,0 +1,1402 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - navigation [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e8]
+        - generic [ref=e14]:
+          - heading "Solutions Solaires" [level=1] [ref=e15]
+          - paragraph [ref=e16]: EDF - Analyse Premium
+      - generic [ref=e17]:
+        - img [ref=e18]
+        - generic [ref=e21]: "Profil :"
+        - combobox [ref=e22] [cursor=pointer]:
+          - option "👤 Standard (Quiz)" [selected]
+          - option "⚡ Dominant (Coach Commercial)"
+          - option "🛡️ Méfiant (Coach Senior)"
+          - option "🔥 Brûlé (Coach Banquier)"
+      - generic [ref=e23]:
+        - button "Modifier" [ref=e24] [cursor=pointer]:
+          - img [ref=e25]
+          - text: Modifier
+        - button "Nouvelle Analyse" [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+          - text: Nouvelle Analyse
+    - main [ref=e32]:
+      - generic [ref=e33]:
+        - img [ref=e34]
+        - generic [ref=e36]: Les graphiques et calculs se mettent à jour automatiquement.
+      - generic [ref=e38]:
+        - button "10 ANS" [ref=e39] [cursor=pointer]
+        - button "15 ANS" [ref=e40] [cursor=pointer]
+        - button "20 ANS" [ref=e41] [cursor=pointer]
+        - button "25 ANS" [ref=e42] [cursor=pointer]
+      - generic [ref=e43]:
+        - 'button "ÉTAPE 1 : PROTOCOLE D''AUDIT TECHNIQUE ET FINANCIER #certification-calculs" [ref=e44] [cursor=pointer]':
+          - generic [ref=e45]:
+            - img [ref=e47]
+            - 'heading "ÉTAPE 1 : PROTOCOLE D''AUDIT TECHNIQUE ET FINANCIER" [level=3] [ref=e50]'
+          - generic [ref=e51]:
+            - generic [ref=e52]: "#certification-calculs"
+            - img [ref=e53]
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - heading "AUDIT DE CONFORMITÉ SYSTÈME v2.4" [level=3] [ref=e60]
+              - paragraph [ref=e61]: Certification Algorithmique EDF Solutions Solaires
+            - generic [ref=e63]:
+              - generic [ref=e64]: Indice de Fiabilité
+              - generic [ref=e65]: 86%
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - generic [ref=e70]:
+                - generic [ref=e73]: Analyse des factures & Profil de consommation
+                - generic [ref=e74]: 208€/mois
+              - generic [ref=e75]:
+                - generic [ref=e77]: Vérification des paliers d'abonnement et historique sur 12 mois.
+                - img [ref=e78]
+            - generic [ref=e81]:
+              - generic [ref=e82]:
+                - generic [ref=e85]: Gisement solaire & Masques d'ombrage
+                - generic [ref=e86]: 7000 kWh/an
+              - generic [ref=e87]:
+                - generic [ref=e89]: Calcul d'irradiation héliométrique via données satellites PVGIS 5.2.
+                - img [ref=e90]
+            - generic [ref=e93]:
+              - generic [ref=e94]:
+                - generic [ref=e97]: Audit Patrimonial & Valeur Verte
+                - generic [ref=e98]: +30720€
+              - generic [ref=e99]:
+                - generic [ref=e101]: Évaluation de la plus-value immobilière certifiée base DVF Notaires.
+                - img [ref=e102]
+            - generic [ref=e105]:
+              - generic [ref=e106]:
+                - generic [ref=e109]: Rentabilité (TRI) & Cash-Flow
+                - generic [ref=e110]: 6.52%
+              - generic [ref=e111]:
+                - generic [ref=e113]: Modélisation financière incluant amortissement et réinvestissement.
+                - img [ref=e114]
+            - generic [ref=e117]:
+              - generic [ref=e118]:
+                - generic [ref=e121]: Conformité Fiscale & Éligibilité Aides
+                - generic [ref=e122]: TVA 5.5%
+              - generic [ref=e123]:
+                - generic [ref=e125]: Validation Prime à l'autoconsommation et cadre Loi de Finance 2025.
+                - img [ref=e126]
+            - generic [ref=e129]:
+              - generic [ref=e130]:
+                - generic [ref=e133]: Sécurité Électrique & Normes NFC
+                - generic [ref=e134]: NFC 15-712-1
+              - generic [ref=e135]:
+                - generic [ref=e137]: Vérification des protections parafoudre et dimensionnement des câbles.
+                - img [ref=e138]
+            - generic [ref=e141]:
+              - generic [ref=e142]:
+                - generic [ref=e145]: Résilience Énergie & Inflation
+                - generic [ref=e146]: "---"
+              - generic [ref=e148]: Attente de validation...
+          - generic [ref=e149]:
+            - generic [ref=e150]: "ID_SCAN: 878TWVHHA"
+            - generic [ref=e151]: © EDF SOLUTIONS SOLAIRES - PROTOCOLE 2025
+      - generic [ref=e152]:
+        - 'button "Répartition Énergie #repartition" [ref=e153] [cursor=pointer]':
+          - generic [ref=e154]:
+            - img [ref=e156]
+            - heading "Répartition Énergie" [level=3] [ref=e158]
+          - generic [ref=e159]:
+            - generic [ref=e160]: "#repartition"
+            - img [ref=e161]
+        - generic [ref=e165]:
+          - generic [ref=e166]:
+            - img [ref=e167]
+            - heading "Répartition Énergie" [level=2] [ref=e169]
+          - generic [ref=e170]:
+            - generic [ref=e171]:
+              - img [ref=e172]
+              - img [ref=e175]
+              - generic:
+                - generic: Production
+                - generic: "7000"
+                - generic: kWh/an
+            - generic [ref=e178]:
+              - generic [ref=e179]:
+                - generic [ref=e182]: Autoconsommation (70%)
+                - generic [ref=e183]: 4 900 kWh
+                - paragraph [ref=e184]: Énergie consommée directement chez vous. Économie maximale car aucun coût réseau.
+              - generic [ref=e185]:
+                - generic [ref=e188]: Vente surplus (30%)
+                - generic [ref=e189]: 2 100 kWh
+                - paragraph [ref=e190]: Surplus revendu à EDF OA. Revenu garanti pendant 20 ans.
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - img [ref=e193]
+                  - generic [ref=e196]: OPTIMISATION
+                - paragraph [ref=e197]: Modifiez le taux d'autoconsommation dans les paramètres pour voir l'impact sur votre rentabilité.
+      - generic [ref=e198]:
+        - 'button "Écart de Dépenses Énergétiques #gouffre-financier" [ref=e199] [cursor=pointer]':
+          - generic [ref=e200]:
+            - img [ref=e202]
+            - heading "Écart de Dépenses Énergétiques" [level=3] [ref=e204]
+          - generic [ref=e205]:
+            - generic [ref=e206]: "#gouffre-financier"
+            - img [ref=e207]
+        - generic [ref=e211]:
+          - generic [ref=e212]:
+            - generic [ref=e213]:
+              - img [ref=e214]
+              - generic [ref=e216]:
+                - heading "ÉCART DE DÉPENSES ÉNERGÉTIQUES" [level=2] [ref=e217]
+                - paragraph [ref=e218]: Visualisez l'écart sur 20 ans entre agir maintenant ou ne rien faire
+            - generic [ref=e219]:
+              - generic [ref=e220]:
+                - img [ref=e222]
+                - generic [ref=e225]:
+                  - text: Projet
+                  - text: Rentable
+              - generic [ref=e227]:
+                - generic [ref=e228]:
+                  - generic [ref=e229]: 17 613
+                  - generic [ref=e230]: €
+                - generic [ref=e231]: Gain net sur 20 ans
+            - generic [ref=e232]:
+              - button "Financement" [ref=e233] [cursor=pointer]
+              - button "Cash" [ref=e234] [cursor=pointer]
+          - generic [ref=e237]:
+            - list [ref=e239]:
+              - listitem [ref=e240]:
+                - img "[object Object] legend icon" [ref=e241]
+                - generic [ref=e243]: Avec Solaire (Financement)
+              - listitem [ref=e244]:
+                - img "[object Object] legend icon" [ref=e245]
+                - generic [ref=e247]: Sans Solaire
+            - application [ref=e248]:
+              - generic [ref=e269]:
+                - generic [ref=e270]:
+                  - generic [ref=e272]: "2026"
+                  - generic [ref=e274]: "2027"
+                  - generic [ref=e276]: "2028"
+                  - generic [ref=e278]: "2029"
+                  - generic [ref=e280]: "2030"
+                  - generic [ref=e282]: "2031"
+                  - generic [ref=e284]: "2032"
+                  - generic [ref=e286]: "2033"
+                  - generic [ref=e288]: "2034"
+                  - generic [ref=e290]: "2035"
+                  - generic [ref=e292]: "2036"
+                  - generic [ref=e294]: "2037"
+                  - generic [ref=e296]: "2038"
+                  - generic [ref=e298]: "2039"
+                  - generic [ref=e300]: "2040"
+                  - generic [ref=e302]: "2041"
+                  - generic [ref=e304]: "2042"
+                  - generic [ref=e306]: "2043"
+                  - generic [ref=e308]: "2044"
+                  - generic [ref=e310]: "2045"
+                - generic [ref=e311]: Années
+                - generic [ref=e312]:
+                  - generic [ref=e314]: 0 €
+                  - generic [ref=e316]: 25 000 €
+                  - generic [ref=e318]: 50 000 €
+                  - generic [ref=e320]: 75 000 €
+                  - generic [ref=e322]: 100 000 €
+          - generic [ref=e323]:
+            - generic [ref=e324]:
+              - img [ref=e325]
+              - paragraph [ref=e329]:
+                - strong [ref=e330]: Le point de croisement
+                - text: marque votre retour sur investissement. Après ce point, chaque euro économisé correspond à des économies nettes.
+            - generic [ref=e331]:
+              - generic [ref=e332]:
+                - img [ref=e333]
+                - paragraph [ref=e335]:
+                  - strong [ref=e336]: "Important :"
+                  - text: L'investissement initial (ligne bleue/verte) crée un
+                  - strong [ref=e337]: actif patrimonial
+                  - text: qui produit pendant 30 ans. La dépense sans solaire (ligne rouge) n'a
+                  - strong [ref=e338]: aucune contrepartie
+                  - text: .
+              - generic [ref=e339]:
+                - button "Plus d'informations" [ref=e340] [cursor=pointer]:
+                  - img [ref=e341]
+                - button "Plus d'informations" [ref=e343] [cursor=pointer]:
+                  - img [ref=e344]
+      - generic [ref=e346]:
+        - generic [ref=e347]:
+          - generic [ref=e348]:
+            - generic [ref=e349]:
+              - generic [ref=e350]:
+                - img [ref=e351]
+                - text: PROJECTION 20 ANS
+              - generic [ref=e354]:
+                - img [ref=e355]
+                - text: 0€ D'APPORT
+            - heading "Écart Économique Cumulé" [level=2] [ref=e358]
+            - generic [ref=e359]: 17,613 €
+            - generic [ref=e360]:
+              - generic [ref=e361]:
+                - img [ref=e362]
+                - heading "COMMENT EST CALCULÉ CET ÉCART ?" [level=3] [ref=e365]
+              - generic [ref=e366]:
+                - generic [ref=e367]:
+                  - img [ref=e368]
+                  - generic [ref=e371]:
+                    - generic [ref=e372]: SCÉNARIO SANS SOLAIRE
+                    - generic [ref=e373]: Dépense énergétique totale sur 20 ans
+                - generic [ref=e374]: 82,700 €
+              - generic [ref=e375]: MOINS
+              - generic [ref=e376]:
+                - generic [ref=e377]:
+                  - img [ref=e379]
+                  - generic [ref=e382]:
+                    - generic [ref=e383]: SCÉNARIO AVEC SOLAIRE
+                    - generic [ref=e384]: Réorganisation budget + facture résiduelle
+                - generic [ref=e385]: 65,087 €
+              - generic [ref=e386]: EGAL
+              - generic [ref=e387]:
+                - generic [ref=e388]:
+                  - img [ref=e389]
+                  - generic [ref=e392]: VOTRE GAIN NET
+                - generic [ref=e393]: +17 613 €
+              - paragraph [ref=e395]: ⚠ LES PREMIÈRES ANNÉES CORRESPONDENT À UNE PHASE DE RÉORGANISATION BUDGÉTAIRE. DÈS L'ANNÉE 8, VOUS COMMENCEZ À ÉCONOMISER. APRÈS REMBOURSEMENT (15 ANS), LES ÉCONOMIES DEVIENNENT MASSIVES ET PERMANENTES.
+            - generic [ref=e396]:
+              - generic [ref=e397]:
+                - generic [ref=e398]: CAPITAL IMMOBILISÉ
+                - generic [ref=e399]: 0€
+              - generic [ref=e400]:
+                - generic [ref=e401]: ÉCART MOYEN
+                - generic [ref=e402]: +881 €/an
+              - generic [ref=e403]:
+                - generic [ref=e404]: POINT MORT
+                - generic [ref=e405]: 12 ans
+              - generic [ref=e406]:
+                - generic [ref=e407]: ÉQUIVALENT LIVRET A
+                - generic [ref=e408]: 32 616 €
+          - generic [ref=e409]:
+            - generic [ref=e410]:
+              - generic [ref=e411]:
+                - img [ref=e412]
+                - heading "ÉQUIVALENT BANCAIRE" [level=3] [ref=e414]
+              - paragraph [ref=e415]:
+                - text: Pour générer
+                - generic [ref=e416]: 881 €/an
+                - text: "avec un Livret A, il vous faudrait bloquer :"
+              - generic [ref=e417]: 32,616 €
+              - generic [ref=e418]: ICI, VOUS NE BLOQUEZ RIEN.
+              - paragraph [ref=e419]:
+                - img [ref=e420]
+                - text: VOTRE CAPITAL RESTE DISPONIBLE PENDANT QUE VOUS OPTIMISEZ UNE DÉPENSE.
+            - generic [ref=e422]:
+              - generic [ref=e423]:
+                - img [ref=e424]
+                - heading "RÉALLOCATION ANNÉE 1" [level=3] [ref=e426]
+              - generic [ref=e427]: +41 €
+              - generic [ref=e428]:
+                - generic [ref=e429]:
+                  - generic [ref=e430]: "Nouveau Budget :"
+                  - generic [ref=e431]: 249 €
+                - generic [ref=e432]:
+                  - generic [ref=e433]: "Ancien Budget :"
+                  - generic [ref=e434]: 208 €
+                - generic [ref=e435]:
+                  - generic [ref=e436]: = Réallocation
+                  - generic [ref=e437]: +41 €
+              - paragraph [ref=e439]: VOTRE CAPACITÉ D'ÉPARGNE S'ACCÉLÈRE À CHAQUE AUGMENTATION DU TARIF DE L'ÉNERGIE.
+        - generic [ref=e440]:
+          - generic [ref=e441]:
+            - button [ref=e443] [cursor=pointer]:
+              - img [ref=e444]
+            - generic [ref=e447]:
+              - heading "HÉRITAGE NET" [level=3] [ref=e448]
+              - paragraph [ref=e449]: PROJECTION PATRIMONIALE RÉELLE
+              - generic [ref=e450]:
+                - generic [ref=e451]: 14 090 €
+                - paragraph [ref=e452]: SOMME NETTE DISPONIBLE SUR 20 ANS
+            - generic [ref=e454]:
+              - generic [ref=e455]:
+                - generic [ref=e456]: "Gains Énergie (Brut) :"
+                - generic [ref=e457]: +17,613 €
+              - generic [ref=e458]:
+                - generic [ref=e459]: "Valeur Verte Maison (Patrimoine) :"
+                - generic [ref=e460]: +30,720 €
+              - generic [ref=e461]:
+                - generic [ref=e462]: "Provision Successions (20% du Cash) :"
+                - generic [ref=e463]: "-3,523 €"
+          - generic [ref=e464]:
+            - button [ref=e466] [cursor=pointer]:
+              - img [ref=e467]
+            - generic [ref=e473]:
+              - heading "VALEUR VERTE" [level=3] [ref=e474]
+              - paragraph [ref=e475]: VOTRE RÉSIDENCE À 1 RUE MIREILLE 06400 CANNES
+              - generic [ref=e476]: +30,720 €
+              - generic [ref=e477]:
+                - img [ref=e478]
+                - text: "ANALYSE RÉELLE : 1 RUE MIREILLE 06400 CANNES"
+              - paragraph [ref=e481]:
+                - text: PLUS-VALUE ESTIMÉE POUR VOTRE MAISON DE
+                - generic [ref=e482]: 120 M²
+                - text: DANS VOTRE ZONE. C'EST UN ACTIF IMMOBILIER IMMÉDIAT.
+            - generic [ref=e484]:
+              - paragraph [ref=e485]: "SOURCES : NOTAIRES DE FRANCE"
+              - paragraph [ref=e486]: "CALCUL : 3,200 €/M² × 120 M² × 4% = 30,720 €"
+      - generic [ref=e487]:
+        - 'button "Votre argent dans X ans #where-money" [ref=e488] [cursor=pointer]':
+          - generic [ref=e489]:
+            - img [ref=e491]
+            - heading "Votre argent dans X ans" [level=3] [ref=e494]
+          - generic [ref=e495]:
+            - generic [ref=e496]: "#where-money"
+            - img [ref=e497]
+        - generic [ref=e500]:
+          - generic [ref=e501]:
+            - generic [ref=e502]:
+              - img [ref=e504]
+              - generic [ref=e507]:
+                - heading "Votre argent dans 20 ans" [level=2] [ref=e508]
+                - paragraph [ref=e509]: Où finira chaque euro que vous dépensez aujourd'hui ?
+            - generic [ref=e510]:
+              - button "Financement" [ref=e511] [cursor=pointer]
+              - button "Cash" [ref=e512] [cursor=pointer]
+          - generic [ref=e513]:
+            - generic [ref=e514]:
+              - generic: "5"
+              - heading "DANS 5 ANS" [level=3] [ref=e515]
+              - generic [ref=e516]:
+                - generic [ref=e517]:
+                  - generic [ref=e518]:
+                    - img [ref=e519]
+                    - generic [ref=e522]: AVEC INSTALLATION SOLAIRE
+                  - generic [ref=e523]:
+                    - generic [ref=e524]:
+                      - generic [ref=e525]: Vous aurez payé
+                      - generic [ref=e526]: 15 136 €
+                    - generic [ref=e527]:
+                      - generic [ref=e528]: ⏳ Phase d'investissement
+                      - generic [ref=e529]: Rentable dans 7 ans
+                - generic [ref=e530]:
+                  - generic [ref=e533]:
+                    - img [ref=e534]
+                    - generic [ref=e536]: SANS RIEN FAIRE (STATU QUO)
+                  - generic [ref=e537]:
+                    - generic [ref=e538]: Argent définitivement perdu
+                    - generic [ref=e539]: 13 800 €
+              - generic [ref=e540]: ⏱️ Chaque mois compte - l'écart commence à se creuser
+            - generic [ref=e541]:
+              - generic: "10"
+              - heading "DANS 10 ANS" [level=3] [ref=e542]
+              - generic [ref=e543]:
+                - generic [ref=e544]:
+                  - generic [ref=e545]:
+                    - img [ref=e546]
+                    - generic [ref=e549]: AVEC INSTALLATION SOLAIRE
+                  - generic [ref=e550]:
+                    - generic [ref=e551]:
+                      - generic [ref=e552]: Vous aurez payé
+                      - generic [ref=e553]: 32 134 €
+                    - generic [ref=e554]:
+                      - generic [ref=e555]: ⏳ Phase d'investissement
+                      - generic [ref=e556]: Rentable dans 2 ans
+                - generic [ref=e557]:
+                  - generic [ref=e560]:
+                    - img [ref=e561]
+                    - generic [ref=e563]: SANS RIEN FAIRE (STATU QUO)
+                  - generic [ref=e564]:
+                    - generic [ref=e565]: Argent définitivement perdu
+                    - generic [ref=e566]: 31 500 €
+              - generic [ref=e567]: 📈 L'effet boule de neige est lancé
+            - generic [ref=e568]:
+              - generic: "20"
+              - heading "DANS 20 ANS" [level=3] [ref=e569]
+              - generic [ref=e570]:
+                - generic [ref=e571]:
+                  - generic [ref=e572]:
+                    - img [ref=e573]
+                    - generic [ref=e576]: AVEC INSTALLATION SOLAIRE
+                  - generic [ref=e577]:
+                    - generic [ref=e578]:
+                      - generic [ref=e579]: Vous aurez payé
+                      - generic [ref=e580]: 65 087 €
+                    - generic [ref=e581]:
+                      - generic [ref=e582]: 💰 Économie réalisée
+                      - generic [ref=e583]: 17 613 €
+                - generic [ref=e584]:
+                  - generic [ref=e587]:
+                    - img [ref=e588]
+                    - generic [ref=e590]: SANS RIEN FAIRE (STATU QUO)
+                  - generic [ref=e591]:
+                    - generic [ref=e592]: Argent définitivement perdu
+                    - generic [ref=e593]: 82 700 €
+                  - generic [ref=e594]:
+                    - generic [ref=e595]: 💸 Manque à gagner
+                    - generic [ref=e596]: 17 613 €
+                - generic [ref=e597]:
+                  - generic [ref=e598]: 🎯 RÉSULTAT FINAL
+                  - generic [ref=e599]: +17 613 €
+                  - generic [ref=e600]: dans votre patrimoine au lieu de 0€
+              - generic [ref=e601]: 🏆 Un capital transmissible à vos enfants
+          - generic [ref=e603]:
+            - img [ref=e604]
+            - generic [ref=e607]:
+              - heading "⏰ Chaque mois d'attente coûte 208 €" [level=4] [ref=e608]
+              - paragraph [ref=e609]:
+                - text: Pendant que vous réfléchissez, votre compteur tourne.
+                - strong [ref=e610]: Attendre 1 an
+                - text: =
+                - strong [ref=e611]: 2 500 €
+                - text: partis définitivement. Ces euros auraient pu
+                - strong [ref=e612]: travailler pour vous pendant 20 ans
+                - text: .
+      - generic [ref=e613]:
+        - 'button "Financement VS Cash #financement-vs-cash" [ref=e614] [cursor=pointer]':
+          - generic [ref=e615]:
+            - img [ref=e617]
+            - heading "Financement VS Cash" [level=3] [ref=e622]
+          - generic [ref=e623]:
+            - generic [ref=e624]: "#financement-vs-cash"
+            - img [ref=e625]
+        - generic [ref=e628]:
+          - generic [ref=e629]:
+            - img [ref=e631]
+            - generic [ref=e636]:
+              - heading "FINANCEMENT VS PAIEMENT CASH" [level=2] [ref=e637]
+              - paragraph [ref=e638]: Quel mode de paiement optimise votre écart économique ?
+          - generic [ref=e639]:
+            - generic [ref=e640]:
+              - generic:
+                - img
+              - generic [ref=e641]:
+                - img [ref=e643]
+                - generic [ref=e646]:
+                  - heading "AVEC FINANCEMENT" [level=3] [ref=e647]
+                  - paragraph [ref=e648]: Réallocation budgétaire
+              - generic [ref=e649]:
+                - generic [ref=e650]:
+                  - generic [ref=e651]: ÉCART TOTAL (20 ANS)
+                  - generic [ref=e652]: 17 613 €
+                - generic [ref=e653]:
+                  - generic [ref=e654]: POINT MORT
+                  - generic [ref=e655]: 12 ans
+                - generic [ref=e656]:
+                  - generic [ref=e657]: CAPITAL IMMOBILISÉ
+                  - generic [ref=e658]: 0€
+              - generic [ref=e659]:
+                - generic [ref=e660]:
+                  - img [ref=e661]
+                  - text: AVANTAGES
+                - list [ref=e664]:
+                  - listitem [ref=e665]:
+                    - img [ref=e666]
+                    - text: Aucun capital immobilisé - Épargne disponible
+                  - listitem [ref=e669]:
+                    - img [ref=e670]
+                    - text: "Effort année 1 : 41 € (puis décroissant)"
+                  - listitem [ref=e673]:
+                    - img [ref=e674]
+                    - text: Réallocation progressive d'une dépense existante
+            - generic [ref=e677]:
+              - generic:
+                - img
+              - generic [ref=e678]:
+                - img [ref=e680]
+                - generic [ref=e685]:
+                  - heading "PAIEMENT CASH" [level=3] [ref=e686]
+                  - paragraph [ref=e687]: Performance maximale
+              - generic [ref=e688]:
+                - generic [ref=e689]:
+                  - generic [ref=e690]: ÉCART TOTAL (20 ANS)
+                  - generic [ref=e691]: 24 502 €
+                - generic [ref=e692]:
+                  - generic [ref=e693]: POINT MORT
+                  - generic [ref=e694]: 12 ans
+                - generic [ref=e695]:
+                  - generic [ref=e696]: PERFORMANCE ANNUELLE
+                  - generic [ref=e697]: +6.52%
+              - generic [ref=e698]:
+                - generic [ref=e699]:
+                  - img [ref=e700]
+                  - text: AVANTAGES
+                - list [ref=e703]:
+                  - listitem [ref=e704]:
+                    - img [ref=e705]
+                    - text: Performance supérieure (+1.8% vs crédit)
+                  - listitem [ref=e708]:
+                    - img [ref=e709]
+                    - text: Point mort plus rapide (12 ans vs 12)
+                  - listitem [ref=e712]:
+                    - img [ref=e713]
+                    - text: Pas d'intérêts bancaires - 100% des économies pour vous
+          - generic [ref=e717]:
+            - generic [ref=e718]:
+              - img [ref=e719]
+              - text: ÉCART CASH VS FINANCEMENT
+            - generic [ref=e722]: +6 889 €
+            - generic [ref=e723]: sur 20 ans
+          - generic [ref=e724]:
+            - generic [ref=e725]:
+              - img [ref=e727]
+              - generic [ref=e730]:
+                - heading "FINANCEMENT STRUCTURÉ" [level=4] [ref=e731]
+                - paragraph [ref=e732]:
+                  - text: Si vous préférez
+                  - strong [ref=e733]: conserver votre capital disponible
+                  - text: (0€ immobilisé).
+            - generic [ref=e734]:
+              - img [ref=e736]
+              - generic [ref=e739]:
+                - heading "CASH OPTIMAL" [level=4] [ref=e740]
+                - paragraph [ref=e741]:
+                  - text: "Si vous disposez du capital :"
+                  - strong [ref=e742]: +6 889 €
+                  - text: d'écart sur 20 ans.
+          - generic [ref=e743]: Les deux scénarios génèrent un écart économique positif. Le scénario par défaut (ne rien faire) correspond à une dépense non optimisée.
+      - generic [ref=e744]:
+        - 'button "Comparaison avec vos autres options #comparaison" [ref=e745] [cursor=pointer]':
+          - generic [ref=e746]:
+            - img [ref=e748]
+            - heading "Comparaison avec vos autres options" [level=3] [ref=e750]
+          - generic [ref=e751]:
+            - generic [ref=e752]: "#comparaison"
+            - img [ref=e753]
+        - generic [ref=e756]:
+          - generic:
+            - img
+          - generic [ref=e757]:
+            - generic [ref=e758]:
+              - img [ref=e760]
+              - heading "Comparaison avec vos autres options" [level=2] [ref=e762]
+            - generic [ref=e763]:
+              - generic [ref=e764]:
+                - paragraph [ref=e765]: Les deux scénarios sont présentés de manière strictement symétrique. La différence observée provient uniquement du mode de production de l'énergie.
+                - button "Plus d'informations" [ref=e766] [cursor=pointer]:
+                  - img [ref=e767]
+              - generic [ref=e769]:
+                - paragraph [ref=e770]: Même avec une stagnation des prix de l'énergie, l'installation reste pertinente car elle remplace une dépense par une autoproduction à coût marginal quasi nul.
+                - button "Plus d'informations" [ref=e771] [cursor=pointer]:
+                  - img [ref=e772]
+            - generic [ref=e774]:
+              - generic [ref=e775]:
+                - generic [ref=e777]:
+                  - generic [ref=e778]:
+                    - img [ref=e780]
+                    - generic [ref=e782]:
+                      - heading "Livret A" [level=3] [ref=e783]
+                      - paragraph [ref=e784]: Capital bloqué
+                  - generic [ref=e785]: 2.7%
+                  - generic [ref=e786]: Performance annuelle
+                - generic [ref=e787]:
+                  - generic [ref=e788]: Gain sur 20 ans
+                  - generic [ref=e789]: 13 230 €
+              - generic [ref=e790]:
+                - generic [ref=e792]:
+                  - generic [ref=e793]:
+                    - img [ref=e795]
+                    - generic [ref=e798]:
+                      - heading "Assurance Vie" [level=3] [ref=e799]
+                      - paragraph [ref=e800]: Frais de gestion
+                  - generic [ref=e801]: 3.5%
+                  - generic [ref=e802]: Performance annuelle
+                - generic [ref=e803]:
+                  - generic [ref=e804]: Gain sur 20 ans
+                  - generic [ref=e805]: 18 607 €
+              - generic [ref=e806]:
+                - generic [ref=e808]:
+                  - generic [ref=e809]:
+                    - img [ref=e811]
+                    - generic [ref=e814]:
+                      - heading "SCPI/Immobilier" [level=3] [ref=e815]
+                      - paragraph [ref=e816]: Illiquide
+                  - generic [ref=e817]: 4.5%
+                  - generic [ref=e818]: Performance annuelle
+                - generic [ref=e819]:
+                  - generic [ref=e820]: Gain sur 20 ans
+                  - generic [ref=e821]: 26 539 €
+              - generic [ref=e822]:
+                - generic [ref=e823]:
+                  - generic [ref=e824]: Meilleur Choix
+                  - generic [ref=e825]:
+                    - generic [ref=e826]:
+                      - img [ref=e828]
+                      - generic [ref=e834]:
+                        - heading "Solaire" [level=3] [ref=e835]
+                        - paragraph [ref=e836]: Sans immobiliser de capital
+                    - generic [ref=e837]: 0€
+                    - generic [ref=e838]: Capital bloqué
+                    - generic [ref=e839]:
+                      - img [ref=e840]
+                      - text: Vous réduisez votre dépendance au réseau
+                - generic [ref=e843]:
+                  - generic [ref=e844]: Écart sur 20 ans
+                  - generic [ref=e845]: 17 613 €
+                  - generic [ref=e846]: Équivalent à 32 616 € sur un Livret A
+            - generic [ref=e847]:
+              - img [ref=e848]
+              - paragraph [ref=e850]:
+                - strong [ref=e851]: La différence ?
+                - text: Les placements classiques immobilisent votre capital. Le solaire permet de redistribuer dans le temps une dépense énergétique existante, tout en conservant votre épargne disponible pour d'autres opportunités.
+      - generic [ref=e852]:
+        - 'button "Locataire VS Propriétaire Énergétique #locataire-proprietaire" [ref=e853] [cursor=pointer]':
+          - generic [ref=e854]:
+            - img [ref=e856]
+            - heading "Locataire VS Propriétaire Énergétique" [level=3] [ref=e858]
+          - generic [ref=e859]:
+            - generic [ref=e860]: "#locataire-proprietaire"
+            - img [ref=e861]
+        - generic [ref=e864]:
+          - generic [ref=e865]:
+            - generic [ref=e866]: Modèle Dépassé
+            - generic [ref=e867]:
+              - img [ref=e869]
+              - heading "LOCATAIRE ÉNERGÉTIQUE" [level=3] [ref=e873]
+            - paragraph [ref=e874]: Vous louez l'électricité que vous consommez. Chaque euro payé disparaît.
+            - list [ref=e875]:
+              - listitem [ref=e876]:
+                - img [ref=e877]
+                - text: Vous subissez 100% des hausses (inflation sans fin)
+              - listitem [ref=e879]:
+                - img [ref=e880]
+                - text: 0€ de capital créé après 20 ans (facture éternelle)
+              - listitem [ref=e882]:
+                - img [ref=e883]
+                - text: Dépendance totale aux décisions politiques
+              - listitem [ref=e885]:
+                - img [ref=e886]
+                - text: Votre facture finance les profits des actionnaires
+            - generic [ref=e890]:
+              - img [ref=e891]
+              - text: Pendant que vous payez, votre pouvoir d'achat s'érode.
+          - generic [ref=e894]:
+            - generic [ref=e895]: Votre Liberté
+            - generic [ref=e896]:
+              - img [ref=e898]
+              - heading "PROPRIÉTAIRE PRODUCTEUR" [level=3] [ref=e901]
+            - paragraph [ref=e902]: Vous possédez votre centrale. Chaque kWh produit vous appartient.
+            - list [ref=e903]:
+              - listitem [ref=e904]:
+                - img [ref=e905]
+                - text: Prix stabilisé par autoproduction pendant 30 ans
+              - listitem [ref=e908]:
+                - img [ref=e909]
+                - text: Vous créez un patrimoine transmissible et valorisable
+              - listitem [ref=e912]:
+                - img [ref=e913]
+                - text: Indépendance face aux crises énergétiques
+              - listitem [ref=e916]:
+                - img [ref=e917]
+                - text: "Vous êtes la banque : vous financez avec vos économies futures"
+            - generic [ref=e922]:
+              - img [ref=e923]
+              - text: Pendant que vous économisez, votre patrimoine grandit.
+      - generic [ref=e926]:
+        - 'button "Garanties & Sécurité #garanties" [ref=e927] [cursor=pointer]':
+          - generic [ref=e928]:
+            - img [ref=e930]
+            - heading "Garanties & Sécurité" [level=3] [ref=e933]
+          - generic [ref=e934]:
+            - generic [ref=e935]: "#garanties"
+            - img [ref=e936]
+        - generic [ref=e940]:
+          - generic [ref=e941]:
+            - generic [ref=e942]:
+              - img [ref=e943]
+              - heading "GARANTIES & SÉCURITÉ" [level=2] [ref=e946]
+            - generic [ref=e947]:
+              - button "Essentielle (TVA 5.5%)" [ref=e948] [cursor=pointer]
+              - button "Performance (TVA 20%)" [ref=e949] [cursor=pointer]
+          - generic [ref=e950]:
+            - img [ref=e951]
+            - generic [ref=e954]: OFFRE PERFORMANCE - TVA 20%
+            - generic [ref=e955]: Garantie maximale avec autopilote IA, afficheur temps réel et production garantie À VIE.
+          - generic [ref=e956]:
+            - generic [ref=e957]:
+              - generic [ref=e958]:
+                - img [ref=e960]
+                - generic [ref=e966]: À VIE
+                - generic [ref=e967]: PANNEAUX
+                - generic [ref=e968]: Pièces + M.O. + Déplacement
+              - generic [ref=e969]:
+                - img [ref=e970]
+                - heading "PANNEAUX À VIE" [level=4] [ref=e976]
+                - paragraph [ref=e977]: Garantie matériel, main d'œuvre et déplacement à vie.
+            - generic [ref=e978]:
+              - generic [ref=e979]:
+                - img [ref=e981]
+                - generic [ref=e983]: À VIE
+                - generic [ref=e984]: ONDULEURS
+                - generic [ref=e985]: Pièces + M.O. + Déplacement
+              - generic [ref=e986]:
+                - img [ref=e987]
+                - heading "ONDULEURS À VIE" [level=4] [ref=e989]
+                - paragraph [ref=e990]: Remplacement à neuf, main d'œuvre et déplacement à vie.
+            - generic [ref=e991]:
+              - generic [ref=e992]:
+                - img [ref=e994]
+                - generic [ref=e996]: À VIE
+                - generic [ref=e997]: STRUCTURE
+                - generic [ref=e998]: Pièces + M.O. + Déplacement
+              - generic [ref=e999]:
+                - img [ref=e1000]
+                - heading "STRUCTURE À VIE" [level=4] [ref=e1002]
+                - paragraph [ref=e1003]: Garantie à vie sur le système de fixation.
+            - generic [ref=e1004]:
+              - generic [ref=e1005]:
+                - img [ref=e1007]
+                - generic [ref=e1010]: À VIE
+                - generic [ref=e1011]: MATÉRIEL
+                - generic [ref=e1012]: Remplacement à neuf
+              - generic [ref=e1013]:
+                - img [ref=e1014]
+                - heading "MATÉRIEL À VIE" [level=4] [ref=e1017]
+                - paragraph [ref=e1018]: Garantie matérielle complète à vie.
+          - generic [ref=e1019]:
+            - paragraph [ref=e1020]:
+              - strong [ref=e1021]: Garantie de performance
+              - text: ": Indemnisation si production annuelle inférieure aux engagements contractuels."
+              - strong [ref=e1022]: Garantie matériel
+              - text: ": Remplacement pièces, main d'œuvre et déplacement selon les conditions de l'offre Performance."
+            - button "Plus d'informations" [ref=e1023] [cursor=pointer]:
+              - img [ref=e1024]
+          - generic [ref=e1026]:
+            - img [ref=e1028]
+            - generic [ref=e1031]:
+              - generic [ref=e1032]:
+                - heading "SYSTÈME YUZE - SUPERVISION INTELLIGENTE EDF" [level=3] [ref=e1033]
+                - generic [ref=e1034]: Inclus
+              - paragraph [ref=e1035]:
+                - text: Système développé par les ingénieurs EDF Solutions Solaires (Limonest - Lyon). Surveillance continue par algorithmes IA. Détection des écarts de performance et déclenchement des interventions selon les procédures EDF.
+                - button "Plus d'informations" [ref=e1036] [cursor=pointer]:
+                  - img [ref=e1037]
+              - generic [ref=e1039]:
+                - generic [ref=e1040]:
+                  - generic [ref=e1043]: SURVEILLANCE CONTINUE
+                  - paragraph [ref=e1044]: Monitoring temps réel de chaque panneau. Analyse des performances vs données météo et production théorique.
+                - generic [ref=e1045]:
+                  - generic [ref=e1048]: ALGORITHMES IA
+                  - paragraph [ref=e1049]: Apprentissage automatique de vos habitudes de consommation pour optimiser l'autoconsommation et maximiser vos économies.
+          - generic [ref=e1050]:
+            - img [ref=e1052]
+            - generic [ref=e1055]:
+              - heading "AFFICHEUR CONNECTÉ EN TEMPS RÉEL" [level=3] [ref=e1057]
+              - paragraph [ref=e1058]: Suivez votre production, votre consommation et vos économies depuis votre smartphone ou tablette.
+              - generic [ref=e1059]:
+                - generic [ref=e1060]:
+                  - img [ref=e1061]
+                  - generic [ref=e1063]: Production Live
+                  - generic [ref=e1064]: kW actuels + Cumul jour
+                - generic [ref=e1065]:
+                  - img [ref=e1066]
+                  - generic [ref=e1069]: Consommation Live
+                  - generic [ref=e1070]: Appareil par appareil
+                - generic [ref=e1071]:
+                  - img [ref=e1072]
+                  - generic [ref=e1077]: Économies Temps Réel
+                  - generic [ref=e1078]: € économisés aujourd'hui
+              - generic [ref=e1079]:
+                - img [ref=e1080]
+                - text: "Optimisez vos consommations : l'afficheur vous suggère les meilleurs moments pour lancer lave-linge, lave-vaisselle, etc."
+          - generic [ref=e1082]:
+            - img [ref=e1083]
+            - paragraph [ref=e1086]: "RÉSULTAT : Vous dormez tranquille. Nous surveillons tout 24/7. Si problème, on intervient gratuitement. Si sous-production, on paie la différence."
+      - generic [ref=e1087]:
+        - 'button "Structure du Budget (Mensuel) #structure-budget" [ref=e1088] [cursor=pointer]':
+          - generic [ref=e1089]:
+            - img [ref=e1091]
+            - heading "Structure du Budget (Mensuel)" [level=3] [ref=e1095]
+          - generic [ref=e1096]:
+            - generic [ref=e1097]: "#structure-budget"
+            - img [ref=e1098]
+        - generic [ref=e1101]:
+          - generic [ref=e1102]:
+            - generic [ref=e1103]:
+              - img [ref=e1104]
+              - heading "STRUCTURE DU BUDGET (MENSUEL)" [level=2] [ref=e1108]
+            - generic [ref=e1109]: Année 1 - Comparatif
+          - generic [ref=e1110]:
+            - generic [ref=e1111]:
+              - generic [ref=e1112]:
+                - generic [ref=e1113]: SITUATION ACTUELLE
+                - generic [ref=e1114]: 208 € /mois
+              - generic [ref=e1120]:
+                - generic [ref=e1121]: FACTURE ACTUELLE
+                - generic [ref=e1122]: 100% PERTE
+            - generic [ref=e1123]:
+              - generic [ref=e1124]:
+                - generic [ref=e1125]: PROJET SOLAIRE
+                - generic [ref=e1126]: 249 € /MOIS
+              - generic [ref=e1127]:
+                - generic [ref=e1132]:
+                  - generic [ref=e1133]: CRÉDIT
+                  - generic [ref=e1134]: 143 €
+                - generic [ref=e1140]:
+                  - generic [ref=e1141]: RESTE
+                  - generic [ref=e1142]: 106 €
+      - generic [ref=e1143]:
+        - 'button "Synthèse d''Arbitrage Énergétique #ai-analysis-cta" [ref=e1144] [cursor=pointer]':
+          - generic [ref=e1145]:
+            - img [ref=e1147]
+            - heading "Synthèse d'Arbitrage Énergétique" [level=3] [ref=e1150]
+          - generic [ref=e1151]:
+            - generic [ref=e1152]: "#ai-analysis-cta"
+            - img [ref=e1153]
+        - generic [ref=e1158]:
+          - generic [ref=e1160]:
+            - img [ref=e1162]
+            - generic [ref=e1165]:
+              - heading "Synthèse d'Arbitrage" [level=2] [ref=e1166]
+              - paragraph [ref=e1167]: Projection sur 20 ans (Données Certifiées)
+          - generic [ref=e1168]:
+            - generic [ref=e1169]:
+              - generic [ref=e1170]:
+                - heading "Option Financement" [level=3] [ref=e1171]
+                - generic [ref=e1172]: Top Sécurité
+              - generic [ref=e1173]:
+                - generic [ref=e1174]:
+                  - generic [ref=e1175]: 0€
+                  - generic [ref=e1176]: Capital Immobilisé
+                - generic [ref=e1177]:
+                  - generic [ref=e1178]: "12"
+                  - generic [ref=e1179]: Point Mort (ans)
+                - generic [ref=e1180]:
+                  - generic [ref=e1181]: 17 613 €
+                  - generic [ref=e1182]: Écart 20 ans
+              - generic [ref=e1183]:
+                - generic [ref=e1184]:
+                  - img [ref=e1185]
+                  - generic [ref=e1188]: Aucun capital immobilisé - Épargne disponible
+                - generic [ref=e1189]:
+                  - img [ref=e1190]
+                  - generic [ref=e1193]: "Effort année 1 : +41€/mois"
+            - generic [ref=e1194]:
+              - generic [ref=e1195]:
+                - heading "Option Cash" [level=3] [ref=e1196]
+                - generic [ref=e1197]: Performance maximale
+              - generic [ref=e1198]:
+                - generic [ref=e1199]:
+                  - generic [ref=e1200]: 18 799 €
+                  - generic [ref=e1201]: Capital investi
+                - generic [ref=e1202]:
+                  - generic [ref=e1203]: "12"
+                  - generic [ref=e1204]: Point Mort (ans)
+                - generic [ref=e1205]:
+                  - generic [ref=e1206]: 24 502 €
+                  - generic [ref=e1207]: Écart 20 ans
+          - generic [ref=e1208]:
+            - paragraph [ref=e1209]:
+              - strong [ref=e1210]: Vous n'immobilisez aucun capital initial.
+              - text: Pendant 15 ans, le financement redistribue dans le temps une dépense énergétique déjà existante.
+            - paragraph [ref=e1211]:
+              - text: Après remboursement, vous économisez
+              - generic [ref=e1212]: 881 € par an
+              - text: ", soit un gain cumulé de"
+              - generic [ref=e1213]: 17 613 € sur 20 ans.
+            - paragraph [ref=e1214]: Cet écart économique correspond à l'équivalent d'un capital de 32 616 € placé sur un Livret A à 2,7%.
+          - generic [ref=e1215]:
+            - button "Exporter PDF Dossier Complet + Amortissement" [ref=e1217] [cursor=pointer]:
+              - img [ref=e1219]
+              - generic [ref=e1222]:
+                - heading "Exporter PDF" [level=3] [ref=e1223]
+                - paragraph [ref=e1224]: Dossier Complet + Amortissement
+            - button "Générer Accès Client Signature du dossier technique" [ref=e1225] [cursor=pointer]:
+              - generic [ref=e1226]:
+                - img [ref=e1227]
+                - generic [ref=e1229]:
+                  - generic [ref=e1230]: Générer Accès Client
+                  - generic [ref=e1231]: Signature du dossier technique
+      - generic [ref=e1232]:
+        - 'button "Écart du Scénario par Défaut #scenario-defaut" [ref=e1233] [cursor=pointer]':
+          - generic [ref=e1234]:
+            - img [ref=e1236]
+            - heading "Écart du Scénario par Défaut" [level=3] [ref=e1238]
+          - generic [ref=e1239]:
+            - generic [ref=e1240]: "#scenario-defaut"
+            - img [ref=e1241]
+        - generic [ref=e1243]:
+          - generic [ref=e1244]:
+            - generic [ref=e1245]:
+              - img [ref=e1247]
+              - generic [ref=e1249]:
+                - heading "ÉCART DU SCÉNARIO PAR DÉFAUT" [level=2] [ref=e1250]
+                - paragraph [ref=e1251]: Ne pas agir correspond à conserver une dépendance complète au fournisseur d'énergie
+            - generic [ref=e1252]:
+              - generic [ref=e1253]:
+                - generic [ref=e1254]: DÉPENSE ÉNERGÉTIQUE ANNÉE 1
+                - generic [ref=e1255]: 2 500 €
+                - generic [ref=e1256]: Facture annuelle fournisseur
+              - generic [ref=e1257]:
+                - generic [ref=e1258]: OPTIMISATION NON RÉALISÉE
+                - generic [ref=e1259]: "-1 286 €"
+                - generic [ref=e1260]: Écart potentiel année 1
+              - generic [ref=e1261]:
+                - generic [ref=e1262]: ÉCART CUMULATIF (20 ANS)
+                - generic [ref=e1263]: "-17 613 €"
+                - generic [ref=e1264]: Optimisation non captée
+            - paragraph [ref=e1266]: Le scénario par défaut ne nécessite aucune décision, mais correspond à une exposition intégrale aux évolutions tarifaires. Plus la décision est prise tard, plus l'écart cumulatif augmente mécaniquement.
+            - generic [ref=e1267]:
+              - generic [ref=e1269]:
+                - img [ref=e1270]
+                - text: "Écart cumulatif par période d'attente :"
+              - generic [ref=e1273]:
+                - generic [ref=e1274]:
+                  - generic [ref=e1275]: "-881 €"
+                  - generic [ref=e1276]: Attente 1 an
+                - generic [ref=e1277]:
+                  - generic [ref=e1278]: "-2 642 €"
+                  - generic [ref=e1279]: Attente 3 ans
+                - generic [ref=e1280]:
+                  - generic [ref=e1281]: "-5 284 €"
+                  - generic [ref=e1282]: Attente 5 ans
+          - generic [ref=e1283]:
+            - img [ref=e1284]
+            - generic [ref=e1286]:
+              - paragraph [ref=e1287]:
+                - text: Chaque année d'attente accroît l'écart économique par effet cumulatif. Le scénario par défaut (ne rien faire) correspond à une
+                - generic [ref=e1288]: exposition intégrale aux évolutions tarifaires
+                - text: ", sans optimisation de la dépense énergétique existante."
+              - generic [ref=e1289]:
+                - generic [ref=e1290]: Plus la décision est tardive, plus l'écart augmente mécaniquement.
+                - button "Plus d'informations" [ref=e1291] [cursor=pointer]:
+                  - img [ref=e1292]
+      - generic [ref=e1294]:
+        - 'button "Coût de l''Attente #momentum" [ref=e1295] [cursor=pointer]':
+          - generic [ref=e1296]:
+            - img [ref=e1298]
+            - heading "Coût de l'Attente" [level=3] [ref=e1301]
+          - generic [ref=e1302]:
+            - generic [ref=e1303]: "#momentum"
+            - img [ref=e1304]
+        - generic [ref=e1307]:
+          - generic [ref=e1308]:
+            - img [ref=e1309]
+            - generic [ref=e1311]: DÉCISION ATTENDUE
+          - generic [ref=e1312]:
+            - img [ref=e1314]
+            - generic [ref=e1317]:
+              - heading "COÛT DE L'ATTENTE" [level=2] [ref=e1318]
+              - paragraph [ref=e1319]: Pendant que vous lisez cette étude, votre compteur tourne
+          - generic [ref=e1321]:
+            - generic [ref=e1322]:
+              - generic [ref=e1323]: 💸 ARGENT PERDU DEPUIS L'OUVERTURE DE CETTE PAGE
+              - button [ref=e1324] [cursor=pointer]:
+                - img [ref=e1325]
+            - generic [ref=e1327]: 0,0004 €
+            - generic [ref=e1328]: "\"Ce compteur ne s'arrêtera jamais tant que vous n'agissez pas\""
+          - generic [ref=e1329]:
+            - generic [ref=e1330]:
+              - generic [ref=e1331]: 1 250 €
+              - generic [ref=e1332]: Attendre 6 mois
+            - generic [ref=e1333]:
+              - generic [ref=e1334]: 2 500 €
+              - generic [ref=e1335]: Attendre 1 an
+            - generic [ref=e1336]:
+              - generic [ref=e1337]: 3 523 €
+              - generic [ref=e1338]: Attendre 3 ans
+          - generic [ref=e1339]:
+            - paragraph [ref=e1340]: ⏰ La question n'est plus "Est-ce que je dois le faire ?"
+            - paragraph [ref=e1341]:
+              - text: "La question est :"
+              - strong [ref=e1342]: "\"Combien vais-je encore perdre avant de me décider ?\""
+      - generic [ref=e1343]:
+        - 'button "Bilan Total sur X ans #bilan-total" [ref=e1344] [cursor=pointer]':
+          - generic [ref=e1345]:
+            - img [ref=e1347]
+            - heading "Bilan Total sur X ans" [level=3] [ref=e1351]
+          - generic [ref=e1352]:
+            - generic [ref=e1353]: "#bilan-total"
+            - img [ref=e1354]
+        - generic [ref=e1357]:
+          - generic [ref=e1358]:
+            - generic [ref=e1359]:
+              - img [ref=e1361]
+              - generic [ref=e1365]:
+                - heading "BILAN TOTAL SUR 20 ANS" [level=2] [ref=e1366]
+                - generic [ref=e1367]:
+                  - img [ref=e1368]
+                  - text: Imaginez ces barres comme deux comptes bancaires...
+            - generic [ref=e1370]:
+              - button "Financement" [ref=e1371] [cursor=pointer]
+              - button "Cash" [ref=e1372] [cursor=pointer]
+          - generic [ref=e1373]:
+            - generic [ref=e1374]:
+              - generic [ref=e1375]:
+                - generic [ref=e1378]: Sans Solaire (Dépense non valorisée)
+                - generic [ref=e1379]: 82 700 €
+              - generic [ref=e1385]:
+                - img [ref=e1386]
+                - text: Cet argent est parti pour toujours.
+            - generic [ref=e1388]:
+              - generic [ref=e1389]:
+                - generic [ref=e1392]: Avec Solaire (Investissement patrimonial)
+                - generic [ref=e1393]: 65 087 €
+              - generic [ref=e1400]:
+                - generic [ref=e1401]:
+                  - img [ref=e1402]
+                  - text: Cette dépense génère un actif qui produit pendant 25+ ans.
+                - generic [ref=e1404]:
+                  - img [ref=e1405]
+                  - generic [ref=e1410]: "Différence :"
+                  - generic [ref=e1411]: 17 613 €
+          - generic [ref=e1412]:
+            - img [ref=e1414]
+            - generic [ref=e1416]:
+              - heading "Pourquoi cette différence ?" [level=3] [ref=e1417]
+              - paragraph [ref=e1418]:
+                - text: Le scénario
+                - strong [ref=e1419]: sans solaire
+                - text: représente une dépense pure qui n'a aucune contrepartie. Le scénario
+                - strong [ref=e1420]: avec solaire
+                - text: transforme cette dépense en investissement patrimonial qui génère de la valeur pendant plus de 25 ans.
+      - generic [ref=e1421]:
+        - 'button "Surcoût Mensuel Chart #surcout-mensuel" [ref=e1422] [cursor=pointer]':
+          - generic [ref=e1423]:
+            - img [ref=e1425]
+            - heading "Surcoût Mensuel Chart" [level=3] [ref=e1428]
+          - generic [ref=e1429]:
+            - generic [ref=e1430]: "#surcout-mensuel"
+            - img [ref=e1431]
+        - generic [ref=e1434]:
+          - generic [ref=e1435]:
+            - generic [ref=e1436]:
+              - img [ref=e1437]
+              - generic [ref=e1440]:
+                - heading "SURCOÛT MENSUEL (20 ans)" [level=2] [ref=e1441]
+                - paragraph [ref=e1442]: Différence mensuelle vs situation sans panneaux
+            - generic [ref=e1443]:
+              - generic [ref=e1444]:
+                - generic [ref=e1445]: Surcoût
+                - generic [ref=e1447]: Économie
+              - generic [ref=e1449]:
+                - button "Financement" [ref=e1450] [cursor=pointer]:
+                  - img [ref=e1451]
+                  - text: Financement
+                - button "Cash" [ref=e1454] [cursor=pointer]:
+                  - img [ref=e1455]
+                  - text: Cash
+          - application [ref=e1463]:
+            - generic [ref=e1512]:
+              - generic [ref=e1514]: An 1
+              - generic [ref=e1516]: An 2
+              - generic [ref=e1518]: An 3
+              - generic [ref=e1520]: An 4
+              - generic [ref=e1522]: An 5
+              - generic [ref=e1524]: An 6
+              - generic [ref=e1526]: An 7
+              - generic [ref=e1528]: An 8
+              - generic [ref=e1530]: An 9
+              - generic [ref=e1532]: An 10
+              - generic [ref=e1534]: An 11
+              - generic [ref=e1536]: An 12
+              - generic [ref=e1538]: An 13
+              - generic [ref=e1540]: An 14
+              - generic [ref=e1542]: An 15
+              - generic [ref=e1544]: An 16
+              - generic [ref=e1546]: An 17
+              - generic [ref=e1548]: An 18
+              - generic [ref=e1550]: An 19
+              - generic [ref=e1552]: An 20
+          - generic [ref=e1553]:
+            - img [ref=e1554]
+            - paragraph [ref=e1556]:
+              - strong [ref=e1557]: Les barres rouges
+              - text: représentent les mois où vous avez un
+              - strong [ref=e1558]: surcoût
+              - text: par rapport à votre ancienne facture.
+              - strong [ref=e1559]: Les barres vertes
+              - text: représentent les mois où vous réalisez des
+              - strong [ref=e1560]: économies
+              - text: .
+      - generic [ref=e1561]:
+        - 'button "Plan de Financement Détaillé #tableau-detaille" [ref=e1562] [cursor=pointer]':
+          - generic [ref=e1563]:
+            - img [ref=e1565]
+            - heading "Plan de Financement Détaillé" [level=3] [ref=e1567]
+          - generic [ref=e1568]:
+            - generic [ref=e1569]: "#tableau-detaille"
+            - img [ref=e1570]
+        - generic [ref=e1574]:
+          - generic [ref=e1575]:
+            - generic [ref=e1576]:
+              - img [ref=e1577]
+              - heading "Plan de Financement Détaillé" [level=2] [ref=e1579]
+            - generic [ref=e1580]:
+              - generic [ref=e1581]:
+                - button "Financement" [ref=e1582] [cursor=pointer]
+                - button "Cash" [ref=e1583] [cursor=pointer]
+              - generic [ref=e1584]:
+                - button "Annuel" [ref=e1585] [cursor=pointer]
+                - button "Mensuel" [ref=e1586] [cursor=pointer]
+          - table [ref=e1588]:
+            - rowgroup [ref=e1589]:
+              - row "Année Sans Solaire Crédit Reste Facture Total Avec Solaire Effort Mensuel Trésorerie Cumulée" [ref=e1590]:
+                - columnheader "Année" [ref=e1591]
+                - columnheader "Sans Solaire" [ref=e1592]
+                - columnheader "Crédit" [ref=e1593]
+                - columnheader "Reste Facture" [ref=e1594]
+                - columnheader "Total Avec Solaire" [ref=e1595]
+                - columnheader "Effort Mensuel" [ref=e1596]
+                - columnheader "Trésorerie Cumulée" [ref=e1597]
+            - rowgroup [ref=e1598]:
+              - 'row "Année 0 - - - APPORT : 0 € 0 € -0 €" [ref=e1599]':
+                - cell "Année 0" [ref=e1600]
+                - cell "-" [ref=e1601]
+                - cell "-" [ref=e1602]
+                - cell "-" [ref=e1603]
+                - 'cell "APPORT : 0 €" [ref=e1604]'
+                - cell "0 €" [ref=e1605]
+                - cell "-0 €" [ref=e1606]
+              - row "2026 208 € 143 € 106 € 249 € +41 € -404 €" [ref=e1607]:
+                - cell "2026" [ref=e1608]
+                - cell "208 €" [ref=e1609]
+                - cell "143 €" [ref=e1610]
+                - cell "106 €" [ref=e1611]
+                - cell "249 €" [ref=e1612]
+                - cell "+41 €" [ref=e1613]
+                - cell "-404 €" [ref=e1614]
+              - row "2027 217 € 143 € 111 € 253 € +37 € -754 €" [ref=e1615]:
+                - cell "2027" [ref=e1616]
+                - cell "217 €" [ref=e1617]
+                - cell "143 €" [ref=e1618]
+                - cell "111 €" [ref=e1619]
+                - cell "253 €" [ref=e1620]
+                - cell "+37 €" [ref=e1621]
+                - cell "-754 €" [ref=e1622]
+              - row "2028 233 € 143 € 119 € 262 € +28 € -1 002 €" [ref=e1623]:
+                - cell "2028" [ref=e1624]
+                - cell "233 €" [ref=e1625]
+                - cell "143 €" [ref=e1626]
+                - cell "119 €" [ref=e1627]
+                - cell "262 €" [ref=e1628]
+                - cell "+28 €" [ref=e1629]
+                - cell "-1 002 €" [ref=e1630]
+              - row "2029 242 € 143 € 123 € 266 € +24 € -1 196 €" [ref=e1631]:
+                - cell "2029" [ref=e1632]
+                - cell "242 €" [ref=e1633]
+                - cell "143 €" [ref=e1634]
+                - cell "123 €" [ref=e1635]
+                - cell "266 €" [ref=e1636]
+                - cell "+24 €" [ref=e1637]
+                - cell "-1 196 €" [ref=e1638]
+              - row "2030 250 € 143 € 128 € 270 € +20 € -1 336 €" [ref=e1639]:
+                - cell "2030" [ref=e1640]
+                - cell "250 €" [ref=e1641]
+                - cell "143 €" [ref=e1642]
+                - cell "128 €" [ref=e1643]
+                - cell "270 €" [ref=e1644]
+                - cell "+20 €" [ref=e1645]
+                - cell "-1 336 €" [ref=e1646]
+              - row "2031 267 € 143 € 136 € 279 € +12 € -1 374 €" [ref=e1647]:
+                - cell "2031" [ref=e1648]
+                - cell "267 €" [ref=e1649]
+                - cell "143 €" [ref=e1650]
+                - cell "136 €" [ref=e1651]
+                - cell "279 €" [ref=e1652]
+                - cell "+12 €" [ref=e1653]
+                - cell "-1 374 €" [ref=e1654]
+              - row "2032 283 € 143 € 145 € 287 € +4 € -1 308 €" [ref=e1655]:
+                - cell "2032" [ref=e1656]
+                - cell "283 €" [ref=e1657]
+                - cell "143 €" [ref=e1658]
+                - cell "145 €" [ref=e1659]
+                - cell "287 €" [ref=e1660]
+                - cell "+4 €" [ref=e1661]
+                - cell "-1 308 €" [ref=e1662]
+              - row "2033 292 € 143 € 149 € 291 € -0 € -1 187 €" [ref=e1663]:
+                - cell "2033" [ref=e1664]
+                - cell "292 €" [ref=e1665]
+                - cell "143 €" [ref=e1666]
+                - cell "149 €" [ref=e1667]
+                - cell "291 €" [ref=e1668]
+                - cell "-0 €" [ref=e1669]
+                - cell "-1 187 €" [ref=e1670]
+              - row "2034 308 € 143 € 157 € 300 € -8 € -962 €" [ref=e1671]:
+                - cell "2034" [ref=e1672]
+                - cell "308 €" [ref=e1673]
+                - cell "143 €" [ref=e1674]
+                - cell "157 €" [ref=e1675]
+                - cell "300 €" [ref=e1676]
+                - cell "-8 €" [ref=e1677]
+                - cell "-962 €" [ref=e1678]
+              - row "2035 325 € 143 € 166 € 308 € -17 € -634 €" [ref=e1679]:
+                - cell "2035" [ref=e1680]
+                - cell "325 €" [ref=e1681]
+                - cell "143 €" [ref=e1682]
+                - cell "166 €" [ref=e1683]
+                - cell "308 €" [ref=e1684]
+                - cell "-17 €" [ref=e1685]
+                - cell "-634 €" [ref=e1686]
+              - row "2036 342 € 143 € 174 € 317 € -25 € -200 €" [ref=e1687]:
+                - cell "2036" [ref=e1688]
+                - cell "342 €" [ref=e1689]
+                - cell "143 €" [ref=e1690]
+                - cell "174 €" [ref=e1691]
+                - cell "317 €" [ref=e1692]
+                - cell "-25 €" [ref=e1693]
+                - cell "-200 €" [ref=e1694]
+              - row "2037 358 € 143 € 183 € 325 € -33 € 338 €" [ref=e1695]:
+                - cell "2037" [ref=e1696]
+                - cell "358 €" [ref=e1697]
+                - cell "143 €" [ref=e1698]
+                - cell "183 €" [ref=e1699]
+                - cell "325 €" [ref=e1700]
+                - cell "-33 €" [ref=e1701]
+                - cell "338 €" [ref=e1702]
+              - row "2038 375 € 143 € 191 € 334 € -41 € 981 €" [ref=e1703]:
+                - cell "2038" [ref=e1704]
+                - cell "375 €" [ref=e1705]
+                - cell "143 €" [ref=e1706]
+                - cell "191 €" [ref=e1707]
+                - cell "334 €" [ref=e1708]
+                - cell "-41 €" [ref=e1709]
+                - cell "981 €" [ref=e1710]
+              - row "2039 392 € 143 € 200 € 342 € -49 € 1 730 €" [ref=e1711]:
+                - cell "2039" [ref=e1712]
+                - cell "392 €" [ref=e1713]
+                - cell "143 €" [ref=e1714]
+                - cell "200 €" [ref=e1715]
+                - cell "342 €" [ref=e1716]
+                - cell "-49 €" [ref=e1717]
+                - cell "1 730 €" [ref=e1718]
+              - row "2040 408 € 143 € 208 € 351 € -57 € 2 585 €" [ref=e1719]:
+                - cell "2040" [ref=e1720]
+                - cell "408 €" [ref=e1721]
+                - cell "143 €" [ref=e1722]
+                - cell "208 €" [ref=e1723]
+                - cell "351 €" [ref=e1724]
+                - cell "-57 €" [ref=e1725]
+                - cell "2 585 €" [ref=e1726]
+              - row "2041 433 € 0 € 221 € 221 € -212 € 5 307 €" [ref=e1727]:
+                - cell "2041" [ref=e1728]
+                - cell "433 €" [ref=e1729]
+                - cell "0 €" [ref=e1730]
+                - cell "221 €" [ref=e1731]
+                - cell "221 €" [ref=e1732]
+                - cell "-212 €" [ref=e1733]
+                - cell "5 307 €" [ref=e1734]
+              - row "2042 458 € 0 € 234 € 234 € -225 € 8 186 €" [ref=e1735]:
+                - cell "2042" [ref=e1736]
+                - cell "458 €" [ref=e1737]
+                - cell "0 €" [ref=e1738]
+                - cell "234 €" [ref=e1739]
+                - cell "234 €" [ref=e1740]
+                - cell "-225 €" [ref=e1741]
+                - cell "8 186 €" [ref=e1742]
+              - row "2043 475 € 0 € 242 € 242 € -233 € 11 171 €" [ref=e1743]:
+                - cell "2043" [ref=e1744]
+                - cell "475 €" [ref=e1745]
+                - cell "0 €" [ref=e1746]
+                - cell "242 €" [ref=e1747]
+                - cell "242 €" [ref=e1748]
+                - cell "-233 €" [ref=e1749]
+                - cell "11 171 €" [ref=e1750]
+              - row "2044 500 € 0 € 255 € 255 € -245 € 14 313 €" [ref=e1751]:
+                - cell "2044" [ref=e1752]
+                - cell "500 €" [ref=e1753]
+                - cell "0 €" [ref=e1754]
+                - cell "255 €" [ref=e1755]
+                - cell "255 €" [ref=e1756]
+                - cell "-245 €" [ref=e1757]
+                - cell "14 313 €" [ref=e1758]
+              - row "2045 525 € 0 € 268 € 268 € -257 € 17 613 €" [ref=e1759]:
+                - cell "2045" [ref=e1760]
+                - cell "525 €" [ref=e1761]
+                - cell "0 €" [ref=e1762]
+                - cell "268 €" [ref=e1763]
+                - cell "268 €" [ref=e1764]
+                - cell "-257 €" [ref=e1765]
+                - cell "17 613 €" [ref=e1766]
+      - generic [ref=e1767]:
+        - 'button "Projets réalisés dans votre secteur #social-proof" [ref=e1768] [cursor=pointer]':
+          - generic [ref=e1769]:
+            - img [ref=e1771]
+            - heading "Projets réalisés dans votre secteur" [level=3] [ref=e1776]
+          - generic [ref=e1777]:
+            - generic [ref=e1778]: "#social-proof"
+            - img [ref=e1779]
+        - generic [ref=e1783]:
+          - heading "ILS ONT SIGNÉ CETTE SEMAINE" [level=2] [ref=e1784]
+          - generic [ref=e1785]:
+            - generic [ref=e1786]:
+              - img [ref=e1787]
+              - heading "ILS ONT SIGNÉ CETTE SEMAINE — ALPES-MARITIMES" [level=2] [ref=e1792]
+            - generic [ref=e1793]: Données Réelles
+          - generic [ref=e1794]:
+            - generic [ref=e1795]:
+              - generic [ref=e1796]:
+                - generic [ref=e1799]: Installation raccordée
+                - generic [ref=e1800]: 6.5 kWc
+              - generic [ref=e1801]: Famille D.
+              - generic [ref=e1802]: Grasse
+              - generic [ref=e1803]:
+                - generic [ref=e1804]: Économie projetée (20 ans)
+                - generic [ref=e1805]: 47 200 €
+            - generic [ref=e1806]:
+              - generic [ref=e1807]:
+                - generic [ref=e1810]: Mise en service
+                - generic [ref=e1811]: 9 kWc
+              - generic [ref=e1812]: M. et Mme L.
+              - generic [ref=e1813]: Cannes
+              - generic [ref=e1814]:
+                - generic [ref=e1815]: Économie projetée (20 ans)
+                - generic [ref=e1816]: 51 800 €
+            - generic [ref=e1817]:
+              - generic [ref=e1818]:
+                - generic [ref=e1821]: Installation raccordée
+                - generic [ref=e1822]: 6 kWc
+              - generic [ref=e1823]: M. R.
+              - generic [ref=e1824]: Antibes
+              - generic [ref=e1825]:
+                - generic [ref=e1826]: Économie projetée (20 ans)
+                - generic [ref=e1827]: 39 400 €
+          - generic [ref=e1829]:
+            - img [ref=e1831]
+            - paragraph [ref=e1834]:
+              - strong [ref=e1835]: 127 projets accompagnés
+              - text: ce mois-ci dans le département des Alpes-Maritimes.
+              - generic [ref=e1836]: En moyenne, les foyers qui passent à l'action économisent
+              - strong [ref=e1837]: dès la première année
+              - generic [ref=e1838]: grâce au dispositif de financement structuré.
+      - generic [ref=e1839]:
+        - generic [ref=e1840]:
+          - generic [ref=e1845]: Protocole de Qualification Terminal
+          - generic [ref=e1846]:
+            - img [ref=e1847]
+            - generic [ref=e1850]: "Session Active : ~15 min"
+        - generic [ref=e1854]:
+          - generic [ref=e1855]:
+            - img [ref=e1857]
+            - generic [ref=e1860]:
+              - generic [ref=e1861]: Audit Énergétique
+              - generic [ref=e1862]: Analysé
+          - generic [ref=e1863]:
+            - img [ref=e1865]
+            - generic [ref=e1868]:
+              - generic [ref=e1869]: Étude Solaire
+              - generic [ref=e1870]: Gisement OK
+          - generic [ref=e1871]:
+            - img [ref=e1873]
+            - generic [ref=e1876]:
+              - generic [ref=e1877]: Éligibilité Aides
+              - generic [ref=e1878]: TVA 5.5% OK
+          - generic [ref=e1879]:
+            - img [ref=e1881]
+            - generic [ref=e1885]:
+              - generic [ref=e1886]: Synthèse Projet
+              - generic [ref=e1887]: Calculs en cours
+        - generic [ref=e1888]:
+          - generic [ref=e1889]:
+            - img [ref=e1891]
+            - generic [ref=e1895]:
+              - heading "Finalisation du rapport technique" [level=4] [ref=e1896]
+              - paragraph [ref=e1897]: Vérification des quotas régionaux pour votre secteur
+          - button "Générer la validation" [ref=e1898] [cursor=pointer]:
+            - generic [ref=e1899]:
+              - text: Générer la validation
+              - img [ref=e1900]
+      - generic [ref=e1905]:
+        - paragraph [ref=e1906]: ANALYSE DE VOTRE LOGIQUE
+        - heading "Quand vous investissez, vous êtes plutôt :" [level=2] [ref=e1907]
+        - generic [ref=e1908]:
+          - button "Très prudent, zéro risque" [ref=e1909] [cursor=pointer]
+          - button "Tout analyser en détail" [ref=e1910] [cursor=pointer]
+          - button "Impact immédiat sur mon budget" [ref=e1911] [cursor=pointer]
+  - generic [ref=e1912]: An 1
+```

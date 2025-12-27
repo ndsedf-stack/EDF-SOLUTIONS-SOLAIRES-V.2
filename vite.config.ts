@@ -4,11 +4,11 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
+
   return {
     server: {
       port: 3000,
       host: "0.0.0.0",
-      // --- ON AJOUTE LE PROXY ICI ---
       proxy: {
         "/api-pvgis": {
           target: "https://re.jrc.ec.europa.eu",
@@ -16,7 +16,6 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/api-pvgis/, ""),
         },
       },
-      // ------------------------------
     },
     plugins: [react()],
     define: {
@@ -25,8 +24,13 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "."),
+        "@": path.resolve(__dirname, "src"),
       },
+    },
+    test: {
+      environment: "jsdom",
+      globals: true,
+      exclude: ["**/tests/e2e/**", "**/tests/ui/**"],
     },
   };
 });

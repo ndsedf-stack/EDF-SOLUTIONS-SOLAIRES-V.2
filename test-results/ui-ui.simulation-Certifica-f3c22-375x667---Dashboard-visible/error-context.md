@@ -1,0 +1,86 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - img "EDF" [ref=e7]
+      - generic [ref=e8]: Solutions Solaires
+    - generic [ref=e11]: PVGIS SARAH-3 V5.3 CONNECTED
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Profil Énergétique" [level=3] [ref=e15]:
+          - img [ref=e16]
+          - text: Profil Énergétique
+        - generic [ref=e19]:
+          - generic [ref=e20]:
+            - generic [ref=e21]: Facture (€)
+            - generic [ref=e22]:
+              - spinbutton [ref=e23]: "2500"
+              - generic [ref=e24]: 159.12€/mois
+          - generic [ref=e25]:
+            - generic [ref=e26]: Prix kWh (€)
+            - generic [ref=e27]: "0.2500"
+        - generic [ref=e28]:
+          - generic [ref=e29]:
+            - generic [ref=e30]: Surface (m²)
+            - spinbutton [ref=e31]: "120"
+          - generic [ref=e32]:
+            - generic [ref=e33]: Conso (kWh)
+            - generic [ref=e34]:
+              - spinbutton [ref=e35]: "10000"
+              - button [ref=e36] [cursor=pointer]:
+                - img [ref=e37]
+          - generic [ref=e40]:
+            - generic [ref=e41]: Inflation %
+            - spinbutton [ref=e42]: "5"
+      - generic [ref=e43]:
+        - heading "Financement & Investissement" [level=3] [ref=e44]:
+          - img [ref=e45]
+          - text: Financement & Investissement
+        - generic [ref=e47]:
+          - generic [ref=e48]:
+            - generic [ref=e49]: Prix Inst. (€)
+            - spinbutton [ref=e50]: "18990"
+          - generic [ref=e51]:
+            - generic [ref=e52]: Mensualité (€)
+            - generic [ref=e53]: "159.12"
+          - generic [ref=e54]:
+            - generic [ref=e55]: Durée (m)
+            - spinbutton [ref=e56]: "180"
+          - generic [ref=e57]:
+            - generic [ref=e58]: Taux %
+            - spinbutton [ref=e59]: "5.89"
+    - generic [ref=e61]:
+      - heading "Expertise PVGIS" [level=3] [ref=e62]:
+        - img [ref=e63]
+        - text: Expertise PVGIS
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - img [ref=e72]
+            - text: Localisation
+          - textbox "Saisir l'adresse..." [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e78]: Puissance (KWC)
+            - spinbutton [ref=e79]: "3"
+          - generic [ref=e80]:
+            - generic [ref=e81]: Autocons %
+            - spinbutton [ref=e82]: "100"
+        - generic [ref=e83]:
+          - generic [ref=e84]: Production Estimée
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - generic [ref=e87]: "0"
+              - generic [ref=e88]: kWh
+            - button [ref=e89] [cursor=pointer]:
+              - img [ref=e90]
+      - generic [ref=e93]:
+        - generic [ref=e94]: Rendement de zone
+        - generic [ref=e95]: — kWh/kWc
+  - button "Lancer l'analyse technique" [ref=e97] [cursor=pointer]:
+    - generic [ref=e98]: Lancer l'analyse technique
+    - img [ref=e100]
+```

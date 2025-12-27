@@ -1,3 +1,13 @@
+export interface ValidationReport {
+  isValid: boolean;
+  score: number;
+  errors: string[];
+  warnings: string[];
+  infos: string[];
+}
+
+export type ValidationRule = (data: any) => ValidationReport;
+
 export interface SimulationParams {
   inflationRate: number | string;
   electricityPrice: number | string;
@@ -16,11 +26,6 @@ export interface SimulationParams {
   insuranceRate?: number | string;
 }
 
-export interface SimulationResult {
-  params: SimulationParams;
-  salesPitch: string;
-}
-
 export interface YearlyDetail {
   year: number;
   edfBillWithoutSolar: number;
@@ -31,7 +36,7 @@ export interface YearlyDetail {
   cumulativeSpendNoSolar: number;
   cumulativeSpendSolar: number;
   cashflowDiff: number;
-  solarSavingsValue: number; // Valeur générée (Économie + Revente)
+  solarSavingsValue: number;
 }
 
 export interface CalculationOutput {
@@ -39,64 +44,29 @@ export interface CalculationOutput {
   slicedDetails: YearlyDetail[];
   detailsCash: YearlyDetail[];
   slicedDetailsCash: YearlyDetail[];
-
   totalSavingsProjected: number;
   totalSpendNoSolar: number;
   totalSpendSolar: number;
-
   totalSavingsProjectedCash: number;
   totalSpendNoSolarCash: number;
   totalSpendSolarCash: number;
-
   breakEvenPoint: number;
   breakEvenPointCash: number;
-
   costOfInactionPerSecond: number;
   averageYearlyGain: number;
   averageYearlyGainCash: number;
-
   newMonthlyBillYear1: number;
   oldMonthlyBillYear1: number;
   monthlyEffortYear1: number;
-
   roiPercentage: number;
   roiPercentageCash: number;
-
   bankEquivalentCapital: number;
   bankEquivalentCapitalCash: number;
-
   savingsRatePercent: number;
   baseConsumptionKwh: number;
   lossIfWait1Year: number;
   savingsLostIfWait1Year: number;
   surplusRevenuePerYear: number;
   interestRate: number;
-
   year1: YearlyDetail;
-}
-
-export interface AmortizationPoint {
-  year: number;
-  balance: number;
-  interest: number;
-  principal: number;
-}
-
-export interface CalculationResult {
-  monthlyPayment: number;
-  totalPayment: number;
-  totalInterest: number;
-  schedule: AmortizationPoint[];
-}
-
-export interface LoanParams {
-  amount: number;
-  rate: number;
-  years: number;
-}
-
-export interface AIAnalysisState {
-  loading: boolean;
-  response: string | null;
-  error: string | null;
 }

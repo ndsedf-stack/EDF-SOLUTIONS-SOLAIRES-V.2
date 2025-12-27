@@ -1,6 +1,9 @@
 import { CalculationOutput, SimulationParams, YearlyDetail } from "../types";
 
-// Helper for strict 2-decimal rounding to prevent floating point drift
+// ============================================================================
+// HELPERS
+// ============================================================================
+
 const round2 = (num: number): number => Math.round(num * 100) / 100;
 
 export const safeParseFloat = (val: any, defaultVal: number = 0): number => {
@@ -10,37 +13,40 @@ export const safeParseFloat = (val: any, defaultVal: number = 0): number => {
   return isNaN(parsed) ? defaultVal : parsed;
 };
 
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat("fr-FR", {
+export const formatCurrency = (value: number): string =>
+  new Intl.NumberFormat("fr-FR", {
     style: "currency",
     currency: "EUR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
-};
+
+// ============================================================================
+// MOTEUR PRINCIPAL
+// ============================================================================
 
 export const calculateSolarProjection = (
   params: SimulationParams,
   overrides: {
-    inflationRate: number;
+    inflationRate?: number;
     projectionYears: number;
     electricityPrice: number;
     yearlyProduction: number;
     selfConsumptionRate: number;
     installCost: number;
     cashApport: number;
-    remainingToFinance: number;
+    remainingToFinance?: number;
     creditMonthlyPayment: number;
     insuranceMonthlyPayment: number;
     creditDurationMonths: number;
     taxRate?: number;
     buybackRate?: number;
+    interestRate?: number;
   }
 ): CalculationOutput => {
   const currentAnnualBill = safeParseFloat(params.currentAnnualBill, 0);
   const yearlyConsumption = safeParseFloat(params.yearlyConsumption, 0);
 
-  // Destructure overrides with a fallback to prevent "Missing initializer" error
   const {
     inflationRate = 5,
     projectionYears = 20,
@@ -48,21 +54,21 @@ export const calculateSolarProjection = (
     yearlyProduction = 7000,
     selfConsumptionRate = 70,
     installCost = 18799,
-    creditMonthlyPayment = 138.01,
-    insuranceMonthlyPayment = 4.7,
-    creditDurationMonths = 180,
-    taxRate = 0,
+    creditMonthlyPayment = 0,
+    insuranceMonthlyPayment = 0,
+    creditDurationMonths = 0,
     buybackRate = 0.04,
-  } = overrides || {};
+    cashApport = 0,
+    interestRate: overrideInterestRate,
+  } = overrides;
 
-  const cashApport = overrides?.cashApport ?? 0;
-
-  // Normalized inputs
   const localInflation = round2(inflationRate);
   const localInstallCost = round2(installCost);
 
-  // --- BASE CALCULATIONS ---
-  // 1. Consumption Base
+  // --------------------------------------------------------------------------
+  // CONSOMMATION & PRODUCTION
+  // --------------------------------------------------------------------------
+
   const baseConsumptionKwh =
     yearlyConsumption > 0
       ? yearlyConsumption
@@ -70,275 +76,202 @@ export const calculateSolarProjection = (
       ? currentAnnualBill / electricityPrice
       : 0;
 
-  // 2. Production Split
   const selfConsumedKwh = round2(
     yearlyProduction * (selfConsumptionRate / 100)
   );
   const surplusKwh = round2(yearlyProduction - selfConsumedKwh);
-
-  // ✅ CORRECTION 1: Calculer la revente de BASE (sera indexée dans la boucle)
-  // Note: La taxe n'est PAS appliquée sur la revente
   const surplusRevenueBase = round2(surplusKwh * buybackRate);
-
-  // ⚠️ SUPPRIMÉ: const surplusRevenuePerYear = round2(netSurplusRevenue);
-  // Cette valeur sera calculée dans la boucle avec l'inflation
 
   const savingsRatePercent =
     baseConsumptionKwh > 0
       ? round2((selfConsumedKwh / baseConsumptionKwh) * 100)
       : 0;
 
-  // --- SIMULATION LOOPS ---
+  // --------------------------------------------------------------------------
+  // BOUCLE ANNUELLE
+  // --------------------------------------------------------------------------
+
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  const projectStartYear = currentMonth === 11 ? currentYear + 1 : currentYear;
-  const startYear = projectStartYear;
+  const startYear =
+    now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
 
-  // Storage for Credit Scenario
+  let cumulativeNoSolar = 0;
+  let cumulativeSolar = cashApport;
+  let cumulativeNoSolarCash = 0;
+  let cumulativeSolarCash = localInstallCost;
+
   const details: YearlyDetail[] = [];
-  let cumulativeSpendNoSolar = 0; // Pas d'arrondi intermédiaire
-  let cumulativeSpendSolar = cashApport; // Commence à 0 pour financement
-
-  // Storage for Cash Scenario
   const detailsCash: YearlyDetail[] = [];
-  let cumulativeSpendNoSolarCash = 0; // Pas d'arrondi intermédiaire
-  let cumulativeSpendSolarCash = localInstallCost; // Investissement initial
 
-  // Run projection for 30 years (standard lifetime)
   for (let i = 0; i < 30; i++) {
     const year = startYear + i;
+    const inflationCoef = Math.pow(1 + localInflation / 100, i);
+    const price = round2(electricityPrice * inflationCoef);
+    const surplusRevenue = round2(surplusRevenueBase * inflationCoef);
 
-    // Inflation factor
-    const priceMultiplier = Math.pow(1 + localInflation / 100, i);
-    const currentPrice = round2(electricityPrice * priceMultiplier);
+    const billWithoutSolar = round2(baseConsumptionKwh * price);
+    const savingsValue = round2(selfConsumedKwh * price);
+    const residuaryBill = Math.max(0, billWithoutSolar - savingsValue);
 
-    // ✅ CORRECTION 1b: Appliquer l'inflation à la revente
-    const surplusRevenuePerYear = round2(surplusRevenueBase * priceMultiplier);
-
-    // A. SCENARIO: NO SOLAR
-    const billWithoutSolar = round2(baseConsumptionKwh * currentPrice);
-
-    // B. SCENARIO: WITH SOLAR (COMMON)
-    const savingsInEuros = round2(selfConsumedKwh * currentPrice);
-    const residuaryBill = Math.max(
+    const monthsStart = i * 12;
+    const monthsEnd = (i + 1) * 12;
+    const monthsActive = Math.max(
       0,
-      round2(billWithoutSolar - savingsInEuros)
+      Math.min(monthsEnd, creditDurationMonths) - Math.max(monthsStart, 0)
     );
 
-    // Total raw value generated by the system (Savings + Resale)
-    const solarSavingsValue = round2(savingsInEuros + surplusRevenuePerYear);
-
-    // C. CREDIT SPECIFICS
-    // Precise monthly calculation to match validation script
-    const startMonthOfLoan = 0;
-    const endMonthOfLoan = creditDurationMonths;
-    const yearStartMonth = i * 12;
-    const yearEndMonth = (i + 1) * 12;
-    const activeStart = Math.max(yearStartMonth, startMonthOfLoan);
-    const activeEnd = Math.min(yearEndMonth, endMonthOfLoan);
-    const monthsActiveInYear = Math.max(0, activeEnd - activeStart);
-
-    const creditCostYearly =
-      monthsActiveInYear > 0
+    const creditCost =
+      monthsActive > 0
         ? round2(
-            (creditMonthlyPayment + insuranceMonthlyPayment) *
-              monthsActiveInYear
+            (creditMonthlyPayment + insuranceMonthlyPayment) * monthsActive
           )
         : 0;
 
-    // Cashflow Credit
-    // Total Décaissé = Bill residue + Loan + Insurance - Resale Revenue
-    const totalDecaisse = round2(
-      residuaryBill + creditCostYearly - surplusRevenuePerYear
-    );
-    const yearlyCashflow = round2(billWithoutSolar - totalDecaisse);
+    // --- CREDIT ---
+    const totalWithSolar = round2(residuaryBill + creditCost - surplusRevenue);
 
-    // ✅ CORRECTION 2 & 3: Cumuls sans round2() intermédiaire
-    cumulativeSpendNoSolar = cumulativeSpendNoSolar + billWithoutSolar;
-    cumulativeSpendSolar = cumulativeSpendSolar + totalDecaisse;
-
-    // ✅ CORRECTION 2b: Simplification du calcul
-    const cumulativeSavings = cumulativeSpendNoSolar - cumulativeSpendSolar;
+    cumulativeNoSolar += billWithoutSolar;
+    cumulativeSolar += totalWithSolar;
 
     details.push({
       year,
-      edfBillWithoutSolar: round2(billWithoutSolar),
-      creditPayment: round2(creditCostYearly),
-      edfResidue: round2(residuaryBill),
-      totalWithSolar: round2(totalDecaisse),
-      cumulativeSavings: round2(cumulativeSavings), // ✅ Arrondi à l'affichage uniquement
-      cumulativeSpendNoSolar: round2(cumulativeSpendNoSolar),
-      cumulativeSpendSolar: round2(cumulativeSpendSolar),
-      cashflowDiff: round2(yearlyCashflow),
-      solarSavingsValue: round2(solarSavingsValue),
+      edfBillWithoutSolar: billWithoutSolar,
+      creditPayment: creditCost,
+      edfResidue: residuaryBill,
+      totalWithSolar,
+      cumulativeSavings: round2(cumulativeNoSolar - cumulativeSolar),
+      cumulativeSpendNoSolar: round2(cumulativeNoSolar),
+      cumulativeSpendSolar: round2(cumulativeSolar),
+      cashflowDiff: round2(billWithoutSolar - totalWithSolar),
+      solarSavingsValue: round2(savingsValue + surplusRevenue),
     });
 
-    // D. CASH SPECIFICS
-    const totalDecaisseCash = round2(residuaryBill - surplusRevenuePerYear);
-    const yearlyCashflowCash = round2(billWithoutSolar - totalDecaisseCash);
+    // --- CASH ---
+    const totalWithSolarCash = round2(residuaryBill - surplusRevenue);
 
-    // ✅ CORRECTION 2 & 3: Même logique pour le cash
-    cumulativeSpendNoSolarCash = cumulativeSpendNoSolarCash + billWithoutSolar;
-    cumulativeSpendSolarCash = cumulativeSpendSolarCash + totalDecaisseCash;
-
-    // ✅ CORRECTION 2b: Simplification
-    const cumulativeSavingsCash =
-      cumulativeSpendNoSolarCash - cumulativeSpendSolarCash;
+    cumulativeNoSolarCash += billWithoutSolar;
+    cumulativeSolarCash += totalWithSolarCash;
 
     detailsCash.push({
       year,
-      edfBillWithoutSolar: round2(billWithoutSolar),
+      edfBillWithoutSolar: billWithoutSolar,
       creditPayment: 0,
-      edfResidue: round2(residuaryBill),
-      totalWithSolar: round2(totalDecaisseCash),
-      cumulativeSavings: round2(cumulativeSavingsCash), // ✅ Arrondi à l'affichage
-      cumulativeSpendNoSolar: round2(cumulativeSpendNoSolarCash),
-      cumulativeSpendSolar: round2(cumulativeSpendSolarCash),
-      cashflowDiff: round2(yearlyCashflowCash),
-      solarSavingsValue: round2(solarSavingsValue),
+      edfResidue: residuaryBill,
+      totalWithSolar: totalWithSolarCash,
+      cumulativeSavings: round2(cumulativeNoSolarCash - cumulativeSolarCash),
+      cumulativeSpendNoSolar: round2(cumulativeNoSolarCash),
+      cumulativeSpendSolar: round2(cumulativeSolarCash),
+      cashflowDiff: round2(billWithoutSolar - totalWithSolarCash),
+      solarSavingsValue: round2(savingsValue + surplusRevenue),
     });
   }
 
-  // --- AGGREGATES ---
+  // --------------------------------------------------------------------------
+  // KPI FINALS
+  // --------------------------------------------------------------------------
+
   const slicedDetails = details.slice(0, projectionYears);
   const slicedDetailsCash = detailsCash.slice(0, projectionYears);
 
-  // Projections Credit
-  const totalSavingsProjected =
-    slicedDetails.length > 0
-      ? slicedDetails[slicedDetails.length - 1].cumulativeSavings
-      : 0;
-  const totalSpendNoSolar =
-    slicedDetails.length > 0
-      ? slicedDetails[slicedDetails.length - 1].cumulativeSpendNoSolar
-      : 0;
-  const totalSpendSolar =
-    slicedDetails.length > 0
-      ? slicedDetails[slicedDetails.length - 1].cumulativeSpendSolar
-      : 0;
+  const totalSavingsProjected = slicedDetails.at(-1)?.cumulativeSavings ?? 0;
 
-  const breakEvenYearIndex = details.findIndex((d) => d.cumulativeSavings > 0);
-  const breakEvenPoint =
-    breakEvenYearIndex !== -1 ? breakEvenYearIndex + 1 : 30;
-
-  // Projections Cash
   const totalSavingsProjectedCash =
-    slicedDetailsCash.length > 0
-      ? slicedDetailsCash[slicedDetailsCash.length - 1].cumulativeSavings
-      : 0;
-  const totalSpendNoSolarCash =
-    slicedDetailsCash.length > 0
-      ? slicedDetailsCash[slicedDetailsCash.length - 1].cumulativeSpendNoSolar
-      : 0;
-  const totalSpendSolarCash =
-    slicedDetailsCash.length > 0
-      ? slicedDetailsCash[slicedDetailsCash.length - 1].cumulativeSpendSolar
-      : 0;
-  const breakEvenYearIndexCash = detailsCash.findIndex(
+    slicedDetailsCash.at(-1)?.cumulativeSavings ?? 0;
+
+  const breakEvenIndex = details.findIndex((d) => d.cumulativeSavings > 0);
+
+  const breakEvenPoint = breakEvenIndex === -1 ? 30 : breakEvenIndex + 1;
+
+  const breakEvenIndexCash = detailsCash.findIndex(
     (d) => d.cumulativeSavings > 0
   );
   const breakEvenPointCash =
-    breakEvenYearIndexCash !== -1 ? breakEvenYearIndexCash + 1 : 30;
+    breakEvenIndexCash === -1 ? projectionYears : breakEvenIndexCash + 1;
 
-  // KPIs
-  const year1 =
-    details.length > 0
-      ? details[0]
-      : {
-          totalWithSolar: 0,
-          edfBillWithoutSolar: 0,
-          creditPayment: 0,
-          edfResidue: 0,
-          cumulativeSavings: 0,
-          cumulativeSpendNoSolar: 0,
-          cumulativeSpendSolar: 0,
-          cashflowDiff: 0,
-          solarSavingsValue: 0,
-          year: startYear,
-        };
-
-  const newMonthlyBillYear1 = round2(year1.totalWithSolar / 12);
-  const oldMonthlyBillYear1 = round2(year1.edfBillWithoutSolar / 12);
-  const monthlyEffortYear1 = round2(newMonthlyBillYear1 - oldMonthlyBillYear1);
-
-  const averageYearlyGain =
-    projectionYears > 0 ? round2(totalSavingsProjected / projectionYears) : 0;
-  const averageYearlyGainCash =
-    projectionYears > 0
-      ? round2(totalSavingsProjectedCash / projectionYears)
-      : 0;
-
-  const costOfInactionPerSecond = Math.max(
-    0.0001,
-    averageYearlyGain / (365 * 24 * 3600)
-  );
-
-  const effectiveCost = localInstallCost > 0 ? localInstallCost : 20000;
-
-  // ROI calculations (conservés pour compatibilité)
-  const roiPercentage =
-    effectiveCost > 0
-      ? Math.round((averageYearlyGain / effectiveCost) * 1000) / 10
-      : 0;
-
-  const roiPercentageCash =
-    localInstallCost > 0
-      ? Math.round((averageYearlyGainCash / localInstallCost) * 1000) / 10
-      : 0;
-
-  const bankEquivalentCapital = round2(averageYearlyGain / 0.027);
-  const bankEquivalentCapitalCash = round2(averageYearlyGainCash / 0.027);
-
-  // Next Year Loss
-  const priceNextYear = round2(
-    electricityPrice * Math.pow(1 + localInflation / 100, 1)
-  );
-  const lossIfWait1Year = round2(baseConsumptionKwh * electricityPrice);
-  const savingsLostIfWait1Year = round2(selfConsumedKwh * priceNextYear);
-
-  // ✅ NOUVEAU: Calculer surplusRevenuePerYear pour l'année 1 (pour compatibilité avec les autres composants)
-  const surplusRevenuePerYearOutput = round2(
-    surplusRevenueBase * Math.pow(1 + localInflation / 100, 0)
-  );
+  const year1 = details[0];
 
   return {
     details,
     slicedDetails,
     detailsCash,
     slicedDetailsCash,
+
     totalSavingsProjected,
-    totalSpendNoSolar,
-    totalSpendSolar,
+    totalSavings: Math.max(0, totalSavingsProjected),
+
+    totalSpendNoSolar: slicedDetails.at(-1)?.cumulativeSpendNoSolar ?? 0,
+    totalSpendSolar: slicedDetails.at(-1)?.cumulativeSpendSolar ?? 0,
+
     totalSavingsProjectedCash,
-    totalSpendNoSolarCash,
-    totalSpendSolarCash,
+    totalSpendNoSolarCash:
+      slicedDetailsCash.at(-1)?.cumulativeSpendNoSolar ?? 0,
+    totalSpendSolarCash: slicedDetailsCash.at(-1)?.cumulativeSpendSolar ?? 0,
+
     breakEvenPoint,
     breakEvenPointCash,
-    costOfInactionPerSecond,
-    averageYearlyGain,
-    averageYearlyGainCash,
-    newMonthlyBillYear1,
-    oldMonthlyBillYear1,
-    monthlyEffortYear1,
-    roiPercentage,
-    roiPercentageCash,
-    bankEquivalentCapital,
-    bankEquivalentCapitalCash,
+    paybackYear: Math.max(0, breakEvenPoint),
+
+    costOfInactionPerSecond: Math.max(
+      0.0001,
+      totalSavingsProjected / projectionYears / (365 * 24 * 3600)
+    ),
+
+    averageYearlyGain: round2(
+      Math.max(0, totalSavingsProjected / projectionYears)
+    ),
+    averageYearlyGainCash: round2(
+      Math.max(0, totalSavingsProjectedCash / projectionYears)
+    ),
+
+    newMonthlyBillYear1: round2((year1.creditPayment + year1.edfResidue) / 12),
+    oldMonthlyBillYear1: round2(year1.edfBillWithoutSolar / 12),
+    monthlyEffortYear1: round2(
+      (year1.creditPayment + year1.edfResidue) / 12 -
+        year1.edfBillWithoutSolar / 12
+    ),
+
+    roiPercentage:
+      localInstallCost > 0
+        ? round2(
+            Math.max(
+              0,
+              (totalSavingsProjected / projectionYears / localInstallCost) * 100
+            )
+          )
+        : 0,
+
+    roiPercentageCash:
+      localInstallCost > 0
+        ? round2(
+            Math.max(
+              0,
+              (totalSavingsProjectedCash / projectionYears / localInstallCost) *
+                100
+            )
+          )
+        : 0,
+
+    bankEquivalentCapital: round2(
+      Math.max(0, totalSavingsProjected / projectionYears / 0.027)
+    ),
+    bankEquivalentCapitalCash: round2(
+      Math.max(0, totalSavingsProjectedCash / projectionYears / 0.027)
+    ),
+
     savingsRatePercent,
     baseConsumptionKwh,
-    lossIfWait1Year,
-    savingsLostIfWait1Year,
-    surplusRevenuePerYear: surplusRevenuePerYearOutput,
-    interestRate: safeParseFloat(
-      params["interestRate" as keyof typeof params] ||
-        params.creditInterestRate ||
-        0
+    lossIfWait1Year: round2(baseConsumptionKwh * electricityPrice),
+    savingsLostIfWait1Year: round2(
+      selfConsumedKwh * electricityPrice * (1 + localInflation / 100)
     ),
+    surplusRevenuePerYear: surplusRevenueBase,
+    interestRate:
+      overrideInterestRate ?? safeParseFloat(params.creditInterestRate || 0),
     year1,
   };
 };
 
-export const printSimpleReport = (result: CalculationOutput) => {
-  // Silence radio : le validateur s'occupe de tout désormais.
-};
+// Alias compat
+export const calculateFinancials = calculateSolarProjection;
+
+export const printSimpleReport = (_: CalculationOutput) => {};

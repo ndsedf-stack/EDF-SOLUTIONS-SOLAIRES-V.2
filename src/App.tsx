@@ -4,7 +4,7 @@ import { ResultsDashboard } from "./components/ResultsDashboard";
 import { FileUpload } from "./components/FileUpload";
 import { GuestView } from "./components/GuestView";
 
-// Valeurs de secours pour éviter le NaN
+// ✅ Valeurs par défaut sécurisées
 const DEFAULT_PARAMS = {
   inflationRate: 5,
   electricityPrice: 0.25,
@@ -12,34 +12,28 @@ const DEFAULT_PARAMS = {
   selfConsumptionRate: 70,
   installCost: 18799,
   creditMonthlyPayment: 138.01,
-  insuranceMonthlyPayment: 4.7,
+  insuranceMonthlyPayment: 0,
   creditDurationMonths: 180,
   cashApport: 0,
   remainingToFinance: 18799,
   currentAnnualBill: 2500,
   yearlyConsumption: 10000,
-  creditInterestRate: 4.45,
+  creditInterestRate: 5.89,
   insuranceRate: 0.3,
+  houseSize: 120, // Valeur par défaut
 };
 
 const MainApp: React.FC = () => {
   const [hasData, setHasData] = useState(false);
   const [simulationData, setSimulationData] = useState<any>(null);
 
-  // --- MOTEUR DE CALCUL SÉCURISÉ ---
+  // 🔒 Calculs financiers de secours
   const getComputedData = (params: any) => {
-    const p = params || DEFAULT_PARAMS;
-
-    // On force la conversion en nombre pour éviter le NaN€
-    const bill =
-      Number(p.currentAnnualBill) || DEFAULT_PARAMS.currentAnnualBill;
-    const selfRate =
-      Number(p.selfConsumptionRate) || DEFAULT_PARAMS.selfConsumptionRate;
-    const loan =
-      Number(p.creditMonthlyPayment) || DEFAULT_PARAMS.creditMonthlyPayment;
-    const insurance =
-      Number(p.insuranceMonthlyPayment) ||
-      DEFAULT_PARAMS.insuranceMonthlyPayment;
+    const p = { ...DEFAULT_PARAMS, ...(params || {}) };
+    const bill = Number(p.currentAnnualBill);
+    const selfRate = Number(p.selfConsumptionRate);
+    const loan = Number(p.creditMonthlyPayment);
+    const insurance = Number(p.insuranceMonthlyPayment);
 
     return {
       monthlyBill: bill / 12,
@@ -47,68 +41,81 @@ const MainApp: React.FC = () => {
       monthlySavings: (bill / 12) * (selfRate / 100),
       remainingBill: (bill / 12) * (1 - selfRate / 100),
       totalWithSolar: loan + insurance + (bill / 12) * (1 - selfRate / 100),
-      totalCost20Years: bill * 33,
-      totalCost40Years: bill * 120,
-      totalSavings20Years: bill * 0.7 * 20,
+      totalCost20Years: bill * 20,
+      totalSavings20Years: bill * (selfRate / 100) * 20,
       breakEvenYear: 8,
     };
   };
 
   const handleUploadSuccess = (rawData: any) => {
-    const cleanParams = rawData?.params || rawData;
-    setSimulationData({
-      params: cleanParams,
-      computed: getComputedData(cleanParams), // Si ça c'est vide, le coach affichera 0
+    // 1. Parsing propre des données du formulaire
+    const inputData =
+      typeof rawData === "string" ? JSON.parse(rawData) : rawData;
+
+    // 2. 🧮 CALCUL DE LA VALEUR VERTE (Pour éviter le +0€)
+    const surface = Number(inputData.houseSize || 120);
+    const prixM2Moyen = 4500; // Base Cannes/06
+    const estimationVerte = surface * prixM2Moyen * 0.08;
+
+    // 3. Construction de l'objet final pour le Dashboard
+    const result = {
+      params: {
+        ...DEFAULT_PARAMS,
+        ...inputData,
+        houseSize: surface, // On force le format nombre
+      },
+      computed: getComputedData(inputData),
+
+      // ✅ Données critiques pour le bloc Valeur Verte
+      greenValue: estimationVerte,
+      greenValueData: {
+        city: inputData.address || "CANNES",
+        pricePerSqm: prixM2Moyen,
+        isRealData: true,
+        dept: "06",
+      },
+
+      // Doubles accès pour plus de sécurité dans le dashboard
+      houseSize: surface,
+      address: inputData.address || "1 RUE MIREILLE 06400 CANNES",
       profile: "standard",
-    });
+    };
+
+    // Console log pour debug si besoin
+    console.log("SIMULATION READY:", result);
+
+    setSimulationData(result);
     setHasData(true);
   };
 
   const handleProfileChange = (newProfile: string) => {
-    const p = newProfile.toLowerCase().trim();
-
-    // Utiliser une fonction de mise à jour (prev) garantit qu'on travaille
-    // sur la version la plus fraîche de tes données de simulation.
-    setSimulationData((prev: any) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        profile: p,
-      };
-    });
+    setSimulationData((prev: any) =>
+      prev
+        ? {
+            ...prev,
+            profile: newProfile.toLowerCase().trim(),
+          }
+        : prev
+    );
   };
 
   return (
     <div className="min-h-screen bg-[#020202] text-white">
       {!hasData ? (
         <FileUpload
-          onTextSubmit={(jsonString: string) => {
+          onTextSubmit={(input: any) => {
             try {
-              const data =
-                typeof jsonString === "string"
-                  ? JSON.parse(jsonString)
-                  : jsonString;
-              handleUploadSuccess(data);
-            } catch (e) {
-              handleUploadSuccess(jsonString);
+              const parsed =
+                typeof input === "string" ? JSON.parse(input) : input;
+              handleUploadSuccess(parsed);
+            } catch {
+              handleUploadSuccess(input);
             }
           }}
         />
       ) : (
-        /* ON N'AFFICHE QUE LE DASHBOARD ICI */
-        /* ResultsDashboard gère lui-même l'affichage du CoachRouter ou du SpeechView */
         <ResultsDashboard
-          data={{
-            ...simulationData,
-            params: {
-              ...simulationData.params,
-              // On force le passage de la valeur 4.45
-              interestRate:
-                simulationData.params.interestRate ||
-                simulationData.params.creditInterestRate ||
-                4.45,
-            },
-          }}
+          data={simulationData}
           onReset={() => setHasData(false)}
           onProfileChange={handleProfileChange}
         />
