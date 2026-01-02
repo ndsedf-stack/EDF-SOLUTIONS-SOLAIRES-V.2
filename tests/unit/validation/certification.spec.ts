@@ -9,13 +9,10 @@ describe("Système de Certification - Tests de Robustesse", () => {
       totalSavingsProjectedCash: 800,
       roiPercentage: 15,
       breakEvenPoint: 1,
-
       // Séries détaillées (pour validateTotals et validateCumulative)
       details: [{ cumulativeSavings: 500 }, { cumulativeSavings: 1000 }],
       detailsCash: [{ cumulativeSavings: 400 }, { cumulativeSavings: 800 }],
-
       // Séries graphiques (pour validateGraphs)
-      // Elles doivent être présentes et contenir des nombres finis
       slicedDetails: [{ cumulativeSavings: 500 }, { cumulativeSavings: 1000 }],
       slicedDetailsCash: [
         { cumulativeSavings: 400 },
@@ -25,7 +22,7 @@ describe("Système de Certification - Tests de Robustesse", () => {
 
     const report = validateAll(validData);
 
-    // Diagnostic en cas d'échec : on affiche les erreurs pour debug
+    // Diagnostic en cas d'échec
     if (!report.isValid) {
       console.log("Erreurs de validation détectées:", report.errors);
     }
@@ -37,35 +34,37 @@ describe("Système de Certification - Tests de Robustesse", () => {
 
   it("doit détecter une incohérence de total (Échec Totals)", () => {
     const corruptedData = {
-      totalSavingsProjected: 5000, // Total annoncé faux
-      details: [{ cumulativeSavings: 1000 }], // Dernier cumul réel = 1000
+      totalSavingsProjected: 5000,
+      details: [{ cumulativeSavings: 1000 }],
     };
 
     const report = validateAll(corruptedData);
+
     expect(report.isValid).toBe(false);
-    expect(report.errors.some((e) => e.includes("totalSavingsProjected"))).toBe(
-      true
-    );
+    // ✅ CORRECTION : Vérifier dans les objets ValidationError
+    expect(
+      report.errors.some((e) => e.message.includes("totalSavingsProjected"))
+    ).toBe(true);
   });
 
   it("doit détecter une chute de rentabilité (Échec Monotonie)", () => {
     const sinkingData = {
-      details: [
-        { cumulativeSavings: 1000 },
-        { cumulativeSavings: 800 }, // Impossible en cumulé
-      ],
+      details: [{ cumulativeSavings: 1000 }, { cumulativeSavings: 800 }],
     };
 
     const report = validateAll(sinkingData);
+
     expect(report.isValid).toBe(false);
-    expect(report.errors.some((e) => e.includes("Décroissance"))).toBe(true);
+    // ✅ CORRECTION : Vérifier dans les objets ValidationError
+    expect(report.errors.some((e) => e.message.includes("Décroissance"))).toBe(
+      true
+    );
   });
 
   it("doit rester stable si les données sont partiellement manquantes", () => {
     const emptyData = {};
     const report = validateAll(emptyData);
 
-    // Le système ne doit pas crash, il doit juste invalider
     expect(report.isValid).toBe(false);
     expect(typeof report.score).toBe("number");
   });

@@ -20,8 +20,12 @@ import {
 } from "lucide-react";
 
 export const GuestView: React.FC = () => {
-  // ✅ 1. TOUS LES useState
+  // ✅ CHANGEMENT ICI
   const { studyId } = useParams<{ studyId: string }>();
+  const finalStudyId = studyId || "METS_UN_VRAI_UUID_ICI"; // ← Remplace par un vrai ID
+
+  console.log("🔍 studyId utilisé:", finalStudyId);
+
   const [data, setData] = useState<any>(null);
   const [study, setStudy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -36,38 +40,42 @@ export const GuestView: React.FC = () => {
     "financement"
   );
 
-  // ✅ 2. TOUS LES useEffect ENSEMBLE (AVANT LES EARLY RETURNS)
-
-  // useEffect 1 : Chargement Supabase
+  // ✅ CHANGEMENTS DANS LE useEffect
   useEffect(() => {
     const loadStudy = async () => {
-      if (!studyId) {
+      if (!finalStudyId) {
         setError("ID d'étude manquant");
         setLoading(false);
         return;
       }
 
       try {
+        // 1. Récupération des données
         const { data: studyData, error: fetchError } = await supabase
           .from("studies")
           .select("*")
-          .eq("id", studyId)
+          .eq("id", finalStudyId)
           .single();
 
-        if (fetchError) {
-          console.error("❌ Erreur:", fetchError);
+        if (fetchError || !studyData) {
+          console.error("❌ Erreur Supabase:", fetchError);
           throw new Error("Étude introuvable");
         }
 
+        // 2. Logique d'expiration corrigée
         const now = new Date();
         const expiresAt = new Date(studyData.expires_at);
 
-        if (now > expiresAt || !studyData.is_active) {
+        // On ajoute une marge de 5 minutes pour éviter les bugs de synchro d'horloge
+        const isActuallyExpired = now.getTime() > expiresAt.getTime() + 300000;
+
+        if (isActuallyExpired) {
           setIsExpired(true);
           setLoading(false);
           return;
         }
 
+        // 3. Mise à jour des stats (Optionnel mais recommandé)
         await supabase
           .from("studies")
           .update({
@@ -75,8 +83,9 @@ export const GuestView: React.FC = () => {
             last_opened_at: now.toISOString(),
             opened_count: (studyData.opened_count || 0) + 1,
           })
-          .eq("id", studyId);
+          .eq("id", finalStudyId);
 
+        // 4. Stockage dans les states
         setStudy(studyData);
         setData(studyData.study_data);
         setLoading(false);
@@ -88,9 +97,8 @@ export const GuestView: React.FC = () => {
     };
 
     loadStudy();
-  }, [studyId]);
+  }, [finalStudyId]);
 
-  // useEffect 2 : Block context menu
   useEffect(() => {
     const blockContext = (e: MouseEvent) => {
       e.preventDefault();
@@ -115,7 +123,6 @@ export const GuestView: React.FC = () => {
     };
   }, []);
 
-  // ✅ useEffect 3 : Countdown (CORRIGÉ - utilise study.expires_at)
   useEffect(() => {
     if (!study?.expires_at) return;
 
@@ -139,7 +146,6 @@ export const GuestView: React.FC = () => {
     return () => clearInterval(timer);
   }, [study?.expires_at]);
 
-  // useEffect 4 : Compteur argent perdu
   useEffect(() => {
     if (!data?.conso || !data?.elecPrice) return;
 
@@ -152,7 +158,6 @@ export const GuestView: React.FC = () => {
     return () => clearInterval(interval);
   }, [data?.conso, data?.elecPrice]);
 
-  // ✅ 3. EARLY RETURNS (APRÈS TOUS LES HOOKS)
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
@@ -204,7 +209,6 @@ export const GuestView: React.FC = () => {
     return <div className="bg-black min-h-screen" />;
   }
 
-  // ✅ 4. VARIABLES CALCULÉES
   const safeData = {
     n: data.n || data.clientName || "Client",
     e: data.e || 32202,
@@ -239,7 +243,6 @@ export const GuestView: React.FC = () => {
           ]),
   };
 
-  // ✅ 5. FONCTIONS UTILITAIRES
   const handleCall = () => {
     window.location.href = "tel:0683623329";
   };
@@ -358,7 +361,6 @@ export const GuestView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#020202] text-white p-4 md:p-6 relative overflow-hidden select-none font-sans">
-      {/* FILIGRANE */}
       <div className="fixed inset-0 opacity-[0.03] pointer-events-none flex flex-wrap gap-12 rotate-[-25deg] scale-150 justify-center items-center">
         {Array(100)
           .fill(0)
@@ -372,7 +374,6 @@ export const GuestView: React.FC = () => {
           ))}
       </div>
 
-      {/* HEADER */}
       <div className="relative z-10 flex justify-between items-start mb-8">
         <div className="text-xl font-black italic text-white/20 uppercase tracking-tighter">
           EDF SOLUTIONS
@@ -386,7 +387,6 @@ export const GuestView: React.FC = () => {
       </div>
 
       <div className="relative z-10 max-w-lg mx-auto">
-        {/* ✅ TITRE EN PREMIER */}
         <h1 className="text-5xl font-black italic uppercase leading-none tracking-tighter mb-2">
           VOTRE ÉTUDE
           <br />
@@ -400,7 +400,6 @@ export const GuestView: React.FC = () => {
           </span>
         </p>
 
-        {/* ⏰ COUNTDOWN 7 JOURS */}
         <div className="bg-gradient-to-br from-red-950/80 via-orange-950/60 to-red-900/40 border-2 border-red-500/50 rounded-[32px] p-6 mb-8 relative overflow-hidden shadow-[0_0_60px_rgba(239,68,68,0.4)]">
           <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/20 rounded-full blur-3xl animate-pulse" />
 
@@ -449,7 +448,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* CARTE GAIN NET */}
         <div className="relative group mb-6">
           <div className="absolute -inset-1 bg-gradient-to-r from-emerald-600 via-blue-600 to-cyan-600 rounded-[40px] blur-xl opacity-30 group-hover:opacity-50 transition-opacity duration-500" />
           <div className="relative bg-gradient-to-br from-zinc-900 via-zinc-900/95 to-black border border-white/20 rounded-[40px] p-8 backdrop-blur-xl shadow-2xl">
@@ -471,7 +469,6 @@ export const GuestView: React.FC = () => {
               </div>
             </div>
 
-            {/* ✅ CHIFFRES RÉDUITS SUR MOBILE */}
             <div className="flex items-baseline gap-2 mb-6 justify-center">
               <span className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-r from-emerald-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
                 {safeData.e >= 0 ? "+" : ""}
@@ -496,7 +493,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* GRID MÉTRIQUES */}
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-6 text-center shadow-inner">
             <span className="block text-[9px] font-black uppercase tracking-widest text-slate-500 mb-3 italic">
@@ -521,7 +517,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* DÉTAILS INSTALLATION */}
         <div className="bg-zinc-900/50 border border-white/10 rounded-[32px] p-6 mb-8">
           <h3 className="text-sm font-black uppercase text-blue-400 mb-4">
             Votre Installation
@@ -578,15 +573,12 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* GRAPHIQUE STRUCTURE BUDGET */}
         <div className="bg-zinc-900/50 border border-white/10 rounded-[32px] p-6 mb-8">
           <h3 className="text-sm font-black uppercase text-blue-400 mb-4">
             Structure de votre Budget
           </h3>
 
-          {/* Barres empilées */}
           <div className="space-y-4">
-            {/* Barre mensualité */}
             <div>
               <div className="flex justify-between text-xs mb-2">
                 <span className="text-slate-400">Mensualité crédit</span>
@@ -604,7 +596,6 @@ export const GuestView: React.FC = () => {
               </div>
             </div>
 
-            {/* Barre facture résiduelle */}
             <div>
               <div className="flex justify-between text-xs mb-2">
                 <span className="text-slate-400">
@@ -638,7 +629,6 @@ export const GuestView: React.FC = () => {
               </div>
             </div>
 
-            {/* Total mensuel */}
             <div className="pt-3 border-t border-white/10">
               <div className="flex justify-between">
                 <span className="text-white font-bold uppercase text-sm">
@@ -664,7 +654,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* 🔥 COMPARAISON X ANS - CHIFFRES RÉDUITS SUR MOBILE */}
         <div className="bg-gradient-to-br from-orange-950/60 to-red-950/40 border-2 border-orange-500/40 rounded-[32px] p-6 mb-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl"></div>
 
@@ -673,7 +662,6 @@ export const GuestView: React.FC = () => {
           </h3>
 
           <div className="grid grid-cols-2 gap-4 relative z-10">
-            {/* Sans Solaire */}
             <div className="bg-red-950/60 border-2 border-red-500/40 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center">
@@ -688,7 +676,6 @@ export const GuestView: React.FC = () => {
                 <div className="text-[10px] text-red-300 uppercase mb-1">
                   Argent Parti
                 </div>
-                {/* ✅ RÉDUIT SUR MOBILE */}
                 <div className="text-2xl md:text-3xl font-black text-red-500">
                   -
                   {(() => {
@@ -718,7 +705,6 @@ export const GuestView: React.FC = () => {
               </div>
             </div>
 
-            {/* Avec Solaire */}
             <div className="bg-emerald-950/60 border-2 border-emerald-500/40 rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 bg-emerald-500/20 rounded-full flex items-center justify-center">
@@ -728,12 +714,10 @@ export const GuestView: React.FC = () => {
                   Avec Solaire
                 </span>
               </div>
-
               <div className="mb-4">
                 <div className="text-[10px] text-emerald-300 uppercase mb-1">
                   Patrimoine Créé
                 </div>
-                {/* ✅ RÉDUIT SUR MOBILE */}
                 <div className="text-2xl md:text-3xl font-black text-emerald-400">
                   {(() => {
                     const patrimoine =
@@ -749,7 +733,6 @@ export const GuestView: React.FC = () => {
                   )}
                 </div>
               </div>
-
               <div className="space-y-2 text-xs text-emerald-200">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 size={12} className="text-emerald-500" />
@@ -767,7 +750,6 @@ export const GuestView: React.FC = () => {
             </div>
           </div>
 
-          {/* Écart total - RÉDUIT SUR MOBILE */}
           <div className="mt-6 bg-black/60 backdrop-blur-md border border-orange-500/30 p-4 rounded-xl relative z-10">
             <div className="flex items-center justify-between">
               <span className="text-orange-300 font-bold text-sm uppercase">
@@ -794,7 +776,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* ✅ TABLEAU DÉTAILLÉ - OPTIMISÉ */}
         <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-4 md:p-8 mb-8 border border-white/10 overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-3">
@@ -851,7 +832,6 @@ export const GuestView: React.FC = () => {
             </div>
           </div>
 
-          {/* ✅ TABLEAU OPTIMISÉ POUR MOBILE */}
           <div className="overflow-x-auto -mx-4 md:mx-0">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
@@ -946,7 +926,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* TABLEAU AMORTISSEMENT */}
         {showAmortissement && safeData.mode !== "cash" && (
           <div className="bg-zinc-900/90 border border-white/10 rounded-[24px] p-6 mb-8 overflow-hidden">
             <h3 className="text-sm font-black uppercase text-blue-400 mb-4">
@@ -996,7 +975,6 @@ export const GuestView: React.FC = () => {
           </div>
         )}
 
-        {/* 🏆 GARANTIES */}
         <div className="bg-gradient-to-br from-blue-950/60 to-indigo-950/40 border border-blue-500/30 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 bg-blue-500/20 rounded-xl">
@@ -1025,7 +1003,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* 👥 SOCIAL PROOF */}
         <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-2 mb-4">
             <Users className="text-emerald-400" size={20} />
@@ -1075,7 +1052,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* BANDEAU EXPIRATION */}
         <div className="bg-orange-500/5 border border-orange-500/20 rounded-2xl p-4 flex items-center gap-4 mb-8">
           <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500">
             <Calendar size={18} />
@@ -1087,7 +1063,6 @@ export const GuestView: React.FC = () => {
           </p>
         </div>
 
-        {/* 💸 COMPTEUR ARGENT PERDU */}
         <div className="bg-gradient-to-br from-orange-950/60 to-red-950/40 border border-orange-500/30 rounded-[32px] p-6 mb-8 shadow-[0_0_40px_rgba(249,115,22,0.3)]">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-orange-500/20 rounded-lg">
@@ -1110,7 +1085,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* BOUTON APPEL */}
         <button
           onClick={handleCall}
           className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-black py-7 rounded-3xl uppercase tracking-widest text-sm flex items-center justify-center gap-4 transition-all active:scale-95 shadow-2xl shadow-blue-600/30 mb-4"
@@ -1119,7 +1093,6 @@ export const GuestView: React.FC = () => {
           Finaliser mon dossier MAINTENANT
         </button>
 
-        {/* Message urgence */}
         <div className="bg-red-950/20 border-l-4 border-red-500 p-4 rounded mb-8">
           <p className="text-red-200 text-sm font-bold">
             ⚠️ Ne laissez pas passer cette opportunité. Chaque jour qui passe
@@ -1128,7 +1101,6 @@ export const GuestView: React.FC = () => {
           </p>
         </div>
 
-        {/* MENTIONS LÉGALES */}
         <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-2 mb-4">
             <AlertCircle size={16} className="text-slate-500" />
@@ -1165,7 +1137,6 @@ export const GuestView: React.FC = () => {
           </div>
         </div>
 
-        {/* Alert copie */}
         {copyAttempts > 0 && (
           <div className="bg-red-950/40 border-l-4 border-red-500 p-4 rounded mb-4">
             <p className="text-red-200 text-xs font-bold">
