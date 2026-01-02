@@ -55,10 +55,13 @@ export const GuestView: React.FC = () => {
           .from("studies")
           .select("*")
           .eq("id", finalStudyId)
-          .single();
+          .maybeSingle();
 
-        if (fetchError || !studyData) {
-          console.error("❌ Erreur Supabase:", fetchError);
+        console.log("GUEST finalStudyId:", finalStudyId);
+        console.log("GUEST studyData:", studyData);
+        console.log("GUEST fetchError:", fetchError);
+
+        if (!studyData) {
           throw new Error("Étude introuvable");
         }
 
