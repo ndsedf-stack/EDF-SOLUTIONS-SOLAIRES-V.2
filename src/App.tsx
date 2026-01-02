@@ -20,35 +20,33 @@ const MainApp: React.FC = () => {
 
   const handleUploadSuccess = async (data: any) => {
     console.log("✅ handleUploadSuccess appelé avec:", data);
-
     let parsedData = typeof data === "string" ? JSON.parse(data) : data;
-
     setSimulationData(parsedData);
 
     // TEMPORAIREMENT COMMENTÉ POUR TESTER
     /*
-  try {
-    const { data: insertedStudy, error } = await supabase
-      .from("studies")
-      .insert([
-        {
-          simulation_data: parsedData,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
+    try {
+      const { data: insertedStudy, error } = await supabase
+        .from("studies")
+        .insert([
+          {
+            simulation_data: parsedData,
+            created_at: new Date().toISOString(),
+          },
+        ])
+        .select()
+        .single();
 
-    if (error) {
-      console.error("❌ Erreur Supabase:", error);
-    } else {
-      console.log("✅ Étude créée dans Supabase:", insertedStudy);
-      setStudy(insertedStudy);
+      if (error) {
+        console.error("❌ Erreur Supabase:", error);
+      } else {
+        console.log("✅ Étude créée dans Supabase:", insertedStudy);
+        setStudy(insertedStudy);
+      }
+    } catch (err) {
+      console.error("❌ Erreur lors de l'insertion:", err);
     }
-  } catch (err) {
-    console.error("❌ Erreur lors de l'insertion:", err);
-  }
-  */
+    */
 
     setHasData(true);
   };
@@ -106,7 +104,8 @@ const App = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<MainApp />} />
-      <Route path="/guest/:id" element={<GuestView />} />
+      {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
+      <Route path="/guest/:studyId" element={<GuestView />} />
     </Routes>
   </BrowserRouter>
 );
