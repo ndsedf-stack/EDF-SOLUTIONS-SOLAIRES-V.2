@@ -1293,7 +1293,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     setIsLoading(true);
 
     try {
-      await handleGenerateStudy(inputClientName);
+      await handleGenerateStudy(inputClientName, inputCommercialEmail);
     } catch (error) {
       console.error("Erreur:", error);
     } finally {
@@ -1980,17 +1980,26 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     }));
   }, [calculationResult, gouffreMode, projectionYears]);
 
-  const handleGenerateStudy = async (forcedClientName?: string) => {
-    const rawClientName = forcedClientName ?? clientName ?? "";
-
-    const cleanedClientName = rawClientName.trim().replace(/\s+/g, " ");
+  const handleGenerateStudy = async (
+    forcedClientName?: string,
+    forcedCommercialEmail?: string
+  ) => {
+    const cleanedClientName = (forcedClientName ?? clientName ?? "")
+      .trim()
+      .replace(/\s+/g, " ");
 
     if (cleanedClientName.length < 2) {
       alert("⚠️ Veuillez entrer le nom du client");
       return;
     }
 
-    if (!commercialEmail?.trim()) {
+    const cleanedCommercialEmail = (
+      forcedCommercialEmail ??
+      commercialEmail ??
+      ""
+    ).trim();
+
+    if (!cleanedCommercialEmail) {
       alert("⚠️ Email commercial manquant");
       return;
     }
@@ -2028,7 +2037,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           client_name: cleanedClientName,
           client_email: clientEmail || null,
           client_phone: clientPhone || null,
-          commercial_email: commercialEmail,
+          commercial_email: cleanedCommercialEmail, // 🔥 ICI
           commercial_name: commercialName || null,
           is_active: true,
         })
