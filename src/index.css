@@ -267,3 +267,7 @@ select.bg-black.border-white\/20 {
     transform: translateY(0);
   }
 }
+.edf-numbers {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
+}

@@ -4,6 +4,7 @@ import ResultsDashboard from "./components/ResultsDashboard.REFONTE2";
 import { FileUpload } from "./components/FileUpload";
 import { SpeechView } from "./components/SpeechView";
 import { supabase } from "./lib/supabase";
+import { GuestView } from "./components/GuestView";
 
 const MainApp: React.FC = () => {
   const [hasData, setHasData] = useState(false);
@@ -105,6 +106,7 @@ const App = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/" element={<MainApp />} />
+      <Route path="/guest/:id" element={<GuestView />} />
     </Routes>
   </BrowserRouter>
 );
