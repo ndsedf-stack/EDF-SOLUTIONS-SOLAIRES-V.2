@@ -2049,7 +2049,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         throw error;
       }
 
-      const guestUrl = `https://edf-solutions-solaires.vercel.app/guest/${study.id}`;
+      const guestUrl = `${window.location.origin}/guest/${study.id}`;
+
       setEncodedUrl(guestUrl);
       setGeneratedLink(guestUrl);
       setShowNamePopup(false);
