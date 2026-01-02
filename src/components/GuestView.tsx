@@ -22,7 +22,7 @@ import {
 export const GuestView: React.FC = () => {
   // ✅ CHANGEMENT ICI
   const { studyId } = useParams<{ studyId: string }>();
-  const finalStudyId = studyId || "METS_UN_VRAI_UUID_ICI"; // ← Remplace par un vrai ID
+  const finalStudyId = studyId;
 
   console.log("🔍 studyId utilisé:", finalStudyId);
 

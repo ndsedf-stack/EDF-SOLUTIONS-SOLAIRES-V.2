@@ -312,7 +312,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
             <div className="space-y-8 flex-grow">
               <div className="relative">
-                <label className="text-[10px] font-bold text-blue-400 uppercase mb-3 block flex items-center gap-2 tracking-[0.1em]">
+                <label className="text-[10px] font-bold text-blue-400 uppercase mb-3 flex items-center gap-2 tracking-[0.1em]">
                   <MapPin size={12} /> Localisation
                 </label>
                 <input
