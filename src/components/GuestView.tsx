@@ -20,7 +20,8 @@ import {
 } from "lucide-react";
 
 export const GuestView: React.FC = () => {
-  // ✅ CHANGEMENT ICI
+  console.log("🔥 VERSION GUESTVIEW 02/01 14:30");
+
   const { studyId } = useParams<{ studyId: string }>();
   const finalStudyId = studyId;
 
