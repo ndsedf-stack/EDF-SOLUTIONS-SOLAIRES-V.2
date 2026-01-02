@@ -1,4 +1,4 @@
-import { ValidationReport } from "./types";
+import { ValidationReport } from "../types";
 import { validateTotals } from "./rules/validateTotals";
 import { validateCumulative } from "./rules/validateCumulative";
 import { validateGraphs } from "./rules/validateGraphs";
@@ -8,20 +8,21 @@ const RULES = [validateTotals, validateCumulative, validateGraphs, validateROI];
 
 export const validateAll = (data: any): ValidationReport => {
   const reports = RULES.map((rule) => rule(data));
+
   const aggregated = reports.reduce(
     (acc, curr) => ({
       isValid: acc.isValid && curr.isValid,
       score: acc.score + curr.score,
       errors: [...acc.errors, ...curr.errors],
       warnings: [...acc.warnings, ...curr.warnings],
-      infos: [...acc.infos, ...curr.infos],
+      info: [...acc.info, ...curr.info], // ✅ Pas "infos"
     }),
     {
       isValid: true,
       score: 0,
       errors: [],
       warnings: [],
-      infos: [],
+      info: [], // ✅ Pas "infos"
     } as ValidationReport
   );
 

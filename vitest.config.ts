@@ -7,12 +7,22 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
-    include: ["tests/**/*.spec.ts"],
+    setupFiles: ["./tests/setup.tsx"],
+    include: ["tests/**/*.spec.{ts,tsx}"],
     exclude: ["tests/e2e/**"],
+
+    // 🧩 nécessaire pour que les mocks Recharts soient bien appliqués
+    deps: {
+      optimizer: {
+        web: {
+          include: ["recharts"],
+        },
+      },
+    },
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 });

@@ -1,9 +1,18 @@
+import { test, expect } from "@playwright/test";
+
+// ✅ Ajout de la fonction manquante pour extraire les nombres du texte (ex: "1 200 €" -> 1200)
+const extractNumber = (text: string): number | null => {
+  const cleaned = text.replace(/[^0-9.,-]/g, "").replace(",", ".");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+};
+
 test("Loi des 20 ans : Certification de la trajectoire cumulative", async ({
   page,
 }) => {
+  // On attend que la page soit bien chargée
   await page.goto("/");
 
-  // Les modules qui doivent obligatoirement être croissants (Loi des 20 ans)
   const cumulativeModules = [
     "economies-cumulees",
     "bilan-patrimonial-20y",
@@ -11,8 +20,7 @@ test("Loi des 20 ans : Certification de la trajectoire cumulative", async ({
   ];
 
   for (const id of cumulativeModules) {
-    // 1. On récupère toutes les valeurs de la série (via les tooltips ou les points du graph)
-    // Ici, on part du principe que tu as une série de données accessible ou des data-points
+    // On cible les éléments via data-testid
     const dataPoints = page.locator(`[data-testid="${id}-point"]`);
     const count = await dataPoints.count();
 
@@ -24,10 +32,10 @@ test("Loi des 20 ans : Certification de la trajectoire cumulative", async ({
         const currentValue = extractNumber(text);
 
         if (currentValue !== null) {
-          // CERTIFICATION : La valeur de l'année N ne peut pas être < Année N-1
+          // ✅ Vérification de croissance (Loi des 20 ans)
           expect(
             currentValue,
-            `Anomalie de trajectoire sur ${id} à l'année ${i}`
+            `Anomalie de trajectoire sur ${id} à l'année ${i} : ${currentValue} est inférieur à ${previousValue}`
           ).toBeGreaterThanOrEqual(previousValue);
 
           previousValue = currentValue;

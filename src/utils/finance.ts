@@ -3,7 +3,6 @@ import { CalculationOutput, SimulationParams, YearlyDetail } from "../types";
 // ============================================================================
 // HELPERS
 // ============================================================================
-
 const round2 = (num: number): number => Math.round(num * 100) / 100;
 
 export const safeParseFloat = (val: any, defaultVal: number = 0): number => {
@@ -20,6 +19,23 @@ export const formatCurrency = (value: number): string =>
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(value);
+
+// ============================================================================
+// 🔥 AJOUTER CETTE FONCTION ICI — extraction ville
+// ============================================================================
+export const extractCity = (fullAddress: string): string | null => {
+  if (!fullAddress) return null;
+
+  // Si l'adresse a une virgule → ex: "12 rue du Soleil, Nice"
+  const commaSplit = fullAddress.split(",");
+  if (commaSplit.length > 1) {
+    return commaSplit[commaSplit.length - 1].trim().toUpperCase();
+  }
+
+  // Fallback → dernier mot seulement
+  const parts = fullAddress.trim().split(" ");
+  return parts.length > 0 ? parts[parts.length - 1].toUpperCase() : null;
+};
 
 // ============================================================================
 // MOTEUR PRINCIPAL
@@ -106,7 +122,7 @@ export const calculateSolarProjection = (
   for (let i = 0; i < 30; i++) {
     const year = startYear + i;
     const inflationCoef = Math.pow(1 + localInflation / 100, i);
-    const price = round2(electricityPrice * inflationCoef);
+    const price = electricityPrice * inflationCoef;
     const surplusRevenue = round2(surplusRevenueBase * inflationCoef);
 
     const billWithoutSolar = round2(baseConsumptionKwh * price);
