@@ -30,6 +30,7 @@ import { BanquierCoach } from "../coaches/BanquierCoach";
 import { SeniorCoach } from "../coaches/SeniorCoach";
 import { CommercialCoach } from "../coaches/CommercialCoach";
 import { useParams } from "react-router-dom"; // ← ajoute ça
+import { formatCurrency, formatPercent } from "../../utils/format";
 
 import {
   validateSimulation,
@@ -412,42 +413,38 @@ const WarrantyCard = ({
 
 // --- MAIN COMPONENT ---
 // ============================================
-// MODULE TAUX PRIVILÉGIÉ 1.99% - VERSION CORPORATE
+// MODULE TAUX PRIVILÉGIÉ 1.99% - VERSION CORRIGÉE
 // ============================================
-const ModuleTauxPrivilege = ({ taux, mensualite, duree, montantFinance }) => {
-  if (taux !== 1.99) {
+const ModuleTauxPrivilege = ({
+  taux,
+  mensualite,
+  duree,
+  montantFinance,
+  hasPromoCode,
+}) => {
+  if (taux !== 1.99 || !hasPromoCode) {
     return null;
   }
 
   const tauxMarche = 5.89;
   const tauxStandard = 3.89;
 
-  const mensualiteMarche = Math.round(
+  const mensualiteMarche =
     (montantFinance * (tauxMarche / 12 / 100)) /
-      (1 - Math.pow(1 + tauxMarche / 12 / 100, -duree))
-  );
+    (1 - Math.pow(1 + tauxMarche / 12 / 100, -duree));
 
-  const mensualiteStandard = Math.round(
+  const mensualiteStandard =
     (montantFinance * (tauxStandard / 12 / 100)) /
-      (1 - Math.pow(1 + tauxStandard / 12 / 100, -duree))
-  );
+    (1 - Math.pow(1 + tauxStandard / 12 / 100, -duree));
 
   const economieVsMarche = Math.abs((mensualiteMarche - mensualite) * duree);
-
-  const [refDossier] = useState(
-    () =>
-      `EDF-SOL-${new Date().getFullYear()}-${Math.random()
-        .toString(36)
-        .substr(2, 6)
-        .toUpperCase()}`
-  );
   const economieVsStandard = Math.abs(
     (mensualiteStandard - mensualite) * duree
   );
 
   return (
     <div className="bg-zinc-900/40 border border-white/10 rounded-xl p-8 my-8">
-      {/* HEADER SOBRE */}
+      {/* HEADER */}
       <div className="border-b border-white/10 pb-6 mb-6">
         <div className="flex items-start justify-between">
           <div>
@@ -470,14 +467,14 @@ const ModuleTauxPrivilege = ({ taux, mensualite, duree, montantFinance }) => {
         </div>
       </div>
 
-      {/* GRID DONNÉES TECHNIQUES */}
+      {/* GRID DONNÉES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-black/40 border border-white/5 rounded-lg p-5">
           <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">
             Taux Annuel Effectif Global (TAEG)
           </div>
           <div className="text-5xl font-black text-white font-mono tabular-nums mb-1">
-            1.99<span className="text-2xl">%</span>
+            {formatPercent(taux)}
           </div>
           <div className="text-xs text-emerald-400 font-mono">
             ✓ Taux bonifié validé
@@ -489,8 +486,7 @@ const ModuleTauxPrivilege = ({ taux, mensualite, duree, montantFinance }) => {
             Mensualité (Hors Assurance)
           </div>
           <div className="text-5xl font-black text-white font-mono tabular-nums mb-1">
-            {mensualite}
-            <span className="text-2xl">€</span>
+            {formatCurrency(mensualite)}
           </div>
           <div className="text-xs text-slate-400 font-mono">
             sur {duree} mois
@@ -502,16 +498,15 @@ const ModuleTauxPrivilege = ({ taux, mensualite, duree, montantFinance }) => {
             Économie vs Taux Marché
           </div>
           <div className="text-5xl font-black text-white font-mono tabular-nums mb-1">
-            {economieVsMarche.toLocaleString()}
-            <span className="text-2xl">€</span>
+            {formatCurrency(economieVsMarche)}
           </div>
           <div className="text-xs text-slate-400 font-mono">
-            vs taux marché {tauxMarche}%
+            vs taux marché {formatPercent(tauxMarche)}
           </div>
         </div>
       </div>
 
-      {/* TABLEAU COMPARATIF 3 COLONNES */}
+      {/* TABLEAU COMPARATIF */}
       <div className="bg-black/20 border border-white/5 rounded-lg overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead className="bg-white/5 border-b border-white/10">
@@ -533,81 +528,53 @@ const ModuleTauxPrivilege = ({ taux, mensualite, duree, montantFinance }) => {
           <tbody className="font-mono">
             <tr className="border-b border-white/5">
               <td className="p-4 text-slate-300">TAEG</td>
-              <td className="p-4 text-right text-red-400">{tauxMarche}%</td>
-              <td className="p-4 text-right text-slate-400">{tauxStandard}%</td>
+              <td className="p-4 text-right text-red-400">
+                {formatPercent(tauxMarche)}
+              </td>
+              <td className="p-4 text-right text-slate-400">
+                {formatPercent(tauxStandard)}
+              </td>
               <td className="p-4 text-right text-emerald-400 font-bold">
-                {taux}%
+                {formatPercent(taux)}
               </td>
             </tr>
+
             <tr className="border-b border-white/5">
               <td className="p-4 text-slate-300">Mensualité</td>
               <td className="p-4 text-right text-slate-400">
-                {mensualiteMarche}€
+                {formatCurrency(mensualiteMarche)}
               </td>
               <td className="p-4 text-right text-slate-400">
-                {mensualiteStandard}€
+                {formatCurrency(mensualiteStandard)}
               </td>
               <td className="p-4 text-right text-white font-bold">
-                {mensualite}€
+                {formatCurrency(mensualite)}
               </td>
             </tr>
+
             <tr>
               <td className="p-4 text-slate-300">Coût Total Crédit</td>
               <td className="p-4 text-right text-slate-400">
-                {(mensualiteMarche * duree).toLocaleString()}€
+                {formatCurrency(mensualiteMarche * duree)}
               </td>
               <td className="p-4 text-right text-slate-400">
-                {(mensualiteStandard * duree).toLocaleString()}€
+                {formatCurrency(mensualiteStandard * duree)}
               </td>
               <td className="p-4 text-right text-white font-bold">
-                {(mensualite * duree).toLocaleString()}€
+                {formatCurrency(mensualite * duree)}
               </td>
             </tr>
+
             <tr className="bg-emerald-950/20">
               <td className="p-4 text-slate-300 font-bold">Économie Totale</td>
               <td className="p-4 text-right text-slate-400">—</td>
               <td className="p-4 text-right text-slate-400">—</td>
               <td className="p-4 text-right text-emerald-400 font-bold">
-                {economieVsMarche.toLocaleString()}€
+                {formatCurrency(economieVsMarche)}
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-
-      {/* CONDITIONS */}
-      <div className="bg-blue-950/10 border border-blue-500/10 rounded-lg p-5 mb-6">
-        <div className="flex items-start gap-3 mb-4">
-          <ShieldCheck
-            className="text-blue-400 flex-shrink-0 mt-0.5"
-            size={18}
-          />
-          <div>
-            <h4 className="text-sm font-semibold text-white mb-3">
-              Conditions d'Accès Validées
-            </h4>
-            <div className="space-y-2 text-xs text-slate-300">
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                <span>Zone géographique éligible (06 - Alpes-Maritimes)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                <span>Installation conforme RGE et normes NFC 15-100</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                <span>Dossier validé selon critères d'éligibilité</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
-                <span>
-                  Programme actif au {new Date().toLocaleDateString("fr-FR")}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* FOOTER */}
@@ -631,31 +598,30 @@ const ModuleTauxPrivilege = ({ taux, mensualite, duree, montantFinance }) => {
 };
 
 // ============================================
-// MODULE TAUX BONIFIÉ STANDARD 3.89%
+// MODULE TAUX STANDARD 3.89% - VERSION CORRIGÉE
 // ============================================
-const ModuleTauxStandard = ({ taux, mensualite, duree, montantFinance }) => {
-  if (taux !== 3.89) {
+const ModuleTauxStandard = ({
+  taux,
+  mensualite,
+  duree,
+  montantFinance,
+  hasPromoCode,
+}) => {
+  if (taux !== 3.89 || !hasPromoCode) {
     return null;
   }
 
   const tauxMarche = 5.89;
-  const mensualiteMarche = Math.round(
+
+  const mensualiteMarche =
     (montantFinance * (tauxMarche / 12 / 100)) /
-      (1 - Math.pow(1 + tauxMarche / 12 / 100, -duree))
-  );
+    (1 - Math.pow(1 + tauxMarche / 12 / 100, -duree));
 
   const economieVsMarche = Math.abs((mensualiteMarche - mensualite) * duree);
-  const [refDossier] = useState(
-    () =>
-      `EDF-SOL-${new Date().getFullYear()}-${Math.random()
-        .toString(36)
-        .substr(2, 6)
-        .toUpperCase()}`
-  );
 
   return (
     <div className="bg-zinc-900/40 border border-white/10 rounded-xl p-8 my-8">
-      {/* HEADER SOBRE */}
+      {/* HEADER */}
       <div className="border-b border-white/10 pb-6 mb-6">
         <div className="flex items-start justify-between">
           <div>
@@ -678,15 +644,14 @@ const ModuleTauxStandard = ({ taux, mensualite, duree, montantFinance }) => {
         </div>
       </div>
 
-      {/* GRID DONNÉES TECHNIQUES */}
+      {/* GRID DONNÉES */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-black/40 border border-white/5 rounded-lg p-5">
           <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">
             Taux Annuel Effectif Global (TAEG)
           </div>
           <div className="text-5xl font-black text-white font-mono tabular-nums mb-1">
-            {taux.toFixed(2)}
-            <span className="text-2xl">%</span>
+            {formatPercent(taux)}
           </div>
           <div className="text-xs text-emerald-400 font-mono">
             ✓ Taux bonifié validé
@@ -698,8 +663,7 @@ const ModuleTauxStandard = ({ taux, mensualite, duree, montantFinance }) => {
             Mensualité (Hors Assurance)
           </div>
           <div className="text-5xl font-black text-white font-mono tabular-nums mb-1">
-            {mensualite.toFixed(2)}
-            <span className="text-2xl">€</span>
+            {formatCurrency(mensualite)}
           </div>
           <div className="text-xs text-slate-400 font-mono">
             sur {duree} mois
@@ -711,11 +675,10 @@ const ModuleTauxStandard = ({ taux, mensualite, duree, montantFinance }) => {
             Économie vs Taux Marché
           </div>
           <div className="text-5xl font-black text-white font-mono tabular-nums mb-1">
-            {economieVsMarche.toLocaleString()}
-            <span className="text-2xl">€</span>
+            {formatCurrency(economieVsMarche)}
           </div>
           <div className="text-xs text-slate-400 font-mono">
-            vs marché {tauxMarche}%
+            vs marché {formatPercent(tauxMarche)}
           </div>
         </div>
       </div>
@@ -739,34 +702,39 @@ const ModuleTauxStandard = ({ taux, mensualite, duree, montantFinance }) => {
           <tbody className="font-mono">
             <tr className="border-b border-white/5">
               <td className="p-4 text-slate-300">TAEG</td>
-              <td className="p-4 text-right text-red-400">{tauxMarche}%</td>
+              <td className="p-4 text-right text-red-400">
+                {formatPercent(tauxMarche)}
+              </td>
               <td className="p-4 text-right text-emerald-400 font-bold">
-                {taux.toFixed(2)}%
+                {formatPercent(taux)}
               </td>
             </tr>
+
             <tr className="border-b border-white/5">
               <td className="p-4 text-slate-300">Mensualité</td>
               <td className="p-4 text-right text-slate-400">
-                {mensualiteMarche}€
+                {formatCurrency(mensualiteMarche)}
               </td>
               <td className="p-4 text-right text-white font-bold">
-                {mensualite.toFixed(2)}€
+                {formatCurrency(mensualite)}
               </td>
             </tr>
+
             <tr>
               <td className="p-4 text-slate-300">Coût Total Crédit</td>
               <td className="p-4 text-right text-slate-400">
-                {Math.round(mensualiteMarche * duree).toLocaleString()}€
+                {formatCurrency(mensualiteMarche * duree)}
               </td>
               <td className="p-4 text-right text-white font-bold">
-                {Math.round(mensualite * duree).toLocaleString()}€
+                {formatCurrency(mensualite * duree)}
               </td>
             </tr>
+
             <tr className="bg-emerald-950/20">
               <td className="p-4 text-slate-300 font-bold">Économie Totale</td>
               <td className="p-4 text-right text-slate-400">—</td>
               <td className="p-4 text-right text-emerald-400 font-bold">
-                {Math.round(economieVsMarche).toLocaleString()}€
+                {formatCurrency(economieVsMarche)}
               </td>
             </tr>
           </tbody>
@@ -829,46 +797,35 @@ const ModuleTauxStandard = ({ taux, mensualite, duree, montantFinance }) => {
 };
 
 // ============================================
-// MODULE TAUX EXCEPTIONNEL 0.99%
+// MODULE TAUX EXCEPTIONNEL 0.99% - VERSION CORRIGÉE
 // ============================================
 const ModuleTauxUltraPremium = ({
   taux,
   mensualite,
   duree,
   montantFinance,
+  hasPromoCode,
 }) => {
-  if (taux !== 0.99) {
+  if (taux !== 0.99 || !hasPromoCode) {
     return null;
   }
 
   const tauxMarche = 5.89;
   const tauxStandard = 3.89;
 
-  const mensualiteMarche = Math.round(
+  const mensualiteMarche =
     (montantFinance * (tauxMarche / 12 / 100)) /
-      (1 - Math.pow(1 + tauxMarche / 12 / 100, -duree))
-  );
+    (1 - Math.pow(1 + tauxMarche / 12 / 100, -duree));
 
-  const mensualiteStandard = Math.round(
+  const mensualiteStandard =
     (montantFinance * (tauxStandard / 12 / 100)) /
-      (1 - Math.pow(1 + tauxStandard / 12 / 100, -duree))
-  );
+    (1 - Math.pow(1 + tauxStandard / 12 / 100, -duree));
 
   const economieVsMarche = Math.abs((mensualiteMarche - mensualite) * duree);
-  const [refDossier] = useState(
-    () =>
-      `EDF-SOL-${new Date().getFullYear()}-${Math.random()
-        .toString(36)
-        .substr(2, 6)
-        .toUpperCase()}`
-  );
-  const economieVsStandard = Math.abs(
-    (mensualiteStandard - mensualite) * duree
-  );
 
   return (
     <div className="bg-zinc-900/40 border border-white/10 rounded-xl p-8 my-8">
-      {/* HEADER SOBRE */}
+      {/* HEADER */}
       <div className="border-b border-white/10 pb-6 mb-6">
         <div className="flex items-start justify-between">
           <div>
@@ -891,7 +848,7 @@ const ModuleTauxUltraPremium = ({
         </div>
       </div>
 
-      {/* NOTE DISCRÈTE */}
+      {/* NOTE */}
       <div className="bg-blue-950/10 border border-blue-500/10 rounded-lg p-4 mb-6">
         <p className="text-xs text-slate-300 leading-relaxed">
           Ce dossier bénéficie d'un taux préférentiel exceptionnel dans le cadre
@@ -899,14 +856,14 @@ const ModuleTauxUltraPremium = ({
         </p>
       </div>
 
-      {/* GRID DONNÉES TECHNIQUES */}
+      {/* GRID DONNÉES */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-black/40 border border-white/5 rounded-lg p-4">
           <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">
             TAEG
           </div>
           <div className="text-4xl font-black text-white font-mono tabular-nums">
-            0.99<span className="text-xl">%</span>
+            {formatPercent(taux)}
           </div>
           <div className="text-xs text-emerald-400 font-mono mt-1">
             ✓ Validé
@@ -918,8 +875,7 @@ const ModuleTauxUltraPremium = ({
             Mensualité
           </div>
           <div className="text-4xl font-black text-white font-mono tabular-nums">
-            {mensualite}
-            <span className="text-xl">€</span>
+            {formatCurrency(mensualite)}
           </div>
           <div className="text-xs text-slate-400 font-mono mt-1">
             sur {duree} mois
@@ -931,8 +887,7 @@ const ModuleTauxUltraPremium = ({
             Économie
           </div>
           <div className="text-4xl font-black text-white font-mono tabular-nums">
-            {economieVsMarche.toLocaleString()}
-            <span className="text-xl">€</span>
+            {formatCurrency(economieVsMarche)}
           </div>
         </div>
 
@@ -941,8 +896,7 @@ const ModuleTauxUltraPremium = ({
             Durée
           </div>
           <div className="text-4xl font-black text-white font-mono tabular-nums">
-            {duree / 12}
-            <span className="text-xl">ans</span>
+            {duree / 12} ans
           </div>
         </div>
       </div>
@@ -969,42 +923,49 @@ const ModuleTauxUltraPremium = ({
           <tbody className="font-mono">
             <tr className="border-b border-white/5">
               <td className="p-4 text-slate-300">TAEG</td>
-              <td className="p-4 text-right text-red-400">{tauxMarche}%</td>
-              <td className="p-4 text-right text-slate-400">{tauxStandard}%</td>
+              <td className="p-4 text-right text-red-400">
+                {formatPercent(tauxMarche)}
+              </td>
+              <td className="p-4 text-right text-slate-400">
+                {formatPercent(tauxStandard)}
+              </td>
               <td className="p-4 text-right text-emerald-400 font-bold">
-                {taux}%
+                {formatPercent(taux)}
               </td>
             </tr>
+
             <tr className="border-b border-white/5">
               <td className="p-4 text-slate-300">Mensualité</td>
               <td className="p-4 text-right text-slate-400">
-                {mensualiteMarche}€
+                {formatCurrency(mensualiteMarche)}
               </td>
               <td className="p-4 text-right text-slate-400">
-                {mensualiteStandard}€
+                {formatCurrency(mensualiteStandard)}
               </td>
               <td className="p-4 text-right text-white font-bold">
-                {mensualite}€
+                {formatCurrency(mensualite)}
               </td>
             </tr>
+
             <tr>
               <td className="p-4 text-slate-300">Coût Total Crédit</td>
               <td className="p-4 text-right text-slate-400">
-                {(mensualiteMarche * duree).toLocaleString()}€
+                {formatCurrency(mensualiteMarche * duree)}
               </td>
               <td className="p-4 text-right text-slate-400">
-                {(mensualiteStandard * duree).toLocaleString()}€
+                {formatCurrency(mensualiteStandard * duree)}
               </td>
               <td className="p-4 text-right text-white font-bold">
-                {(mensualite * duree).toLocaleString()}€
+                {formatCurrency(mensualite * duree)}
               </td>
             </tr>
+
             <tr className="bg-emerald-950/20">
               <td className="p-4 text-slate-300 font-bold">Économie Totale</td>
               <td className="p-4 text-right text-slate-400">—</td>
               <td className="p-4 text-right text-slate-400">—</td>
               <td className="p-4 text-right text-emerald-400 font-bold">
-                {economieVsMarche.toLocaleString()}€
+                {formatCurrency(economieVsMarche)}
               </td>
             </tr>
           </tbody>
@@ -1065,6 +1026,7 @@ const ModuleTauxUltraPremium = ({
     </div>
   );
 };
+
 declare global {
   interface Window {
     calculationResult?: any;
@@ -7306,18 +7268,21 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
           mensualite={creditMonthlyPayment}
           duree={creditDurationMonths}
           montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
         />
         <ModuleTauxPrivilege
           taux={interestRate}
           mensualite={creditMonthlyPayment}
           duree={creditDurationMonths}
           montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
         />
         <ModuleTauxStandard
           taux={interestRate}
           mensualite={creditMonthlyPayment}
           duree={creditDurationMonths}
           montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
         />
         {/* ============================================
    💼 WIDGET COMPTEUR - AVEC INFO-BULLE
