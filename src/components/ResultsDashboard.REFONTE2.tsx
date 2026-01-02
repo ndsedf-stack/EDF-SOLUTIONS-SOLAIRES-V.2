@@ -1266,33 +1266,36 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [generatedLink, setGeneratedLink] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
+  const [inputClientName, setInputClientName] = useState("");
+  const [inputClientEmail, setInputClientEmail] = useState("");
+  const [inputClientPhone, setInputClientPhone] = useState("");
+  const [inputCommercialName, setInputCommercialName] = useState("");
+  const [inputCommercialEmail, setInputCommercialEmail] = useState("");
   const handleGenerate = async () => {
-    if (!inputValue.trim()) return alert("⚠️ Veuillez entrer le nom du client");
+    // Validation
+    if (!inputClientName.trim()) {
+      alert("⚠️ Veuillez entrer le nom du client");
+      return;
+    }
+
+    if (!inputCommercialEmail.trim()) {
+      alert("⚠️ Veuillez entrer l'email du commercial");
+      return;
+    }
+
+    // ✅ Synchroniser toutes les valeurs
+    setClientName(inputClientName);
+    setClientEmail(inputClientEmail);
+    setClientPhone(inputClientPhone);
+    setCommercialName(inputCommercialName);
+    setCommercialEmail(inputCommercialEmail);
+
     setIsLoading(true);
 
-    const rawId = studyId || data?.id;
-    const cleanId = String(rawId)
-      .replace(/[^a-zA-Z0-9-]/g, "")
-      .trim();
-
     try {
-      const { error } = await supabase
-        .from("studies")
-        .update({
-          client_name: inputValue,
-          is_active: true,
-        })
-        .eq("id", cleanId);
-
-      if (error) throw error;
-
-      const domain = window.location.origin;
-      const link = `${domain}/guest/${cleanId}`;
-
-      setGeneratedLink(link); // On stocke le lien
-      // ❌ On ne fait plus navigator.clipboard ici pour éviter l'erreur de permission
-    } catch (error: any) {
-      alert(`❌ Erreur: ${error.message}`);
+      await handleGenerateStudy(inputClientName);
+    } catch (error) {
+      console.error("Erreur:", error);
     } finally {
       setIsLoading(false);
     }
@@ -1977,20 +1980,24 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     }));
   }, [calculationResult, gouffreMode, projectionYears]);
 
-  const handleGenerateStudy = async () => {
-    if (!clientName.trim()) {
+  const handleGenerateStudy = async (forcedClientName?: string) => {
+    const rawClientName = forcedClientName ?? clientName ?? "";
+
+    const cleanedClientName = rawClientName.trim().replace(/\s+/g, " ");
+
+    if (cleanedClientName.length < 2) {
       alert("⚠️ Veuillez entrer le nom du client");
       return;
     }
 
-    if (!commercialEmail) {
+    if (!commercialEmail?.trim()) {
       alert("⚠️ Email commercial manquant");
       return;
     }
 
     try {
       const payload = {
-        n: clientName,
+        n: cleanedClientName,
         e: Math.round(calculationResult.totalSavingsProjected || 0),
         a: Math.round(selfConsumptionRate || 70),
         m: Math.round(
@@ -2005,33 +2012,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         cashApport: cashApport || 0,
         elecPrice: electricityPrice || 0.25,
         installedPower: installedPower || 3.5,
-        projectionYears: projectionYears,
+        projectionYears,
         mode: "financement",
         warrantyMode: warrantyMode ? "performance" : "essential",
       };
 
-      // Remplace la vérification d'expiration par celle-ci
-      // ✅ VERSION SÉCURISÉE
-      const expiresAt = data?.expires_at ? new Date(data.expires_at) : null;
-      const now = new Date();
-
-      // On ajoute une marge de sécurité de 1 minute pour éviter les conflits de millisecondes à la création
-      const bufferTime = 60 * 1000;
-      const isActuallyExpired =
-        now.getTime() > expiresAt.getTime() + bufferTime;
-
-      if (isActuallyExpired) {
-        setIsExpired(true);
-        setIsLoading(false);
-        return;
-      }
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
 
       const { data: study, error } = await supabase
         .from("studies")
         .insert({
           study_data: payload,
           expires_at: expiresAt.toISOString(),
-          client_name: clientName,
+          client_name: cleanedClientName,
           client_email: clientEmail || null,
           client_phone: clientPhone || null,
           commercial_email: commercialEmail,
@@ -2047,8 +2041,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       }
 
       const guestUrl = `https://edf-solutions-solaires.vercel.app/guest/${study.id}`;
-
       setEncodedUrl(guestUrl);
+      setGeneratedLink(guestUrl);
       setShowNamePopup(false);
       setShowQRCode(true);
 
@@ -7476,55 +7470,104 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
         {/* ==== POPUP NOM DU CLIENT (STYLE IOS PREMIUM) ==== */}
         {__footerPopup && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
-            <div className="w-full max-w-[420px] bg-[#1C1C1E] rounded-[40px] p-10 shadow-2xl relative border border-white/5">
-              <h2 className="text-[32px] font-bold text-white mb-2 tracking-tight">
-                Nom du client
+            <div className="w-full max-w-[480px] bg-[#1C1C1E] rounded-[40px] p-8 shadow-2xl relative border border-white/5 max-h-[90vh] overflow-y-auto">
+              <h2 className="text-[28px] font-bold text-white mb-2 tracking-tight">
+                Informations client
               </h2>
-              <p className="text-[#8E8E93] text-[17px] mb-10 font-medium leading-tight">
-                Ce nom apparaîtra sur l'étude personnalisée
+              <p className="text-[#8E8E93] text-[15px] mb-8 font-medium leading-tight">
+                Remplissez les informations pour générer l'étude personnalisée
               </p>
 
-              <div className="relative mb-10">
-                <input
-                  autoFocus
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  type="text"
-                  placeholder="Ex: M. et Mme Dupont"
-                  className="w-full bg-black border-[1.5px] border-[#0A84FF] rounded-[16px] py-4 px-5 text-white text-[19px] outline-none shadow-[0_0_20px_rgba(10,132,255,0.15)]"
-                />
-                <div className="absolute -left-3 -bottom-3 w-10 h-10 bg-[#0A84FF] rounded-full flex items-center justify-center border-[4px] border-[#1C1C1E] shadow-xl z-10 pointer-events-none">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 17V3m-7 7l7-7 7 7" />
-                  </svg>
+              {/* ====== INFORMATIONS CLIENT ====== */}
+              <div className="mb-6">
+                <label className="text-white text-[13px] font-semibold mb-2 block uppercase tracking-wide">
+                  Client
+                </label>
+
+                {/* Nom du client */}
+                <div className="relative mb-4">
+                  <input
+                    autoFocus
+                    value={inputClientName}
+                    onChange={(e) => setInputClientName(e.target.value)}
+                    type="text"
+                    placeholder="Nom complet *"
+                    className="w-full bg-black border-[1.5px] border-[#0A84FF] rounded-[14px] py-3.5 px-4 text-white text-[16px] outline-none shadow-[0_0_15px_rgba(10,132,255,0.1)]"
+                  />
+                </div>
+
+                {/* Email du client */}
+                <div className="relative mb-4">
+                  <input
+                    value={inputClientEmail}
+                    onChange={(e) => setInputClientEmail(e.target.value)}
+                    type="email"
+                    placeholder="Email (optionnel)"
+                    className="w-full bg-black border-[1.5px] border-[#3A3A3C] rounded-[14px] py-3.5 px-4 text-white text-[16px] outline-none focus:border-[#0A84FF] transition-colors"
+                  />
+                </div>
+
+                {/* Téléphone du client */}
+                <div className="relative mb-4">
+                  <input
+                    value={inputClientPhone}
+                    onChange={(e) => setInputClientPhone(e.target.value)}
+                    type="tel"
+                    placeholder="Téléphone (optionnel)"
+                    className="w-full bg-black border-[1.5px] border-[#3A3A3C] rounded-[14px] py-3.5 px-4 text-white text-[16px] outline-none focus:border-[#0A84FF] transition-colors"
+                  />
                 </div>
               </div>
 
-              <div className="flex gap-4">
+              {/* ====== INFORMATIONS COMMERCIAL ====== */}
+              <div className="mb-8">
+                <label className="text-white text-[13px] font-semibold mb-2 block uppercase tracking-wide">
+                  Commercial
+                </label>
+
+                {/* Nom du commercial */}
+                <div className="relative mb-4">
+                  <input
+                    value={inputCommercialName}
+                    onChange={(e) => setInputCommercialName(e.target.value)}
+                    type="text"
+                    placeholder="Nom du commercial (optionnel)"
+                    className="w-full bg-black border-[1.5px] border-[#3A3A3C] rounded-[14px] py-3.5 px-4 text-white text-[16px] outline-none focus:border-[#0A84FF] transition-colors"
+                  />
+                </div>
+
+                {/* Email du commercial */}
+                <div className="relative mb-4">
+                  <input
+                    value={inputCommercialEmail}
+                    onChange={(e) => setInputCommercialEmail(e.target.value)}
+                    type="email"
+                    placeholder="Email commercial *"
+                    className="w-full bg-black border-[1.5px] border-[#0A84FF] rounded-[14px] py-3.5 px-4 text-white text-[16px] outline-none shadow-[0_0_15px_rgba(10,132,255,0.1)]"
+                  />
+                </div>
+              </div>
+
+              {/* ====== BOUTONS ====== */}
+              <div className="flex gap-3">
                 <button
                   onClick={() => __setFooterPopup(false)}
-                  className="flex-1 py-4.5 bg-[#2C2C2E] text-white font-bold rounded-[20px] text-[17px] active:scale-95 transition-all"
+                  className="flex-1 py-4 bg-[#2C2C2E] text-white font-bold rounded-[18px] text-[16px] active:scale-95 transition-all"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleGenerate}
-                  disabled={isLoading || !inputValue}
-                  className="flex-1 py-4.5 bg-[#48484A] text-white font-bold rounded-[20px] text-[17px] active:scale-95 transition-all"
+                  disabled={
+                    isLoading || !inputClientName || !inputCommercialEmail
+                  }
+                  className="flex-1 py-4 bg-[#0A84FF] text-white font-bold rounded-[18px] text-[16px] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                 >
-                  {isLoading ? "..." : "Générer"}
+                  {isLoading ? "Génération..." : "Générer l'étude"}
                 </button>
               </div>
 
+              {/* ====== SECTION QR CODE (s'affiche après génération) ====== */}
               {generatedLink && (
                 <div className="mt-8 p-6 bg-white rounded-[32px] flex flex-col items-center shadow-2xl animate-in fade-in zoom-in">
                   <p className="text-[10px] text-slate-400 uppercase font-black mb-4 tracking-widest text-center">
