@@ -1,0 +1,106 @@
+# ⚡ Automatisation Solaire — Nicolas Di Stefano  
+**EDF Solutions Solaires**
+
+📅 Dernière mise à jour : **3 janvier 2026**  
+🗂️ Projet Supabase : `ugwqfvwclwctzgtxcakp`  
+🚀 Statut : **100 % OPÉRATIONNEL — AUTOPILOTE STABLE**
+
+---
+
+## 🧠 Philosophie du système
+
+Ce projet **n’est pas un outil marketing**.  
+C’est un **système de sécurisation décisionnelle** conçu pour :
+
+- le **POST-REFUS** (client non signé)
+- l’**ANTI-ANNULATION** (client signé)
+
+🎯 Objectif unique : **CLOSING NET**  
+> Signer **ET** éviter l’annulation J+7.
+
+Aucune pression, aucune manipulation, aucune relance agressive.  
+Approche institutionnelle EDF, adaptée CSP+.
+
+---
+
+## 🏗️ Architecture générale
+
+### 🔐 Schémas Supabase actifs
+- `public`
+- `cron`
+- `net`
+- `auth`
+- `extensions`
+
+---
+
+### 🗄️ Tables critiques
+
+#### `public.clients`
+- Base prospects
+- Dédoublonnage par email
+- Source de vérité client
+
+#### `public.studies`
+- Études techniques & financières
+- Statuts :
+  - `draft`
+  - `sent` (non signé)
+  - `signed` (signé)
+- Relation client via `client_id (UUID)`
+
+#### `public.email_queue`
+- File d’attente emails automatiques
+- Champs clés :
+  - `email_type`
+  - `scheduled_for`
+  - `status`
+  - `payload` (**non-null, contrainte volontaire**)
+
+#### `public.tracking_events`
+- Logs comportementaux :
+  - `email_open`
+  - `email_click`
+  - `view_study`
+- Utilisés uniquement via vues de synthèse
+
+---
+
+### 🔎 Vues de pilotage (lecture seule)
+
+#### `studies_activity_summary`
+- Synthèse comportementale par étude
+- Ouvertures, interactions, dernière activité
+
+#### `studies_to_watch`
+- Vue de **surveillance intelligente**
+- Peut être vide (état normal)
+- Ne déclenche aucune action automatique
+
+---
+
+## 🌐 Services tiers
+
+- **Supabase**
+  - Base de données
+  - Triggers
+  - Cron jobs
+
+- **Resend**
+  - Envoi des emails
+  - Domaine : `nicolas-distefano-edf.fr`
+
+- **Vercel**
+  - Dashboard
+  - API emails
+  - API tracking
+  - Endpoint cron sécurisé
+
+---
+
+## 🛠️ Historique technique — 3 janvier 2026
+
+### A. Client de test (UPSERT)
+```sql
+INSERT INTO clients (...)
+ON CONFLICT (email) DO UPDATE;
