@@ -1545,12 +1545,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     // ⛔️ PAS de reset
     // ⛔️ PAS de fermeture du modal
   };
-  const handleConfirmSimulation = () => {
+  const handleConfirmSimulation = async () => {
     setCreditDurationMonths(selectedDuration); // ✅ SEUL ENDROIT
     setAutoCalculate(true); // ✅ UNE FOIS
     setShowParamsEditor(false);
     setCodeValidated(false);
     setCodeInput("");
+    await supabase
+      .from("studies")
+      .update({
+        status: "signed",
+        signed_at: new Date().toISOString(),
+      })
+      .eq("id", studyId);
   };
 
   useEffect(() => {
@@ -7471,7 +7478,7 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
             >
               📱{" "}
               <span className="font-black uppercase tracking-widest">
-                Générer Accès Client
+                Transmettre la synthèse EDF
               </span>
             </button>
           </div>
