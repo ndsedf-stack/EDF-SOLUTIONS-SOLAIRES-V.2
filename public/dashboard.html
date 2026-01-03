@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Commercial - EDF Solutions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-slate-950 text-white min-h-screen p-6">
+    <div class="max-w-7xl mx-auto">
+      <!-- HEADER -->
+      <div class="mb-8 flex justify-between items-center">
+        <div>
+          <h1 class="text-4xl font-black uppercase mb-2">
+            Dashboard Commercial
+          </h1>
+          <p class="text-slate-400">
+            Suivi automatique des emails et conversions
+          </p>
+        </div>
+        <button
+          onclick="loadData()"
+          class="p-3 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all"
+        >
+          <svg
+            class="w-5 h-5 text-blue-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            ></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- STATS CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-2">
+            <svg
+              class="w-5 h-5 text-blue-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+            <span class="text-xs text-slate-500 font-bold uppercase"
+              >Études</span
+            >
+          </div>
+          <div class="text-3xl font-black text-white" id="stat-studies">4</div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-2">
+            <svg
+              class="w-5 h-5 text-yellow-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              ></path>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              ></path>
+            </svg>
+            <span class="text-xs text-slate-500 font-bold uppercase"
+              >Taux ouverture</span
+            >
+          </div>
+          <div class="text-3xl font-black text-yellow-400" id="stat-opened">
+            75%
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-2">
+            <svg
+              class="w-5 h-5 text-purple-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+              ></path>
+            </svg>
+            <span class="text-xs text-slate-500 font-bold uppercase"
+              >Taux clic</span
+            >
+          </div>
+          <div class="text-3xl font-black text-purple-400" id="stat-click">
+            50%
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-2">
+            <svg
+              class="w-5 h-5 text-orange-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <span class="text-xs text-slate-500 font-bold uppercase"
+              >En attente</span
+            >
+          </div>
+          <div class="text-3xl font-black text-orange-400" id="stat-pending">
+            5
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-2">
+            <svg
+              class="w-5 h-5 text-emerald-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              ></path>
+            </svg>
+            <span class="text-xs text-slate-500 font-bold uppercase"
+              >Signés</span
+            >
+          </div>
+          <div class="text-3xl font-black text-emerald-400" id="stat-signed">
+            1
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-red-500/20 rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-2">
+            <svg
+              class="w-5 h-5 text-red-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              ></path>
+            </svg>
+            <span class="text-xs text-slate-500 font-bold uppercase"
+              >À risque</span
+            >
+          </div>
+          <div class="text-3xl font-black text-red-400" id="stat-risk">1</div>
+        </div>
+      </div>
+
+      <!-- FILTRES -->
+      <div class="flex gap-3 mb-6">
+        <button
+          onclick="setFilter('all')"
+          id="filter-all"
+          class="px-4 py-2 rounded-xl font-bold text-sm transition-all bg-blue-500 text-white"
+        >
+          Tous
+        </button>
+        <button
+          onclick="setFilter('post_refus')"
+          id="filter-post_refus"
+          class="px-4 py-2 rounded-xl font-bold text-sm transition-all bg-slate-800 text-slate-400 hover:bg-slate-700"
+        >
+          Post-refus
+        </button>
+        <button
+          onclick="setFilter('signed')"
+          id="filter-signed"
+          class="px-4 py-2 rounded-xl font-bold text-sm transition-all bg-slate-800 text-slate-400 hover:bg-slate-700"
+        >
+          Signés
+        </button>
+      </div>
+
+      <!-- TABLE -->
+      <div
+        class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden"
+      >
+        <table class="w-full">
+          <thead class="bg-slate-800/50">
+            <tr>
+              <th
+                class="text-left p-4 text-xs font-bold uppercase text-slate-400"
+              >
+                Client
+              </th>
+              <th
+                class="text-left p-4 text-xs font-bold uppercase text-slate-400"
+              >
+                Status
+              </th>
+              <th
+                class="text-center p-4 text-xs font-bold uppercase text-slate-400"
+              >
+                Emails envoyés
+              </th>
+              <th
+                class="text-center p-4 text-xs font-bold uppercase text-slate-400"
+              >
+                Ouvertures
+              </th>
+              <th
+                class="text-center p-4 text-xs font-bold uppercase text-slate-400"
+              >
+                CTA
+              </th>
+              <th
+                class="text-right p-4 text-xs font-bold uppercase text-slate-400"
+              >
+                Dernière interaction
+              </th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            <!-- Les données seront injectées ici -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const studies = [
+        {
+          id: "1",
+          client_name: "Jean Dupont",
+          client_email: "jean.dupont@example.com",
+          status: "sent",
+          created_at: new Date(
+            Date.now() - 2 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          last_interaction: new Date(
+            Date.now() - 1 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          emails_sent: 2,
+          emails_opened: 1,
+          cta_clicked: false,
+        },
+        {
+          id: "2",
+          client_name: "Marie Martin",
+          client_email: "marie.martin@example.com",
+          status: "sent",
+          created_at: new Date(
+            Date.now() - 1 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          last_interaction: new Date(
+            Date.now() - 2 * 60 * 60 * 1000
+          ).toISOString(),
+          emails_sent: 1,
+          emails_opened: 2,
+          cta_clicked: true,
+        },
+        {
+          id: "3",
+          client_name: "Pierre Dubois",
+          client_email: "pierre.dubois@example.com",
+          status: "signed",
+          created_at: new Date(
+            Date.now() - 5 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          last_interaction: new Date(
+            Date.now() - 4 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          emails_sent: 4,
+          emails_opened: 3,
+          cta_clicked: true,
+        },
+        {
+          id: "4",
+          client_name: "Sophie Bernard",
+          client_email: "sophie.bernard@example.com",
+          status: "sent",
+          created_at: new Date(
+            Date.now() - 4 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          last_interaction: new Date(
+            Date.now() - 4 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          emails_sent: 3,
+          emails_opened: 0,
+          cta_clicked: false,
+        },
+      ];
+
+      let currentFilter = "all";
+
+      function getStatusBadge(status) {
+        const styles = {
+          draft: {
+            bg: "bg-slate-500/20",
+            text: "text-slate-400",
+            label: "Brouillon",
+          },
+          sent: {
+            bg: "bg-blue-500/20",
+            text: "text-blue-400",
+            label: "Envoyé",
+          },
+          opened: {
+            bg: "bg-yellow-500/20",
+            text: "text-yellow-400",
+            label: "Ouvert",
+          },
+          clicked: {
+            bg: "bg-purple-500/20",
+            text: "text-purple-400",
+            label: "CTA cliqué",
+          },
+          signed: {
+            bg: "bg-emerald-500/20",
+            text: "text-emerald-400",
+            label: "Signé",
+          },
+          cancelled: {
+            bg: "bg-red-500/20",
+            text: "text-red-400",
+            label: "Annulé",
+          },
+        };
+
+        const style = styles[status] || styles.draft;
+        return `<span class="px-3 py-1 rounded-full text-xs font-bold ${style.bg} ${style.text}">${style.label}</span>`;
+      }
+
+      function formatDate(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 60) return `Il y a ${diffMins} min`;
+        if (diffHours < 24) return `Il y a ${diffHours}h`;
+        if (diffDays < 7) return `Il y a ${diffDays}j`;
+        return date.toLocaleDateString("fr-FR");
+      }
+
+      function renderTable() {
+        const filteredStudies = studies.filter((study) => {
+          if (currentFilter === "all") return true;
+          if (currentFilter === "post_refus") return study.status === "sent";
+          if (currentFilter === "signed") return study.status === "signed";
+          return true;
+        });
+
+        const tbody = document.getElementById("table-body");
+        tbody.innerHTML = filteredStudies
+          .map(
+            (study) => `
+        <tr class="border-t border-slate-800 hover:bg-slate-800/30 transition-colors">
+          <td class="p-4">
+            <div class="font-bold text-white">${study.client_name}</div>
+            <div class="text-xs text-slate-500">${study.client_email}</div>
+          </td>
+          <td class="p-4">${getStatusBadge(study.status)}</td>
+          <td class="p-4 text-center">
+            <span class="text-2xl font-black text-blue-400">${
+              study.emails_sent
+            }</span>
+          </td>
+          <td class="p-4 text-center">
+            <span class="text-2xl font-black text-yellow-400">${
+              study.emails_opened
+            }</span>
+          </td>
+          <td class="p-4 text-center">
+            ${
+              study.cta_clicked
+                ? '<svg class="w-6 h-6 text-emerald-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+                : '<svg class="w-6 h-6 text-slate-600 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            }
+          </td>
+          <td class="p-4 text-right text-sm text-slate-400">
+            ${formatDate(study.last_interaction)}
+          </td>
+        </tr>
+      `
+          )
+          .join("");
+      }
+
+      function setFilter(filter) {
+        currentFilter = filter;
+
+        // Update button states
+        ["all", "post_refus", "signed"].forEach((f) => {
+          const btn = document.getElementById(`filter-${f}`);
+          if (f === filter) {
+            btn.className =
+              "px-4 py-2 rounded-xl font-bold text-sm transition-all bg-blue-500 text-white";
+          } else {
+            btn.className =
+              "px-4 py-2 rounded-xl font-bold text-sm transition-all bg-slate-800 text-slate-400 hover:bg-slate-700";
+          }
+        });
+
+        renderTable();
+      }
+
+      function loadData() {
+        // Simuler le chargement des données
+        console.log("Chargement des données...");
+        renderTable();
+      }
+
+      // Initialisation
+      renderTable();
+    </script>
+  </body>
+</html>
