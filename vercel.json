@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/emails/send-pending",
+      "schedule": "0 * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
