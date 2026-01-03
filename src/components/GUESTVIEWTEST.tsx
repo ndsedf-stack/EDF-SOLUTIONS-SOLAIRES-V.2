@@ -3,6 +3,7 @@ import {
   Lock,
   Phone,
   TrendingUp,
+  Calendar,
   AlertTriangle,
   Users,
   CheckCircle2,
@@ -10,6 +11,7 @@ import {
   X,
   Shield,
   AlertCircle,
+  Table2,
   Loader,
   ShieldCheck,
   Home,
@@ -23,11 +25,15 @@ import {
   Coins,
   ClipboardCheck,
   Scale,
+  HelpCircle,
+  Clock,
   Wallet,
   Bot,
   MapPin,
   BarChart3,
+  Lightbulb,
   Info,
+  MessageCircle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -37,6 +43,8 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
+  ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 
 // ⚙️ CONFIGURATION
@@ -52,6 +60,7 @@ const supabase = {
     select: (fields: string) => ({
       eq: (field: string, value: string) => ({
         maybeSingle: async () => {
+          // Simulation de données pour demo
           return {
             data: {
               id: value,
@@ -146,6 +155,65 @@ const ModuleSection: React.FC<{
   );
 };
 
+// Composant InfoPopup
+const InfoPopup: React.FC<{ title: string; children: React.ReactNode }> = ({
+  title,
+  children,
+}) => {
+  const [show, setShow] = useState(false);
+
+  return (
+    <div className="relative inline-block">
+      <button
+        onClick={() => setShow(!show)}
+        className="text-blue-400 hover:text-blue-300"
+      >
+        <Info size={16} />
+      </button>
+      {show && (
+        <div className="absolute z-50 w-72 p-4 bg-black border border-white/20 rounded-lg shadow-xl top-6 right-0">
+          <div className="text-sm text-white font-bold mb-2">{title}</div>
+          <div className="text-xs text-slate-300">{children}</div>
+          <button
+            onClick={() => setShow(false)}
+            className="absolute top-2 right-2 text-slate-400 hover:text-white"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Composant ProfitBadge
+const ProfitBadge: React.FC<{
+  totalSavings: number;
+  paybackYear: number;
+  projectionYears: number;
+}> = ({ totalSavings, paybackYear, projectionYears }) => {
+  const formatMoney = (val: number) =>
+    new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    }).format(val);
+
+  return (
+    <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-4">
+      <div className="text-[10px] text-emerald-400 uppercase mb-1">
+        Gain projeté
+      </div>
+      <div className="text-2xl font-black text-emerald-400">
+        {formatMoney(totalSavings)}
+      </div>
+      <div className="text-xs text-slate-400 mt-1">
+        sur {projectionYears} ans
+      </div>
+    </div>
+  );
+};
+
 export default function GuestView() {
   const [data, setData] = useState<any>(null);
   const [study, setStudy] = useState<any>(null);
@@ -154,7 +222,22 @@ export default function GuestView() {
   const [isExpired, setIsExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [wastedCash, setWastedCash] = useState(0.5);
+  const [copyAttempts, setCopyAttempts] = useState(0);
+  const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("annuel");
+  const [tableScenario, setTableScenario] = useState<"financement" | "cash">(
+    "financement"
+  );
+  const [activeModule, setActiveModule] = useState<string>("");
+  const [showCoachPanel, setShowCoachPanel] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [whereMoneyMode, setWhereMoneyMode] = useState<"financement" | "cash">(
+    "financement"
+  );
+  const [gouffreMode, setGouffreMode] = useState<"financement" | "cash">(
+    "financement"
+  );
 
+  // Simuler le chargement
   useEffect(() => {
     const loadStudy = async () => {
       try {
@@ -178,6 +261,7 @@ export default function GuestView() {
     loadStudy();
   }, []);
 
+  // Timer countdown
   useEffect(() => {
     if (!study?.expires_at) return;
 
@@ -199,6 +283,7 @@ export default function GuestView() {
     return () => clearInterval(timer);
   }, [study?.expires_at]);
 
+  // Compteur argent gaspillé
   useEffect(() => {
     if (!data?.conso || !data?.elecPrice) return;
 
@@ -277,6 +362,7 @@ export default function GuestView() {
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
+  // Calculs financiers simplifiés
   const monthlyBill = (safeData.conso * safeData.elecPrice) / 12;
   const monthlyCredit = safeData.m;
   const monthlyResidue =
@@ -296,6 +382,16 @@ export default function GuestView() {
     greenValue: 5000,
     totalSpendNoSolar: 80000,
     totalSpendSolar: 55000,
+    totalSpendNoSolarCash: 75000,
+    totalSpendSolarCash: 50000,
+    bankEquivalentCapital: 45000,
+    year1: {
+      creditPayment: monthlyCredit * 12,
+      edfResidue: monthlyResidue * 12,
+      totalWithSolar: totalMensuel * 12,
+    },
+    details: [],
+    detailsCash: [],
   };
 
   const gouffreChartData = Array.from({ length: 20 }, (_, i) => ({
@@ -308,8 +404,25 @@ export default function GuestView() {
     window.location.href = `tel:${STUDY_CONFIG.phoneNumber}`;
   };
 
+  const getYearData = (year: number) => ({
+    credit: {
+      cumulativeSpendSolar: -totalMensuel * 12 * year,
+      cumulativeSpendNoSolar: -monthlyBill * 12 * year * Math.pow(1.05, year),
+    },
+    cash: {
+      cumulativeSpendSolar: -safeData.installCost - monthlyResidue * 12 * year,
+      cumulativeSpendNoSolar: -monthlyBill * 12 * year * Math.pow(1.05, year),
+    },
+  });
+
+  const yearsToDisplay = [5, 10, 20];
   const clientCity = "Cannes";
   const projectionYears = safeData.projectionYears;
+  const installCost = safeData.installCost;
+  const cashApport = safeData.cashApport;
+  const creditDurationMonths = safeData.d;
+  const creditMonthlyPayment = safeData.m;
+  const insuranceMonthlyPayment = 0;
 
   return (
     <div className="min-h-screen bg-[#020202] text-white p-4 md:p-6">
@@ -317,7 +430,7 @@ export default function GuestView() {
         {/* HEADER */}
         <div className="flex justify-between items-start mb-8">
           <div className="text-xl font-black italic text-white/20 uppercase">
-            EDF SOLUTIONS SOLAIRES
+            EDF SOLUTIONS
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-full">
             <Lock size={12} className="text-blue-400" />
@@ -329,7 +442,9 @@ export default function GuestView() {
 
         {/* TITRE */}
         <h1 className="text-5xl font-black italic uppercase leading-none mb-2">
-          VOTRE ÉTUDE SOLAIRE.
+          VOTRE ÉTUDE
+          <br />
+          SOLAIRE.
         </h1>
         <div className="h-1.5 w-20 bg-blue-600 mb-6" />
         <p className="text-slate-400 text-sm font-medium mb-8 italic uppercase">
@@ -340,17 +455,20 @@ export default function GuestView() {
         </p>
 
         {/* COMPTE À REBOURS */}
-        <div className="bg-gradient-to-br from-orange-950/60 to-orange-900/40 border border-orange-500/40 rounded-[32px] p-6 mb-8">
+        <div className="bg-gradient-to-br from-red-950/80 to-red-900/40 border-2 border-red-500/50 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="text-orange-400" size={20} />
+            <AlertTriangle
+              className="text-orange-400 animate-pulse"
+              size={20}
+            />
             <span className="text-orange-300 text-xs font-black uppercase">
-              Validité du cadre tarifaire
+              Offre Limitée
             </span>
           </div>
           <div className="text-white text-sm font-medium mb-6">
-            Conditions actuelles valables jusqu'au :
+            Cette étude expire dans :
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-4">
+          <div className="grid grid-cols-4 gap-2 mb-6">
             {[
               { val: days, label: "JOURS" },
               { val: hours, label: "H" },
@@ -359,9 +477,9 @@ export default function GuestView() {
             ].map((unit, i) => (
               <div
                 key={i}
-                className="bg-black/60 border border-orange-500/20 rounded-xl p-3 text-center"
+                className="bg-black/60 border border-red-500/20 rounded-xl p-3 text-center"
               >
-                <div className="text-3xl font-black text-orange-400">
+                <div className="text-3xl font-black text-red-400">
                   {String(unit.val).padStart(2, "0")}
                 </div>
                 <div className="text-[8px] text-slate-500 uppercase font-bold mt-1">
@@ -369,9 +487,6 @@ export default function GuestView() {
                 </div>
               </div>
             ))}
-          </div>
-          <div className="text-xs text-orange-200/70 italic text-center">
-            Paramètres tarifaires garantis dans ce cadre
           </div>
         </div>
 
@@ -393,7 +508,7 @@ export default function GuestView() {
           </div>
         </div>
 
-        {/* MODULE: PROJET SÉCURISÉ */}
+        {/* MODULE 1: PROJET SÉCURISÉ */}
         <ModuleSection
           id="projet-securise"
           title="PROJET SOLAIRE SÉCURISÉ – ZÉRO RISQUE"
@@ -501,7 +616,7 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: GARANTIES */}
+        {/* MODULE 2: GARANTIES */}
         <ModuleSection
           id="garanties"
           title="Garanties de Sécurité"
@@ -543,12 +658,13 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: STRUCTURE BUDGET */}
+        {/* MODULE 3: STRUCTURE BUDGET */}
         <ModuleSection
           id="budget"
           title="Structure du Budget (Mensuel)"
           icon={<Scale className="text-slate-400" />}
           defaultOpen={false}
+          onOpen={setActiveModule}
         >
           <div className="bg-black/40 p-6 rounded-2xl border border-white/10">
             <div className="text-[10px] text-slate-500 italic mb-4">
@@ -595,7 +711,7 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: IMPACT BUDGET */}
+        {/* MODULE 4: IMPACT BUDGET */}
         <ModuleSection
           id="impact"
           title="Impact sur votre budget mensuel"
@@ -631,7 +747,7 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: PROJECTION */}
+        {/* MODULE 5: PROJECTION */}
         <ModuleSection
           id="projection"
           title="Projection financière dans le temps"
@@ -651,22 +767,19 @@ export default function GuestView() {
                     dataKey="cumulativeSpendNoSolar"
                     stroke="#ef4444"
                     fill="rgba(239, 68, 68, 0.2)"
-                    name="Sans solaire"
                   />
                   <Area
                     type="monotone"
                     dataKey="cumulativeSpendSolar"
                     stroke="#3b82f6"
                     fill="rgba(59, 130, 246, 0.2)"
-                    name="Avec solaire"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: SÉCURITÉ JURIDIQUE */}
+        {/* MODULE 6: SÉCURITÉ JURIDIQUE */}
         <ModuleSection
           id="securite-juridique"
           title="Garanties de Sécurité"
@@ -756,12 +869,13 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: PROCESSUS ADMINISTRATIF */}
+        {/* MODULE 7: PROCESSUS ADMINISTRATIF */}
         <ModuleSection
           id="securisation"
           title="Processus de Sécurisation Administrative"
           icon={<ClipboardCheck className="text-blue-500" />}
           defaultOpen={false}
+          onOpen={setActiveModule}
         >
           <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
             <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-500/5 blur-[120px]" />
@@ -839,12 +953,12 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: CONTEXTE LECTURE FINANCIÈRE */}
+        {/* MODULE 8: CONTEXTE LECTURE FINANCIÈRE */}
         <ModuleSection
           id="financial-context"
           title="Comment lire les chiffres qui suivent"
           icon={<Scale className="text-blue-400" />}
-          defaultOpen={false}
+          defaultOpen={true}
         >
           <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 space-y-6">
             <div className="bg-blue-950/30 border-l-4 border-blue-500/60 rounded-r-2xl p-6">
@@ -900,7 +1014,7 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: FINANCEMENT VS CASH */}
+        {/* MODULE 9: FINANCEMENT VS CASH */}
         <ModuleSection
           id="financement-vs-cash"
           title="Ajustement de financement"
@@ -988,7 +1102,7 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: SYNTHÈSE DE COHÉRENCE */}
+        {/* MODULE 10: SYNTHÈSE DE COHÉRENCE */}
         <ModuleSection
           id="synthese"
           title="Synthèse de cohérence du projet"
@@ -1074,7 +1188,7 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
-        {/* MODULE: PREUVE SOCIALE */}
+        {/* MODULE 11: PREUVE SOCIALE */}
         <ModuleSection
           id="realisations"
           title="Réalisations EDF — Familles accompagnées"
@@ -1182,74 +1296,554 @@ export default function GuestView() {
           </div>
         </ModuleSection>
 
+        {/* MODULE 12: VOTRE ARGENT DANS X ANS */}
+        <ModuleSection
+          id="where-money"
+          title="Votre argent dans X ans"
+          icon={<HelpCircle className="text-blue-500" />}
+          defaultOpen={false}
+          onOpen={setActiveModule}
+        >
+          <p className="text-[10px] text-slate-400 italic mb-3">
+            Ce module est un repère visuel. Il ne sert pas à décider, seulement
+            à comprendre les ordres de grandeur dans le temps.
+          </p>
+
+          <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-4 md:p-8 border border-white/10">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+              <div className="flex items-center gap-3">
+                <HelpCircle size={28} className="text-blue-500" />
+                <div>
+                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                    Votre argent dans {projectionYears} ans
+                  </h2>
+                  <p className="text-slate-500 text-sm mt-1">
+                    Visualisation factuelle — comparaison de scénarios
+                    possibles.
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10 shadow-inner">
+                <button
+                  onClick={() => setWhereMoneyMode("financement")}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    whereMoneyMode === "financement"
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  Financement
+                </button>
+                <button
+                  onClick={() => setWhereMoneyMode("cash")}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    whereMoneyMode === "cash"
+                      ? "bg-emerald-600 text-white"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  Cash
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {yearsToDisplay.map((year) => {
+                const data = getYearData(year);
+                const selectedData =
+                  whereMoneyMode === "financement" ? data.credit : data.cash;
+                const youPaid = Math.abs(selectedData.cumulativeSpendSolar);
+                const youWouldHavePaid = Math.abs(
+                  selectedData.cumulativeSpendNoSolar
+                );
+                const difference = youWouldHavePaid - youPaid;
+
+                let headerColor = "text-orange-500";
+                let borderColor = "border-orange-500/30";
+                let shadowColor =
+                  "hover:shadow-[0_0_30px_rgba(249,115,22,0.25)]";
+
+                if (year === 10) {
+                  headerColor = "text-blue-500";
+                  borderColor = "border-blue-500/30";
+                  shadowColor = "hover:shadow-[0_0_30px_rgba(59,130,246,0.25)]";
+                } else if (year === 20) {
+                  headerColor = "text-emerald-500";
+                  borderColor = "border-emerald-500/30";
+                  shadowColor = "hover:shadow-[0_0_30px_rgba(16,185,129,0.35)]";
+                }
+
+                return (
+                  <div
+                    key={year}
+                    className={`relative bg-[#0b0b0b]/60 backdrop-blur-md border ${borderColor} rounded-2xl p-6 overflow-hidden transition-all duration-300 hover:border-white/30 ${shadowColor}`}
+                  >
+                    <div className="absolute top-4 right-4 text-[120px] font-black text-white opacity-[0.03] leading-none select-none pointer-events-none">
+                      {year}
+                    </div>
+
+                    <h3
+                      className={`${headerColor} font-bold text-sm uppercase mb-6 tracking-wider`}
+                    >
+                      DANS {year} ANS
+                    </h3>
+
+                    <div className="space-y-6 relative z-10">
+                      <div className="bg-gradient-to-br from-blue-950/30 to-blue-900/10 border border-blue-500/20 p-4 rounded-xl">
+                        <div className="flex items-center gap-2 mb-3">
+                          <CheckCircle2 size={14} className="text-blue-400" />
+                          <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                            Avec installation solaire
+                          </span>
+                        </div>
+
+                        <p className="text-[9px] text-slate-500 uppercase mb-1">
+                          Dépenses énergétiques cumulées
+                        </p>
+                        <p className="text-2xl font-black text-white tabular-nums">
+                          {formatMoney(youPaid)}
+                        </p>
+
+                        {difference > 0 && (
+                          <div className="mt-4 bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-lg">
+                            <p className="text-[9px] text-emerald-400 uppercase mb-1">
+                              Écart observé
+                            </p>
+                            <p className="text-3xl font-black text-emerald-400 tabular-nums">
+                              +{formatMoney(difference)}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="bg-gradient-to-br from-red-950/40 to-red-900/20 border border-red-500/20 p-4 rounded-xl">
+                        <div className="flex items-center gap-2 mb-3">
+                          <AlertTriangle size={14} className="text-red-400" />
+                          <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                            Situation actuelle (référence)
+                          </span>
+                        </div>
+
+                        <p className="text-[9px] text-red-300 uppercase mb-1">
+                          Dépenses énergétiques estimées
+                        </p>
+                        <p className="text-2xl font-black text-red-400 tabular-nums">
+                          {formatMoney(youWouldHavePaid)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-10 bg-gradient-to-r from-orange-950/30 to-red-950/30 border-l-4 border-orange-500 p-6 rounded-xl">
+              <div className="flex items-start gap-4">
+                <Clock
+                  size={24}
+                  className="text-orange-400 flex-shrink-0 mt-1"
+                />
+                <div>
+                  <h4 className="text-orange-400 font-bold text-lg mb-2">
+                    Repère mensuel actuel :{" "}
+                    {formatMoney(calculationResult.oldMonthlyBillYear1)}
+                  </h4>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    À titre de repère, ce montant correspond à la dépense
+                    énergétique moyenne observée aujourd'hui.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModuleSection>
+
+        {/* MODULE 13: COMPARAISON AUTRES OPTIONS */}
+        <ModuleSection
+          id="comparaison"
+          title="Comparaison avec vos autres options"
+          icon={<Landmark className="text-purple-500" />}
+          defaultOpen={false}
+        >
+          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative">
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <Landmark size={120} className="text-purple-500" />
+            </div>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <Landmark size={26} className="text-purple-500" />
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                  Comparaison avec vos autres options
+                </h2>
+              </div>
+
+              <p className="text-[10px] text-slate-400 italic mb-4">
+                Cette comparaison est présentée à titre informatif. Elle permet
+                de situer différents scénarios possibles, sans objectif de
+                choix.
+              </p>
+
+              <div className="mb-4 bg-blue-950/30 border-l-4 border-blue-500 p-4 rounded text-sm text-gray-300 leading-relaxed flex items-start gap-3">
+                <span className="flex-1">
+                  Tous les scénarios sont calculés avec les mêmes hypothèses de
+                  départ. Les écarts observés proviennent uniquement de la
+                  nature de chaque option.
+                </span>
+                <InfoPopup title="Méthodologie de calcul">
+                  <p className="mb-3">
+                    Les calculs utilisent votre consommation déclarée, les
+                    tarifs réglementés actuels et des hypothèses prudentes
+                    d'évolution.
+                  </p>
+                  <p className="text-blue-400 text-xs">
+                    L'objectif est de comparer des ordres de grandeur, pas de
+                    prédire un rendement exact.
+                  </p>
+                </InfoPopup>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="flex flex-col gap-3">
+                  <div className="bg-black/60 border border-blue-900/20 p-6 rounded-2xl">
+                    <h3 className="font-bold text-white text-sm mb-2">
+                      Livret A
+                    </h3>
+                    <div className="text-4xl font-black text-blue-500 mb-1">
+                      2,7%
+                    </div>
+                    <div className="text-[10px] text-slate-500 uppercase">
+                      Rendement annuel
+                    </div>
+                  </div>
+                  <div className="bg-blue-950/20 border border-blue-900/30 p-4 rounded-xl">
+                    <div className="text-[10px] text-blue-400 uppercase mb-1">
+                      Gain estimé sur {projectionYears} ans
+                    </div>
+                    <div className="text-xl font-black text-blue-400">
+                      {formatMoney(
+                        installCost * Math.pow(1.027, projectionYears) -
+                          installCost
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div className="bg-black/60 border border-purple-900/20 p-6 rounded-2xl">
+                    <h3 className="font-bold text-white text-sm mb-2">
+                      Assurance-vie
+                    </h3>
+                    <div className="text-4xl font-black text-purple-500 mb-1">
+                      3,5%
+                    </div>
+                    <div className="text-[10px] text-slate-500 uppercase">
+                      Rendement annuel
+                    </div>
+                  </div>
+                  <div className="bg-purple-950/20 border border-purple-900/30 p-4 rounded-xl">
+                    <div className="text-[10px] text-purple-400 uppercase mb-1">
+                      Gain estimé sur {projectionYears} ans
+                    </div>
+                    <div className="text-xl font-black text-purple-400">
+                      {formatMoney(
+                        installCost * Math.pow(1.035, projectionYears) -
+                          installCost
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div className="bg-black/60 border border-orange-900/20 p-6 rounded-2xl">
+                    <h3 className="font-bold text-white text-sm mb-2">
+                      SCPI / Immobilier
+                    </h3>
+                    <div className="text-4xl font-black text-orange-500 mb-1">
+                      4,5%
+                    </div>
+                    <div className="text-[10px] text-slate-500 uppercase">
+                      Rendement annuel
+                    </div>
+                  </div>
+                  <div className="bg-orange-950/20 border border-orange-900/30 p-4 rounded-xl">
+                    <div className="text-[10px] text-orange-400 uppercase mb-1">
+                      Gain estimé sur {projectionYears} ans
+                    </div>
+                    <div className="text-xl font-black text-orange-400">
+                      {formatMoney(
+                        installCost * Math.pow(1.045, projectionYears) -
+                          installCost
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <div className="bg-[#022c22] border border-emerald-500 p-6 rounded-2xl">
+                    <h3 className="font-black text-white text-sm uppercase mb-2">
+                      Solaire
+                    </h3>
+                    <div className="text-4xl font-black text-emerald-400 mb-1">
+                      0 €
+                    </div>
+                    <div className="text-[10px] text-emerald-600 uppercase">
+                      Capital immobilisé
+                    </div>
+                  </div>
+                  <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 rounded-xl">
+                    <div className="text-[10px] text-emerald-400 uppercase mb-1">
+                      Écart estimé sur {projectionYears} ans
+                    </div>
+                    <div className="text-xl font-black text-emerald-400">
+                      {formatMoney(calculationResult.totalSavingsProjected)}
+                    </div>
+                    <div className="text-[9px] text-emerald-300 mt-1">
+                      Ordre de grandeur comparable à{" "}
+                      {formatMoney(calculationResult.bankEquivalentCapital)}{" "}
+                      placé
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 bg-black/40 border border-white/10 p-4 rounded-xl flex items-start gap-3 text-sm text-slate-300">
+                <Lightbulb
+                  size={20}
+                  className="text-yellow-500 flex-shrink-0 mt-0.5"
+                />
+                <p>
+                  Cette comparaison illustre des mécanismes différents :
+                  certains scénarios immobilisent un capital, d'autres
+                  réorganisent une dépense existante.
+                </p>
+              </div>
+            </div>
+          </div>
+        </ModuleSection>
+
+        {/* MODULE 14: BILAN TOTAL */}
+        <ModuleSection
+          id="bilan-total"
+          title={`Bilan total sur ${projectionYears} ans`}
+          icon={<Scale className="text-slate-400" />}
+          defaultOpen={false}
+        >
+          <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/10 relative">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
+                  <Scale className="text-slate-400 w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white uppercase tracking-tight">
+                    Bilan total sur {projectionYears} ans
+                  </h2>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    Comparatif objectif
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
+                <button
+                  onClick={() => setGouffreMode("financement")}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    gouffreMode === "financement"
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  Financement
+                </button>
+                <button
+                  onClick={() => setGouffreMode("cash")}
+                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    gouffreMode === "cash"
+                      ? "bg-emerald-600 text-white"
+                      : "text-slate-500 hover:text-white"
+                  }`}
+                >
+                  Cash
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-12">
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-bold text-slate-300 uppercase">
+                    Sans solaire (dépense)
+                  </span>
+                  <span className="text-4xl font-black text-white">
+                    {formatMoney(
+                      gouffreMode === "financement"
+                        ? calculationResult.totalSpendNoSolar
+                        : calculationResult.totalSpendNoSolarCash
+                    )}
+                  </span>
+                </div>
+                <div className="h-24 rounded-2xl bg-gradient-to-b from-red-500 to-red-700 shadow-2xl" />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-bold text-slate-300 uppercase">
+                    Avec solaire (investissement)
+                  </span>
+                  <span className="text-4xl font-black text-white">
+                    {formatMoney(
+                      gouffreMode === "financement"
+                        ? calculationResult.totalSpendSolar
+                        : calculationResult.totalSpendSolarCash
+                    )}
+                  </span>
+                </div>
+
+                <div className="relative h-24 rounded-2xl bg-slate-800 overflow-hidden">
+                  {(() => {
+                    const base =
+                      gouffreMode === "financement"
+                        ? calculationResult.totalSpendNoSolar
+                        : calculationResult.totalSpendNoSolarCash;
+                    const value =
+                      gouffreMode === "financement"
+                        ? calculationResult.totalSpendSolar
+                        : calculationResult.totalSpendSolarCash;
+                    const width = Math.min(
+                      100,
+                      Math.max(0, (value / base) * 100)
+                    );
+
+                    return (
+                      <div
+                        className={`h-full ${
+                          gouffreMode === "cash"
+                            ? "bg-gradient-to-b from-emerald-500 to-emerald-700"
+                            : "bg-gradient-to-b from-blue-500 to-blue-700"
+                        } transition-all duration-700`}
+                        style={{ width: `${width}%` }}
+                      />
+                    );
+                  })()}
+                </div>
+
+                <div className="flex justify-between items-center mt-4">
+                  <p
+                    className={`text-sm italic ${
+                      gouffreMode === "cash"
+                        ? "text-emerald-400/70"
+                        : "text-blue-400/70"
+                    }`}
+                  >
+                    Investissement valorisé sur 25+ ans
+                  </p>
+
+                  <div className="bg-black/60 border border-emerald-500/30 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <Coins size={14} className="text-emerald-400" />
+                    <span className="text-xs uppercase text-emerald-400">
+                      Différence :
+                    </span>
+                    <span className="text-xl font-black text-emerald-400">
+                      {formatMoney(
+                        gouffreMode === "financement"
+                          ? calculationResult.totalSavingsProjected
+                          : calculationResult.totalSavingsProjected
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-10 bg-black/60 border border-white/10 rounded-xl p-6 flex gap-4">
+              <Info size={16} className="text-slate-400 mt-1" />
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Le scénario{" "}
+                <strong className="text-red-400">sans solaire</strong>{" "}
+                correspond à une dépense subie. Le scénario{" "}
+                <strong className="text-blue-400">avec solaire</strong>{" "}
+                transforme cette dépense en actif durable.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+
         {/* BOUTON APPEL */}
         <button
           onClick={handleCall}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8 hover:from-blue-500 hover:to-blue-400 transition-all"
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8"
         >
           <Phone size={20} fill="currentColor" />
-          On sécurise le projet ensemble
+          Finaliser mon dossier MAINTENANT
         </button>
 
         {/* COMPTEUR ARGENT GASPILLÉ */}
-        <div className="bg-gradient-to-br from-orange-950/60 to-red-950/40 border border-orange-500/30 rounded-[32px] p-6 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Flame size={20} className="text-orange-400" />
-            <span className="text-orange-300 text-xs font-black uppercase tracking-wider">
-              Argent perdu depuis l'ouverture
-            </span>
-          </div>
-
-          <div className="text-center">
-            <div className="text-5xl font-black text-red-500 tabular-nums mb-2">
-              {formatMoneyPrecise(wastedCash)}
-            </div>
-            <div className="text-xs text-slate-400 italic">
-              Ce compteur ne s'arrêtera jamais tant que vous n'agissez pas
-            </div>
-          </div>
-        </div>
-
-        {/* MENTIONS LÉGALES */}
-        <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle size={16} className="text-slate-500" />
-            <h3 className="text-xs font-black uppercase text-slate-400">
-              Mentions Légales
-            </h3>
-          </div>
-          <div className="text-[9px] text-slate-600 space-y-2 leading-relaxed">
-            <p>
-              <strong className="text-slate-400">
-                Document confidentiel :
-              </strong>{" "}
-              Cette étude est la propriété d'EDF Solutions Solaires.
-              Reproduction interdite.
-            </p>
-            <p>
-              <strong className="text-slate-400">Validité :</strong> Tarifs
-              valables 7 jours. Aides soumises à conditions.
-            </p>
-            <p>
-              <strong className="text-slate-400">Estimations :</strong> Basées
-              sur consommation actuelle et ensoleillement moyen régional.
-            </p>
-            <p>
-              <strong className="text-slate-400">RGPD :</strong> Droit
-              d'accès/rectification.
-            </p>
-            <p className="text-slate-500 font-bold mt-3">
-              EDF Solutions Solaires
-            </p>
-          </div>
-        </div>
-
-        {/* FOOTER */}
-        <div className="text-center pb-8">
-          <span className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.4em]">
-            DOCUMENT SÉCURISÉ EDF SOLUTIONS PRO
+        <div className="flex items-center gap-3 mb-4">
+          <Flame size={20} className="text-orange-400" />
+          <span className="text-orange-300 text-xs font-black uppercase tracking-wider">
+            Argent perdu depuis l'ouverture
           </span>
         </div>
+
+        <div className="text-center">
+          <div className="text-5xl font-black text-red-500 tabular-nums mb-2">
+            {formatMoneyPrecise(wastedCash)}
+          </div>
+          <div className="text-xs text-slate-400 italic">
+            Ce compteur ne s'arrêtera jamais tant que vous n'agissez pas
+          </div>
+        </div>
+      </div>
+
+      {/* MENTIONS LÉGALES */}
+      <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-6 mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <AlertCircle size={16} className="text-slate-500" />
+          <h3 className="text-xs font-black uppercase text-slate-400">
+            Mentions Légales
+          </h3>
+        </div>
+        <div className="text-[9px] text-slate-600 space-y-2 leading-relaxed">
+          <p>
+            <strong className="text-slate-400">Document confidentiel :</strong>{" "}
+            Cette étude est la propriété d'EDF Solutions Solaires. Reproduction
+            interdite.
+          </p>
+          <p>
+            <strong className="text-slate-400">Validité :</strong> Tarifs
+            valables 7 jours. Aides soumises à conditions.
+          </p>
+          <p>
+            <strong className="text-slate-400">Estimations :</strong> Basées sur
+            consommation actuelle et ensoleillement moyen régional.
+          </p>
+          <p>
+            <strong className="text-slate-400">RGPD :</strong> Droit
+            d'accès/rectification.
+          </p>
+          <p className="text-slate-500 font-bold mt-3">
+            EDF Solutions Solaires
+          </p>
+        </div>
+      </div>
+
+      {/* ALERTE TENTATIVES DE COPIE */}
+      {copyAttempts > 0 && (
+        <div className="bg-red-950/40 border-l-4 border-red-500 p-4 rounded mb-4">
+          <p className="text-red-200 text-xs font-bold">
+            ⚠️ {copyAttempts} tentative(s) de copie détectée(s). Document
+            protégé.
+          </p>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <div className="text-center pb-8">
+        <span className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.4em]">
+          DOCUMENT SÉCURISÉ EDF SOLUTIONS PRO
+        </span>
       </div>
     </div>
   );
