@@ -1287,6 +1287,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [isExpired, setIsExpired] = useState(false);
   const [inputClientName, setInputClientName] = useState("");
   const [inputClientEmail, setInputClientEmail] = useState("");
+  const [inputClientId, setInputClientId] = useState<string | null>(
+    data?.client_id || null
+  );
   const [inputClientPhone, setInputClientPhone] = useState("");
   const [inputCommercialName, setInputCommercialName] = useState("");
   const [inputCommercialEmail, setInputCommercialEmail] = useState("");
@@ -1312,7 +1315,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     setIsLoading(true);
 
     try {
-      await handleGenerateStudy(inputClientName, inputCommercialEmail);
+      // 🔥 On ajoute inputClientId ici pour qu'il soit transmis à la fonction
+      await handleGenerateStudy(
+        inputClientName,
+        inputCommercialEmail,
+        inputClientId || undefined,
+        inputClientEmail, // ← AJOUTÉ
+        inputClientPhone // ← AJOUTÉ
+      );
     } catch (error) {
       console.error("Erreur:", error);
     } finally {
@@ -2008,7 +2018,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const handleGenerateStudy = async (
     forcedClientName?: string,
-    forcedCommercialEmail?: string
+    forcedCommercialEmail?: string,
+    forcedClientId?: string,
+    forcedClientEmail?: string, // ← AJOUTÉ
+    forcedClientPhone?: string // ← AJOUTÉ
   ) => {
     const cleanedClientName = (forcedClientName ?? clientName ?? "")
       .trim()
@@ -2031,6 +2044,50 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     }
 
     try {
+      // ═══════════════════════════════════════════════════════════
+      // 🟢 CRÉER OU RÉCUPÉRER LE CLIENT
+      // ═══════════════════════════════════════════════════════════
+      let clientId: string | null = forcedClientId || null;
+      const cleanedEmail = (forcedClientEmail || inputClientEmail || "")
+        .trim()
+        .toLowerCase();
+      const cleanedPhone = (forcedClientPhone || clientPhone || "").trim();
+
+      // Si on n'a pas de forcedClientId ET qu'on a un email
+      if (!clientId && cleanedEmail) {
+        // Chercher si le client existe
+        const { data: existingClient } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("email", cleanedEmail)
+          .maybeSingle();
+
+        if (existingClient) {
+          clientId = existingClient.id;
+          console.log("✅ Client existant:", clientId);
+        } else {
+          // Créer le nouveau client
+          const nameParts = cleanedClientName.split(" ");
+          const { data: newClient, error: clientError } = await supabase
+            .from("clients")
+            .insert({
+              first_name: nameParts[0] || cleanedClientName,
+              last_name: nameParts.slice(1).join(" ") || "",
+              email: cleanedEmail,
+              phone: cleanedPhone || null,
+            })
+            .select("id")
+            .single();
+
+          if (clientError) {
+            console.error("❌ Erreur création client:", clientError);
+          } else {
+            clientId = newClient.id;
+            console.log("✅ Nouveau client créé:", clientId);
+          }
+        }
+      }
+      // ═══════════════════════════════════════════════════════════
       const payload = {
         n: cleanedClientName,
         e: Math.round(calculationResult.totalSavingsProjected || 0),
@@ -2060,10 +2117,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         .insert({
           study_data: payload,
           expires_at: expiresAt.toISOString(),
+          client_id: clientId, // ← Utilise le clientId créé plus haut
           client_name: cleanedClientName,
-          client_email: clientEmail || null,
+          client_email: inputClientEmail || null, // 🔥 FIX : Remplit l'email pour éviter le NULL
           client_phone: clientPhone || null,
-          commercial_email: cleanedCommercialEmail, // 🔥 ICI
+          commercial_email: cleanedCommercialEmail,
           commercial_name: commercialName || null,
           is_active: true,
         })
@@ -7685,7 +7743,10 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
                 <button
                   onClick={handleGenerate}
                   disabled={
-                    isLoading || !inputClientName || !inputCommercialEmail
+                    isLoading ||
+                    !inputClientName ||
+                    !inputClientEmail ||
+                    !inputCommercialEmail
                   }
                   className="flex-1 py-4 bg-[#0A84FF] text-white font-bold rounded-[18px] text-[16px] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                 >
