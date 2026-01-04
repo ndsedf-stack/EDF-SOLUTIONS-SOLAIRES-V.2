@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { IS_DEV, IS_PROD } from "../config/env";
 import { useVocabularyGuard } from "../hooks/useVocabularyGuard";
 import { seniorPhases } from "../coaches/SeniorCoachPhases";
 import { banquierPhases } from "../coaches/BanquierCoachPhases";
@@ -1042,8 +1043,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   onProfileChange,
   studyId,
 }) => {
-  console.log("🔥 ResultsDashboard RENDERED");
-
   const didLogValidation = useRef(false);
   const [projectionYears, setProjectionYears] = useState<number>(
     initialProjectionYears || 10
@@ -7366,7 +7365,7 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
                 </div>
                 <div>
                   <h4 className="text-white font-black text-sm uppercase italic tracking-tight">
-                    Votre projet est prêt
+                    Votre projet est cohérent
                   </h4>
                   <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
                     Projet EDF confirmé pour{" "}

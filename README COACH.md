@@ -385,3 +385,315 @@ Phases
 
 fais-le en conscience.
 Tout le reste peut évoluer sans risque.
+README.md — BIBLE DU COACH (SYSTÈME DE GUIDAGE RDV)
+🎯 Vision générale
+
+Ce projet implémente un système de coaching en temps réel destiné uniquement au conseiller, pendant un rendez-vous client.
+
+👉 Le client ne voit jamais le coach
+👉 Le coach n’automatise pas la vente
+👉 Le coach guide, sécurise et structure le discours humain
+
+Le système est conçu pour :
+
+s’adapter au profil psychologique du client
+
+rester discret (HUD minimal)
+
+permettre un pilotage actif (Panel)
+
+être désactivable instantanément (OFF)
+
+évoluer dans le temps sans dette technique
+
+🧠 Architecture globale (qui dirige quoi)
+ResultsDashboard
+│
+├── CoachJail → Sécurité écran (client vs conseiller)
+│
+├── CoachController → Orchestrateur UNIQUE du coach
+│ │
+│ ├── HUD (CoachCompassMinimal)
+│ │ └── Guidance silencieuse (bas gauche)
+│ │
+│ └── PANEL (CoachRouter)
+│ └── SeniorCoach | BanquierCoach | CommercialCoach
+│
+└── Modules métier (audit, graphes, calculs, etc.)
+
+🧩 Principe clé
+
+Un seul coach rendu à la fois.
+Jamais deux.
+Jamais en double.
+
+🔐 Sécurité écran — CoachJail
+🎯 Rôle
+
+Empêcher tout affichage coach sur l’écran client (HDMI / partage écran).
+
+Responsabilité
+
+Si ce n’est pas l’écran conseiller → aucun rendu coach
+
+Aucun display:none
+
+Aucun DOM caché
+
+⚠️ RÈGLE ABSOLUE
+
+❌ Ne jamais contourner CoachJail
+❌ Ne jamais rendre un coach hors de cette enveloppe
+
+🎛️ CoachController — LE CERVEAU
+🎯 Rôle
+
+Point d’entrée unique du système coach.
+
+Il décide :
+
+si le coach est ON / OFF
+
+si on affiche le HUD ou le PANEL
+
+quel coach afficher selon le profil
+
+quand le HUD revient
+
+quand le panel se ferme
+
+👉 Aucune logique coach ne doit vivre ailleurs.
+
+États clés
+isCoachDisabled // kill switch total
+coachView // "hud" | "panel"
+profile // senior | banquier | standard
+
+⚠️ ZONE GELÉE (PROD)
+
+❌ Ne pas modifier :
+
+logique ON / OFF
+
+logique HUD ↔ PANEL
+
+routing des coaches
+
+🧭 HUD — CoachCompassMinimal
+🎯 Rôle
+
+Guidance silencieuse, ultra-discrète, non intrusive.
+
+Affiche :
+
+phase actuelle
+
+phrase clé
+
+action immédiate
+
+progression temporelle
+
+Interaction
+
+clic → ouvre le panel
+
+aucune autre action
+
+Règles
+
+✔️ Toujours visible quand coach actif
+✔️ Jamais visible en même temps que le panel
+✔️ Jamais bloquant
+
+📊 PANEL — Coaches métier
+Règle fondamentale
+
+Les coaches NE GÈRENT PAS leur ouverture / fermeture.
+
+Ils :
+
+affichent le contenu
+
+notifient la phase active
+
+demandent la fermeture (onClose)
+
+Le parent décide.
+
+👴 SeniorCoach / 💼 BanquierCoach / 💬 CommercialCoach
+🎯 Rôle
+
+Afficher le script adapté au profil client.
+
+Chaque coach :
+
+reçoit onPhaseChange
+
+reçoit onClose
+
+gère UNIQUEMENT :
+
+l’affichage
+
+la navigation interne
+
+le contenu des phases
+
+✅ Ce qu’on peut modifier sans risque
+
+textes
+
+phrases clés
+
+doList / dontList
+
+ordre des phases
+
+labels visuels
+
+❌ Ce qu’on ne modifie PAS
+
+gestion HUD / PANEL
+
+logique de fermeture
+
+routing profil
+
+🔁 CoachRouter
+🎯 Rôle
+
+Sélectionner le bon coach selon le profil courant.
+
+profile === "senior" → SeniorCoach
+profile === "banquier" → BanquierCoach
+profile === "standard" → CommercialCoach
+
+Important
+
+Le profil peut changer à chaud en RDV
+
+Le router s’adapte automatiquement
+
+🧠 Gestion du profil client
+Origine
+
+détecté par SpeechView
+
+stocké dans ResultsDashboard
+
+peut être modifié manuellement en RDV
+
+Effet
+
+changement immédiat des phases
+
+changement du coach actif
+
+aucun reload
+
+invisible pour le client
+
+🛑 Bouton PRÉSENTATION OFF
+🎯 Rôle
+
+Couper TOUT le système coach instantanément.
+
+Effets :
+
+HUD disparaît
+
+panel disparaît
+
+alertes stoppées
+
+timers stoppés
+
+Usage terrain
+
+client regarde l’écran
+
+moment sensible
+
+besoin de silence
+
+🔒 PHASE 6 — MODE PROD (EN PLACE)
+Actif :
+
+logs contrôlés
+
+OFF sécurisé
+
+aucun affichage client
+
+architecture figée
+
+⚠️ À NE PAS FAIRE EN PROD
+
+ajouter des console.log
+
+rendre un coach hors CoachJail
+
+dupliquer un coach
+
+🧠 PHASE 7 — APPRENTISSAGE LÉGER
+Principe
+
+Pas d’IA lourde.
+Juste des signaux terrain.
+
+On observe :
+
+temps par phase
+
+alertes déclenchées
+
+OFF utilisé
+
+changement de profil
+
+On ajuste :
+
+textes
+
+timings
+
+seuils
+
+👉 Le coach apprend, mais l’humain décide.
+
+🧬 PHASE 8 — SCORING J+7
+Pourquoi J+7
+
+recul émotionnel
+
+objections réelles
+
+signature connue
+
+Objectif
+
+Améliorer :
+
+scripts
+
+séquences
+
+profils
+
+taux de closing réel
+
+👉 Ce score n’est jamais une sanction.
+
+🏁 CONCLUSION
+
+Ce système n’est pas :
+❌ un bot
+❌ une IA vendeuse
+❌ une automatisation agressive
+
+C’est :
+✅ un copilote humain
+✅ un garde-fou émotionnel
+✅ un structurant de discours
+✅ un outil durable

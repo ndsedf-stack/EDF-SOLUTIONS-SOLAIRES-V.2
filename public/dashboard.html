@@ -233,6 +233,41 @@
         </table>
       </div>
 
+      <div class="mt-16">
+        <h2
+          class="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6"
+        >
+          📧 Suivi Autopilote Leads Email
+        </h2>
+        <div
+          id="email-today-indicator"
+          class="mb-4 text-[10px] font-black uppercase tracking-widest text-orange-400 hidden"
+        >
+          🔔 <span id="email-today-count">0</span> relance(s) automatique(s)
+          prévue(s) aujourd’hui
+        </div>
+        <div
+          class="glass border border-slate-800/50 rounded-3xl overflow-hidden"
+        >
+          <table class="w-full text-left border-collapse">
+            <thead
+              class="bg-black/40 text-slate-500 text-[9px] font-black uppercase tracking-[0.2em]"
+            >
+              <tr>
+                <th class="p-4">Lead</th>
+                <th class="p-4 text-center">Dernier email</th>
+                <th class="p-4 text-center">Prochaine relance</th>
+                <th class="p-4 text-center">Opt-out</th>
+              </tr>
+            </thead>
+            <tbody
+              id="leads-email-body"
+              class="divide-y divide-slate-800/30"
+            ></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="mt-12 mb-10">
         <h2
           class="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2"
@@ -425,30 +460,30 @@
       function renderLogs() {
         const container = document.getElementById("logs-container");
         if (logsData.length === 0) {
-          container.innerHTML = `<div class="p-10 text-center text-slate-600 text-[10px] uppercase tracking-widest italic">Aucune archive de forçage.</div>`;
+          container.innerHTML = `<div class="p-10 text-center text-slate-600 text-[10px] uppercase tracking-widest italic">Aucune archive de forçage...</div>`;
           return;
         }
         container.innerHTML = logsData
           .map(
             (l) => `
-            <div class="p-4 flex justify-between items-center hover:bg-white/[0.01] transition-colors">
-                <div class="flex flex-col">
-                    <span class="text-[8px] text-orange-500 font-black uppercase tracking-tighter">${
-                      l.action_performed
-                    }</span>
-                    <span class="text-sm font-bold text-slate-200">${
-                      l.client_name
-                    }</span>
-                </div>
-                <div class="max-w-[50%] text-right">
-                    <div class="text-[10px] text-slate-400 italic">"${
-                      l.justification
-                    }"</div>
-                    <div class="text-[8px] text-slate-600 uppercase font-bold mt-1">${new Date(
-                      l.created_at
-                    ).toLocaleString()}</div>
-                </div>
-            </div>`
+                        <div class="p-4 flex justify-between items-center hover:bg-white/[0.01] transition-colors">
+                            <div class="flex flex-col">
+                                <span class="text-[8px] text-orange-500 font-black uppercase tracking-tighter">${
+                                  l.action_performed
+                                }</span>
+                                <span class="text-sm font-bold text-slate-200">${
+                                  l.client_name
+                                }</span>
+                            </div>
+                            <div class="max-w-[50%] text-right">
+                                <div class="text-[10px] text-slate-400 italic">"${
+                                  l.justification
+                                }"</div>
+                                <div class="text-[8px] text-slate-600 uppercase font-bold mt-1">${new Date(
+                                  l.created_at
+                                ).toLocaleString()}</div>
+                            </div>
+                        </div>`
           )
           .join("");
       }
@@ -497,16 +532,16 @@
           document.getElementById("anomaly-list").innerHTML = anomalies
             .map(
               (a) => `
-            <div class="anomaly-card p-5 rounded-2xl border-l-4 border-l-red-500">
-                <div class="text-[9px] font-black text-red-500 mb-1 tracking-widest">${a.type}</div>
-                <div class="text-lg font-bold mb-1">${a.name}</div>
-                <div class="text-[10px] text-slate-500 italic mb-2">${a.desc}</div>
-                <button onclick="toggleRule('${a.id}')" class="text-[9px] text-blue-400 hover:underline uppercase tracking-tighter">Pourquoi ce dossier est signalé ?</button>
-                <div id="rule-${a.id}" class="hidden rule-box">
-                    <div>${a.rule}</div>
-                    <div class="mt-1">${a.obs}</div>
-                </div>
-            </div>`
+                        <div class="anomaly-card p-5 rounded-2xl border-l-4 border-l-red-500">
+                            <div class="text-[9px] font-black text-red-500 mb-1 tracking-widest">${a.type}</div>
+                            <div class="text-lg font-bold mb-1">${a.name}</div>
+                            <div class="text-[10px] text-slate-500 italic mb-2">${a.desc}</div>
+                            <button onclick="toggleRule('${a.id}')" class="text-[9px] text-blue-400 hover:underline uppercase tracking-tighter">Pourquoi ce dossier est signalé ?</button>
+                            <div id="rule-${a.id}" class="hidden rule-box">
+                                <div>${a.rule}</div>
+                                <div class="mt-1">${a.obs}</div>
+                            </div>
+                        </div>`
             )
             .join("");
         } else {
@@ -579,117 +614,263 @@
           .map((s) => {
             const hasAlert = anomaliesDetected.includes(s.id);
             return `
-            <tr class="transition-colors group ${
-              hasAlert ? "bg-red-500/5" : "hover:bg-white/[0.02]"
-            }">
-                <td class="p-6">
-                    <div class="flex items-center gap-2">
-                        <div class="text-xl font-bold text-slate-100 group-hover:text-blue-400 transition-colors">${
-                          s.name
-                        }</div>
-                        ${
-                          s.hasLog
-                            ? `<span class="tooltip"><span class="text-orange-500 text-xs cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>`
-                            : ""
-                        }
-                    </div>
-                    <div class="text-xs text-slate-500 font-medium">${
-                      s.email
-                    }</div>
-                    <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-widest italic">${getTimeSince(
-                      s.created_at
-                    )}</div>
-                </td>
-                <td class="p-6 text-center">
-                    <div class="flex justify-center gap-10 font-black">
-                        <div><div class="text-2xl ${
-                          s.views >= 3 ? "text-orange-400" : "text-slate-300"
-                        }">${
+                        <tr class="transition-colors group ${
+                          hasAlert ? "bg-red-500/5" : "hover:bg-white/[0.02]"
+                        }">
+                            <td class="p-6">
+                                <div class="flex items-center gap-2">
+                                    <div class="text-xl font-bold text-slate-100 group-hover:text-blue-400 transition-colors">${
+                                      s.name
+                                    }</div>
+                                    ${
+                                      s.hasLog
+                                        ? `<span class="tooltip"><span class="text-orange-500 text-xs cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>`
+                                        : ""
+                                    }
+                                </div>
+                                <div class="text-xs text-slate-500 font-medium">${
+                                  s.email
+                                }</div>
+                                <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-widest italic">${getTimeSince(
+                                  s.created_at
+                                )}</div>
+                            </td>
+                            <td class="p-6 text-center">
+                                <div class="flex justify-center gap-10 font-black">
+                                    <div><div class="text-2xl ${
+                                      s.views >= 3
+                                        ? "text-orange-400"
+                                        : "text-slate-300"
+                                    }">${
               s.views
             }</div><div class="text-[8px] text-slate-500 uppercase italic">Vues</div></div>
-                        <div class="border-l border-slate-800/50 pl-10"><div class="text-2xl ${
-                          s.clicks > 0 ? "text-purple-400" : "text-slate-300"
-                        }">${
+                                    <div class="border-l border-slate-800/50 pl-10"><div class="text-2xl ${
+                                      s.clicks > 0
+                                        ? "text-purple-400"
+                                        : "text-slate-300"
+                                    }">${
               s.clicks
             }</div><div class="text-[8px] text-slate-500 uppercase italic">Clics</div></div>
-                    </div>
-                </td>
-                <td class="p-6 text-center">
-                    <div class="inline-block px-4 py-1.5 rounded-lg border font-black uppercase text-[9px] tracking-[0.15em] ${
-                      s.status === "signed"
-                        ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                        : s.status === "sent"
-                        ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
-                        : "border-slate-600/50 text-slate-400"
-                    }">
-                        <select onchange="${
-                          hasAlert
-                            ? `forceAction('${s.id}', '${s.name.replace(
-                                /'/g,
-                                "\\'"
-                              )}', this.value)`
-                            : `updateStatus('${s.id}', this.value)`
-                        }">
-                            <option value="sent" ${
-                              s.status === "sent" ? "selected" : ""
-                            }>SENT</option>
-                            <option value="draft" ${
-                              s.status === "draft" ? "selected" : ""
-                            }>DRAFT</option>
-                            <option value="signed" ${
-                              s.status === "signed" ? "selected" : ""
-                            }>SIGNED</option>
-                            <option value="cancelled" ${
-                              s.status === "cancelled" ? "selected" : ""
-                            }>CANCELLED</option>
-                        </select>
-                    </div>
-                </td>
-                <td class="p-6 text-right">
-                    <div class="flex justify-end gap-2">
-                        <div class="tooltip">
-                            <button onclick="${
-                              hasAlert
-                                ? `forceAction('${s.id}', '${s.name.replace(
-                                    /'/g,
-                                    "\\'"
-                                  )}', 'signed')`
-                                : `updateStatus('${s.id}', 'signed')`
-                            }" 
-                                    class="px-4 py-2 ${
+                                </div>
+                            </td>
+                            <td class="p-6 text-center">
+                                <div class="inline-block px-4 py-1.5 rounded-lg border font-black uppercase text-[9px] tracking-[0.15em] ${
+                                  s.status === "signed"
+                                    ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                                    : s.status === "sent"
+                                    ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
+                                    : "border-slate-600/50 text-slate-400"
+                                }">
+                                    <select onchange="${
                                       hasAlert
-                                        ? "bg-orange-500 text-black"
-                                        : "bg-emerald-500 text-black"
-                                    } rounded-xl font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all">
-                                ${hasAlert ? "Forcer Signé" : "Signé"}
-                            </button>
-                            <span class="tooltiptext">${
-                              hasAlert
-                                ? "DÉVERROUILLAGE REQUIS"
-                                : "MARQUER SIGNÉ"
-                            }</span>
-                        </div>
-                        <div class="tooltip">
-                            <button onclick="updateStatus('${
-                              s.id
-                            }', 'draft')" class="px-3 py-2 bg-slate-900 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-[9px] font-bold tracking-widest">DRAFT</button>
-                            <span class="tooltiptext">REMETTRE EN BROUILLON</span>
-                        </div>
-                        <div class="tooltip">
-                            <button onclick="updateStatus('${
-                              s.id
-                            }', 'cancelled')" class="px-3 py-2 bg-slate-900 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs">×</button>
-                            <span class="tooltiptext">ANNULER</span>
-                        </div>
-                    </div>
-                </td>
-            </tr>`;
+                                        ? `forceAction('${
+                                            s.id
+                                          }', '${s.name.replace(
+                                            /'/g,
+                                            "\\'"
+                                          )}', this.value)`
+                                        : `updateStatus('${s.id}', this.value)`
+                                    }">
+                                        <option value="sent" ${
+                                          s.status === "sent" ? "selected" : ""
+                                        }>SENT</option>
+                                        <option value="draft" ${
+                                          s.status === "draft" ? "selected" : ""
+                                        }>DRAFT</option>
+                                        <option value="signed" ${
+                                          s.status === "signed"
+                                            ? "selected"
+                                            : ""
+                                        }>SIGNED</option>
+                                        <option value="cancelled" ${
+                                          s.status === "cancelled"
+                                            ? "selected"
+                                            : ""
+                                        }>CANCELLED</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td class="p-6 text-right">
+                                <div class="flex justify-end gap-2">
+                                    <div class="tooltip">
+                                        <button onclick="${
+                                          hasAlert
+                                            ? `forceAction('${
+                                                s.id
+                                              }', '${s.name.replace(
+                                                /'/g,
+                                                "\\'"
+                                              )}', 'signed')`
+                                            : `updateStatus('${s.id}', 'signed')`
+                                        }"
+                                                class="px-4 py-2 ${
+                                                  hasAlert
+                                                    ? "bg-orange-500 text-black"
+                                                    : "bg-emerald-500 text-black"
+                                                } rounded-xl font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all">
+                                            ${
+                                              hasAlert
+                                                ? "Forcer Signé"
+                                                : "Signé"
+                                            }
+                                        </button>
+                                        <span class="tooltiptext">${
+                                          hasAlert
+                                            ? "DÉVERROUILLAGE REQUIS"
+                                            : "MARQUER SIGNÉ"
+                                        }</span>
+                                    </div>
+                                    <div class="tooltip">
+                                        <button onclick="updateStatus('${
+                                          s.id
+                                        }', 'draft')" class="px-3 py-2 bg-slate-900 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-[9px] font-bold tracking-widest">DRAFT</button>
+                                        <span class="tooltiptext">REMETTRE EN BROUILLON</span>
+                                    </div>
+                                    <div class="tooltip">
+                                        <button onclick="updateStatus('${
+                                          s.id
+                                        }', 'cancelled')" class="px-3 py-2 bg-slate-900 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs">×</button>
+                                        <span class="tooltiptext">ANNULER</span>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>`;
           })
           .join("");
       }
 
+      function daysAgo(date) {
+        const d = Math.floor(
+          (new Date() - new Date(date)) / (1000 * 60 * 60 * 24)
+        );
+        return d <= 0 ? "Aujourd’hui" : `Il y a ${d}j`;
+      }
+
+      function nextFollowUp(lead) {
+        const now = new Date();
+        const created = new Date(lead.created_at);
+        const last = lead.last_email_sent_at
+          ? new Date(lead.last_email_sent_at)
+          : created;
+
+        const daysSinceCreation = (now - created) / (1000 * 60 * 60 * 24);
+        const daysSinceLast = (now - last) / (1000 * 60 * 60 * 24);
+
+        if (daysSinceCreation > 120) return "Terminé";
+
+        if (daysSinceCreation <= 60) {
+          return daysSinceLast >= 7
+            ? "Aujourd’hui"
+            : `Dans ${Math.ceil(7 - daysSinceLast)}j`;
+        }
+
+        return daysSinceLast >= 14
+          ? "Aujourd’hui"
+          : `Dans ${Math.ceil(14 - daysSinceLast)}j`;
+      }
+
+      async function loadEmailLeads() {
+        const { data: leads } = await supabaseClient
+          .from("email_leads")
+          .select(
+            `
+        id,
+        created_at,
+        last_email_sent_at,
+        email_step,
+        clients (
+          id,
+          email,
+          first_name,
+          last_name,
+          email_optout
+        )
+              `
+          )
+          .order("created_at", { ascending: false })
+          .limit(200);
+
+        const tbody = document.getElementById("leads-email-body");
+        if (!tbody || !leads) return;
+
+        // Calcul du compteur
+        const todayCount = leads.filter((l) => {
+          const c = l.clients;
+          if (!c) return false;
+          return nextFollowUp(l) === "Aujourd’hui" && !c.email_optout;
+        }).length;
+
+        const indicator = document.getElementById("email-today-indicator");
+        const countEl = document.getElementById("email-today-count");
+
+        if (todayCount > 0) {
+          countEl.innerText = todayCount;
+          indicator.classList.remove("hidden");
+        } else {
+          indicator.classList.add("hidden");
+        }
+
+        // Rendu du tableau EMAIL LEADS
+        tbody.innerHTML = leads
+          .map((l) => {
+            const c = l.clients;
+            if (!c) return "";
+
+            return `
+                  <tr class="hover:bg-white/[0.02] transition-colors">
+                    <td class="p-4">
+                      <div class="font-bold text-slate-200">
+                        ${c.first_name || ""} ${c.last_name || ""}
+                      </div>
+                      <div class="text-xs text-slate-500">${c.email}</div>
+                    </td>
+
+                    <td class="p-4 text-center text-xs text-slate-400">
+                      ${
+                        l.last_email_sent_at
+                          ? daysAgo(l.last_email_sent_at)
+                          : "Jamais"
+                      }
+
+                    </td>
+
+                    <td class="p-4 text-center">
+                      ${
+                        nextFollowUp(l) === "Aujourd’hui"
+                          ? `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-orange-500/20 text-orange-400 animate-pulse">🔔 Aujourd’hui</span>`
+                          : `<span class="text-xs font-bold text-slate-400">${nextFollowUp(
+                              l
+                            )}</span>`
+                      }
+                    </td>
+
+                    <td class="p-4 text-center">
+                      ${
+                        c.email_optout
+                          ? `<span class="text-red-500 text-xs font-black uppercase">Oui</span>`
+                          : `<button onclick="setOptOut('${c.email}')" class="px-3 py-1 text-[9px] font-black uppercase bg-slate-800 border border-slate-600 rounded hover:bg-red-500 hover:text-white transition-all">Stop emails</button>`
+                      }
+                    </td>
+                  </tr>
+                `;
+          })
+          .join("");
+      }
+
+      async function setOptOut(email) {
+        if (!confirm("Confirmer l’exclusion de ce lead ?")) return;
+        await supabaseClient
+          .from("clients")
+          .update({ email_optout: true })
+          .eq("email", email);
+        loadEmailLeads();
+      }
+
+      // Lancement et rafraîchissement
       loadData();
+      loadEmailLeads();
       setInterval(loadData, 60000);
+      setInterval(loadEmailLeads, 60000);
     </script>
   </body>
 </html>
