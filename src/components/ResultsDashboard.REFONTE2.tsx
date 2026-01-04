@@ -1042,6 +1042,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   onProfileChange,
   studyId,
 }) => {
+  console.log("🔥 ResultsDashboard RENDERED");
+
   const didLogValidation = useRef(false);
   const [projectionYears, setProjectionYears] = useState<number>(
     initialProjectionYears || 10
@@ -1050,30 +1052,43 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   // 1️⃣ TOUS LES STATES EN PREMIER
 
   // ✅ PROFIL — Synchronisé avec le quiz
-
   const [profile, setProfile] = useState<
     "standard" | "banquier" | "senior" | null
   >(data.profile || "standard");
+
+  // 🧠 PHASES SELON PROFIL
   const phases =
     profile === "senior"
       ? seniorPhases
       : profile === "banquier"
       ? banquierPhases
       : standardPhases;
+
+  // 🧠 PHASE ACTIVE POUR LE COACH (HUD / PANEL)
+  const [activeCoachPhase, setActiveCoachPhase] = useState<any>(null);
+
+  // 🔥 INITIALISATION AUTOMATIQUE DE LA PHASE COACH
+  useEffect(() => {
+    if (!activeCoachPhase && phases.length > 0) {
+      setActiveCoachPhase(phases[0]);
+    }
+  }, [phases, activeCoachPhase]);
+
+  // 📊 PHASES DU DASHBOARD (INDÉPENDANT DU COACH)
   const [currentPhase, setCurrentPhase] = useState(0);
   const [timeOnModule, setTimeOnModule] = useState(0);
   const activePhase = phases[currentPhase];
-  // 🔥 Synchronisation automatique
+
+  // 🔄 SYNCHRO PROFIL SI CHANGEMENT VIA QUIZ
   useEffect(() => {
     if (data.profile && data.profile !== profile) {
       setProfile(data.profile);
       console.log("✅ Profil synchronisé depuis quiz :", data.profile);
     }
-  }, [data.profile]);
+  }, [data.profile, profile]);
 
   // Reste de tes states
   const [showCoach, setShowCoach] = useState(false);
-  const [activeCoachPhase, setActiveCoachPhase] = useState(null);
   const [showQuiz, setShowQuiz] = useState(false);
   const [step, setStep] = useState<"dashboard" | "coach" | "results">(
     "dashboard"
@@ -1085,6 +1100,11 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [isCoachDisabled, setIsCoachDisabled] = useState(false);
+  const [coachView, setCoachView] = useState<"hud" | "panel">("hud");
+  // 🧭 UI coach
+
+  // 🔐 SÉCURITÉ ÉCRAN
+  const [isAdvisorScreen, setIsAdvisorScreen] = useState(true);
 
   // 🔥 PHASE 1 : Machine à états
   const {
@@ -2168,9 +2188,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
     return () => clearInterval(interval);
   }, []); // ✅ Se lance une seule fois au montage
+
   // ============================================
   // ROUTAGE SIMPLE QUIZZ → AUDIT → BILAN
   // ============================================
+  // 🔐 Jail visuelle — coach visible uniquement sur écran conseiller
+  const CoachJail = ({ children }: { children: React.ReactNode }) => {
+    if (!isAdvisorScreen) return null;
+    if (isCoachDisabled) return null;
+    return <>{children}</>;
+  };
+
   if (!calculationResult) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -2178,6 +2206,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       </div>
     );
   }
+
   // 🧭 RENDER PRINCIPAL avec étapes
 
   // 3️⃣ BILAN / DASHBOARD COMPLET
@@ -2217,6 +2246,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           >
             <TrendingUp size={14} /> Nouvelle Analyse
           </button>
+          {/* 🛑 BOUTON PANIC — ARRÊT TOTAL DU COACH */}
+          <button
+            onClick={() => setIsCoachDisabled((v) => !v)}
+            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider
+             text-slate-400 hover:text-white
+             bg-transparent border border-white/10
+             hover:border-white/30
+             transition-all"
+          >
+            {isCoachDisabled ? "ASSISTANCE ON" : "ASSISTANCE OFF"}
+          </button>
         </div>
       </nav>
 
@@ -2228,6 +2268,76 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     )}
   </div>
   */}
+      {/* ============================= */}
+      {/* 🔐 COACH — ÉCRAN CONSEILLER UNIQUEMENT */}
+      {/* ============================= */}
+      <>
+        {!isCoachDisabled && (
+          <>
+            {/* 🔴 Popups STOP */}
+            {popup === "STOP_XYEARS" && (
+              <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
+                <div className="bg-red-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-lg w-full text-2xl font-black">
+                  🚨 STOP – Zone financière anxiogène
+                  <p className="text-white/80 text-sm mt-2 text-center">
+                    Profil Senior → interdiction d’ouvrir ce module.
+                  </p>
+                  <button
+                    onClick={() => setPopup(null)}
+                    className="mt-6 px-6 py-3 bg-white text-red-700 font-bold rounded-xl"
+                  >
+                    OK – revenir
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 🚨 Alertes coach */}
+            <AlertPopup
+              alert={activeAlert || silenceAlert}
+              onDismiss={activeAlert ? dismissAlert : dismissSilenceAlert}
+              onAction={(action) =>
+                activeAlert ? handleAlertAction(action) : dismissSilenceAlert()
+              }
+            />
+
+            {/* 🎉 Fin parcours */}
+            {showCompletion && (
+              <CompletionScreen onClose={() => setShowCompletion(false)} />
+            )}
+
+            {/* 🧠 HUD ou PANEL — JAMAIS LES DEUX */}
+            {coachView === "hud" ? (
+              <CoachCompassMinimal
+                profile={profile || data?.profile}
+                activePhase={activeCoachPhase}
+                timeOnCurrentModule={securityTime}
+                minTimeRequired={activeCoachPhase?.minDuration || 0}
+                hasError={securityTime < (activeCoachPhase?.minDuration || 0)}
+                signal={signal}
+                onOpenPanel={() => setCoachView("panel")}
+              />
+            ) : (
+              <CoachRouter
+                profile={profile || data?.profile}
+                onPhaseChange={setActiveCoachPhase}
+                onClose={() => setCoachView("hud")}
+              />
+            )}
+
+            {/* 🔔 Notifications étapes */}
+            {stepNotification && (
+              <StepNotification
+                step={stepNotification.step}
+                message={stepNotification.message}
+                onConfirm={confirmStep}
+                onDismiss={() => {}}
+              />
+            )}
+          </>
+        )}
+      </>
+
       <main className="pt-24 pb-20 px-4 max-w-7xl mx-auto space-y-8">
         {/* ✅ MODAL PARAMÈTRES - DÉPLACÉE ICI POUR ÊTRE TOUJOURS ACCESSIBLE */}
         {showParamsEditor && (
@@ -7623,58 +7733,6 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
           </div>
         )}
       </main>
-
-      {/* --- ÉLÉMENTS DE STRUCTURE ET COACHES --- */}
-      {popup === "STOP_XYEARS" && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[9999]">
-          <div className="bg-red-600 text-white p-8 rounded-2xl shadow-2xl text-center max-w-lg w-full text-2xl font-black">
-            🚨 STOP – Zone financière anxiogène
-            <p className="text-white/80 text-sm mt-2 text-center">
-              Profil Senior → interdiction d’ouvrir ce module.
-            </p>
-            <button
-              onClick={() => setPopup(null)}
-              className="mt-6 px-6 py-3 bg-white text-red-700 font-bold rounded-xl"
-            >
-              OK – revenir
-            </button>
-          </div>
-        </div>
-      )}
-
-      <AlertPopup
-        alert={activeAlert || silenceAlert}
-        onDismiss={activeAlert ? dismissAlert : dismissSilenceAlert}
-        onAction={(action) =>
-          activeAlert ? handleAlertAction(action) : dismissSilenceAlert()
-        }
-      />
-
-      {showCompletion && (
-        <CompletionScreen onClose={() => setShowCompletion(false)} />
-      )}
-
-      <CoachCompassMinimal
-        profile={profile || data?.profile}
-        activePhase={activeCoachPhase}
-        timeOnCurrentModule={securityTime}
-        minTimeRequired={activeCoachPhase?.minDuration || 0}
-        hasError={securityTime < (activeCoachPhase?.minDuration || 0)}
-        signal={signal}
-      />
-
-      <BanquierCoach onPhaseChange={setActiveCoachPhase} />
-      <CommercialCoach onPhaseChange={setActiveCoachPhase} />
-      <SeniorCoach onPhaseChange={setActiveCoachPhase} />
-
-      {stepNotification && (
-        <StepNotification
-          step={stepNotification.step}
-          message={stepNotification.message}
-          onConfirm={confirmStep}
-          onDismiss={() => {}}
-        />
-      )}
     </div>
   );
 };

@@ -5,29 +5,25 @@ import { CommercialCoach } from "./CommercialCoach";
 
 interface CoachRouterProps {
   profile: "senior" | "banquier" | "standard";
-  calculatorProps: any;
-  onPhaseChange?: (phase: any) => void; // ← NOUVEAU
+  onPhaseChange?: (phase: any) => void;
+  onClose?: () => void;
 }
 
 export const CoachRouter: React.FC<CoachRouterProps> = ({
   profile,
-  calculatorProps,
-  onPhaseChange, // ← NOUVEAU
+  onPhaseChange,
+  onClose,
 }) => {
-  // Route vers le bon coach selon profil
   switch (profile) {
     case "senior":
-      return <SeniorCoach {...calculatorProps} onPhaseChange={onPhaseChange} />;
+      return <SeniorCoach onPhaseChange={onPhaseChange} onClose={onClose} />;
 
     case "banquier":
-      return (
-        <BanquierCoach {...calculatorProps} onPhaseChange={onPhaseChange} />
-      );
+      return <BanquierCoach onPhaseChange={onPhaseChange} onClose={onClose} />;
 
-    case "standard":
     default:
       return (
-        <CommercialCoach {...calculatorProps} onPhaseChange={onPhaseChange} />
+        <CommercialCoach onPhaseChange={onPhaseChange} onClose={onClose} />
       );
   }
 };

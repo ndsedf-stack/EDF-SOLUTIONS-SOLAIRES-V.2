@@ -22,6 +22,7 @@ interface CoachCompassMinimalProps {
   hasError?: boolean;
   errorMessage?: string;
   signal?: boolean;
+  onOpenPanel?: () => void;
 }
 
 export function CoachCompassMinimal({
@@ -32,6 +33,7 @@ export function CoachCompassMinimal({
   hasError,
   errorMessage,
   signal = false,
+  onOpenPanel, // ✅ DOIT ÊTRE LÀ
 }: CoachCompassMinimalProps) {
   if (!activePhase) return null;
 
@@ -48,7 +50,10 @@ export function CoachCompassMinimal({
       {/* 🧠 EXTREMELY DISCREET SIGNAL — visible only for you */}
       <VocabularySignal show={signal} />
 
-      <div className="fixed bottom-4 left-4 z-[9999]">
+      <div
+        className="fixed bottom-4 left-4 z-[9999] cursor-pointer"
+        onClick={onOpenPanel}
+      >
         <div className="bg-black/60 backdrop-blur-md text-white rounded-2xl shadow-xl border border-white/10 p-4 w-[280px]">
           <div className="text-xs text-slate-400">
             Phase {activePhase.number} / {phases.length}
