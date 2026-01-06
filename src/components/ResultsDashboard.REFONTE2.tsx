@@ -2020,10 +2020,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     forcedClientName?: string,
     forcedCommercialEmail?: string,
     forcedClientId?: string,
-    forcedClientEmail?: string, // ← AJOUTÉ
-    forcedClientPhone?: string // ← AJOUTÉ
+    forcedClientEmail?: string,
+    forcedClientPhone?: string
   ) => {
-    const cleanedClientName = (forcedClientName ?? clientName ?? "")
+    console.log("🟢 DÉBUT handleGenerateStudy");
+    console.log("🔵 PARAMS REÇUS:", {
+      forcedClientName,
+      forcedCommercialEmail,
+      forcedClientId,
+      forcedClientEmail,
+      forcedClientPhone,
+    });
+
+    // ✅ UTILISE UNIQUEMENT LES PARAMÈTRES FORCÉS
+    const cleanedClientName = (forcedClientName || "")
       .trim()
       .replace(/\s+/g, " ");
 
@@ -2032,11 +2042,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       return;
     }
 
-    const cleanedCommercialEmail = (
-      forcedCommercialEmail ??
-      commercialEmail ??
-      ""
-    ).trim();
+    const cleanedCommercialEmail = (forcedCommercialEmail || "").trim();
 
     if (!cleanedCommercialEmail) {
       alert("⚠️ Email commercial manquant");
@@ -2048,14 +2054,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       // 🟢 CRÉER OU RÉCUPÉRER LE CLIENT
       // ═══════════════════════════════════════════════════════════
       let clientId: string | null = forcedClientId || null;
-      const cleanedEmail = (forcedClientEmail || inputClientEmail || "")
-        .trim()
-        .toLowerCase();
-      const cleanedPhone = (forcedClientPhone || clientPhone || "").trim();
+      const cleanedEmail = (forcedClientEmail || "").trim().toLowerCase();
+      const cleanedPhone = (forcedClientPhone || "").trim();
 
-      // Si on n'a pas de forcedClientId ET qu'on a un email
+      console.log("🔵 Données client:", {
+        cleanedClientName,
+        cleanedEmail,
+        cleanedPhone,
+      });
+
       if (!clientId && cleanedEmail) {
-        // Chercher si le client existe
         const { data: existingClient } = await supabase
           .from("clients")
           .select("id")
@@ -2065,8 +2073,24 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         if (existingClient) {
           clientId = existingClient.id;
           console.log("✅ Client existant:", clientId);
+
+          // ✅ MISE À JOUR DU NOM DU CLIENT EXISTANT
+          const nameParts = cleanedClientName.split(" ");
+          const { error: updateError } = await supabase
+            .from("clients")
+            .update({
+              first_name: nameParts[0] || cleanedClientName,
+              last_name: nameParts.slice(1).join(" ") || "",
+              phone: cleanedPhone || null,
+            })
+            .eq("id", clientId);
+
+          if (updateError) {
+            console.error("⚠️ Erreur mise à jour client:", updateError);
+          } else {
+            console.log("✅ Client mis à jour avec:", cleanedClientName);
+          }
         } else {
-          // Créer le nouveau client
           const nameParts = cleanedClientName.split(" ");
           const { data: newClient, error: clientError } = await supabase
             .from("clients")
@@ -2081,12 +2105,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
           if (clientError) {
             console.error("❌ Erreur création client:", clientError);
-          } else {
+            alert("❌ Impossible de créer le client : " + clientError.message);
+            return;
+          }
+
+          if (newClient) {
             clientId = newClient.id;
             console.log("✅ Nouveau client créé:", clientId);
           }
         }
       }
+
+      // ═══════════════════════════════════════════════════════════
+      // 🟢 PAYLOAD ÉTUDE
       // ═══════════════════════════════════════════════════════════
       const payload = {
         n: cleanedClientName,
@@ -2107,34 +2138,152 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         projectionYears,
         mode: "financement",
         warrantyMode: warrantyMode ? "performance" : "essential",
+
+        // ✅ Données calculées (résumé)
+        breakEven:
+          calculationResult.paybackYear ||
+          calculationResult.breakEvenPoint ||
+          12,
+        averageYearlyGain: Math.round(
+          (calculationResult.totalSavingsProjected || 0) / projectionYears
+        ),
+        totalSpendNoSolar: Math.round(calculationResult.totalSpendNoSolar || 0),
+        totalSpendSolar: Math.round(calculationResult.totalSpendSolar || 0),
+        greenValue: Math.round(
+          (yearlyProduction || 7000) * projectionYears * 0.5
+        ),
+        ga: calculationResult.yearlyGains || [],
+
+        // ✅ DÉTAILS ANNÉE PAR ANNÉE (CRITIQUE !)
+        details: calculationResult.details.map((d) => ({
+          year: d.year,
+          cumulativeSpendNoSolar: Math.round(d.cumulativeSpendNoSolar || 0),
+          cumulativeSpendSolar: Math.round(d.cumulativeSpendSolar || 0),
+          edfBillWithoutSolar: Math.round(d.edfBillWithoutSolar || 0),
+          creditPayment: Math.round(d.creditPayment || 0),
+          edfResidue: Math.round(d.edfResidue || 0),
+          totalWithSolar: Math.round(d.totalWithSolar || 0),
+          cumulativeSavings: Math.round(d.cumulativeSavings || 0),
+        })),
+
+        detailsCash: calculationResult.detailsCash.map((d) => ({
+          year: d.year,
+          cumulativeSpendNoSolar: Math.round(d.cumulativeSpendNoSolar || 0),
+          cumulativeSpendSolar: Math.round(d.cumulativeSpendSolar || 0),
+          cumulativeSavings: Math.round(d.cumulativeSavings || 0),
+          edfBillWithoutSolar: Math.round(d.edfBillWithoutSolar || 0),
+          edfResidue: Math.round(d.edfResidue || 0),
+          totalWithSolar: Math.round(d.totalWithSolar || 0),
+        })),
       };
 
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      const { data: study, error } = await supabase
+      const studyId = crypto.randomUUID();
+      const guestUrl = `${window.location.origin}/guest/${studyId}`;
+
+      console.log("🔵 Study ID généré:", studyId);
+      console.log("🔵 Client ID:", clientId);
+
+      // ═══════════════════════════════════════════════════════════
+      // 📊 INSERTION ÉTUDE
+      // ═══════════════════════════════════════════════════════════
+      const result = await supabase
         .from("studies")
         .insert({
+          id: studyId,
           study_data: payload,
           expires_at: expiresAt.toISOString(),
-          client_id: clientId, // ← Utilise le clientId créé plus haut
+          guest_view_url: guestUrl,
+          client_id: clientId,
           client_name: cleanedClientName,
-          client_email: inputClientEmail || null, // 🔥 FIX : Remplit l'email pour éviter le NULL
-          client_phone: clientPhone || null,
+          client_email: cleanedEmail || null,
+          client_phone: cleanedPhone || null,
           commercial_email: cleanedCommercialEmail,
-          commercial_name: commercialName || null,
+          commercial_name: null,
           is_active: true,
+          status: "draft",
         })
         .select()
         .single();
 
-      if (error) {
-        console.error("❌ Erreur Supabase:", error);
-        throw error;
+      console.log("🟥 INSERT STUDY RESULT =", result);
+      console.log("📊 STUDY DATA:", result.data);
+      console.log("📌 STUDY ID:", result.data?.id);
+
+      if (result.error) {
+        alert("❌ ERREUR SUPABASE : " + result.error.message);
+        console.error("❌ SUPABASE ERROR FULL =", result.error);
+        return;
       }
 
-      const guestUrl = `${window.location.origin}/guest/${study.id}`;
+      const study = result.data;
+      console.log("✅ ÉTUDE CRÉÉE AVEC SUCCÈS:", study.id);
 
+      // ═══════════════════════════════════════════════════════════
+      // ✉️ AJOUT EMAIL FILE D'ATTENTE
+      // ═══════════════════════════════════════════════════════════
+      const emailResult = await supabase
+        .from("email_queue")
+        .insert({
+          client_id: clientId,
+          study_id: study.id,
+          email_type: "STUDY_READY",
+          status: "processing",
+          scheduled_for: new Date().toISOString(),
+          payload: {
+            guestview_url: guestUrl,
+          },
+        })
+        .select()
+        .single();
+
+      console.log("📧 Email queue créé:", emailResult);
+
+      if (emailResult.error) {
+        console.error("⚠️ Erreur email queue:", emailResult.error);
+      } else if (emailResult.data) {
+        // ✅ ENVOIE L'EMAIL IMMÉDIATEMENT VIA EDGE FUNCTION
+        console.log("📨 Déclenchement envoi email...");
+
+        try {
+          const response = await fetch(
+            `${
+              import.meta.env.VITE_SUPABASE_URL
+            }/functions/v1/send_email_from_queue`, // ✅
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${
+                  import.meta.env.VITE_SUPABASE_ANON_KEY
+                }`, // ✅
+              },
+              body: JSON.stringify({
+                record: emailResult.data,
+                type: "INSERT",
+                table: "email_queue",
+              }),
+            }
+          );
+
+          const sendResult = await response.json();
+          console.log("✅ Réponse envoi email:", sendResult);
+
+          if (!response.ok) {
+            console.error("❌ Erreur lors de l'envoi:", sendResult);
+          } else {
+            console.log("🎉 Email envoyé avec succès !");
+          }
+        } catch (emailError) {
+          console.error("❌ Erreur appel Edge Function:", emailError);
+        }
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 🟢 UI
+      // ═══════════════════════════════════════════════════════════
       setEncodedUrl(guestUrl);
       setGeneratedLink(guestUrl);
       setShowNamePopup(false);
@@ -2143,10 +2292,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       alert(
         `✅ Étude générée avec succès !\n\nID: ${
           study.id
-        }\nExpire le: ${expiresAt.toLocaleDateString("fr-FR")}`
+        }\nClient ID: ${clientId}\nExpire le: ${expiresAt.toLocaleDateString(
+          "fr-FR"
+        )}`
       );
     } catch (error: any) {
-      console.error("❌ Erreur:", error);
+      console.error("❌ Erreur catch:", error);
       alert(`❌ Erreur lors de la génération de l'étude.\n\n${error.message}`);
       setShowNamePopup(false);
     }
@@ -3154,212 +3305,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         {/* ═══════════════════════════════════════════════════════ */}
         {/* 🟢 TUNNEL DÉCISIONNEL — 10 MODULES                      */}
         {/* ═══════════════════════════════════════════════════════ */}
-        {/* ============================================ */}
-        {/* MODULE 2 : PROJET SÉCURISÉ - ZÉRO RISQUE CLIENT */}
-        {/* VERSION FINALE - CLOSING NET MAXIMAL */}
-        {/* Optimisations : anti-annulation J+7 + ancrage post-signature */}
-        {/* ============================================ */}
-        <ModuleSection
-          id="projet-securise-zero-risque"
-          title="PROJET SOLAIRE SÉCURISÉ – ZÉRO RISQUE CLIENT"
-          icon={<ShieldCheck className="text-blue-400" size={20} />}
-          defaultOpen={true}
-        >
-          <div className="space-y-6">
-            {/* BLOC 1 : PROCESSUS COMPLET (Liste exhaustive) */}
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl p-6">
-              <h4 className="text-xl font-black text-white uppercase tracking-tight mb-3">
-                TOUTES LES DÉMARCHES PRISES EN CHARGE PAR EDF
-              </h4>
 
-              {/* 🟢 AMÉLIORATION 1 : Reframing complexité */}
-              <p className="text-sm text-slate-400 italic mb-4">
-                Ces démarches existent dans tous les projets solaires. La
-                différence EDF : vous n'en gérez aucune.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[
-                  {
-                    step: "1",
-                    title: "Urbanisme & Mairie",
-                    desc: "Déclaration préalable de travaux (DP)",
-                    icon: Home,
-                  },
-                  {
-                    step: "2",
-                    title: "Architectes des Bâtiments de France",
-                    desc: "Validation ABF si zone protégée",
-                    icon: Landmark,
-                  },
-                  {
-                    step: "3",
-                    title: "Diagnostic Amiante",
-                    desc: "Diagnostic réglementaire inclus (toitures avant 1997)",
-                    icon: FileSearch,
-                  },
-                  {
-                    step: "4",
-                    title: "Installation & Pose",
-                    desc: "Par installateurs RGE certifiés",
-                    icon: Wrench,
-                  },
-                  {
-                    step: "5",
-                    title: "Consuel (Comité National de Sécurité)",
-                    desc: "Attestation de conformité électrique",
-                    icon: ShieldCheck,
-                  },
-                  {
-                    step: "6",
-                    title: "Raccordement ENEDIS",
-                    desc: "Mise en service du compteur Linky",
-                    icon: Zap,
-                  },
-                  {
-                    step: "7",
-                    title: "Contrat OA (Obligation d'Achat)",
-                    desc: "Signature avec EDF OA - 20 ans",
-                    icon: FileText,
-                  },
-                  {
-                    step: "8",
-                    title: "Mise en Production",
-                    desc: "Activation et suivi de production",
-                    icon: Sun,
-                  },
-                ].map((item, idx) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={idx}
-                      className="bg-black/20 border border-white/5 rounded-lg p-4 hover:border-blue-500/30 transition-all group"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500/20 transition-colors">
-                          <Icon className="text-blue-400" size={18} />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-mono text-slate-500">
-                              ÉTAPE {item.step}
-                            </span>
-                          </div>
-                          <h5 className="text-sm font-bold text-white mb-1">
-                            {item.title}
-                          </h5>
-                          <p className="text-xs text-slate-400">{item.desc}</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* BLOC 2 : GARANTIE ZÉRO RISQUE CLIENT */}
-            <div className="bg-gradient-to-r from-emerald-950/20 to-green-950/20 border-2 border-emerald-500/30 rounded-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Lock className="text-emerald-400" size={28} />
-                </div>
-                <div className="flex-1">
-                  {/* 🟢 AMÉLIORATION 2 : Wording institutionnel */}
-                  <h4 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">
-                    ENGAGEMENT EDF – RISQUE ADMINISTRATIF COUVERT
-                  </h4>
-                  <div className="bg-black/40 rounded-lg p-4 mb-4">
-                    <p className="text-lg text-emerald-300 font-bold leading-relaxed">
-                      Si un blocage administratif empêche l'installation (refus
-                      mairie, ABF, ENEDIS, ou autre),{" "}
-                      <span className="text-white text-xl">
-                        aucun paiement n'est exigible
-                      </span>
-                      .
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="text-emerald-400" size={16} />
-                      <span className="text-slate-300">
-                        Aucun paiement avant validation complète
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="text-emerald-400" size={16} />
-                      <span className="text-slate-300">
-                        Annulation gratuite en cas de refus
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="text-emerald-400" size={16} />
-                      <span className="text-slate-300">
-                        Accompagnement juridique inclus
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 className="text-emerald-400" size={16} />
-                      <span className="text-slate-300">
-                        Prise en charge totale garantie EDF
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* BLOC 3 : PLANNINGS D'INSTALLATION */}
-            <div className="bg-orange-950/20 border-l-4 border-orange-500 rounded-r-xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-orange-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Clock className="text-orange-400" size={24} />
-                </div>
-                <div>
-                  <h4 className="text-lg font-bold text-orange-300 mb-2">
-                    PLANNINGS D'INSTALLATION
-                  </h4>
-                  <p className="text-sm text-slate-300 leading-relaxed mb-3">
-                    Les créneaux d'installation dans votre secteur (06 -
-                    Alpes-Maritimes) sont contraints par les capacités
-                    techniques des équipes certifiées. Valider votre projet
-                    aujourd'hui garantit votre créneau dans les prochaines
-                    semaines.
-                  </p>
-                  <div className="bg-orange-500/10 rounded-lg px-3 py-2 inline-block mb-3">
-                    <span className="text-xs text-orange-400 font-mono">
-                      DISPONIBILITÉ SOUS RÉSERVE DU PLANNING RÉGIONAL
-                    </span>
-                  </div>
-
-                  {/* 🟢 AMÉLIORATION 3 : Urgence → statut protégé */}
-                  <p className="text-xs text-slate-400 italic mt-3">
-                    Une fois validé, votre dossier est priorisé dans le planning
-                    régional EDF.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 🟢 AMÉLIORATION 4 : Ancrage post-décision (CRITIQUE) */}
-            <div className="bg-blue-950/20 border border-blue-500/20 rounded-lg p-4 mt-6">
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Ce projet est validé selon les mêmes standards que les
-                installations réalisées par EDF depuis plus de 25 ans chez des
-                particuliers et des collectivités.
-              </p>
-            </div>
-          </div>
-        </ModuleSection>
         {/* ============================================
-   MODULE SÉCURITÉ JURIDIQUE - VERSION OPTIMISÉE
-   Suppressions : alerte 87% + ligne RGE négative
-   Corrections : wording institutionnel
+   MODULE 1 : SÉCURITÉ EDF - GROUPE D'ÉTAT
    ============================================ */}
+
         <ModuleSection
-          id="securite-juridique"
-          title="Garanties de Sécurité"
+          id="securite-edf-groupe" // ✅ CHANGÉ
+          title="Sécurité EDF – Groupe d'État" // ✅ CHANGÉ
           icon={<ShieldCheck className="text-emerald-500" />}
-          defaultOpen={true}
+          defaultOpen={true} // ✅ DÉJÀ BON
         >
           <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-black/40 p-8 backdrop-blur-xl">
             {/* LUEUR AMBIANTE */}
@@ -3451,6 +3406,524 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </ul>
               </div>
             </div>
+          </div>
+        </ModuleSection>
+        {/* ============================================
+   MODULE 2 : ENGAGEMENT EDF - RISQUE COUVERT
+   FONCTION : Couvrir le RISQUE sans pression
+   TIMING : Juste après la crédibilité
+   ⚠️ CRITIQUE : SANS le bloc "Planning" anxiogène
+   ============================================ */}
+        <ModuleSection
+          id="engagement-risque-admin"
+          title="Engagement EDF – Risque administratif couvert"
+          icon={<Lock className="text-emerald-500" />}
+          defaultOpen={false}
+        >
+          <div className="space-y-6">
+            {/* BLOC PRINCIPAL : ENGAGEMENT RISQUE */}
+            <div className="bg-gradient-to-r from-emerald-950/20 to-green-950/20 border-2 border-emerald-500/30 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-14 h-14 bg-emerald-500/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Lock className="text-emerald-400" size={28} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">
+                    ENGAGEMENT EDF – RISQUE ADMINISTRATIF COUVERT
+                  </h4>
+
+                  {/* MESSAGE PRINCIPAL */}
+                  <div className="bg-black/40 rounded-lg p-4 mb-4">
+                    <p className="text-lg text-emerald-300 font-bold leading-relaxed">
+                      Si un blocage administratif empêche l'installation (refus
+                      mairie, ABF, ENEDIS, ou autre),{" "}
+                      <span className="text-white text-xl">
+                        aucun paiement n'est exigible
+                      </span>
+                      .
+                    </p>
+                  </div>
+
+                  {/* 4 GARANTIES */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2
+                        className="text-emerald-400 flex-shrink-0"
+                        size={16}
+                      />
+                      <span className="text-slate-300">
+                        Aucun paiement avant validation complète du dossier
+                        administratif
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2
+                        className="text-emerald-400 flex-shrink-0"
+                        size={16}
+                      />
+                      <span className="text-slate-300">
+                        Annulation gratuite en cas de refus d'une autorisation
+                        administrative
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2
+                        className="text-emerald-400 flex-shrink-0"
+                        size={16}
+                      />
+                      <span className="text-slate-300">
+                        Accompagnement juridique inclus dans le contrat EDF
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2
+                        className="text-emerald-400 flex-shrink-0"
+                        size={16}
+                      />
+                      <span className="text-slate-300">
+                        Prise en charge totale garantie EDF de toutes les
+                        démarches
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ BLOC PLANNINGS - VERSION FACTUELLE (sans pression) */}
+            <div className="bg-slate-950/40 border border-slate-700/30 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-slate-700/20 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Clock className="text-slate-400" size={24} />
+                </div>
+                <div>
+                  <h4 className="text-lg font-bold text-slate-300 mb-2">
+                    PLANNINGS D'INSTALLATION
+                  </h4>
+                  <p className="text-sm text-slate-400 leading-relaxed mb-3">
+                    Votre secteur (06 - Alpes-Maritimes) : équipes RGE actives.
+                  </p>
+                  <p className="text-sm text-slate-400 leading-relaxed mb-3">
+                    Délai moyen actuel :{" "}
+                    <span className="text-white font-semibold">
+                      6-8 semaines
+                    </span>{" "}
+                    après validation administrative.
+                  </p>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    Une fois validé, votre dossier est transmis au coordinateur
+                    régional EDF.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ANCRAGE POST-DÉCISION */}
+            <div className="bg-blue-950/20 border border-blue-500/20 rounded-lg p-4">
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Ce projet est validé selon les mêmes standards que les
+                installations réalisées par EDF depuis plus de 25 ans chez des
+                particuliers et des collectivités.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+
+        {/* ============================================
+   MODULE 3 : PRISE EN CHARGE ADMINISTRATIVE
+   FONCTION : Expliquer le PROCESSUS sans surcharger
+   TIMING : Après crédibilité + risque
+   ✅ AMÉLIORATION : 8 étapes en accordéon fermé
+   ============================================ */}
+        <ModuleSection
+          id="prise-en-charge-admin"
+          title="Prise en charge administrative"
+          icon={<ClipboardCheck className="text-blue-500" />}
+          defaultOpen={false}
+        >
+          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
+            <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-500/5 blur-[120px]" />
+
+            {/* MESSAGE PRINCIPAL - CLÉ */}
+            <div className="relative z-10 mb-8 p-6 bg-gradient-to-r from-blue-950/30 to-slate-900/30 border-l-4 border-blue-500/50 rounded-r-2xl">
+              <div className="flex items-start gap-4">
+                <ShieldCheck
+                  className="text-blue-400 mt-1 flex-shrink-0"
+                  size={24}
+                />
+                <div>
+                  <h4 className="text-white text-lg font-black mb-2 uppercase tracking-tight">
+                    EDF GÈRE L'ENSEMBLE DU VOLET ADMINISTRATIF ET RÉGLEMENTAIRE
+                  </h4>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    Vous n'avez rien à remplir, rien à suivre. Chaque étape est
+                    prise en main par EDF et validée par vous uniquement lorsque
+                    c'est nécessaire.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* ✅ ACCORDÉON : DÉTAIL DES 8 ÉTAPES (fermé par défaut) */}
+            <details className="relative z-10 mb-8 bg-black/60 border border-white/10 rounded-xl overflow-hidden">
+              <summary className="px-6 py-4 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between">
+                <span className="text-sm font-bold text-white uppercase tracking-wide">
+                  → Voir le détail des démarches administratives
+                </span>
+                <ChevronDown className="text-slate-400" size={20} />
+              </summary>
+
+              <div className="px-6 py-4 border-t border-white/10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    {
+                      step: "1",
+                      title: "Urbanisme & Mairie",
+                      desc: "Déclaration préalable de travaux (DP)",
+                      icon: "Home",
+                    },
+                    {
+                      step: "2",
+                      title: "Architectes des Bâtiments de France",
+                      desc: "Validation ABF si zone protégée",
+                      icon: "Landmark",
+                    },
+                    {
+                      step: "3",
+                      title: "Diagnostic Amiante",
+                      desc: "Diagnostic réglementaire inclus (toitures avant 1997)",
+                      icon: "FileSearch",
+                    },
+                    {
+                      step: "4",
+                      title: "Installation & Pose",
+                      desc: "Par installateurs RGE certifiés",
+                      icon: "Wrench",
+                    },
+                    {
+                      step: "5",
+                      title: "Consuel (Comité National de Sécurité)",
+                      desc: "Attestation de conformité électrique",
+                      icon: "ShieldCheck",
+                    },
+                    {
+                      step: "6",
+                      title: "Raccordement ENEDIS",
+                      desc: "Mise en service du compteur Linky",
+                      icon: "Zap",
+                    },
+                    {
+                      step: "7",
+                      title: "Contrat OA (Obligation d'Achat)",
+                      desc: "Signature avec EDF OA - 20 ans",
+                      icon: "FileText",
+                    },
+                    {
+                      step: "8",
+                      title: "Mise en Production",
+                      desc: "Activation et suivi de production",
+                      icon: "Sun",
+                    },
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="bg-black/20 border border-white/5 rounded-lg p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <span className="text-blue-400 text-xs font-bold">
+                            #{item.step}
+                          </span>
+                        </div>
+                        <div>
+                          <h5 className="text-sm font-bold text-white mb-1">
+                            {item.title}
+                          </h5>
+                          <p className="text-xs text-slate-400">{item.desc}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </details>
+
+            {/* CONCLUSION SÉCURISANTE */}
+            <div className="relative z-10 p-6 bg-emerald-950/20 border border-emerald-500/20 rounded-2xl">
+              <p className="text-emerald-100 text-sm leading-relaxed">
+                <strong className="text-white">
+                  Vous êtes guidé, accompagné et protégé.
+                </strong>{" "}
+                EDF assume la responsabilité du projet — vous validez simplement
+                les étapes importantes.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+
+        {/* ============================================
+   MODULE 4 : GARANTIES LONG TERME
+   FONCTION : Sécuriser la décision dans le temps
+   TIMING : Avant la signature (ancrage final)
+   ============================================ */}
+        <ModuleSection
+          id="garanties-long-terme"
+          title="Vos garanties – Selon l'offre choisie"
+          icon={<ShieldCheck className="text-orange-500" />}
+          defaultOpen={false}
+          onOpen={(id) => {
+            setActiveModule(id);
+          }}
+          onClose={handleModuleClose}
+        >
+          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 space-y-10">
+            {/* ENTRÉE – POSITIONNEMENT EDF */}
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="text-orange-500 w-6 h-6 flex-shrink-0" />
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Avec EDF, vous êtes accompagné du début à la fin : étude,
+                installation, contrôle, mise en service et suivi. L'objectif est
+                simple : que votre installation produise ce qui a été prévu,
+                dans le temps.
+              </p>
+            </div>
+
+            {/* TOGGLE OFFRES */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-black text-white tracking-tight">
+                Vos garanties – selon l'offre choisie
+              </h3>
+              <Toggle
+                checked={warrantyMode}
+                onChange={setWarrantyMode}
+                labelOff="Essentielle (TVA 5.5%)"
+                labelOn="Performance (TVA 20%)"
+              />
+            </div>
+
+            {/* INFO BANNERS */}
+            {!warrantyMode ? (
+              <div className="bg-[#021c15] border border-emerald-500/30 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center gap-4 relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="text-emerald-500 w-5 h-5" />
+                  <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
+                    OFFRE ESSENTIELLE – TVA RÉDUITE 5.5%
+                  </span>
+                </div>
+                <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
+                <div className="flex items-center gap-6 text-xs text-slate-300">
+                  <span className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
+                    Panneaux – 25 ans
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
+                    Production garantie –0.4%/an
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
+                    Fabrication française
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-black/60 backdrop-blur-md border border-blue-900/30 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center gap-3">
+                <Award className="text-blue-400 w-4 h-4" />
+                <span className="text-xs font-bold text-blue-200 uppercase tracking-wider">
+                  OFFRE PERFORMANCE – TVA 20%
+                </span>
+                <span className="text-xs text-slate-500 ml-auto hidden md:block">
+                  Garantie maximale et sérénité long terme.
+                </span>
+              </div>
+            )}
+
+            {/* GRILLE GARANTIES */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {warranties.map((w, i) => (
+                <div key={i}>
+                  <WarrantyCard
+                    years={w.years}
+                    label={w.label}
+                    tag={w.tag}
+                    icon={w.icon}
+                    description={w.description}
+                    isFr={!warrantyMode && w.label === "PANNEAUX" && i === 0}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* EXPLICATION GARANTIES */}
+            <div className="mt-6 bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded flex items-start gap-3">
+              <p className="text-sm text-gray-300 flex-1 leading-relaxed">
+                <strong>Garantie de performance</strong> : si la production est
+                inférieure aux engagements, une compensation est prévue
+                contractuellement.
+                <br />
+                <strong>Garantie matériel</strong> : remplacement pièces, main
+                d'œuvre et déplacement selon conditions de l'offre sélectionnée.
+              </p>
+              <InfoPopup title="Comprendre ces garanties">
+                <p className="mb-3">
+                  <strong>Garantie de performance :</strong> assurée tant que
+                  l'installation est active et conforme. Si écart constaté →
+                  compensation.
+                </p>
+                <p className="mb-3">
+                  <strong>Garantie matériel :</strong>{" "}
+                  {warrantyMode
+                    ? "À vie pour l'Offre Performance."
+                    : "10 à 25 ans selon composants pour l'Offre Essentielle."}
+                </p>
+              </InfoPopup>
+            </div>
+
+            {/* DIFFERENCES – NEUTRE & NON DÉVALORISANTE */}
+            {!warrantyMode && (
+              <div className="mt-6 bg-[#0f0505] border border-red-900/20 rounded-2xl p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="text-orange-500" size={20} />
+                  <h3 className="font-bold text-white text-sm">
+                    Différences entre les deux offres
+                  </h3>
+                </div>
+                <ul className="space-y-2 mb-6 text-xs text-slate-300">
+                  <li className="flex items-center gap-2">
+                    <span className="text-slate-400">Performance</span> →
+                    garantie matériel à vie
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-slate-400">Essentielle</span> → TVA
+                    réduite et panneaux France
+                  </li>
+                </ul>
+                <button
+                  onClick={() => setWarrantyMode(true)}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold text-xs uppercase tracking-wider transition"
+                >
+                  Voir l'option Long Terme
+                </button>
+              </div>
+            )}
+
+            {/* SYSTÈME YUZE */}
+            <div className="bg-[#110e1c] border border-indigo-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 flex-shrink-0">
+                <Bot size={24} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white uppercase mb-2">
+                  Supervision intelligente EDF
+                </h3>
+                <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+                  Votre installation est suivie automatiquement. En cas d'écart
+                  de production, une alerte déclenche un diagnostic et, si
+                  nécessaire, une intervention.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-[#0b0d14] p-4 rounded-xl border border-white/5">
+                    <span className="text-xs font-bold text-blue-200 uppercase flex items-center gap-2 mb-2">
+                      • Surveillance continue
+                    </span>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Analyse en temps réel, panneau par panneau.
+                    </p>
+                  </div>
+                  <div className="bg-[#0b0d14] p-4 rounded-xl border border-white/5">
+                    <span className="text-xs font-bold text-blue-200 uppercase flex items-center gap-2 mb-2">
+                      • Optimisation IA
+                    </span>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      Vos habitudes sont apprises pour maximiser votre
+                      autoconsommation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* AFFICHEUR CONNECTÉ */}
+            <div className="bg-[#150a15] border border-pink-900/30 rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6">
+              <div className="w-12 h-12 bg-pink-900/30 rounded-xl flex items-center justify-center text-pink-400 flex-shrink-0">
+                <Eye size={24} />
+              </div>
+              <div className="flex-1 w-full">
+                <h3 className="text-lg font-bold text-white uppercase mb-2">
+                  Afficheur Connecté
+                </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  Production – consommation – économies → visible en temps réel.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div className="bg-[#1a0f1a] p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
+                    <Zap size={20} className="text-yellow-400 mb-2" />
+                    <div className="text-xs font-bold text-white mb-1">
+                      Production Live
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      kW + cumul jour
+                    </div>
+                  </div>
+
+                  <div className="bg-[#1a0f1a] p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
+                    <Home size={20} className="text-orange-400 mb-2" />
+                    <div className="text-xs font-bold text-white mb-1">
+                      Consommation
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      Par appareil
+                    </div>
+                  </div>
+
+                  <div className="bg-[#1a0f1a] p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
+                    <Coins size={20} className="text-emerald-400 mb-2" />
+                    <div className="text-xs font-bold text-white mb-1">
+                      Économies
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      € économisés aujourd'hui
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* RÉSULTAT BANNER */}
+            <div className="bg-[#040912] border border-blue-900/40 p-4 rounded-xl flex items-center gap-3">
+              <ShieldCheck
+                size={20}
+                className="text-orange-400 flex-shrink-0"
+              />
+              <p className="text-sm text-blue-200 font-semibold leading-relaxed">
+                Résultat : vous installez, vous produisez, vous êtes accompagné.
+                EDF suit, et intervient si nécessaire. Votre rôle : profiter des
+                économies.
+              </p>
+            </div>
+          </div>
+
+          {/* 🧠 Coach local — toujours visible pour le conseiller */}
+          <div
+            id="coach-block-gar"
+            className="hidden mt-4 bg-black/60 border border-white/10 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed"
+          >
+            <p>
+              🧠 Positionnement → « Ici il n'y a rien à décider : on sécurise un
+              projet. »
+            </p>
+            <p>
+              🎤 Terrain → lire le tout en continu, sans pause, puis regarder le
+              client.
+            </p>
+            <p>⏳ Silence → 2 secondes.</p>
+            <p className="text-slate-500 italic">
+              (Et seulement si le client demande : « tant que le dossier n'est
+              pas validé, vous pouvez arrêter le projet sans frais »)
+            </p>
           </div>
         </ModuleSection>
         {/* ============================================
@@ -4203,381 +4676,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             <p className="text-[10px] text-slate-500 italic mt-6 text-center">
               C'est juste du calendrier. La décision vous appartient.
             </p>
-          </div>
-        </ModuleSection>
-
-        {/* ============================================
-   MODULE 9 : GARANTIES & SÉCURITÉ (version optimisée)
-   ============================================ */}
-        <ModuleSection
-          id="garanties"
-          title="Garanties & Sécurité"
-          icon={<ShieldCheck className="text-orange-500" />}
-          defaultOpen={false} // ✅ CHANGÉ : false (fermé par défaut)
-          onOpen={(id) => {
-            setActiveModule(id);
-          }}
-          onClose={handleModuleClose} // ✅ CORRECT
-        >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 space-y-10">
-            {/* ENTRÉE – POSITIONNEMENT EDF */}
-            <div className="flex items-start gap-3">
-              <ShieldCheck className="text-orange-500 w-6 h-6 flex-shrink-0" />
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Avec EDF, vous êtes accompagné du début à la fin : étude,
-                installation, contrôle, mise en service et suivi. L’objectif est
-                simple : que votre installation produise ce qui a été prévu,
-                dans le temps.
-              </p>
-            </div>
-
-            {/* TOGGLE OFFRES */}
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-black text-white tracking-tight">
-                Vos garanties – selon l’offre choisie
-              </h3>
-              <Toggle
-                checked={warrantyMode}
-                onChange={setWarrantyMode}
-                labelOff="Essentielle (TVA 5.5%)"
-                labelOn="Performance (TVA 20%)"
-              />
-            </div>
-
-            {/* INFO BANNERS */}
-            {!warrantyMode ? (
-              <div className="bg-[#021c15] border border-emerald-500/30 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center gap-4 relative overflow-hidden">
-                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="text-emerald-500 w-5 h-5" />
-                  <span className="text-sm font-bold text-emerald-400 uppercase tracking-wider">
-                    OFFRE ESSENTIELLE – TVA RÉDUITE 5.5%
-                  </span>
-                </div>
-                <div className="h-4 w-[1px] bg-white/10 hidden md:block" />
-                <div className="flex items-center gap-6 text-xs text-slate-300">
-                  <span className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
-                    Panneaux – 25 ans
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
-                    Production garantie –0.4%/an
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{" "}
-                    Fabrication française
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-black/60 backdrop-blur-md border border-blue-900/30 rounded-xl p-4 mb-6 flex flex-col md:flex-row items-center gap-3">
-                <Award className="text-blue-400 w-4 h-4" />
-                <span className="text-xs font-bold text-blue-200 uppercase tracking-wider">
-                  OFFRE PERFORMANCE – TVA 20%
-                </span>
-                <span className="text-xs text-slate-500 ml-auto hidden md:block">
-                  Garantie maximale et sérénité long terme.
-                </span>
-              </div>
-            )}
-
-            {/* GRILLE GARANTIES */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {warranties.map((w, i) => (
-                <div key={i}>
-                  <WarrantyCard
-                    years={w.years}
-                    label={w.label}
-                    tag={w.tag}
-                    icon={w.icon}
-                    description={w.description}
-                    isFr={!warrantyMode && w.label === "PANNEAUX" && i === 0}
-                  />
-                </div>
-              ))}
-            </div>
-
-            {/* EXPLICATION GARANTIES */}
-            <div className="mt-6 bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded flex items-start gap-3">
-              <p className="text-sm text-gray-300 flex-1 leading-relaxed">
-                <strong>Garantie de performance</strong> : si la production est
-                inférieure aux engagements, une compensation est prévue
-                contractuellement.
-                <br />
-                <strong>Garantie matériel</strong> : remplacement pièces, main
-                d'œuvre et déplacement selon conditions de l’offre sélectionnée.
-              </p>
-              <InfoPopup title="Comprendre ces garanties">
-                <p className="mb-3">
-                  <strong>Garantie de performance :</strong> assurée tant que
-                  l’installation est active et conforme. Si écart constaté →
-                  compensation.
-                </p>
-                <p className="mb-3">
-                  <strong>Garantie matériel :</strong>{" "}
-                  {warrantyMode
-                    ? "À vie pour l’Offre Performance."
-                    : "10 à 25 ans selon composants pour l’Offre Essentielle."}
-                </p>
-              </InfoPopup>
-            </div>
-
-            {/* DIFFERENCES – NEUTRE & NON DÉVALORISANTE */}
-            {!warrantyMode && (
-              <div className="mt-6 bg-[#0f0505] border border-red-900/20 rounded-2xl p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="text-orange-500" size={20} />
-                  <h3 className="font-bold text-white text-sm">
-                    Différences entre les deux offres
-                  </h3>
-                </div>
-                <ul className="space-y-2 mb-6 text-xs text-slate-300">
-                  <li className="flex items-center gap-2">
-                    <span className="text-slate-400">Performance</span> →
-                    garantie matériel à vie
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <span className="text-slate-400">Essentielle</span> → TVA
-                    réduite et panneaux France
-                  </li>
-                </ul>
-                <button
-                  onClick={() => setWarrantyMode(true)}
-                  className="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold text-xs uppercase tracking-wider transition"
-                >
-                  Voir l’option Long Terme
-                </button>
-              </div>
-            )}
-
-            {/* SYSTÈME YUZE */}
-            <div className="bg-[#110e1c] border border-indigo-500/20 rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6">
-              <div className="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400 flex-shrink-0">
-                <Bot size={24} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-white uppercase mb-2">
-                  Supervision intelligente EDF
-                </h3>
-                <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-                  Votre installation est suivie automatiquement. En cas d’écart
-                  de production, une alerte déclenche un diagnostic et, si
-                  nécessaire, une intervention.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-[#0b0d14] p-4 rounded-xl border border-white/5">
-                    <span className="text-xs font-bold text-blue-200 uppercase flex items-center gap-2 mb-2">
-                      • Surveillance continue
-                    </span>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Analyse en temps réel, panneau par panneau.
-                    </p>
-                  </div>
-                  <div className="bg-[#0b0d14] p-4 rounded-xl border border-white/5">
-                    <span className="text-xs font-bold text-blue-200 uppercase flex items-center gap-2 mb-2">
-                      • Optimisation IA
-                    </span>
-                    <p className="text-xs text-slate-500 leading-relaxed">
-                      Vos habitudes sont apprises pour maximiser votre
-                      autoconsommation.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* AFFICHEUR CONNECTÉ */}
-            <div className="bg-[#150a15] border border-pink-900/30 rounded-2xl p-6 flex flex-col md:flex-row items-start gap-6">
-              <div className="w-12 h-12 bg-pink-900/30 rounded-xl flex items-center justify-center text-pink-400 flex-shrink-0">
-                <Eye size={24} />
-              </div>
-              <div className="flex-1 w-full">
-                <h3 className="text-lg font-bold text-white uppercase mb-2">
-                  Afficheur Connecté
-                </h3>
-                <p className="text-slate-400 text-sm mb-4">
-                  Production – consommation – économies → visible en temps réel.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-[#1a0f1a] p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
-                    <Zap size={20} className="text-yellow-400 mb-2" />
-                    <div className="text-xs font-bold text-white mb-1">
-                      Production Live
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      kW + cumul jour
-                    </div>
-                  </div>
-
-                  <div className="bg-[#1a0f1a] p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
-                    <Home size={20} className="text-orange-400 mb-2" />
-                    <div className="text-xs font-bold text-white mb-1">
-                      Consommation
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      Par appareil
-                    </div>
-                  </div>
-
-                  <div className="bg-[#1a0f1a] p-4 rounded-xl border border-white/5 flex flex-col items-center text-center">
-                    <Coins size={20} className="text-emerald-400 mb-2" />
-                    <div className="text-xs font-bold text-white mb-1">
-                      Économies
-                    </div>
-                    <div className="text-[10px] text-slate-500">
-                      € économisés aujourd’hui
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* RÉSULTAT BANNER */}
-            <div className="bg-[#040912] border border-blue-900/40 p-4 rounded-xl flex items-center gap-3">
-              <ShieldCheck
-                size={20}
-                className="text-orange-400 flex-shrink-0"
-              />
-              <p className="text-sm text-blue-200 font-semibold leading-relaxed">
-                Résultat : vous installez, vous produisez, vous êtes accompagné.
-                EDF suit, et intervient si nécessaire. Votre rôle : profiter des
-                économies.
-              </p>
-            </div>
-          </div>
-
-          {/* 🧠 Coach local — toujours visible pour le conseiller */}
-
-          <div
-            id="coach-block-gar"
-            className="hidden mt-4 bg-black/60 border border-white/10 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed"
-          >
-            <p>
-              🧠 Positionnement → « Ici il n’y a rien à décider : on sécurise un
-              projet. »
-            </p>
-            <p>
-              🎤 Terrain → lire le tout en continu, sans pause, puis regarder le
-              client.
-            </p>
-            <p>⏳ Silence → 2 secondes.</p>
-            <p className="text-slate-500 italic">
-              (Et seulement si le client demande : « tant que le dossier n’est
-              pas validé, vous pouvez arrêter le projet sans frais »)
-            </p>
-          </div>
-        </ModuleSection>
-
-        {/* ============================================
-   MODULE PROCESSUS ADMINISTRATIF & CONFORMITÉ
-   ============================================ */}
-        <ModuleSection
-          id="securisation" // ✅ Modifié (pour matcher le mapping)
-          title="Processus de Sécurisation Administrative"
-          icon={<ClipboardCheck className="text-blue-500" />}
-          defaultOpen={false}
-          onOpen={(id) => {
-            setActiveModule(id);
-          }}
-        >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
-            <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-500/5 blur-[120px]" />
-
-            {/* MESSAGE RASSURANT – CLÉ */}
-            <div className="mb-8 p-5 bg-gradient-to-r from-blue-950/30 to-slate-900/30 border-l-4 border-blue-500/50 rounded-r-2xl">
-              <div className="flex items-start gap-4">
-                <ShieldCheck className="text-blue-400 mt-1" size={22} />
-                <div>
-                  <p className="text-white text-sm font-bold mb-1">
-                    EDF gère l’ensemble du volet administratif et réglementaire
-                  </p>
-                  <p className="text-slate-400 text-xs leading-relaxed">
-                    Vous n’avez rien à remplir, rien à suivre. Chaque étape est
-                    prise en main par EDF et validée par vous uniquement lorsque
-                    c’est nécessaire.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* 4 PILIERS – ÉLÉMENTS DE PREUVE PASSIFS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* PILIER 1 */}
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Autorisations & Urbanisme
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75 pointer-events-none select-none">
-                  <li>• Dossier mairie</li>
-                  <li>• Zones protégées si concerné</li>
-                  <li>• Conformité locale</li>
-                </ul>
-              </div>
-
-              {/* PILIER 2 */}
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Visite Technique & Sécurisation
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75 pointer-events-none select-none">
-                  <li>• Pré-validation sur place</li>
-                  <li>• Vérification technique par équipes EDF</li>
-                  <li>• Adaptations si besoin</li>
-                </ul>
-              </div>
-
-              {/* PILIER 3 */}
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Conformité Électrique
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75 pointer-events-none select-none">
-                  <li>• Validation installation</li>
-                  <li>• Attestation réglementaire</li>
-                  <li>• Sécurité avant mise en service</li>
-                </ul>
-              </div>
-
-              {/* PILIER 4 */}
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Mise en Service & Raccordement
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75 pointer-events-none select-none">
-                  <li>• Raccordement ENEDIS</li>
-                  <li>• Activation contrat EDF</li>
-                  <li>• Passage en production</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* CONCLUSION SÉCURISANTE */}
-            <div className="mt-8 p-6 bg-emerald-950/20 border border-emerald-500/20 rounded-2xl">
-              <p className="text-emerald-100 text-sm leading-relaxed">
-                <strong className="text-white">
-                  Vous êtes guidé, accompagné et protégé.
-                </strong>
-                EDF assume la résponsabilité du projet — vous validez simplement
-                les étapes importantes.
-              </p>
-            </div>
-          </div>
-
-          {/* 🧠 Coach local — toujours visible pour le conseiller */}
-
-          <div
-            id="coach-block-proc"
-            className="hidden mt-4 bg-black/60 border border-white/10 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed"
-          >
-            <p>
-              🎤 Terrain → ne pas lire les listes. Dire uniquement : « EDF gère
-              tout. Vous validez juste quand c’est utile. »
-            </p>
-            <p>⏳ Silence → 1,5 seconde.</p>
-            <p>🎯 Objectif → réduire charge mentale, verrouiller sécurité.</p>
           </div>
         </ModuleSection>
 

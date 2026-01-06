@@ -7,24 +7,75 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
       body {
-        background-color: #05050f;
+        background: linear-gradient(
+          135deg,
+          #0a0a1a 0%,
+          #050510 50%,
+          #0a0a1a 100%
+        );
         color: white;
-        font-family: sans-serif;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
         transition: all 0.4s ease;
-      }
-      .glass {
-        background: rgba(15, 17, 26, 0.7);
-        backdrop-filter: blur(10px);
-      }
-      .anomaly-card {
-        background: rgba(239, 68, 68, 0.05);
-        border: 1px solid rgba(239, 68, 68, 0.2);
-      }
-      .stable-glow {
-        text-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        position: relative;
       }
 
-      /* MODE CALME CSS */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            circle at 20% 50%,
+            rgba(59, 130, 246, 0.03) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 80%,
+            rgba(16, 185, 129, 0.03) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .content-wrapper {
+        position: relative;
+        z-index: 1;
+      }
+
+      .glass {
+        background: rgba(15, 17, 26, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .anomaly-card {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.08) 0%,
+          rgba(239, 68, 68, 0.02) 100%
+        );
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+
+      .stable-indicator {
+        animation: pulse-glow 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse-glow {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        50% {
+          transform: scale(1.05);
+          box-shadow: 0 0 40px rgba(16, 185, 129, 0.5);
+        }
+      }
+
       body.mode-zen .anomaly-card {
         border-color: rgba(255, 255, 255, 0.1);
         background: rgba(255, 255, 255, 0.02);
@@ -61,21 +112,21 @@
       }
       .tooltip .tooltiptext {
         visibility: hidden;
-        width: 120px;
-        background-color: black;
+        width: 140px;
+        background-color: rgba(0, 0, 0, 0.95);
         color: #fff;
         text-align: center;
-        border-radius: 6px;
-        padding: 5px;
+        border-radius: 8px;
+        padding: 8px;
         position: absolute;
         z-index: 10;
         bottom: 125%;
         left: 50%;
-        margin-left: -60px;
+        margin-left: -70px;
         opacity: 0;
         transition: opacity 0.3s;
         font-size: 10px;
-        font-weight: bold;
+        font-weight: 700;
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
       .tooltip:hover .tooltiptext {
@@ -84,206 +135,477 @@
       }
 
       dialog::backdrop {
-        background: rgba(0, 0, 0, 0.8);
-        backdrop-filter: blur(4px);
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
       }
       dialog[open] {
         display: flex;
         flex-direction: column;
       }
 
-      /* STYLE AJOUTÉ POUR LE CONFORT EXPLICATIF */
       .rule-box {
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.5);
         border-radius: 8px;
-        padding: 10px;
-        margin-top: 8px;
-        font-family: monospace;
-        font-size: 10px;
+        padding: 12px;
+        margin-top: 10px;
+        font-family: "Courier New", monospace;
+        font-size: 11px;
         color: #94a3b8;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         text-align: left;
+      }
+
+      .stat-card {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          currentColor,
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.4s;
+      }
+
+      .stat-card:hover::before {
+        opacity: 0.5;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-4px);
+      }
+
+      tbody tr {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      tbody tr:hover {
+        background: rgba(59, 130, 246, 0.03) !important;
+        transform: translateX(4px);
+      }
+
+      .action-button {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .action-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .nuclear-glow {
+        position: relative;
+      }
+
+      .nuclear-glow::after {
+        content: "";
+        position: absolute;
+        inset: -10px;
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.1) 0%,
+          transparent 70%
+        );
+        z-index: -1;
+        animation: nuclear-pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes nuclear-pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
       }
     </style>
   </head>
-  <body class="p-6">
-    <div class="max-w-7xl mx-auto">
-      <div class="mb-10 flex justify-between items-start">
-        <div>
-          <h1
-            class="text-4xl font-[900] tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-500"
+  <body class="p-8">
+    <div class="content-wrapper">
+      <div class="max-w-7xl mx-auto">
+        <div class="mb-12 flex justify-between items-start">
+          <div class="relative">
+            <h1
+              class="text-5xl font-[700] tracking-tight uppercase text-slate-100"
+              style="letter-spacing: 0.05em"
+            >
+              AUTOPILOTE SOLAIRE
+            </h1>
+            <div
+              id="system-status"
+              class="mt-2 text-[10px] font-medium text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2"
+            ></div>
+          </div>
+          <div class="flex gap-3">
+            <button
+              onclick="toggleZen()"
+              id="btn-zen"
+              class="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900/50 text-slate-400 font-medium uppercase text-[9px] tracking-wider hover:bg-slate-800 hover:border-slate-600 transition-all"
+            >
+              🕊️ MODE CALME
+            </button>
+            <button
+              onclick="togglePriority()"
+              id="btn-priority"
+              class="px-5 py-2 rounded-lg border border-slate-700 bg-slate-900/50 text-slate-300 font-semibold hover:bg-slate-800 hover:border-slate-600 transition-all uppercase text-[9px] tracking-wider"
+            >
+              ⚠️ PRIORITÉ
+            </button>
+            <div
+              class="px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg flex items-center"
+            >
+              <span
+                class="text-[10px] font-semibold uppercase text-slate-300 tracking-wider"
+                ><span id="row-count">0</span> DOSSIERS</span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div id="anomaly-zone" class="mb-14 hidden">
+          <h2
+            class="text-red-400 text-[11px] font-black uppercase tracking-[0.35em] mb-6 flex items-center gap-3"
           >
-            Autopilote Solaire
-          </h1>
+            <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            🚨 ÉTUDES À SURVEILLER (RISQUES DÉTECTÉS)
+          </h2>
           <div
-            id="system-status"
-            class="mt-2 text-[11px] font-medium text-slate-400 uppercase tracking-widest flex items-center gap-2"
+            id="anomaly-list"
+            class="grid grid-cols-1 md:grid-cols-3 gap-5"
           ></div>
         </div>
-        <div class="flex gap-3">
-          <button
-            onclick="toggleZen()"
-            id="btn-zen"
-            class="px-4 py-2 rounded-xl border border-slate-700 text-slate-400 font-bold uppercase text-[10px] tracking-widest hover:bg-white/5 transition-all"
-          >
-            🕊️ Mode Calme
-          </button>
-          <button
-            onclick="togglePriority()"
-            id="btn-priority"
-            class="px-6 py-2 rounded-xl border border-orange-500/30 text-orange-500 font-black hover:bg-orange-500/10 transition-all uppercase text-[10px] tracking-widest"
-          >
-            ⚠️ Mode Priorité
-          </button>
-          <div
-            class="px-4 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center"
-          >
-            <span class="text-[10px] font-black uppercase text-emerald-400"
-              ><span id="row-count">0</span> Dossiers</span
+
+        <div id="calm-zone" class="mb-14 hidden">
+          <div class="grid grid-cols-12 gap-4">
+            <!-- COLONNE GAUCHE: INSTRUMENTS -->
+            <div class="col-span-3 space-y-4">
+              <!-- JAUGE 1: DOSSIERS TOTAUX -->
+              <div
+                class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-5"
+              >
+                <div
+                  class="text-[9px] text-slate-500 uppercase font-semibold tracking-wider mb-3"
+                >
+                  DOSSIERS TOTAUX
+                </div>
+                <div
+                  class="relative w-full h-2 bg-slate-800 rounded-full overflow-hidden mb-2"
+                >
+                  <div
+                    class="absolute inset-0 bg-gradient-to-r from-slate-600 to-slate-500"
+                    style="width: 100%"
+                  ></div>
+                </div>
+                <div class="text-3xl font-bold text-slate-200" id="calm-total">
+                  0
+                </div>
+              </div>
+
+              <!-- JAUGE 2: RÈGLES ACTIVES -->
+              <div
+                class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-5"
+              >
+                <div
+                  class="text-[9px] text-slate-500 uppercase font-semibold tracking-wider mb-3"
+                >
+                  RÈGLES ACTIVES
+                </div>
+                <div class="flex items-center gap-2 mb-2">
+                  <div class="w-3 h-3 rounded-sm bg-slate-600"></div>
+                  <div class="w-3 h-3 rounded-sm bg-slate-600"></div>
+                  <div class="w-3 h-3 rounded-sm bg-slate-800"></div>
+                  <div class="w-3 h-3 rounded-sm bg-slate-800"></div>
+                  <div class="w-3 h-3 rounded-sm bg-slate-800"></div>
+                </div>
+                <div class="text-3xl font-bold text-slate-200">2</div>
+              </div>
+
+              <!-- HORLOGE SYSTÈME -->
+              <div
+                class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-5"
+              >
+                <div
+                  class="text-[9px] text-slate-500 uppercase font-semibold tracking-wider mb-2"
+                >
+                  DERNIÈRE VÉRIF.
+                </div>
+                <div
+                  class="text-xl font-mono font-bold text-slate-300"
+                  id="last-check"
+                >
+                  --:--
+                </div>
+              </div>
+            </div>
+
+            <!-- COLONNE DROITE: STATUS PRINCIPAL -->
+            <div class="col-span-9">
+              <div
+                class="bg-slate-900/80 border border-slate-700/50 rounded-lg p-8 h-full"
+              >
+                <!-- HEADER -->
+                <div
+                  class="flex items-center justify-between mb-8 pb-6 border-b border-slate-800"
+                >
+                  <div class="flex items-center gap-4">
+                    <div
+                      class="relative w-12 h-12 rounded-full border-2 border-slate-700 flex items-center justify-center"
+                    >
+                      <div class="w-6 h-6 rounded-full bg-slate-600"></div>
+                      <div
+                        class="absolute inset-0 rounded-full border-2 border-slate-600 animate-ping opacity-20"
+                      ></div>
+                    </div>
+                    <div>
+                      <div
+                        class="text-2xl font-bold text-slate-200 uppercase tracking-wide"
+                      >
+                        SYSTÈME NOMINAL
+                      </div>
+                      <div
+                        class="text-xs text-slate-500 uppercase tracking-wider font-medium mt-1"
+                      >
+                        Tous les systèmes opérationnels
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <div
+                      class="text-xs text-slate-600 uppercase font-semibold tracking-wider"
+                    >
+                      STATUS
+                    </div>
+                    <div
+                      class="text-sm text-slate-400 font-mono mt-1"
+                      id="system-info-calm"
+                    >
+                      0 ANOMALIE / 0 URGENCE
+                    </div>
+                  </div>
+                </div>
+
+                <!-- GRILLE DE MESURES -->
+                <div class="grid grid-cols-4 gap-6">
+                  <!-- MESURE 1 -->
+                  <div class="space-y-2">
+                    <div
+                      class="text-[9px] text-slate-600 uppercase font-semibold tracking-wide"
+                    >
+                      DOSSIERS SENT
+                    </div>
+                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-slate-600" style="width: 0%"></div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-300 font-mono">
+                      0
+                    </div>
+                  </div>
+
+                  <!-- MESURE 2 -->
+                  <div class="space-y-2">
+                    <div
+                      class="text-[9px] text-slate-600 uppercase font-semibold tracking-wide"
+                    >
+                      DOSSIERS SIGNED
+                    </div>
+                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-slate-600" style="width: 0%"></div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-300 font-mono">
+                      0
+                    </div>
+                  </div>
+
+                  <!-- MESURE 3 -->
+                  <div class="space-y-2">
+                    <div
+                      class="text-[9px] text-slate-600 uppercase font-semibold tracking-wide"
+                    >
+                      ANOMALIES
+                    </div>
+                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-slate-600" style="width: 0%"></div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-300 font-mono">
+                      0
+                    </div>
+                  </div>
+
+                  <!-- MESURE 4 -->
+                  <div class="space-y-2">
+                    <div
+                      class="text-[9px] text-slate-600 uppercase font-semibold tracking-wide"
+                    >
+                      FILE ATTENTE
+                    </div>
+                    <div class="h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div class="h-full bg-slate-600" style="width: 0%"></div>
+                    </div>
+                    <div class="text-2xl font-bold text-slate-300 font-mono">
+                      0
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div class="stat-card glass rounded-2xl p-8 relative">
+            <div
+              class="text-[10px] font-black text-slate-400 uppercase mb-4 tracking-[0.3em]"
             >
+              DOSSIERS TOTAUX
+            </div>
+            <div class="text-6xl font-black tracking-tight" id="stat-total">
+              0
+            </div>
           </div>
-        </div>
-      </div>
-
-      <div id="anomaly-zone" class="mb-12 hidden">
-        <h2
-          class="text-red-500 text-[10px] font-black uppercase tracking-[0.3em] mb-4 italic"
-        >
-          🚨 Études à surveiller (Risques détectés)
-        </h2>
-        <div
-          id="anomaly-list"
-          class="grid grid-cols-1 md:grid-cols-3 gap-4"
-        ></div>
-      </div>
-
-      <div
-        id="calm-zone"
-        class="mb-12 py-10 text-center glass border border-emerald-500/20 rounded-3xl hidden"
-      >
-        <div class="text-emerald-400 text-5xl font-black stable-glow mb-2">
-          🟢 SYSTÈME STABLE
-        </div>
-        <p
-          id="system-info-calm"
-          class="text-slate-500 text-xs uppercase tracking-widest"
-        >
-          Aucune anomalie détectée sur les réglages actuels
-        </p>
-      </div>
-
-      <div
-        class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10 opacity-50 hover:opacity-100 transition-opacity"
-      >
-        <div class="glass border border-slate-800/50 rounded-2xl p-6">
           <div
-            class="text-[10px] font-black text-slate-500 uppercase mb-4 tracking-widest italic"
-          >
-            Dossiers Totaux
-          </div>
-          <div class="text-5xl font-black" id="stat-total">0</div>
-        </div>
-        <div class="glass border border-slate-800/50 rounded-2xl p-6">
-          <div
-            class="text-[10px] font-black text-blue-400 uppercase mb-4 tracking-widest italic"
-          >
-            En cours (SENT)
-          </div>
-          <div class="text-5xl font-black text-blue-400" id="stat-sent">0</div>
-        </div>
-        <div class="glass border border-emerald-500/30 rounded-2xl p-6">
-          <div
-            class="text-[10px] font-black text-emerald-400 uppercase mb-4 tracking-widest italic"
-          >
-            Signés (NET)
-          </div>
-          <div class="text-5xl font-black text-emerald-400" id="stat-signed">
-            0
-          </div>
-        </div>
-        <div class="glass border border-orange-500/20 rounded-2xl p-6">
-          <div
-            class="text-[10px] font-black text-orange-400 uppercase mb-4 tracking-widest italic"
-          >
-            File Attente
-          </div>
-          <div class="text-5xl font-black text-orange-400" id="stat-queue">
-            0
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="glass border border-slate-800/50 rounded-3xl overflow-hidden shadow-2xl"
-      >
-        <table class="w-full text-left border-collapse">
-          <thead
-            class="bg-black/40 text-slate-500 text-[9px] font-black uppercase tracking-[0.2em]"
-          >
-            <tr>
-              <th class="p-6">Dossier Client</th>
-              <th class="p-6 text-center">Engagement (Vues/Clics)</th>
-              <th class="p-6 text-center">Statut Actuel</th>
-              <th class="p-6 text-right">Actions Rapides</th>
-            </tr>
-          </thead>
-          <tbody id="table-body" class="divide-y divide-slate-800/30"></tbody>
-        </table>
-      </div>
-
-      <div class="mt-16">
-        <h2
-          class="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6"
-        >
-          📧 Suivi Autopilote Leads Email
-        </h2>
-        <div
-          id="email-today-indicator"
-          class="mb-4 text-[10px] font-black uppercase tracking-widest text-orange-400 hidden"
-        >
-          🔔 <span id="email-today-count">0</span> relance(s) automatique(s)
-          prévue(s) aujourd’hui
-        </div>
-        <div
-          class="glass border border-slate-800/50 rounded-3xl overflow-hidden"
-        >
-          <table class="w-full text-left border-collapse">
-            <thead
-              class="bg-black/40 text-slate-500 text-[9px] font-black uppercase tracking-[0.2em]"
-            >
-              <tr>
-                <th class="p-4">Lead</th>
-                <th class="p-4 text-center">Dernier email</th>
-                <th class="p-4 text-center">Prochaine relance</th>
-                <th class="p-4 text-center">Opt-out</th>
-              </tr>
-            </thead>
-            <tbody
-              id="leads-email-body"
-              class="divide-y divide-slate-800/30"
-            ></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="mt-12 mb-10">
-        <h2
-          class="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mb-6 flex items-center gap-2"
-        >
-          <span class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></span>
-          Journal des Forçages (Boîte Noire)
-        </h2>
-        <div
-          class="glass border border-slate-800/50 rounded-3xl overflow-hidden"
-        >
-          <div
-            id="logs-container"
-            class="max-h-[300px] overflow-y-auto divide-y divide-slate-800/30"
+            class="stat-card glass rounded-2xl p-8 relative border-blue-500/20 text-blue-400"
           >
             <div
-              class="p-6 text-center text-slate-600 text-xs uppercase tracking-widest italic"
+              class="text-[10px] font-black text-blue-400/70 uppercase mb-4 tracking-[0.3em]"
             >
-              Chargement des archives...
+              EN COURS (SENT)
+            </div>
+            <div
+              class="text-6xl font-black text-blue-400 tracking-tight"
+              id="stat-sent"
+            >
+              0
+            </div>
+          </div>
+          <div
+            class="stat-card glass rounded-2xl p-8 relative border-emerald-500/20 text-emerald-400"
+          >
+            <div
+              class="text-[10px] font-black text-emerald-400/70 uppercase mb-4 tracking-[0.3em]"
+            >
+              SIGNÉS (NET)
+            </div>
+            <div
+              class="text-6xl font-black text-emerald-400 tracking-tight"
+              id="stat-signed"
+            >
+              0
+            </div>
+          </div>
+          <div
+            class="stat-card glass rounded-2xl p-8 relative border-orange-500/20 text-orange-400"
+          >
+            <div
+              class="text-[10px] font-black text-orange-400/70 uppercase mb-4 tracking-[0.3em]"
+            >
+              FILE ATTENTE
+            </div>
+            <div
+              class="text-6xl font-black text-orange-400 tracking-tight"
+              id="stat-queue"
+            >
+              0
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl overflow-hidden shadow-2xl relative">
+          <div
+            class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-emerald-500/5 pointer-events-none"
+          ></div>
+          <table class="w-full text-left border-collapse relative">
+            <thead
+              class="bg-black/70 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] border-b border-slate-700/50"
+            >
+              <tr>
+                <th class="p-7 font-black w-[25%]">DOSSIER CLIENT</th>
+                <th class="p-7 text-center font-black w-[15%]">ENGAGEMENT</th>
+                <th class="p-7 text-center font-black w-[12%]">
+                  STATUT ACTUEL
+                </th>
+                <th class="p-7 text-right font-black w-[48%]">
+                  ACTIONS RAPIDES
+                </th>
+              </tr>
+            </thead>
+            <tbody id="table-body" class="divide-y divide-slate-800/20"></tbody>
+          </table>
+        </div>
+
+        <div class="mt-20">
+          <h2
+            class="text-slate-400 text-[11px] font-black uppercase tracking-[0.35em] mb-8 flex items-center gap-3"
+          >
+            <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+            📧 SUIVI AUTOPILOTE LEADS EMAIL
+          </h2>
+          <div
+            id="email-today-indicator"
+            class="mb-5 text-[11px] font-black uppercase tracking-widest text-orange-400 hidden flex items-center gap-2"
+          >
+            <span
+              class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"
+            ></span>
+            🔔 <span id="email-today-count">0</span> RELANCE(S) AUTOMATIQUE(S)
+            PRÉVUE(S) AUJOURD'HUI
+          </div>
+          <div class="glass rounded-3xl overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead
+                class="bg-black/70 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] border-b border-slate-700/50"
+              >
+                <tr>
+                  <th colspan="4" class="p-0">
+                    <div
+                      class="grid grid-cols-[1fr_180px_200px_140px] px-6 py-5 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400"
+                    >
+                      <div class="text-left">LEAD</div>
+                      <div class="text-center">DERNIER EMAIL</div>
+                      <div class="text-center">PROCHAINE RELANCE</div>
+                      <div class="text-center">OPT-OUT</div>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                id="leads-email-body"
+                class="divide-y divide-slate-800/20"
+              ></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-20 mb-12">
+          <h2
+            class="text-slate-400 text-[11px] font-black uppercase tracking-[0.35em] mb-8 flex items-center gap-3"
+          >
+            <span
+              class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"
+            ></span>
+            JOURNAL DES FORÇAGES (BOÎTE NOIRE)
+          </h2>
+          <div class="glass rounded-3xl overflow-hidden">
+            <div
+              id="logs-container"
+              class="max-h-[360px] overflow-y-auto divide-y divide-slate-800/20"
+            >
+              <div
+                class="p-8 text-center text-slate-600 text-xs uppercase tracking-widest italic"
+              >
+                Chargement des archives...
+              </div>
             </div>
           </div>
         </div>
@@ -292,51 +614,51 @@
 
     <dialog
       id="override-modal"
-      class="glass border border-slate-700 p-8 rounded-3xl text-white outline-none"
+      class="glass border border-slate-700 p-10 rounded-3xl text-white outline-none"
     >
       <div class="max-w-md">
-        <h3 class="text-xl font-black text-orange-400 uppercase italic mb-2">
-          ⚠️ Forçage Manuel
+        <h3 class="text-2xl font-black text-orange-400 uppercase mb-3">
+          ⚠️ FORÇAGE MANUEL
         </h3>
-        <p class="text-[10px] text-slate-400 mb-4 uppercase tracking-widest">
+        <p class="text-[11px] text-slate-400 mb-5 uppercase tracking-widest">
           Une anomalie bloque cette action. Justifiez le déverrouillage :
         </p>
-        <div class="flex flex-wrap gap-2 mb-4">
+        <div class="flex flex-wrap gap-3 mb-5">
           <button
             onclick="setTemplate('Contact téléphonique confirmé')"
-            class="text-[8px] px-2 py-1 bg-slate-800 rounded border border-slate-600 hover:bg-slate-700 uppercase"
+            class="text-[9px] px-3 py-2 bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-700 uppercase font-bold tracking-wider transition-all"
           >
-            📞 Tel OK
+            📞 TEL OK
           </button>
           <button
             onclick="setTemplate('Accord oral en attente')"
-            class="text-[8px] px-2 py-1 bg-slate-800 rounded border border-slate-600 hover:bg-slate-700 uppercase"
+            class="text-[9px] px-3 py-2 bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-700 uppercase font-bold tracking-wider transition-all"
           >
-            🤝 Accord Oral
+            🤝 ACCORD ORAL
           </button>
           <button
             onclick="setTemplate('Erreur de tracking connue')"
-            class="text-[8px] px-2 py-1 bg-slate-800 rounded border border-slate-600 hover:bg-slate-700 uppercase"
+            class="text-[9px] px-3 py-2 bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-700 uppercase font-bold tracking-wider transition-all"
           >
-            ⚙️ Bug Track
+            ⚙️ BUG TRACK
           </button>
         </div>
         <textarea
           id="justification-text"
-          class="w-full bg-black/50 border border-slate-700 rounded-xl p-4 text-sm text-white focus:border-orange-500 outline-none mb-6"
+          class="w-full bg-black/60 border border-slate-700 rounded-xl p-5 text-sm text-white focus:border-orange-500 outline-none mb-6 focus:bg-black/80 transition-all"
           placeholder="Ex: Client eu au téléphone..."
-          rows="3"
+          rows="4"
         ></textarea>
-        <div class="flex gap-3">
+        <div class="flex gap-4">
           <button
             onclick="document.getElementById('override-modal').close()"
-            class="flex-1 px-4 py-3 rounded-xl bg-slate-800 font-bold text-[9px] uppercase tracking-widest hover:bg-slate-700 transition-all"
+            class="flex-1 px-5 py-4 rounded-xl bg-slate-800 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all"
           >
             Annuler
           </button>
           <button
             id="confirm-override-btn"
-            class="flex-1 px-4 py-3 rounded-xl bg-orange-500 text-black font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all"
+            class="flex-1 px-5 py-4 rounded-xl bg-orange-500 text-black font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all action-button"
           >
             Confirmer & Loguer
           </button>
@@ -405,7 +727,7 @@
             supabaseClient
               .from("studies")
               .select(
-                "id, status, created_at, clients(first_name, last_name, email)"
+                "id, status, created_at, deposit_paid, deposit_paid_at, clients(first_name, last_name, email)"
               )
               .order("created_at", { ascending: false })
               .limit(1000),
@@ -443,6 +765,25 @@
               clicks: st.interactions || 0,
               diffDays: Math.floor(diffDays),
               hasLog: logsData.some((l) => l.study_id === s.id),
+              deposit_paid: s.deposit_paid || false,
+              deposit_paid_at: s.deposit_paid_at || null,
+            };
+          });
+
+          const { data: j0Emails } = await supabaseClient
+            .from("email_queue")
+            .select("study_id, email_type, sent_at")
+            .in("email_type", [
+              "anti_j0_cash_deposit_request",
+              "anti_j0_financement_deposit_request",
+            ])
+            .eq("status", "sent");
+
+          fullData = fullData.map((s) => {
+            const j0 = j0Emails?.find((e) => e.study_id === s.id);
+            return {
+              ...s,
+              rib_sent_at: j0?.sent_at || null,
             };
           });
 
@@ -458,26 +799,26 @@
       function renderLogs() {
         const container = document.getElementById("logs-container");
         if (logsData.length === 0) {
-          container.innerHTML = `<div class="p-10 text-center text-slate-600 text-[10px] uppercase tracking-widest italic">Aucune archive de forçage...</div>`;
+          container.innerHTML = `<div class="p-12 text-center text-slate-600 text-[11px] uppercase tracking-widest italic">Aucune archive de forçage...</div>`;
           return;
         }
         container.innerHTML = logsData
           .map(
             (l) => `
-                        <div class="p-4 flex justify-between items-center hover:bg-white/[0.01] transition-colors">
+                        <div class="p-6 flex justify-between items-center hover:bg-white/[0.02] transition-all duration-300">
                             <div class="flex flex-col">
-                                <span class="text-[8px] text-orange-500 font-black uppercase tracking-tighter">${
+                                <span class="text-[9px] text-orange-400 font-black uppercase tracking-[0.2em] mb-1">${
                                   l.action_performed
                                 }</span>
-                                <span class="text-sm font-bold text-slate-200">${
+                                <span class="text-base font-bold text-slate-200">${
                                   l.client_name
                                 }</span>
                             </div>
                             <div class="max-w-[50%] text-right">
-                                <div class="text-[10px] text-slate-400 italic">"${
+                                <div class="text-[11px] text-slate-400 italic mb-1">"${
                                   l.justification
                                 }"</div>
-                                <div class="text-[8px] text-slate-600 uppercase font-bold mt-1">${new Date(
+                                <div class="text-[9px] text-slate-600 uppercase font-bold tracking-wider">${new Date(
                                   l.created_at
                                 ).toLocaleString()}</div>
                             </div>
@@ -523,6 +864,8 @@
         const anomalyZone = document.getElementById("anomaly-zone");
         const calmZone = document.getElementById("calm-zone");
         const calmMessage = document.getElementById("system-info-calm");
+        const calmTotal = document.getElementById("calm-total");
+        const lastCheck = document.getElementById("last-check");
 
         if (anomalies.length > 0) {
           anomalyZone.classList.remove("hidden");
@@ -530,14 +873,14 @@
           document.getElementById("anomaly-list").innerHTML = anomalies
             .map(
               (a) => `
-                        <div class="anomaly-card p-5 rounded-2xl border-l-4 border-l-red-500">
-                            <div class="text-[9px] font-black text-red-500 mb-1 tracking-widest">${a.type}</div>
-                            <div class="text-lg font-bold mb-1">${a.name}</div>
-                            <div class="text-[10px] text-slate-500 italic mb-2">${a.desc}</div>
-                            <button onclick="toggleRule('${a.id}')" class="text-[9px] text-blue-400 hover:underline uppercase tracking-tighter">Pourquoi ce dossier est signalé ?</button>
+                        <div class="anomaly-card p-6 rounded-2xl border-l-4 border-l-red-500 hover:border-l-red-400 transition-all duration-300">
+                            <div class="text-[10px] font-black text-red-400 mb-2 tracking-[0.2em]">${a.type}</div>
+                            <div class="text-xl font-bold mb-2">${a.name}</div>
+                            <div class="text-[11px] text-slate-500 italic mb-3">${a.desc}</div>
+                            <button onclick="toggleRule('${a.id}')" class="text-[10px] text-blue-400 hover:text-blue-300 hover:underline uppercase tracking-tighter font-bold transition-colors">Pourquoi ce dossier est signalé ?</button>
                             <div id="rule-${a.id}" class="hidden rule-box">
                                 <div>${a.rule}</div>
-                                <div class="mt-1">${a.obs}</div>
+                                <div class="mt-2">${a.obs}</div>
                             </div>
                         </div>`
             )
@@ -545,7 +888,13 @@
         } else {
           anomalyZone.classList.add("hidden");
           calmZone.classList.remove("hidden");
-          calmMessage.innerHTML = `AUJOURD'HUI : 0 ANOMALIE, 0 URGENCE. <br><span class="opacity-50 text-[10px]">AUCUNE ANOMALIE DÉTECTÉE SUR LES RÉGLAGES ACTUELS</span>`;
+          calmMessage.innerHTML = `Aujourd'hui : 0 anomalie, 0 urgence`;
+          if (calmTotal) calmTotal.innerText = fullData.length;
+          if (lastCheck)
+            lastCheck.innerText = new Date().toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
         }
       }
 
@@ -601,6 +950,7 @@
 
       function render() {
         const tbody = document.getElementById("table-body");
+
         let list = isPriorityMode
           ? fullData.filter(
               (s) =>
@@ -611,128 +961,210 @@
         tbody.innerHTML = list
           .map((s) => {
             const hasAlert = anomaliesDetected.includes(s.id);
+
+            const statusClass =
+              s.status === "signed"
+                ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                : s.status === "sent"
+                ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
+                : "border-slate-600/50 text-slate-400";
+
+            const onChangeStatus = hasAlert
+              ? "forceAction('" +
+                s.id +
+                "', '" +
+                s.name.replace(/'/g, "\\'") +
+                "', this.value)"
+              : "updateStatus('" + s.id + "', this.value)";
+
+            const onClickSigned = hasAlert
+              ? "forceAction('" +
+                s.id +
+                "', '" +
+                s.name.replace(/'/g, "\\'") +
+                "', 'signed')"
+              : "updateStatus('" + s.id + "', 'signed')";
+
             return `
-                        <tr class="transition-colors group ${
-                          hasAlert ? "bg-red-500/5" : "hover:bg-white/[0.02]"
-                        }">
-                            <td class="p-6">
-                                <div class="flex items-center gap-2">
-                                    <div class="text-xl font-bold text-slate-100 group-hover:text-blue-400 transition-colors">${
-                                      s.name
-                                    }</div>
-                                    ${
-                                      s.hasLog
-                                        ? `<span class="tooltip"><span class="text-orange-500 text-xs cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>`
-                                        : ""
-                                    }
-                                </div>
-                                <div class="text-xs text-slate-500 font-medium">${
-                                  s.email
-                                }</div>
-                                <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-widest italic">${getTimeSince(
-                                  s.created_at
-                                )}</div>
-                            </td>
-                            <td class="p-6 text-center">
-                                <div class="flex justify-center gap-10 font-black">
-                                    <div><div class="text-2xl ${
-                                      s.views >= 3
-                                        ? "text-orange-400"
-                                        : "text-slate-300"
-                                    }">${
-              s.views
-            }</div><div class="text-[8px] text-slate-500 uppercase italic">Vues</div></div>
-                                    <div class="border-l border-slate-800/50 pl-10"><div class="text-2xl ${
-                                      s.clicks > 0
-                                        ? "text-purple-400"
-                                        : "text-slate-300"
-                                    }">${
-              s.clicks
-            }</div><div class="text-[8px] text-slate-500 uppercase italic">Clics</div></div>
-                                </div>
-                            </td>
-                            <td class="p-6 text-center">
-                                <div class="inline-block px-4 py-1.5 rounded-lg border font-black uppercase text-[9px] tracking-[0.15em] ${
-                                  s.status === "signed"
-                                    ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                                    : s.status === "sent"
-                                    ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
-                                    : "border-slate-600/50 text-slate-400"
-                                }">
-                                    <select onchange="${
-                                      hasAlert
-                                        ? `forceAction('${
-                                            s.id
-                                          }', '${s.name.replace(
-                                            /'/g,
-                                            "\\'"
-                                          )}', this.value)`
-                                        : `updateStatus('${s.id}', this.value)`
-                                    }">
-                                        <option value="sent" ${
-                                          s.status === "sent" ? "selected" : ""
-                                        }>SENT</option>
-                                        <option value="draft" ${
-                                          s.status === "draft" ? "selected" : ""
-                                        }>DRAFT</option>
-                                        <option value="signed" ${
-                                          s.status === "signed"
-                                            ? "selected"
-                                            : ""
-                                        }>SIGNED</option>
-                                        <option value="cancelled" ${
-                                          s.status === "cancelled"
-                                            ? "selected"
-                                            : ""
-                                        }>CANCELLED</option>
-                                    </select>
-                                </div>
-                            </td>
-                            <td class="p-6 text-right">
-                                <div class="flex justify-end gap-2">
-                                    <div class="tooltip">
-                                        <button onclick="${
-                                          hasAlert
-                                            ? `forceAction('${
-                                                s.id
-                                              }', '${s.name.replace(
-                                                /'/g,
-                                                "\\'"
-                                              )}', 'signed')`
-                                            : `updateStatus('${s.id}', 'signed')`
-                                        }"
-                                                class="px-4 py-2 ${
-                                                  hasAlert
-                                                    ? "bg-orange-500 text-black"
-                                                    : "bg-emerald-500 text-black"
-                                                } rounded-xl font-black text-[9px] uppercase tracking-widest hover:scale-105 transition-all">
-                                            ${
-                                              hasAlert
-                                                ? "Forcer Signé"
-                                                : "Signé"
-                                            }
-                                        </button>
-                                        <span class="tooltiptext">${
-                                          hasAlert
-                                            ? "DÉVERROUILLAGE REQUIS"
-                                            : "MARQUER SIGNÉ"
-                                        }</span>
-                                    </div>
-                                    <div class="tooltip">
-                                        <button onclick="updateStatus('${
-                                          s.id
-                                        }', 'draft')" class="px-3 py-2 bg-slate-900 text-blue-400 border border-blue-500/20 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-[9px] font-bold tracking-widest">DRAFT</button>
-                                        <span class="tooltiptext">REMETTRE EN BROUILLON</span>
-                                    </div>
-                                    <div class="tooltip">
-                                        <button onclick="updateStatus('${
-                                          s.id
-                                        }', 'cancelled')" class="px-3 py-2 bg-slate-900 text-red-500 border border-red-500/20 rounded-xl hover:bg-red-500 hover:text-white transition-all text-xs">×</button>
-                                        <span class="tooltiptext">ANNULER</span>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>`;
+<tr class="transition-all duration-300 group ${hasAlert ? "bg-red-500/5" : ""}">
+
+  <td class="p-7">
+    <div class="flex items-center gap-3">
+      <div class="text-xl font-bold text-slate-100 group-hover:text-blue-400 transition-colors">
+        ${s.name}
+      </div>
+      ${
+        s.hasLog
+          ? '<span class="tooltip"><span class="text-orange-400 text-sm cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>'
+          : ""
+      }
+    </div>
+    <div class="text-xs text-slate-500 font-medium mt-1">${s.email}</div>
+    <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-[0.2em]">
+      ${getTimeSince(s.created_at)}
+    </div>
+  </td>
+
+  <td class="p-7 text-center">
+    <div class="flex justify-center gap-14 font-black">
+      <div class="relative group/stat">
+        <div class="absolute -inset-3 bg-gradient-to-r ${
+          s.views >= 3
+            ? "from-orange-500/15 to-orange-500/5"
+            : "from-slate-500/10 to-transparent"
+        } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+        <div class="relative">
+          <div class="text-3xl ${
+            s.views >= 3 ? "text-orange-400" : "text-slate-400"
+          } tracking-tight">${s.views}</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">VUES</div>
+        </div>
+      </div>
+
+      <div class="w-px bg-gradient-to-b from-transparent via-slate-700/50 to-transparent"></div>
+
+      <div class="relative group/stat">
+        <div class="absolute -inset-3 bg-gradient-to-r ${
+          s.clicks > 0
+            ? "from-purple-500/15 to-purple-500/5"
+            : "from-slate-500/10 to-transparent"
+        } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+        <div class="relative">
+          <div class="text-3xl ${
+            s.clicks > 0 ? "text-purple-400" : "text-slate-400"
+          } tracking-tight">${s.clicks}</div>
+          <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">CLICS</div>
+        </div>
+      </div>
+    </div>
+  </td>
+
+  <td class="p-7 text-center">
+    <div class="inline-block px-5 py-2 rounded-xl border font-black uppercase text-[10px] tracking-[0.2em] ${statusClass}">
+      <select onchange="${onChangeStatus}">
+        <option value="sent" ${
+          s.status === "sent" ? "selected" : ""
+        }>SENT</option>
+        <option value="draft" ${
+          s.status === "draft" ? "selected" : ""
+        }>DRAFT</option>
+        <option value="signed" ${
+          s.status === "signed" ? "selected" : ""
+        }>SIGNED</option>
+        <option value="cancelled" ${
+          s.status === "cancelled" ? "selected" : ""
+        }>CANCELLED</option>
+      </select>
+    </div>
+  </td>
+
+  <td class="p-5">
+    <div class="flex items-center justify-between gap-4">
+      
+      <!-- PARTIE GAUCHE: INFO COMPACT -->
+      <div class="flex items-center gap-6">
+        
+        <!-- RIB -->
+        <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/40 border border-slate-700/30 min-w-[140px]">
+          <span class="text-base">📄</span>
+          <div>
+            <div class="text-[8px] text-slate-600 uppercase font-bold tracking-wide">RIB</div>
+            <div class="${
+              s.rib_sent_at ? "text-emerald-400 font-bold" : "text-slate-600"
+            } text-xs">
+              ${
+                s.rib_sent_at
+                  ? new Date(s.rib_sent_at).toLocaleDateString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })
+                  : "—"
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- ACOMPTE -->
+        <div class="flex items-center gap-2 px-3 py-2 rounded-lg ${
+          s.deposit_paid
+            ? "bg-emerald-500/10 border border-emerald-500/30"
+            : "bg-slate-800/40 border border-slate-700/30"
+        } min-w-[140px]">
+          <span class="text-base">${s.deposit_paid ? "✓" : "💶"}</span>
+          <div>
+            <div class="text-[8px] ${
+              s.deposit_paid ? "text-emerald-400" : "text-slate-600"
+            } uppercase font-bold tracking-wide">ACOMPTE</div>
+            ${
+              s.deposit_paid
+                ? `<div class="text-emerald-400 font-bold text-xs">
+                    ${new Date(s.deposit_paid_at).toLocaleDateString("fr-FR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                    })}
+                  </div>`
+                : `<div class="text-slate-600 text-xs font-medium">En attente</div>`
+            }
+          </div>
+          ${
+            !s.deposit_paid
+              ? `<button onclick="markDepositPaid('${s.id}')" 
+                  class="ml-auto px-2 py-1 rounded bg-emerald-500 text-black font-bold text-[9px] hover:scale-105 transition-all">
+                  ✓
+                </button>`
+              : ""
+          }
+        </div>
+        
+      </div>
+
+      <!-- PARTIE DROITE: ACTIONS -->
+      <div class="flex items-center gap-2">
+        
+        <!-- BOUTON SIGNÉ -->
+        <div class="tooltip">
+          <button
+            onclick="${onClickSigned}"
+            class="action-button px-6 py-2 ${
+              hasAlert
+                ? "bg-orange-500 text-black border border-orange-400 animate-pulse"
+                : "bg-emerald-500 text-black border border-emerald-400"
+            } rounded-lg font-bold text-xs uppercase tracking-wide shadow-md hover:scale-105 transition-all"
+          >
+            ${hasAlert ? "⚠️ FORCER" : "✓ SIGNÉ"}
+          </button>
+          <span class="tooltiptext">
+            ${hasAlert ? "⚠️ Anomalie détectée" : "Marquer comme signé"}
+          </span>
+        </div>
+
+        <!-- BOUTON DRAFT -->
+        <div class="tooltip">
+          <button
+            onclick="updateStatus('${s.id}', 'draft')"
+            class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-blue-400 border border-blue-500/40 rounded-lg hover:bg-blue-500 hover:text-white transition-all text-base"
+          >
+            📝
+          </button>
+          <span class="tooltiptext">Remettre en brouillon</span>
+        </div>
+
+        <!-- BOUTON ANNULER -->
+        <div class="tooltip">
+          <button
+            onclick="updateStatus('${s.id}', 'cancelled')"
+            class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500 hover:text-white transition-all text-lg font-bold"
+          >
+            ✕
+          </button>
+          <span class="tooltiptext">Annuler le dossier</span>
+        </div>
+        
+      </div>
+    </div>
+  </td>
+
+</tr>`;
           })
           .join("");
       }
@@ -741,7 +1173,7 @@
         const d = Math.floor(
           (new Date() - new Date(date)) / (1000 * 60 * 60 * 24)
         );
-        return d <= 0 ? "Aujourd’hui" : `Il y a ${d}j`;
+        return d <= 0 ? "Aujourd'hui" : `Il y a ${d}j`;
       }
 
       function nextFollowUp(lead) {
@@ -758,12 +1190,12 @@
 
         if (daysSinceCreation <= 60) {
           return daysSinceLast >= 7
-            ? "Aujourd’hui"
+            ? "Aujourd'hui"
             : `Dans ${Math.ceil(7 - daysSinceLast)}j`;
         }
 
         return daysSinceLast >= 14
-          ? "Aujourd’hui"
+          ? "Aujourd'hui"
           : `Dans ${Math.ceil(14 - daysSinceLast)}j`;
       }
 
@@ -791,11 +1223,10 @@
         const tbody = document.getElementById("leads-email-body");
         if (!tbody || !leads) return;
 
-        // Calcul du compteur
         const todayCount = leads.filter((l) => {
           const c = l.clients;
           if (!c) return false;
-          return nextFollowUp(l) === "Aujourd’hui" && !c.email_optout;
+          return nextFollowUp(l) === "Aujourd'hui" && !c.email_optout;
         }).length;
 
         const indicator = document.getElementById("email-today-indicator");
@@ -808,45 +1239,43 @@
           indicator.classList.add("hidden");
         }
 
-        // Rendu du tableau EMAIL LEADS
         tbody.innerHTML = leads
           .map((l) => {
             const c = l.clients;
             if (!c) return "";
 
             return `
-                  <tr class="hover:bg-white/[0.02] transition-colors">
-                    <td class="p-4">
-                      <div class="font-bold text-slate-200">
+                  <tr class="hover:bg-white/[0.02] transition-all duration-300">
+                    <td class="p-5">
+                      <div class="font-bold text-slate-200 text-base">
                         ${c.first_name || ""} ${c.last_name || ""}
                       </div>
-                      <div class="text-xs text-slate-500">${c.email}</div>
+                      <div class="text-xs text-slate-500 mt-1">${c.email}</div>
                     </td>
 
-                    <td class="p-4 text-center text-xs text-slate-400">
+                    <td class="p-5 text-center text-xs text-slate-400 font-medium">
                       ${
                         l.last_email_sent_at
                           ? daysAgo(l.last_email_sent_at)
                           : "Jamais"
                       }
-
                     </td>
 
-                    <td class="p-4 text-center">
+                    <td class="p-5 text-center">
                       ${
-                        nextFollowUp(l) === "Aujourd’hui"
-                          ? `<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-orange-500/20 text-orange-400 animate-pulse">🔔 Aujourd’hui</span>`
+                        nextFollowUp(l) === "Aujourd'hui"
+                          ? `<span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] bg-orange-500/20 text-orange-400 animate-pulse border border-orange-500/30">🔔 AUJOURD'HUI</span>`
                           : `<span class="text-xs font-bold text-slate-400">${nextFollowUp(
                               l
                             )}</span>`
                       }
                     </td>
 
-                    <td class="p-4 text-center">
+                    <td class="p-5 text-center">
                       ${
                         c.email_optout
-                          ? `<span class="text-red-500 text-xs font-black uppercase">Oui</span>`
-                          : `<button onclick="setOptOut('${c.email}')" class="px-3 py-1 text-[9px] font-black uppercase bg-slate-800 border border-slate-600 rounded hover:bg-red-500 hover:text-white transition-all">Stop emails</button>`
+                          ? `<span class="text-red-400 text-xs font-black uppercase tracking-wider">OUI</span>`
+                          : `<button onclick="setOptOut('${c.email}')" class="action-button px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">STOP EMAILS</button>`
                       }
                     </td>
                   </tr>
@@ -856,7 +1285,7 @@
       }
 
       async function setOptOut(email) {
-        if (!confirm("Confirmer l’exclusion de ce lead ?")) return;
+        if (!confirm("Confirmer l'exclusion de ce lead ?")) return;
         await supabaseClient
           .from("clients")
           .update({ email_optout: true })
@@ -864,7 +1293,24 @@
         loadEmailLeads();
       }
 
-      // Lancement et rafraîchissement
+      async function markDepositPaid(studyId) {
+        if (!confirm("Confirmer la réception de l'acompte (1500 €) ?")) return;
+
+        const { error } = await supabaseClient
+          .from("studies")
+          .update({
+            deposit_paid: true,
+            deposit_paid_at: new Date().toISOString(),
+          })
+          .eq("id", studyId);
+
+        if (error) {
+          alert("Erreur lors de l'enregistrement de l'acompte");
+        } else {
+          loadData();
+        }
+      }
+
       loadData();
       loadEmailLeads();
       setInterval(loadData, 60000);

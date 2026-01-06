@@ -28,6 +28,7 @@ import {
   MapPin,
   BarChart3,
   Info,
+  Table2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -38,6 +39,7 @@ import {
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from "recharts";
+import { createClient } from "@supabase/supabase-js";
 
 // ⚙️ CONFIGURATION
 const STUDY_CONFIG = {
@@ -46,51 +48,11 @@ const STUDY_CONFIG = {
   phoneNumber: "0683623329",
 };
 
-// Mock Supabase
-const supabase = {
-  from: (table: string) => ({
-    select: (fields: string) => ({
-      eq: (field: string, value: string) => ({
-        maybeSingle: async () => {
-          return {
-            data: {
-              id: value,
-              expires_at: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000
-              ).toISOString(),
-              study_data: {
-                n: "Famille Martin",
-                e: 32202,
-                a: 70,
-                m: 139,
-                t: 3.89,
-                d: 180,
-                prod: 7000,
-                conso: 10000,
-                selfCons: 70,
-                installCost: 18799,
-                cashApport: 0,
-                elecPrice: 0.25,
-                mode: "financement",
-                installedPower: 3.5,
-                projectionYears: 20,
-                ga: [
-                  "🏆 Garantie Performance 30 ans",
-                  "Garantie main d'œuvre À VIE",
-                  "SAV et maintenance inclus",
-                ],
-              },
-            },
-            error: null,
-          };
-        },
-      }),
-    }),
-    update: (data: any) => ({
-      eq: (field: string, value: string) => Promise.resolve(),
-    }),
-  }),
-};
+// ✅ VRAIE connexion Supabase
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL!,
+  import.meta.env.VITE_SUPABASE_ANON_KEY!
+);
 
 // Composant ModuleSection
 const ModuleSection: React.FC<{
@@ -154,22 +116,47 @@ export default function GuestView() {
   const [isExpired, setIsExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [wastedCash, setWastedCash] = useState(0.5);
+  const [gouffreMode, setGouffreMode] = useState<"financement" | "cash">(
+    "financement"
+  );
+  const [tableScenario, setTableScenario] = useState<"financement" | "cash">(
+    "financement"
+  );
+  const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("mensuel");
+  const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
     const loadStudy = async () => {
       try {
-        const { data: studyData } = await supabase
+        // ✅ Récupère l'ID depuis l'URL
+        const studyId = window.location.pathname.split("/guest/")[1];
+
+        if (!studyId) {
+          throw new Error("ID d'étude manquant dans l'URL");
+        }
+
+        console.log("🔍 Chargement de l'étude:", studyId);
+
+        const { data: studyData, error } = await supabase
           .from("studies")
           .select("*")
-          .eq("id", "demo-id")
+          .eq("id", studyId)
           .maybeSingle();
 
-        if (studyData) {
-          setStudy(studyData);
-          setData(studyData.study_data);
+        if (error) {
+          console.error("❌ Erreur Supabase:", error);
+          throw error;
         }
+
+        if (!studyData) {
+          throw new Error("Étude introuvable");
+        }
+
+        setStudy(studyData);
+        setData(studyData.study_data);
         setLoading(false);
       } catch (err: any) {
+        console.error("❌ Erreur chargement:", err);
         setError(err.message);
         setLoading(false);
       }
@@ -237,24 +224,62 @@ export default function GuestView() {
     );
   }
 
-  if (!data) return null;
+  // ✅ UNE SEULE vérification
+  if (!data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">
+            Données manquantes
+          </h2>
+          <p className="text-slate-400">
+            L'étude n'a pas pu être chargée correctement.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const safeData = {
+    // Données client
     n: data.n || "Client",
-    e: data.e || 32202,
-    prod: data.prod || 7000,
-    conso: data.conso || 10000,
-    selfCons: data.selfCons || 70,
-    installCost: data.installCost || 18799,
-    cashApport: data.cashApport || 0,
-    elecPrice: data.elecPrice || 0.25,
-    m: data.m || 139,
-    t: data.t || 3.89,
-    d: data.d || 180,
-    installedPower: data.installedPower || 3.5,
-    projectionYears: data.projectionYears || 20,
+
+    // Données financières
+    e: data.e || 0,
+    installCost: data.installCost || data.ic || 0,
+    cashApport: data.cashApport || data.ca || 0,
+    m: data.m || 0,
+    t: data.t || 0,
+    d: data.d || 0,
+
+    // Données énergétiques
+    prod: data.prod || data.p || 0,
+    conso: Number(data.conso || data.c || 0), // ✅ Converti en nombre
+    selfCons: data.selfCons || data.a || 0,
+    installedPower: data.installedPower || data.kWc || 0,
+
+    // Prix
+    elecPrice: data.elecPrice || data.pe || 0.25,
+
+    // Projection
+    projectionYears: data.projectionYears || data.py || 25,
+
+    // Graphique gains annuels
     ga: data.ga || [],
+
+    // Mode
     mode: data.mode || "financement",
+    warrantyMode: data.warrantyMode || "performance",
+
+    // ✅ AJOUTE CES PROPRIÉTÉS :
+    breakEven: data.breakEven || null,
+    averageYearlyGain: data.averageYearlyGain || null,
+    totalSpendNoSolar: data.totalSpendNoSolar || null,
+    totalSpendSolar: data.totalSpendSolar || null,
+    greenValue: data.greenValue || null,
+    details: data.details || [],
+    detailsCash: data.detailsCash || [],
   };
 
   const formatMoney = (val: number) =>
@@ -288,14 +313,20 @@ export default function GuestView() {
 
   const calculationResult = {
     oldMonthlyBillYear1: monthlyBill,
-    totalSavings: 25000,
-    totalSavingsProjected: 32000,
-    breakEvenPoint: 8,
-    paybackYear: 8,
-    averageYearlyGain: 1600,
-    greenValue: 5000,
-    totalSpendNoSolar: 80000,
-    totalSpendSolar: 55000,
+
+    // ✅ Utilise les données de l'étude si elles existent, sinon calcule
+    totalSavings: safeData.e || 0,
+    totalSavingsProjected: safeData.e || 0,
+    breakEvenPoint: safeData.breakEven || Math.round((safeData.d / 12) * 0.67),
+    paybackYear: safeData.breakEven || Math.round((safeData.d / 12) * 0.67),
+    averageYearlyGain:
+      safeData.averageYearlyGain || safeData.e / safeData.projectionYears,
+    greenValue:
+      safeData.greenValue || safeData.prod * safeData.projectionYears * 0.5,
+    totalSpendNoSolar:
+      safeData.totalSpendNoSolar ||
+      monthlyBill * 12 * safeData.projectionYears * 1.05,
+    totalSpendSolar: safeData.totalSpendSolar || totalMensuel * safeData.d,
   };
 
   const gouffreChartData = Array.from({ length: 20 }, (_, i) => ({
@@ -389,7 +420,8 @@ export default function GuestView() {
             </div>
           </div>
           <div className="text-6xl font-black text-emerald-400 text-center mb-6">
-            +{Number(safeData.e).toLocaleString("fr-FR")}€
+            {safeData.e > 0 ? "+" : ""}
+            {Number(safeData.e).toLocaleString("fr-FR")}€
           </div>
         </div>
 
@@ -630,8 +662,7 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: PROJECTION */}
+        {/* MODULE 5: PROJECTION */}
         <ModuleSection
           id="projection"
           title="Projection financière dans le temps"
@@ -645,27 +676,267 @@ export default function GuestView() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
                   <XAxis dataKey="year" stroke="#9ca3af" />
                   <YAxis stroke="#9ca3af" />
-                  <RechartsTooltip />
+
+                  {/* ✅ TOOLTIP CORRIGÉ */}
+                  <RechartsTooltip
+                    contentStyle={{
+                      backgroundColor: "#1e293b",
+                      border: "1px solid #475569",
+                      borderRadius: "8px",
+                      padding: "12px",
+                    }}
+                    labelStyle={{
+                      color: "#e2e8f0",
+                      fontWeight: "bold",
+                      marginBottom: "8px",
+                    }}
+                    itemStyle={{
+                      color: "#e2e8f0",
+                    }}
+                    formatter={(value: number, name: string) => {
+                      const label =
+                        name === "cumulativeSpendNoSolar"
+                          ? "Sans solaire"
+                          : "Avec solaire";
+                      return [formatMoney(value), label];
+                    }}
+                    labelFormatter={(label) => `Année ${label}`}
+                  />
+
                   <Area
                     type="monotone"
                     dataKey="cumulativeSpendNoSolar"
+                    name="cumulativeSpendNoSolar"
                     stroke="#ef4444"
                     fill="rgba(239, 68, 68, 0.2)"
-                    name="Sans solaire"
                   />
                   <Area
                     type="monotone"
                     dataKey="cumulativeSpendSolar"
+                    name="cumulativeSpendSolar"
                     stroke="#3b82f6"
                     fill="rgba(59, 130, 246, 0.2)"
-                    name="Avec solaire"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
         </ModuleSection>
+        <ModuleSection
+          id="tableau-detaille"
+          title="Projection Financière — 25 ans"
+          icon={<Table2 className="text-slate-400" />}
+          defaultOpen={false}
+        >
+          <p className="text-[10px] text-slate-400 italic mb-3">
+            Ce qui suit ne sert pas à choisir — juste à vérifier qu'on ne fait
+            pas une erreur.
+          </p>
 
+          {/* Contrôles : Scénario et affichage */}
+          <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
+            {/* Financement / Cash */}
+            <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
+              <button
+                onClick={() => setTableScenario("financement")}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  tableScenario === "financement"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Financement
+              </button>
+              <button
+                onClick={() => setTableScenario("cash")}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  tableScenario === "cash"
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Cash
+              </button>
+            </div>
+
+            {/* Annuel / Mensuel */}
+            <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
+              <button
+                onClick={() => setTableMode("annuel")}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  tableMode === "annuel"
+                    ? "bg-slate-700 text-white"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Annuel
+              </button>
+              <button
+                onClick={() => setTableMode("mensuel")}
+                className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  tableMode === "mensuel"
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Mensuel
+              </button>
+            </div>
+          </div>
+
+          {/* TABLEAU */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10 text-[10px] uppercase text-slate-500 font-bold tracking-wider">
+                  <th className="py-3 px-4">Année</th>
+                  <th className="py-3 px-4 text-red-400">Sans Solaire</th>
+                  {showDetails && (
+                    <>
+                      <th className="py-3 px-4 text-blue-400">Crédit</th>
+                      <th className="py-3 px-4 text-yellow-400">
+                        Facture restante
+                      </th>
+                    </>
+                  )}
+                  <th className="py-3 px-4 text-white">Avec Solaire</th>
+                  <th className="py-3 px-4 text-slate-300">
+                    Différence {tableMode === "annuel" ? "/an" : "/mois"}
+                  </th>
+                  <th className="py-3 px-4 text-emerald-400 text-right">
+                    Trésorerie cumulée
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="text-sm font-mono text-slate-300">
+                {/* Année 0 */}
+                <tr className="border-b border-white/5 bg-[#1a1505]/30">
+                  <td className="py-4 px-4 text-yellow-500 font-bold">
+                    Année 0
+                  </td>
+                  <td className="py-4 px-4 opacity-50">-</td>
+                  {showDetails && <td className="py-4 px-4 opacity-50">-</td>}
+                  {showDetails && <td className="py-4 px-4 opacity-50">-</td>}
+                  <td className="py-4 px-4 text-yellow-400 font-bold uppercase">
+                    APPORT :{" "}
+                    {formatMoney(
+                      tableScenario === "financement"
+                        ? safeData.cashApport
+                        : safeData.installCost
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-red-400 font-bold">
+                    {formatMoney(
+                      (tableScenario === "financement"
+                        ? safeData.cashApport
+                        : safeData.installCost) /
+                        (tableMode === "mensuel" ? 12 : 1)
+                    )}
+                  </td>
+                  <td className="py-4 px-4 text-right text-red-500 font-bold">
+                    -
+                    {formatMoney(
+                      tableScenario === "financement"
+                        ? safeData.cashApport
+                        : safeData.installCost
+                    )}
+                  </td>
+                </tr>
+
+                {(tableScenario === "financement"
+                  ? safeData.details
+                  : safeData.detailsCash
+                )
+                  .slice(0, safeData.projectionYears)
+                  .map((row) => {
+                    const divider = tableMode === "mensuel" ? 12 : 1;
+                    const noSolar = row.edfBillWithoutSolar / divider;
+
+                    // ✅ CORRECTION : Gère correctement CASH et FINANCEMENT
+                    const credit = (row.creditPayment || 0) / divider;
+                    const residue = row.edfResidue / divider;
+
+                    // ✅ En CASH, totalWithSolar est déjà calculé
+                    const totalWithSolar =
+                      tableScenario === "cash"
+                        ? row.totalWithSolar / divider
+                        : credit + residue;
+
+                    const eff = totalWithSolar - noSolar;
+
+                    return (
+                      <tr
+                        key={row.year}
+                        className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                      >
+                        <td className="py-3 px-4 text-slate-500">{row.year}</td>
+                        <td className="py-3 px-4 text-red-400/80">
+                          {formatMoney(noSolar)}
+                        </td>
+                        {showDetails && (
+                          <>
+                            <td className="py-3 px-4 text-blue-400/80">
+                              {formatMoney(credit)}
+                            </td>
+                            <td className="py-3 px-4 text-yellow-400/80">
+                              {formatMoney(residue)}
+                            </td>
+                          </>
+                        )}
+                        <td className="py-3 px-4 font-bold text-white">
+                          {formatMoney(totalWithSolar)}
+                        </td>
+                        <td
+                          className={`py-3 px-4 font-bold ${
+                            eff > 0 ? "text-white" : "text-emerald-400"
+                          }`}
+                        >
+                          {eff > 0 ? "+" : ""}
+                          {formatMoney(eff)}
+                        </td>
+                        <td
+                          className={`py-3 px-4 text-right font-bold ${
+                            row.cumulativeSavings >= 0
+                              ? "text-emerald-500"
+                              : "text-red-500"
+                          }`}
+                        >
+                          {formatMoney(row.cumulativeSavings)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+
+              <tfoot className="sticky bottom-0 bg-black/95 backdrop-blur-xl border-t-2 border-emerald-500/30">
+                <tr>
+                  <td
+                    colSpan={showDetails ? 6 : 4}
+                    className="py-3 px-4 text-right text-xs font-bold text-slate-400 uppercase"
+                  >
+                    Gain total sur {safeData.projectionYears} ans
+                  </td>
+                  <td className="py-3 px-4 text-right text-xl font-black text-emerald-400">
+                    {formatMoney(
+                      (tableScenario === "financement"
+                        ? safeData.details
+                        : safeData.detailsCash)[safeData.projectionYears - 1]
+                        ?.cumulativeSavings || 0
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <button
+            onClick={() => setShowDetails(!showDetails)}
+            className="mt-4 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+          >
+            {showDetails ? "Vue globale" : "Vue complète"}
+          </button>
+        </ModuleSection>
         {/* MODULE: SÉCURITÉ JURIDIQUE */}
         <ModuleSection
           id="securite-juridique"

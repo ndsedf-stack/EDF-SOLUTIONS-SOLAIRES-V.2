@@ -1,4 +1,5 @@
-# ⚡ Automatisation Solaire — Nicolas Di Stefano  
+# ⚡ Automatisation Solaire — Nicolas Di Stefano
+
 **EDF Solutions Solaires**
 
 📅 Dernière mise à jour : **3 janvier 2026**  
@@ -9,16 +10,171 @@
 
 ## 🧠 Philosophie du système
 
-Ce projet **n’est pas un outil marketing**.  
+AJOUTE CE CHAPITRE
+
+## 🧩 Principes d’Architecture (À NE PAS VIOLER)
+
+Ce système repose sur des règles **non négociables** :
+
+### 1. Aucune décision métier dans l’Edge
+
+- L’Edge **envoie**
+- PostgreSQL **décide**
+- Aucun calcul de timing ou de retry côté Edge
+
+### 2. Aucun email envoyé hors `email_queue`
+
+- Toute tentative de bypass est considérée comme une erreur
+- La queue est la **source de vérité**
+
+### 3. Séparation stricte des responsabilités
+
+- PostgreSQL : orchestration, statuts, retries
+- Edge Functions : rendu + transport
+- Resend : livraison uniquement
+
+### 4. Aucun déclenchement basé sur le tracking
+
+- Le tracking est **informatif**
+- Jamais décisionnel
+
+⚙️ 3️⃣ NOUVELLE SECTION PIPELINE (CRITIQUE)
+
+👉 APRÈS ## 🏗️ Architecture générale
+
+➕ AJOUTE
+
+## ⚙️ Pipeline Email — Flow Réel de Production
+
+ÉVÉNEMENT MÉTIER
+↓
+INSERT dans email_queue (status = 'pending')
+↓
+pg_cron
+↓
+process_one_email_via_edge()
+↓
+Edge Function send_email_from_queue
+↓
+email_templates
+↓
+Resend
+
+### Points clés :
+
+- Un seul email traité par exécution (lock `SKIP LOCKED`)
+- Aucun double envoi possible
+- Le système est **idempotent**
+
+🔁 4️⃣ SECTION RETRY INTELLIGENT
+
+👉 APRÈS la description de email_queue
+
+➕ AJOUTE
+
+## 🔁 Retry Intelligent (Système Auto-Réparant)
+
+Les erreurs d’envoi ne déclenchent **jamais** de boucle infinie.
+
+### Règles :
+
+- Maximum **3 tentatives**
+- Délais progressifs :
+  - tentative 1 → +5 minutes
+  - tentative 2 → +30 minutes
+  - tentative 3 → +2 heures
+- Au-delà → `failed` définitif (intervention humaine)
+
+### Fonction SQL officielle
+
+`````sql
+CREATE OR REPLACE FUNCTION retry_email(p_email_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  UPDATE email_queue
+  SET
+    attempts = attempts + 1,
+    status = CASE
+      WHEN attempts + 1 >= 3 THEN 'failed'
+      ELSE 'pending'
+    END,
+    scheduled_for = CASE
+      WHEN attempts + 1 = 1 THEN now() + interval '5 minutes'
+      WHEN attempts + 1 = 2 THEN now() + interval '30 minutes'
+      WHEN attempts + 1 = 3 THEN now() + interval '2 hours'
+      ELSE scheduled_for
+    END,
+    last_error = COALESCE(last_error, 'retry scheduled')
+  WHERE id = p_email_id;
+END;
+$$;
+
+
+👉 Cette fonction est appelée automatiquement par l’Edge en cas d’échec.
+
+
+---
+
+# 🧹 5️⃣ SECTION SÉCURITÉ ANTI-BLOCAGE
+👉 **APRÈS** la partie CRON / Maintenance
+
+### ➕ AJOUTE
+
+```md
+## 🧹 Sécurité Anti-Blocage (`processing`)
+
+Un email bloqué en `processing` est considéré comme **défaillant**.
+
+### Règle :
+- Un email ne peut pas rester en `processing` > 15 minutes
+
+### Nettoyage automatique recommandé
+
+```sql
+UPDATE email_queue
+SET
+  status = 'error',
+  last_error = 'auto-reset: stuck in processing'
+WHERE status = 'processing'
+  AND created_at < now() - interval '15 minutes';
+
+
+👉 Cette requête peut être exécutée via pg_cron.
+
+
+---
+
+# 🧠 6️⃣ SECTION RESPONSABILITÉS (CLÉ AUDIT)
+👉 **À LA FIN**, juste avant la conclusion
+
+### ➕ AJOUTE
+
+```md
+## 🧠 Responsabilités — Lecture Audit
+
+| Composant | Responsabilité |
+|---------|----------------|
+| PostgreSQL | Décide quoi / quand / retry |
+| Edge Functions | Rend et envoie |
+| Resend | Transporte |
+| Tracking | Observe uniquement |
+| Humain | Décide en dernier recours |
+
+👉 Toute violation de cette séparation est une **régression architecturale**
+
+Ce projet **n’est pas un outil marketing**.
 C’est un **système de sécurisation décisionnelle** conçu pour :
 
 - le **POST-REFUS** (client non signé)
 - l’**ANTI-ANNULATION** (client signé)
 
-🎯 Objectif unique : **CLOSING NET**  
+🎯 Objectif unique : **CLOSING NET**
+
 > Signer **ET** éviter l’annulation J+7.
 
-Aucune pression, aucune manipulation, aucune relance agressive.  
+Aucune pression, aucune manipulation, aucune relance agressive.
 Approche institutionnelle EDF, adaptée CSP+.
 
 ---
@@ -26,6 +182,7 @@ Approche institutionnelle EDF, adaptée CSP+.
 ## 🏗️ Architecture générale
 
 ### 🔐 Schémas Supabase actifs
+
 - `public`
 - `cron`
 - `net`
@@ -37,11 +194,13 @@ Approche institutionnelle EDF, adaptée CSP+.
 ### 🗄️ Tables critiques
 
 #### `public.clients`
+
 - Base prospects
 - Dédoublonnage par email
 - Source de vérité client
 
 #### `public.studies`
+
 - Études techniques & financières
 - Statuts :
   - `draft`
@@ -50,6 +209,7 @@ Approche institutionnelle EDF, adaptée CSP+.
 - Relation client via `client_id (UUID)`
 
 #### `public.email_queue`
+
 - File d’attente emails automatiques
 - Champs clés :
   - `email_type`
@@ -58,6 +218,7 @@ Approche institutionnelle EDF, adaptée CSP+.
   - `payload` (**non-null, contrainte volontaire**)
 
 #### `public.tracking_events`
+
 - Logs comportementaux :
   - `email_open`
   - `email_click`
@@ -69,10 +230,12 @@ Approche institutionnelle EDF, adaptée CSP+.
 ### 🔎 Vues de pilotage (lecture seule)
 
 #### `studies_activity_summary`
+
 - Synthèse comportementale par étude
 - Ouvertures, interactions, dernière activité
 
 #### `studies_to_watch`
+
 - Vue de **surveillance intelligente**
 - Peut être vide (état normal)
 - Ne déclenche aucune action automatique
@@ -82,11 +245,13 @@ Approche institutionnelle EDF, adaptée CSP+.
 ## 🌐 Services tiers
 
 - **Supabase**
+
   - Base de données
   - Triggers
   - Cron jobs
 
 - **Resend**
+
   - Envoi des emails
   - Domaine : `nicolas-distefano-edf.fr`
 
@@ -101,6 +266,627 @@ Approche institutionnelle EDF, adaptée CSP+.
 ## 🛠️ Historique technique — 3 janvier 2026
 
 ### A. Client de test (UPSERT)
-```sql
+
+````sql
 INSERT INTO clients (...)
 ON CONFLICT (email) DO UPDATE;
+
+# 📋 Documentation du Système de Gestion Client et Email Automatisé
+
+## 🎯 Vue d'ensemble
+
+Ce système est une plateforme de gestion de clients avec automatisation des emails, conçue sur **Supabase (PostgreSQL)** avec des fonctionnalités de suivi et d'analyse.
+
+### Fonctionnalités principales
+- ✅ Gestion des clients et de leurs informations
+- ✅ Système d'envoi d'emails automatisé avec file d'attente
+- ✅ Suivi des études (studies) par client
+- ✅ Logs et historique complet des emails
+- ✅ Système de tracking des événements
+- ✅ Contrats signés électroniquement
+- ✅ Alertes et notifications
+
+---
+
+## 📊 Architecture de la Base de Données
+
+### Tables Principales
+
+#### 1. **`clients`** - Gestion des Clients
+Stocke les informations de base des clients.
+
+**Colonnes principales :**
+- `id` (uuid) - Identifiant unique
+- `email` (text) - Email du client
+- `phone` (text) - Téléphone
+- `first_name` (text) - Prénom
+- `last_name` (text) - Nom de famille
+- `city` (text) - Ville
+- `email_optout` (boolean) - Opt-out des emails
+- `created_at` / `updated_at` - Horodatage
+
+**Exemple :**
+```sql
+SELECT * FROM clients WHERE first_name = 'TOURNAY';
+`````
+
+---
+
+#### 2. **`studies`** - Études par Client
+
+Chaque client peut avoir plusieurs études associées.
+
+**Colonnes principales :**
+
+- `id` (uuid) - Identifiant unique de l'étude
+- `client_id` (uuid) - Référence au client
+- `client_name` (text) - Nom du client (dénormalisé)
+- `client_email` (text) - Email du client (dénormalisé)
+- `expires_at` (timestamp) - Date d'expiration de l'étude
+- `created_at` / `updated_at`
+
+**Relations :**
+
+- Un client → plusieurs études (1:N)
+
+**Exemple :**
+
+```sql
+-- Voir toutes les études d'un client
+SELECT * FROM studies WHERE client_id = 'xxx-xxx-xxx';
+```
+
+---
+
+#### 3. **`email_queue`** - File d'Attente d'Emails
+
+Gère l'envoi asynchrone des emails.
+
+**Colonnes principales :**
+
+- `id` (uuid) - Identifiant unique
+- `client_id` (uuid) - Client destinataire
+- `study_id` (uuid) - Étude concernée
+- `email_type` (text) - Type d'email (ex: `anti_j0_cash_deposit_request`)
+- `status` (text) - Statut : `pending`, `sent`, `failed`
+- `scheduled_for` (timestamp) - Date d'envoi prévue
+- `sent_at` (timestamp) - Date d'envoi réel
+- `metadata` (jsonb) - Données supplémentaires
+- `payload` (jsonb) - Contenu de l'email
+- `attempts` (integer) - Nombre de tentatives
+- `last_error` (text) - Dernière erreur rencontrée
+- `external_id` / `resend_id` - IDs externes
+
+**Workflow :**
+
+1. Un email est créé avec `status = 'pending'`
+2. Un CRON job ou trigger le traite
+3. Le statut passe à `sent` ou `failed`
+4. Un log est créé dans `email_logs`
+
+**Exemple :**
+
+```sql
+-- Emails en attente
+SELECT * FROM email_queue WHERE status = 'pending';
+
+-- Emails envoyés aujourd'hui
+SELECT * FROM email_queue
+WHERE status = 'sent'
+AND sent_at::date = CURRENT_DATE;
+```
+
+---
+
+#### 4. **`email_logs`** - Historique des Emails
+
+Logs de tous les emails envoyés (succès et échecs).
+
+**Colonnes principales :**
+
+- `id` (uuid)
+- `client_id` (uuid)
+- `client_email` (text) - Email du destinataire
+- `status_code` (text) - Code de réponse
+- `response_body` (text) - Réponse du serveur
+- `error_message` (text) - Message d'erreur
+- `success` (boolean) - Succès/échec
+- `created_at`
+
+**Exemple :**
+
+```sql
+-- Emails échoués
+SELECT * FROM email_logs WHERE success = false;
+
+-- Stats d'envoi
+SELECT
+  success,
+  COUNT(*) as count
+FROM email_logs
+GROUP BY success;
+```
+
+---
+
+#### 5. **`email_leads`** - Leads Email
+
+Gestion des prospects et leads.
+
+**Colonnes principales :**
+
+- `id` (uuid)
+- `client_id` (uuid)
+- `source` (text) - Source du lead
+- `email_step` (text) - Étape dans le funnel
+- `last_email_sent_at` (timestamp)
+- `created_at` / `updated_at`
+
+---
+
+#### 6. **`tracking_events`** - Événements de Tracking
+
+Suivi des actions et événements liés aux études.
+
+**Colonnes principales :**
+
+- `id` (uuid)
+- `study_id` (uuid) - Étude concernée
+- `event_type` (text) - Type d'événement
+- `metadata` (jsonb) - Détails de l'événement
+- `created_at`
+
+**Exemple :**
+
+```sql
+-- Événements d'une étude
+SELECT * FROM tracking_events
+WHERE study_id = 'xxx-xxx-xxx'
+ORDER BY created_at DESC;
+```
+
+---
+
+#### 7. **`signed_contracts`** - Contrats Signés
+
+Gestion des contrats électroniques signés.
+
+**Colonnes principales :**
+
+- `id` (uuid)
+- `client_id` (uuid)
+- `created_at` / `updated_at`
+
+---
+
+#### 8. **`decision_logs`** - Logs de Décisions
+
+Historique des décisions prises par le système.
+
+**Colonnes principales :**
+
+- `id` (uuid)
+- `client_id` (uuid)
+- `created_at`
+
+---
+
+#### 9. **`email_templates`** - Templates d'Email
+
+Templates réutilisables pour les emails.
+
+**Exemple de types d'emails :**
+
+- `anti_j0_cash_deposit_request` - Demande de dépôt anti-J0 cash
+- Autres types selon configuration
+
+---
+
+#### 10. **`app_config`** - Configuration de l'Application
+
+Paramètres globaux de l'application.
+
+---
+
+#### 11. **`system_settings`** - Paramètres Système
+
+Configuration système et préférences.
+
+---
+
+### Vues (Views)
+
+#### **`alerts_to_call`** - Vue des Alertes
+
+Vue générée automatiquement regroupant les alertes nécessitant une action.
+
+**Note :** Cette vue utilise `GROUP BY` et n'est pas directement modifiable.
+
+---
+
+#### **`studies_activity_summary`** et **`studies_activity_summary_v2`**
+
+Vues de synthèse de l'activité des études.
+
+---
+
+#### **`studies_to_watch`**
+
+Vue des études nécessitant une surveillance.
+
+---
+
+## ⚙️ Fonctionnalités Automatisées
+
+### 1. **Système d'Envoi d'Emails**
+
+Le système utilise une architecture de file d'attente :
+
+```
+Client → Étude créée → Email ajouté à email_queue
+→ CRON/Trigger traite la queue → Email envoyé
+→ Log créé dans email_logs
+```
+
+**Types d'emails automatiques :**
+
+- Demandes de dépôt
+- Confirmations
+- Rappels
+- Notifications
+
+### 2. **CRON Jobs**
+
+Le système utilise `pg_cron` pour l'exécution de tâches planifiées :
+
+- Traitement de la file d'attente d'emails
+- Nettoyage des données expirées
+- Génération de rapports
+
+**Voir les CRON jobs :**
+
+```sql
+SELECT * FROM cron.job;
+```
+
+### 3. **Triggers PostgreSQL**
+
+Des triggers automatisent certaines actions :
+
+- Création automatique de logs
+- Mise à jour de timestamps
+- Validation de données
+
+### 4. **Fonctions PostgreSQL**
+
+Fonctions personnalisées pour la logique métier (sauvegardées dans `backup_all_functions_20260105`).
+
+---
+
+## 🔒 Sécurité et Permissions
+
+### Row Level Security (RLS)
+
+Supabase utilise RLS pour sécuriser l'accès aux données. Les policies définissent qui peut voir/modifier quelles données.
+
+**Voir les policies :**
+
+```sql
+SELECT * FROM pg_policies WHERE schemaname = 'public';
+```
+
+---
+
+## 🗂️ Gestion des Backups
+
+### Tables de Backup Existantes
+
+Le système maintient des backups réguliers :
+
+- `backup_clients_20260105`
+- `backup_email_queue_20260105`
+- `backup_email_logs_20260105`
+- `backup_studies_20260105`
+- `backup_all_functions_20260105`
+- `backup_all_triggers_20260105`
+- `backup_cron_jobs_20260105`
+- etc.
+
+### Créer un Backup Manuel
+
+```sql
+-- Backup d'une table
+CREATE TABLE backup_clients_YYYYMMDD AS
+SELECT * FROM clients;
+
+-- Backup des fonctions
+CREATE TABLE backup_functions_YYYYMMDD AS
+SELECT
+    n.nspname as schema_name,
+    p.proname as function_name,
+    pg_get_functiondef(p.oid) as function_definition,
+    now() as backup_date
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE n.nspname = 'public';
+```
+
+### Restaurer depuis un Backup
+
+```sql
+-- Restaurer les données d'une table
+INSERT INTO clients
+SELECT * FROM backup_clients_20260105
+WHERE id NOT IN (SELECT id FROM clients);
+```
+
+---
+
+## 🧹 Maintenance et Nettoyage
+
+### Supprimer les Données de Test
+
+**ATTENTION :** Ces commandes suppriment définitivement des données !
+
+```sql
+-- 1. Identifier les clients de test
+SELECT * FROM clients
+WHERE LOWER(first_name) LIKE '%test%'
+   OR LOWER(email) LIKE '%@example.com%';
+
+-- 2. Supprimer les clients de test
+DELETE FROM clients
+WHERE LOWER(first_name) LIKE '%test%'
+   OR LOWER(email) LIKE '%@example.com%';
+
+-- 3. Nettoyer les données orphelines
+DELETE FROM studies WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM email_queue WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM email_logs WHERE client_id NOT IN (SELECT id FROM clients);
+DELETE FROM tracking_events WHERE study_id NOT IN (SELECT id FROM studies);
+```
+
+### Nettoyage Automatique
+
+```sql
+-- Supprimer les logs de plus de 90 jours
+DELETE FROM email_logs
+WHERE created_at < NOW() - INTERVAL '90 days';
+
+-- Supprimer les emails échoués anciens
+DELETE FROM email_queue
+WHERE status = 'failed'
+AND created_at < NOW() - INTERVAL '30 days';
+```
+
+---
+
+## 📈 Requêtes Utiles
+
+### Statistiques Clients
+
+```sql
+-- Nombre total de clients
+SELECT COUNT(*) as total_clients FROM clients;
+
+-- Clients par ville
+SELECT city, COUNT(*) as count
+FROM clients
+GROUP BY city
+ORDER BY count DESC;
+
+-- Clients ayant opt-out des emails
+SELECT COUNT(*) FROM clients WHERE email_optout = true;
+```
+
+### Statistiques Emails
+
+```sql
+-- Emails envoyés aujourd'hui
+SELECT COUNT(*) FROM email_queue
+WHERE status = 'sent'
+AND sent_at::date = CURRENT_DATE;
+
+-- Taux de succès des emails (derniers 7 jours)
+SELECT
+  ROUND(100.0 * SUM(CASE WHEN success THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate_percent
+FROM email_logs
+WHERE created_at > NOW() - INTERVAL '7 days';
+
+-- Emails en attente par type
+SELECT email_type, COUNT(*) as count
+FROM email_queue
+WHERE status = 'pending'
+GROUP BY email_type;
+```
+
+### Analyse des Études
+
+```sql
+-- Études actives (non expirées)
+SELECT COUNT(*) FROM studies
+WHERE expires_at > NOW();
+
+-- Études par client
+SELECT
+  client_name,
+  COUNT(*) as study_count
+FROM studies
+GROUP BY client_name
+ORDER BY study_count DESC;
+
+-- Études arrivant à expiration (prochains 7 jours)
+SELECT * FROM studies
+WHERE expires_at BETWEEN NOW() AND NOW() + INTERVAL '7 days'
+ORDER BY expires_at;
+```
+
+---
+
+## 🚀 Déploiement et Configuration
+
+### Variables d'Environnement
+
+Le système nécessite probablement :
+
+- `SUPABASE_URL` - URL du projet Supabase
+- `SUPABASE_ANON_KEY` - Clé publique
+- `SUPABASE_SERVICE_KEY` - Clé service (backend)
+- `EMAIL_PROVIDER_API_KEY` - Clé API du service d'email (Resend, SendGrid, etc.)
+
+### Edge Functions
+
+Les Edge Functions Supabase gèrent la logique côté serveur :
+
+- Traitement des webhooks
+- Envoi d'emails via API externe
+- Validation de données
+- Intégrations tierces
+
+---
+
+## 🔧 Dépannage
+
+### Problème : Emails non envoyés
+
+```sql
+-- Vérifier les emails en erreur
+SELECT * FROM email_queue
+WHERE status = 'failed'
+ORDER BY created_at DESC
+LIMIT 10;
+
+-- Réessayer un email échoué
+UPDATE email_queue
+SET status = 'pending', attempts = 0, last_error = NULL
+WHERE id = 'xxx-xxx-xxx';
+```
+
+### Problème : Données orphelines
+
+```sql
+-- Trouver les études sans client
+SELECT * FROM studies
+WHERE client_id NOT IN (SELECT id FROM clients);
+
+-- Nettoyer
+DELETE FROM studies
+WHERE client_id NOT IN (SELECT id FROM clients);
+```
+
+### Problème : CRON jobs ne s'exécutent pas
+
+```sql
+-- Vérifier les CRON jobs actifs
+SELECT * FROM cron.job WHERE active = true;
+
+-- Voir l'historique d'exécution
+SELECT * FROM cron.job_run_details
+ORDER BY start_time DESC
+LIMIT 20;
+```
+
+---
+
+## 📝 Conventions de Nommage
+
+### Tables
+
+- Pluriel en anglais : `clients`, `studies`, `emails`
+- Snake_case : `email_logs`, `tracking_events`
+
+### Colonnes
+
+- Snake_case : `first_name`, `created_at`
+- IDs : `id` (uuid) pour la clé primaire, `xxx_id` pour les clés étrangères
+
+### Types d'Emails
+
+- Format descriptif : `anti_j0_cash_deposit_request`
+- Snake_case
+
+---
+
+## ⚠️ Bonnes Pratiques
+
+### 1. **Toujours faire un backup avant modification**
+
+```sql
+CREATE TABLE backup_tablename_YYYYMMDD AS SELECT * FROM tablename;
+```
+
+### 2. **Tester les requêtes DELETE avec SELECT d'abord**
+
+```sql
+-- D'abord tester avec SELECT
+SELECT * FROM clients WHERE condition;
+
+-- Puis supprimer
+DELETE FROM clients WHERE condition;
+```
+
+### 3. **Utiliser des transactions pour les modifications multiples**
+
+```sql
+BEGIN;
+  DELETE FROM email_logs WHERE client_id = 'xxx';
+  DELETE FROM email_queue WHERE client_id = 'xxx';
+  DELETE FROM clients WHERE id = 'xxx';
+COMMIT; -- ou ROLLBACK en cas d'erreur
+```
+
+### 4. **Surveiller les performances**
+
+```sql
+-- Voir les requêtes lentes
+SELECT * FROM pg_stat_statements
+ORDER BY total_time DESC
+LIMIT 10;
+```
+
+---
+
+## 📚 Ressources
+
+### Documentation Officielle
+
+- [Supabase Documentation](https://supabase.com/docs)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [pg_cron Documentation](https://github.com/citusdata/pg_cron)
+
+### Support
+
+- Dashboard Supabase : `https://supabase.com/dashboard/project/ugwqfvwclwctzgtxcakp`
+- SQL Editor : Pour exécuter des requêtes
+- Table Editor : Pour voir et modifier les données manuellement
+
+---
+
+## 🎓 Glossaire
+
+- **UUID** : Identifiant unique universel (ex: `ea997cfd-3786-428b-8936-b577b5dbf08b`)
+- **JSONB** : Format JSON binaire dans PostgreSQL
+- **RLS** : Row Level Security - Sécurité au niveau des lignes
+- **CRON** : Tâches planifiées
+- **Trigger** : Fonction automatique déclenchée par un événement
+- **View** : Vue virtuelle générée à partir de requêtes
+- **Edge Function** : Fonction serverless hébergée sur Supabase
+
+---
+
+## ✅ Checklist de Maintenance Mensuelle
+
+- [ ] Vérifier les CRON jobs actifs
+- [ ] Nettoyer les logs de plus de 90 jours
+- [ ] Vérifier les études expirées
+- [ ] Créer un backup complet
+- [ ] Analyser le taux de succès des emails
+- [ ] Vérifier les données orphelines
+- [ ] Optimiser les index si nécessaire
+- [ ] Vérifier l'espace disque utilisé
+
+---
+
+**Dernière mise à jour :** 5 janvier 2026  
+**Version :** 1.0  
+**Projet Supabase :** `ugwqfvwclwctzgtxcakp`
