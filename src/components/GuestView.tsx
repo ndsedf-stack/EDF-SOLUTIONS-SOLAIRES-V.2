@@ -29,6 +29,11 @@ import {
   BarChart3,
   Info,
   Table2,
+  Building2,
+  FileCheck,
+  Target,
+  TrendingDown,
+  CheckCircle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -128,7 +133,6 @@ export default function GuestView() {
   useEffect(() => {
     const loadStudy = async () => {
       try {
-        // ✅ Récupère l'ID depuis l'URL
         const studyId = window.location.pathname.split("/guest/")[1];
 
         if (!studyId) {
@@ -224,7 +228,6 @@ export default function GuestView() {
     );
   }
 
-  // ✅ UNE SEULE vérification
   if (!data) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900">
@@ -242,37 +245,22 @@ export default function GuestView() {
   }
 
   const safeData = {
-    // Données client
     n: data.n || "Client",
-
-    // Données financières
     e: data.e || 0,
     installCost: data.installCost || data.ic || 0,
     cashApport: data.cashApport || data.ca || 0,
     m: data.m || 0,
     t: data.t || 0,
     d: data.d || 0,
-
-    // Données énergétiques
     prod: data.prod || data.p || 0,
-    conso: Number(data.conso || data.c || 0), // ✅ Converti en nombre
+    conso: Number(data.conso || data.c || 0),
     selfCons: data.selfCons || data.a || 0,
     installedPower: data.installedPower || data.kWc || 0,
-
-    // Prix
     elecPrice: data.elecPrice || data.pe || 0.25,
-
-    // Projection
     projectionYears: data.projectionYears || data.py || 25,
-
-    // Graphique gains annuels
     ga: data.ga || [],
-
-    // Mode
     mode: data.mode || "financement",
     warrantyMode: data.warrantyMode || "performance",
-
-    // ✅ AJOUTE CES PROPRIÉTÉS :
     breakEven: data.breakEven || null,
     averageYearlyGain: data.averageYearlyGain || null,
     totalSpendNoSolar: data.totalSpendNoSolar || null,
@@ -297,6 +285,9 @@ export default function GuestView() {
       maximumFractionDigits: 2,
     }).format(val);
 
+  const formatNumber = (val: number) =>
+    new Intl.NumberFormat("fr-FR").format(val);
+
   const days = Math.floor(timeLeft / 86400);
   const hours = Math.floor((timeLeft % 86400) / 3600);
   const minutes = Math.floor((timeLeft % 3600) / 60);
@@ -313,8 +304,6 @@ export default function GuestView() {
 
   const calculationResult = {
     oldMonthlyBillYear1: monthlyBill,
-
-    // ✅ Utilise les données de l'étude si elles existent, sinon calcule
     totalSavings: safeData.e || 0,
     totalSavingsProjected: safeData.e || 0,
     breakEvenPoint: safeData.breakEven || Math.round((safeData.d / 12) * 0.67),
@@ -342,6 +331,9 @@ export default function GuestView() {
   const clientCity = "Cannes";
   const projectionYears = safeData.projectionYears;
 
+  const phone = "+336683623329";
+  const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
   return (
     <div className="min-h-screen bg-[#020202] text-white p-4 md:p-6">
       <div className="max-w-4xl mx-auto">
@@ -357,7 +349,6 @@ export default function GuestView() {
             </span>
           </div>
         </div>
-
         {/* TITRE */}
         <h1 className="text-5xl font-black italic uppercase leading-none mb-2">
           VOTRE ÉTUDE SOLAIRE.
@@ -369,7 +360,6 @@ export default function GuestView() {
             {safeData.n}
           </span>
         </p>
-
         {/* COMPTE À REBOURS */}
         <div className="bg-gradient-to-br from-orange-950/60 to-orange-900/40 border border-orange-500/40 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -405,7 +395,6 @@ export default function GuestView() {
             Paramètres tarifaires garantis dans ce cadre
           </div>
         </div>
-
         {/* GAIN NET */}
         <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/20 rounded-[40px] p-8 mb-8">
           <div className="flex justify-between items-start mb-6">
@@ -424,12 +413,168 @@ export default function GuestView() {
             {Number(safeData.e).toLocaleString("fr-FR")}€
           </div>
         </div>
+        {/* 🔵 BLOC 1 — SÉCURITÉ & CADRE */}
+        {/* Module 1: Sécurité juridique EDF */}
+        <ModuleSection
+          id="securite-juridique"
+          title="Sécurité EDF — Groupe d'État"
+          icon={<Shield className="text-blue-600" />}
+          defaultOpen={true}
+        >
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <div className="bg-blue-600 p-3 rounded-lg">
+                  <Building2 className="w-8 h-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    Vous êtes accompagné par EDF SOLUTIONS SOLAIRES
+                  </h3>
+                  <p className="text-gray-700 leading-relaxed">
+                    Filiale à 100% du groupe EDF, entreprise publique française.
+                    Capital social de 36 millions d'euros, garanties
+                    institutionnelles, pérennité assurée par l'État français.
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        {/* MODULE: PROJET SÉCURISÉ */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="bg-white border-2 border-emerald-200 rounded-lg p-5 hover:border-emerald-400 transition-colors">
+                <div className="flex items-start gap-3 mb-3">
+                  <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-gray-900">
+                    Garantie décennale obligatoire
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Assurance sur 10 ans couvrant tout vice ou défaut affectant la
+                  solidité de l'installation ou la rendant impropre à sa
+                  destination.
+                </p>
+              </div>
+
+              <div className="bg-white border-2 border-blue-200 rounded-lg p-5 hover:border-blue-400 transition-colors">
+                <div className="flex items-start gap-3 mb-3">
+                  <Lock className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-gray-900">
+                    Garantie de rendement panneau
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Minimum 87% de rendement garanti après 30 ans d'exploitation.
+                  Remplacement gratuit en cas de non-conformité.
+                </p>
+              </div>
+
+              <div className="bg-white border-2 border-purple-200 rounded-lg p-5 hover:border-purple-400 transition-colors">
+                <div className="flex items-start gap-3 mb-3">
+                  <Zap className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-gray-900">
+                    Garantie panneaux, onduleur à vie, piéces, main d'oeuvre et
+                    déplacement
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Remplacement ou réparation gratuite à vie
+                </p>
+              </div>
+
+              <div className="bg-white border-2 border-orange-200 rounded-lg p-5 hover:border-orange-400 transition-colors">
+                <div className="flex items-start gap-3 mb-3">
+                  <FileCheck className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-gray-900">
+                    Garantie de rachat État
+                  </h4>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Obligation d'achat par EDF OA pendant 20 ans, tarif fixe
+                  garanti par arrêté ministériel.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                <span className="font-semibold text-gray-900">Important :</span>{" "}
+                Ces garanties sont des obligations légales ou contractuelles
+                fermes, pas des engagements commerciaux. Elles sont opposables
+                juridiquement.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+        {/* Module 2: Synthèse */}
+        <ModuleSection
+          id="synthese"
+          title="Vue d'ensemble — Votre projet en 10 secondes"
+          icon={<FileText className="text-indigo-600" />}
+          defaultOpen={true}
+        >
+          <div className="space-y-6">
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5 text-indigo-600" />
+                Cohérence globale du projet
+              </h3>
+
+              <div className="grid md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white rounded-lg p-4 border border-indigo-100">
+                  <div className="text-sm text-gray-600 mb-1">
+                    Production annuelle
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {formatNumber(safeData.prod)} kWh
+                  </div>
+                  <div className="text-xs text-emerald-600 mt-1">
+                    ✓ Certifiée
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 border border-indigo-100">
+                  <div className="text-sm text-gray-600 mb-1">
+                    Couverture besoins
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {safeData.selfCons}%
+                  </div>
+                  <div className="text-xs text-blue-600 mt-1">
+                    de votre consommation
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-4 border border-indigo-100">
+                  <div className="text-sm text-gray-600 mb-1">
+                    Retour investissement
+                  </div>
+                  <div className="text-2xl font-bold text-gray-900">
+                    {calculationResult.breakEvenPoint} ans
+                  </div>
+                  <div className="text-xs text-purple-600 mt-1">
+                    puis gain net
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg p-4 border-l-4 border-emerald-500">
+                <p className="text-gray-700 leading-relaxed">
+                  <span className="font-semibold text-gray-900">Verdict :</span>{" "}
+                  Installation dimensionnée pour couvrir {safeData.selfCons}% de
+                  vos besoins annuels. Budget mensuel inférieur à votre facture
+                  actuelle dès la première année, puis économies nettes après{" "}
+                  {calculationResult.breakEvenPoint} ans. Projet économiquement
+                  cohérent et techniquement sécurisé.
+                </p>
+              </div>
+            </div>
+          </div>
+        </ModuleSection>
+        {/* Module 3: Projet sécurisé */}
         <ModuleSection
           id="projet-securise"
-          title="PROJET SOLAIRE SÉCURISÉ – ZÉRO RISQUE"
-          icon={<ShieldCheck className="text-blue-400" size={20} />}
+          title="Votre projet solaire est sécurisé — Zéro risque client"
+          icon={<ShieldCheck className="text-blue-400" />}
           defaultOpen={true}
         >
           <div className="space-y-6">
@@ -532,102 +677,242 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: GARANTIES */}
+        {/* Module 4: Sécurisation administrative */}
         <ModuleSection
-          id="garanties"
-          title="Garanties de Sécurité"
-          icon={<Shield className="text-emerald-500" />}
-          defaultOpen={false}
+          id="securisation"
+          title="Administratif pris en charge — Vous n'avez rien à gérer"
+          icon={<FileCheck className="text-blue-500" />}
+          defaultOpen={true}
         >
           <div className="space-y-6">
-            <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-semibold mb-1">
-                    Garantie totale à vie
-                  </h4>
-                  <p className="text-slate-300 text-sm">
-                    Matériel, main-d'œuvre et déplacements garantis{" "}
-                    <span className="text-white font-semibold">à vie</span>.
-                  </p>
-                </div>
-              </div>
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-blue-600" />
+                Zéro démarche administrative de votre côté
+              </h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                EDF SOLUTIONS SOLAIRES prend en charge l'intégralité des
+                démarches administratives, de la déclaration préalable de
+                travaux jusqu'au raccordement Enedis.
+              </p>
             </div>
-            <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-semibold mb-1">
-                    Garantie de performance 30 ans
-                  </h4>
-                  <p className="text-slate-300 text-sm">
-                    Production contractuelle. Si non atteinte,{" "}
-                    <span className="text-white font-semibold">
-                      EDF rembourse la différence
-                    </span>
-                    .
-                  </p>
+
+            <div className="space-y-3">
+              {[
+                {
+                  label: "Déclaration préalable mairie",
+                  status: "EDF SOLUTIONS SOLAIRES",
+                },
+                {
+                  label: "Dossier raccordement Enedis",
+                  status: "EDF SOLUTIONS SOLAIRES",
+                },
+                {
+                  label: "Convention autoconsommation",
+                  status: "EDF SOLUTIONS SOLAIRES",
+                },
+                {
+                  label: "Contrat obligation d'achat",
+                  status: "EDF SOLUTIONS SOLAIRES",
+                },
+                {
+                  label: "Certificat Consuel",
+                  status: "EDF SOLUTIONS SOLAIRES",
+                },
+                { label: "Mise en service compteur", status: "Automatique" },
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                >
+                  <span className="text-gray-700 font-medium">
+                    {item.label}
+                  </span>
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                    {item.status}
+                  </span>
                 </div>
+              ))}
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <span className="font-semibold text-emerald-900">
+                  Important :
+                </span>{" "}
+                Vous recevrez uniquement les notifications de suivi par email.
+                Aucune signature, aucun déplacement, aucun appel administratif
+                requis de votre part.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+        {/* 🟢 BLOC 2 — CADRAGE FINANCIER */}
+        {/* Module 5: Contexte financier */}
+        <ModuleSection
+          id="financial-context"
+          title="Comment lire les chiffres qui suivent"
+          icon={<Info className="text-blue-500" />}
+          defaultOpen={true}
+        >
+          <div className="space-y-4">
+            <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-5">
+              <p className="text-gray-800 leading-relaxed mb-3">
+                Les chiffres ci-dessous comparent votre situation{" "}
+                <strong>AVEC</strong> et <strong>SANS</strong> solaire.
+              </p>
+              <p className="text-gray-800 leading-relaxed font-medium">
+                Ce n'est pas un coût supplémentaire : c'est un arbitrage entre
+                deux façons de payer votre électricité.
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <TrendingDown className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  <strong>Principe :</strong> Votre mensualité solaire remplace
+                  progressivement votre facture EDF traditionnelle. Après
+                  remboursement, vous ne payez plus que les quelques kWh
+                  résiduels que vous achetez au réseau.
+                </p>
               </div>
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: STRUCTURE BUDGET */}
+        {/* 🟡 BLOC 3 — DÉTAIL FINANCIER */}
+        {/* Module 6: Budget */}
         <ModuleSection
           id="budget"
           title="Structure du Budget (Mensuel)"
           icon={<Scale className="text-slate-400" />}
           defaultOpen={false}
         >
-          <div className="bg-black/40 p-6 rounded-2xl border border-white/10">
+          <div className="bg-black/40 p-8 rounded-[32px] border border-white/10 backdrop-blur-xl">
             <div className="text-[10px] text-slate-500 italic mb-4">
               On regarde simplement comment votre budget actuel se réorganise —
               sans nouvelle charge.
             </div>
-            <div className="space-y-8">
+
+            {/* HEADER */}
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-3">
+                <Scale className="text-slate-400 w-6 h-6" />
+                <h2 className="text-xl font-black text-white uppercase tracking-tight">
+                  STRUCTURE DU BUDGET (MENSUEL)
+                </h2>
+              </div>
+              <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded text-[10px] font-bold text-slate-400 border border-white/10 uppercase">
+                Année 1 — Comparatif
+              </div>
+            </div>
+
+            <div className="space-y-12">
+              {/* --- BLOC ROUGE : SITUATION ACTUELLE --- */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <span className="text-sm font-bold text-slate-400 uppercase">
+                <div className="flex justify-between items-end mb-6">
+                  <span className="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
                     Situation actuelle
                   </span>
-                  <span className="text-4xl font-black text-white">
-                    {formatMoney(monthlyBill)}
+                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                    {formatMoney(monthlyBill || 0)}{" "}
+                    <span className="text-2xl opacity-50">/MOIS</span>
                   </span>
                 </div>
-                <div className="h-24 bg-gradient-to-b from-red-500 to-red-700 rounded-2xl" />
+                <p className="text-[11px] text-slate-500 italic mb-4 max-w-2xl">
+                  Concrètement, on ne rajoute rien dans votre budget. On ne paie
+                  rien en plus : on remplace une dépense existante par quelque
+                  chose qui vous reste.
+                </p>
+                <div className="relative h-28 bg-gradient-to-r from-[#e14d4d] via-[#d92d2d] to-[#b32424] rounded-2xl shadow-2xl overflow-hidden flex items-center px-10 border border-white/10">
+                  <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></div>
+                  <span className="relative text-white font-black text-3xl uppercase tracking-wider">
+                    FACTURE ACTUELLE
+                  </span>
+                  <span className="ml-auto relative text-white/30 font-black text-5xl uppercase tracking-tighter">
+                    100% DÉPENSES — SANS RETOUR
+                  </span>
+                </div>
               </div>
+
+              {/* --- BLOC GRIS : INSTALLATION EDF --- */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <span className="text-sm font-bold text-slate-400 uppercase">
-                    Installation EDF
+                <div className="flex justify-between items-end mb-6">
+                  <span className="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
+                    Installation EDF — Mise en place
                   </span>
-                  <span className="text-4xl font-black text-white">
-                    {formatMoney(totalMensuel)}
+                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                    {formatMoney(totalMensuel || 0)}{" "}
+                    <span className="text-2xl opacity-50">/MOIS</span>
                   </span>
                 </div>
-                <div className="h-24 bg-slate-700 rounded-2xl flex">
+                <p className="text-[11px] text-slate-500 italic mb-4">
+                  Montant fixe — identique à ce que vous validez déjà
+                  aujourd'hui. Rien ne change dans votre quotidien : c'est
+                  simplement organisé autrement.
+                </p>
+
+                {/* LA BARRE DOUBLE GRIS (Look Capture) */}
+                <div className="relative h-28 bg-[#1a1f2e] rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
+                  {/* Bloc Financement (Gris plus clair / bleuté) */}
                   <div
-                    className="bg-blue-500 h-full"
+                    className="relative bg-gradient-to-b from-[#3a445e] to-[#232a3d] flex flex-col justify-center px-8 transition-all duration-700"
                     style={{
-                      width: `${(monthlyCredit / totalMensuel) * 100}%`,
+                      width: `${
+                        ((monthlyCredit || 0) / (totalMensuel || 1)) * 100
+                      }%`,
                     }}
-                  />
-                  <div
-                    className="bg-yellow-500 h-full"
-                    style={{
-                      width: `${(monthlyResidue / totalMensuel) * 100}%`,
-                    }}
-                  />
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
+                    <span className="relative text-[11px] font-bold text-slate-300 uppercase tracking-widest mb-1">
+                      Financement EDF
+                    </span>
+                    <span className="relative text-white font-black text-4xl">
+                      {formatMoney(monthlyCredit || 0)}
+                    </span>
+                  </div>
+
+                  {/* Séparateur noir épais comme sur la capture */}
+                  <div className="w-1.5 bg-black/60 shadow-[1px_0_0_rgba(255,255,255,0.1)]"></div>
+
+                  {/* Bloc Reste à Charge (Gris plus sombre) */}
+                  <div className="relative bg-gradient-to-b from-[#1e2536] to-[#141a26] flex-1 flex flex-col justify-center px-8 transition-all duration-700">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
+                    <span className="relative text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                      Reste à charge
+                    </span>
+                    <span className="relative text-slate-300 font-black text-4xl">
+                      {formatMoney(monthlyResidue || 0)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* LÉGENDES EN BAS */}
+                <div className="grid grid-cols-2 gap-12 mt-10 px-2">
+                  <div className="border-l-[3px] border-slate-500 pl-5">
+                    <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">
+                      Patrimoine personnel
+                    </h4>
+                    <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                      C'est de l'épargne : cet argent rembourse votre matériel
+                      et valorise votre maison.
+                    </p>
+                  </div>
+                  <div className="border-l-[3px] border-slate-700 pl-5">
+                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                      Service réseau
+                    </h4>
+                    <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                      La part minime versée à EDF pour l'abonnement et la
+                      sécurité du réseau.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: IMPACT BUDGET */}
+        {/* Module 7: Impact budget */}
         <ModuleSection
           id="impact"
           title="Impact sur votre budget mensuel"
@@ -662,7 +947,7 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-        {/* MODULE 5: PROJECTION */}
+        {/* Module 8: Projection */}
         <ModuleSection
           id="projection"
           title="Projection financière dans le temps"
@@ -676,8 +961,6 @@ export default function GuestView() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
                   <XAxis dataKey="year" stroke="#9ca3af" />
                   <YAxis stroke="#9ca3af" />
-
-                  {/* ✅ TOOLTIP CORRIGÉ */}
                   <RechartsTooltip
                     contentStyle={{
                       backgroundColor: "#1e293b",
@@ -702,7 +985,6 @@ export default function GuestView() {
                     }}
                     labelFormatter={(label) => `Année ${label}`}
                   />
-
                   <Area
                     type="monotone"
                     dataKey="cumulativeSpendNoSolar"
@@ -722,6 +1004,7 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
+        {/* Module 9: Tableau détaillé */}
         <ModuleSection
           id="tableau-detaille"
           title="Projection Financière — 25 ans"
@@ -733,9 +1016,7 @@ export default function GuestView() {
             pas une erreur.
           </p>
 
-          {/* Contrôles : Scénario et affichage */}
           <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
-            {/* Financement / Cash */}
             <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
               <button
                 onClick={() => setTableScenario("financement")}
@@ -759,7 +1040,6 @@ export default function GuestView() {
               </button>
             </div>
 
-            {/* Annuel / Mensuel */}
             <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
               <button
                 onClick={() => setTableMode("annuel")}
@@ -784,7 +1064,6 @@ export default function GuestView() {
             </div>
           </div>
 
-          {/* TABLEAU */}
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -810,7 +1089,6 @@ export default function GuestView() {
               </thead>
 
               <tbody className="text-sm font-mono text-slate-300">
-                {/* Année 0 */}
                 <tr className="border-b border-white/5 bg-[#1a1505]/30">
                   <td className="py-4 px-4 text-yellow-500 font-bold">
                     Année 0
@@ -852,17 +1130,12 @@ export default function GuestView() {
                   .map((row) => {
                     const divider = tableMode === "mensuel" ? 12 : 1;
                     const noSolar = row.edfBillWithoutSolar / divider;
-
-                    // ✅ CORRECTION : Gère correctement CASH et FINANCEMENT
                     const credit = (row.creditPayment || 0) / divider;
                     const residue = row.edfResidue / divider;
-
-                    // ✅ En CASH, totalWithSolar est déjà calculé
                     const totalWithSolar =
                       tableScenario === "cash"
                         ? row.totalWithSolar / divider
                         : credit + residue;
-
                     const eff = totalWithSolar - noSolar;
 
                     return (
@@ -937,241 +1210,8 @@ export default function GuestView() {
             {showDetails ? "Vue globale" : "Vue complète"}
           </button>
         </ModuleSection>
-        {/* MODULE: SÉCURITÉ JURIDIQUE */}
-        <ModuleSection
-          id="securite-juridique"
-          title="Garanties de Sécurité"
-          icon={<ShieldCheck className="text-emerald-500" />}
-          defaultOpen={false}
-        >
-          <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-black/40 p-8 backdrop-blur-xl">
-            <div className="pointer-events-none absolute -top-32 -right-32 h-96 w-96 bg-emerald-500/5 blur-[120px]" />
-
-            <div className="relative z-10 mb-10 flex items-center gap-6 rounded-2xl border border-white/10 bg-gradient-to-r from-blue-950/30 to-slate-900/30 p-6">
-              <div className="relative">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-3 shadow-2xl">
-                  <span className="text-2xl font-black text-[#00008f]">
-                    EDF
-                  </span>
-                </div>
-                <div className="absolute -bottom-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600">
-                  <CheckCircle2 size={16} className="text-white" />
-                </div>
-              </div>
-
-              <div>
-                <h3 className="mb-2 text-2xl font-black uppercase text-white">
-                  GROUPE EDF SOLUTIONS SOLAIRES
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-xs font-bold uppercase">
-                    100% Public
-                  </span>
-                  <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-md text-xs font-bold uppercase">
-                    Contrôlé par l'État
-                  </span>
-                  <span className="bg-purple-500/10 border border-purple-500/30 text-purple-400 px-3 py-1 rounded-md text-xs font-bold uppercase">
-                    Solidité institutionnelle
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide flex items-center gap-2">
-                  <FileText className="text-blue-400" size={18} /> Contrat
-                  protégé
-                </h4>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  <li>✔ 14 jours de rétractation légale</li>
-                  <li>✔ Aucun versement avant démarrage</li>
-                  <li>✔ Protection Code de la consommation</li>
-                </ul>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide flex items-center gap-2">
-                  <Award className="text-yellow-400" size={18} /> Installateurs
-                  certifiés
-                </h4>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  <li>✔ Certification RGE QualiPV</li>
-                  <li>✔ Assurance décennale active</li>
-                </ul>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide flex items-center gap-2">
-                  <Zap className="text-purple-400" size={18} /> Raccordement
-                  sécurisé
-                </h4>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  <li>✔ Contrat EDF OA garanti 20 ans</li>
-                  <li>✔ Prix de rachat fixé par l'État</li>
-                </ul>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide flex items-center gap-2">
-                  <Coins className="text-emerald-400" size={18} /> Aides
-                  sécurisées
-                </h4>
-                <ul className="space-y-2 text-sm text-slate-300">
-                  <li>✔ Versement direct par l'État</li>
-                  <li>✔ Prime autoconsommation garantie</li>
-                  <li>✔ TVA réduite à 5,5%</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </ModuleSection>
-
-        {/* MODULE: PROCESSUS ADMINISTRATIF */}
-        <ModuleSection
-          id="securisation"
-          title="Processus de Sécurisation Administrative"
-          icon={<ClipboardCheck className="text-blue-500" />}
-          defaultOpen={false}
-        >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
-            <div className="absolute -top-32 -right-32 w-96 h-96 bg-blue-500/5 blur-[120px]" />
-
-            <div className="mb-8 p-5 bg-gradient-to-r from-blue-950/30 to-slate-900/30 border-l-4 border-blue-500/50 rounded-r-2xl">
-              <div className="flex items-start gap-4">
-                <ShieldCheck className="text-blue-400 mt-1" size={22} />
-                <div>
-                  <p className="text-white text-sm font-bold mb-1">
-                    EDF gère l'ensemble du volet administratif et réglementaire
-                  </p>
-                  <p className="text-slate-400 text-xs leading-relaxed">
-                    Vous n'avez rien à remplir, rien à suivre. Chaque étape est
-                    prise en main par EDF.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Autorisations & Urbanisme
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75">
-                  <li>• Dossier mairie</li>
-                  <li>• Zones protégées si concerné</li>
-                  <li>• Conformité locale</li>
-                </ul>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Visite Technique & Sécurisation
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75">
-                  <li>• Pré-validation sur place</li>
-                  <li>• Vérification technique par équipes EDF</li>
-                  <li>• Adaptations si besoin</li>
-                </ul>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Conformité Électrique
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75">
-                  <li>• Validation installation</li>
-                  <li>• Attestation réglementaire</li>
-                  <li>• Sécurité avant mise en service</li>
-                </ul>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-6">
-                <h4 className="text-white font-black uppercase mb-3 text-sm tracking-wide">
-                  Mise en Service & Raccordement
-                </h4>
-                <ul className="space-y-3 text-sm text-slate-300 opacity-75">
-                  <li>• Raccordement ENEDIS</li>
-                  <li>• Activation contrat EDF</li>
-                  <li>• Passage en production</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-8 p-6 bg-emerald-950/20 border border-emerald-500/20 rounded-2xl">
-              <p className="text-emerald-100 text-sm leading-relaxed">
-                <strong className="text-white">
-                  Vous êtes guidé, accompagné et protégé.
-                </strong>
-                EDF assume la responsabilité du projet — vous validez simplement
-                les étapes importantes.
-              </p>
-            </div>
-          </div>
-        </ModuleSection>
-
-        {/* MODULE: CONTEXTE LECTURE FINANCIÈRE */}
-        <ModuleSection
-          id="financial-context"
-          title="Comment lire les chiffres qui suivent"
-          icon={<Scale className="text-blue-400" />}
-          defaultOpen={false}
-        >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 space-y-6">
-            <div className="bg-blue-950/30 border-l-4 border-blue-500/60 rounded-r-2xl p-6">
-              <p className="text-white text-sm font-semibold leading-relaxed">
-                Les éléments financiers ci-dessous ne servent pas à comparer une
-                facture à une mensualité.
-              </p>
-              <p className="text-slate-300 text-sm leading-relaxed mt-2">
-                Ils servent à comprendre{" "}
-                <strong>comment votre argent est utilisé</strong> : soit pour
-                une dépense perdue, soit pour un équipement qui produit.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-black/60 border border-white/10 rounded-xl p-5">
-                <h4 className="text-sm font-bold text-white mb-2">
-                  1. Mensualité ≠ Dépense
-                </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Une mensualité finance un actif qui vous appartient et produit
-                  de l'énergie. Une facture est définitivement perdue.
-                </p>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-xl p-5">
-                <h4 className="text-sm font-bold text-white mb-2">
-                  2. Effort temporaire
-                </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  L'équilibre financier s'améliore avec le temps, pendant que
-                  les factures classiques augmentent chaque année.
-                </p>
-              </div>
-
-              <div className="bg-black/60 border border-white/10 rounded-xl p-5">
-                <h4 className="text-sm font-bold text-white mb-2">
-                  3. Décision réversible
-                </h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Tant que le projet n'est pas mis en service, vous restez
-                  protégé par le cadre contractuel EDF.
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-4">
-              <p className="text-emerald-200 text-sm italic text-center">
-                Avec ce cadre en tête, les chiffres peuvent maintenant être
-                regardés sereinement.
-              </p>
-            </div>
-          </div>
-        </ModuleSection>
-
-        {/* MODULE: FINANCEMENT VS CASH */}
+        {/* 🟠 BLOC 4 — AJUSTEMENT */}
+        {/* Module 10: Financement vs Cash */}
         <ModuleSection
           id="financement-vs-cash"
           title="Ajustement de financement"
@@ -1258,94 +1298,49 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: SYNTHÈSE DE COHÉRENCE */}
+        {/* 🟣 BLOC 5 — PREUVE SOCIALE */}
+        {/* Module 11: Garanties (ancien doublon conservé) */}
         <ModuleSection
-          id="synthese"
-          title="Synthèse de cohérence du projet"
-          icon={<Bot className="text-blue-400" />}
+          id="garanties"
+          title="Garanties de Sécurité"
+          icon={<Shield className="text-emerald-500" />}
           defaultOpen={false}
         >
-          <div className="bg-blue-950/20 border border-blue-500/20 rounded-xl p-4 mb-6">
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Cette synthèse n'est <strong>pas un outil de comparaison</strong>.
-              Elle sert uniquement à vérifier que le projet est cohérent,
-              raisonnable et sécurisé dans le temps.
-            </p>
-          </div>
-
-          <div className="bg-[#050505] border border-white/5 rounded-[40px] p-8 md:p-10 relative overflow-hidden">
-            <div className="flex items-center gap-5 mb-10">
-              <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                <Bot className="w-8 h-8 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  Lecture globale du projet
-                </h2>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">
-                  Projection sur {projectionYears} ans — données encadrées EDF
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-zinc-900/40 border border-blue-500/30 rounded-[32px] p-8 mb-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-black/60 p-4 rounded-2xl text-center">
-                  <div className="text-2xl font-black text-emerald-400 italic">
-                    0€
-                  </div>
-                  <div className="text-[9px] text-slate-500 uppercase mt-2">
-                    Capital immobilisé au départ
-                  </div>
-                </div>
-
-                <div className="bg-black/60 p-4 rounded-2xl text-center">
-                  <div className="text-2xl font-black text-blue-400 italic">
-                    {calculationResult.breakEvenPoint}
-                  </div>
-                  <div className="text-[9px] text-slate-500 uppercase mt-2">
-                    Horizon d'équilibre (années)
-                  </div>
-                </div>
-
-                <div className="bg-black/60 p-4 rounded-2xl text-center border border-blue-500/20">
-                  <div className="text-xl font-black text-white italic">
-                    {formatMoney(calculationResult.totalSavingsProjected)}
-                  </div>
-                  <div className="text-[9px] text-slate-500 uppercase mt-2">
-                    Valeur énergétique projetée
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-2 text-xs text-slate-400 italic">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-500" />
-                  <span>Le projet s'auto-finance dans le temps</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-500" />
-                  <span>La dépense énergie est transformée en actif</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 size={14} className="text-emerald-500" />
-                  <span>Aucun déséquilibre budgétaire structurel</span>
+          <div className="space-y-6">
+            <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/30">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5" />
+                <div>
+                  <h4 className="text-white font-semibold mb-1">
+                    Garantie totale à vie
+                  </h4>
+                  <p className="text-slate-300 text-sm">
+                    Matériel, main-d'œuvre et déplacements garantis{" "}
+                    <span className="text-white font-semibold">à vie</span>.
+                  </p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-xl p-5 text-center">
-              <p className="text-sm text-slate-300 italic leading-relaxed">
-                Si cette lecture vous semble cohérente, la suite consiste
-                simplement à valider le dossier avec votre conseiller pour
-                sécuriser les conditions EDF.
-              </p>
+            <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5" />
+                <div>
+                  <h4 className="text-white font-semibold mb-1">
+                    Garantie de performance 30 ans
+                  </h4>
+                  <p className="text-slate-300 text-sm">
+                    Production contractuelle. Si non atteinte,{" "}
+                    <span className="text-white font-semibold">
+                      EDF rembourse la différence
+                    </span>
+                    .
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </ModuleSection>
-
-        {/* MODULE: PREUVE SOCIALE */}
+        {/* Module 12: Réalisations */}
         <ModuleSection
           id="realisations"
           title="Réalisations EDF — Familles accompagnées"
@@ -1452,15 +1447,32 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-
-        {/* BOUTON APPEL */}
-        <button
-          onClick={handleCall}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8 hover:from-blue-500 hover:to-blue-400 transition-all"
-        >
-          <Phone size={20} fill="currentColor" />
-          On sécurise le projet ensemble
-        </button>
+        {/* BOUTON APPEL – UI ORIGINALE */}
+        {isMobile ? (
+          <a
+            href={`tel:${phone}`}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8 hover:from-blue-500 hover:to-blue-400 transition-all no-underline shadow-xl active:opacity-80"
+            style={{
+              WebkitTapHighlightColor: "transparent",
+              textDecoration: "none",
+            }}
+          >
+            <Phone size={20} fill="currentColor" />
+            <span>On sécurise le projet ensemble</span>
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              navigator.clipboard.writeText(phone);
+              alert("Numéro copié : " + phone);
+            }}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8 hover:from-blue-500 hover:to-blue-400 transition-all shadow-xl active:opacity-80"
+          >
+            <Phone size={20} fill="currentColor" />
+            <span>On sécurise le projet ensemble</span>
+          </button>
+        )}
 
         {/* COMPTEUR ARGENT GASPILLÉ */}
         <div className="bg-gradient-to-br from-orange-950/60 to-red-950/40 border border-orange-500/30 rounded-[32px] p-6 mb-8">
@@ -1480,7 +1492,6 @@ export default function GuestView() {
             </div>
           </div>
         </div>
-
         {/* MENTIONS LÉGALES */}
         <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -1514,7 +1525,6 @@ export default function GuestView() {
             </p>
           </div>
         </div>
-
         {/* FOOTER */}
         <div className="text-center pb-8">
           <span className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.4em]">
