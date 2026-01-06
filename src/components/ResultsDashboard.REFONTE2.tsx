@@ -2286,7 +2286,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       // ═══════════════════════════════════════════════════════════
       setEncodedUrl(guestUrl);
       setGeneratedLink(guestUrl);
-      setShowNamePopup(false);
       setShowQRCode(true);
 
       alert(
@@ -7711,7 +7710,7 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
 
         {/* BOUTON SÉCURISATION FINAL */}
         <button
-          onClick={() => setShowNamePopup(true)}
+          onClick={() => __setFooterPopup(true)}
           className="w-full h-24 bg-gradient-to-b from-white to-slate-200 text-black rounded-[28px] border border-black/10 shadow-[0_6px_40px_rgba(255,255,255,0.2)] transition-all duration-300 hover:shadow-[0_6px_60px_rgba(255,255,255,0.28)] active:scale-[0.98] flex items-center justify-center gap-4"
         >
           <Smartphone size={26} className="opacity-60" />
@@ -7879,7 +7878,10 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
                       Copier Lien
                     </button>
                     <button
-                      onClick={() => window.open(generatedLink, "_blank")}
+                      onClick={() => {
+                        console.log("🔵 generatedLink:", generatedLink);
+                        window.location.href = generatedLink;
+                      }}
                       className="flex-1 py-4 bg-blue-600 text-white font-black rounded-2xl text-[10px] uppercase transition-transform active:scale-95 shadow-lg shadow-blue-500/30"
                     >
                       Ouvrir
@@ -7896,4 +7898,5 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
 };
 
 export default ResultsDashboard;
+ 
  
