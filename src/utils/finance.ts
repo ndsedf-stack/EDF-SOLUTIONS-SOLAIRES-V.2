@@ -119,6 +119,36 @@ export const calculateSolarProjection = (
   const details: YearlyDetail[] = [];
   const detailsCash: YearlyDetail[] = [];
 
+  // ✅ AJOUTER ANNÉE 0 (investissement initial) SI apport > 0
+  if (cashApport > 0) {
+    details.push({
+      year: startYear,
+      edfBillWithoutSolar: 0,
+      creditPayment: 0,
+      edfResidue: 0,
+      totalWithSolar: 0,
+      cumulativeSavings: -cashApport,
+      cumulativeSpendNoSolar: 0,
+      cumulativeSpendSolar: cashApport,
+      cashflowDiff: -cashApport,
+      solarSavingsValue: 0,
+    });
+  }
+
+  // ✅ AJOUTER ANNÉE 0 pour le mode CASH (investissement complet)
+  detailsCash.push({
+    year: startYear,
+    edfBillWithoutSolar: 0,
+    creditPayment: 0,
+    edfResidue: 0,
+    totalWithSolar: 0,
+    cumulativeSavings: -localInstallCost,
+    cumulativeSpendNoSolar: 0,
+    cumulativeSpendSolar: localInstallCost,
+    cashflowDiff: -localInstallCost,
+    solarSavingsValue: 0,
+  });
+
   for (let i = 0; i < 30; i++) {
     const year = startYear + i;
     const inflationCoef = Math.pow(1 + localInflation / 100, i);
@@ -277,9 +307,7 @@ export const calculateSolarProjection = (
     savingsRatePercent,
     baseConsumptionKwh,
     lossIfWait1Year: round2(baseConsumptionKwh * electricityPrice),
-    savingsLostIfWait1Year: round2(
-      selfConsumedKwh * electricityPrice * (1 + localInflation / 100)
-    ),
+    savingsLostIfWait1Year: round2(selfConsumedKwh * electricityPrice),
     surplusRevenuePerYear: surplusRevenueBase,
     interestRate:
       overrideInterestRate ?? safeParseFloat(params.creditInterestRate || 0),

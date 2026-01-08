@@ -1172,6 +1172,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     // Pour les autres modules, autoriser la fermeture
     return true;
   };
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
 
   // 2️⃣ USEEFFECTS
 
@@ -1198,6 +1201,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       setPopup("STOP_XYEARS");
     }
   }, [activeModule, profile]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
   // 🔥 AJOUT ICI : Détection fin de parcours (étape 10/10)
   useEffect(() => {
     if (currentStep === 10 && showCompletion === false) {
@@ -1864,9 +1877,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const economyChartData = useMemo(() => {
     const sourceDetails =
       economyChartMode === "financement"
-        ? calculationResult.details
-        : calculationResult.detailsCash;
-    return sourceDetails.slice(0, projectionYears).map((detail, index) => ({
+        ? calculationResult.slicedDetails // ✅ CORRECT
+        : calculationResult.slicedDetailsCash; // ✅ CORRECT
+    return sourceDetails.map((detail, index) => ({
       year: detail.year,
       value: -detail.cashflowDiff,
       type:
@@ -2003,13 +2016,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   // Gouffre Financier Data - Calcul dynamique
   const gouffreChartData = useMemo(() => {
-    // ✅ CORRECTION : Utiliser directement les cumuls calculés dans Finance
     const sourceDetails =
       gouffreMode === "financement"
-        ? calculationResult.details
-        : calculationResult.detailsCash;
+        ? calculationResult.slicedDetails // ✅ CORRECT
+        : calculationResult.slicedDetailsCash; // ✅ CORRECT
 
-    return sourceDetails.slice(0, projectionYears).map((detail) => ({
+    return sourceDetails.map((detail) => ({
       year: detail.year,
       cumulativeSpendNoSolar: Math.round(detail.cumulativeSpendNoSolar),
       cumulativeSpendSolar: Math.round(detail.cumulativeSpendSolar),
@@ -2413,7 +2425,23 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       </div>
     );
   }
+  const rows =
+    tableScenario === "financement"
+      ? calculationResult.details
+      : calculationResult.detailsCash;
 
+  const breakEvenRow = rows.find((r) => r.cumulativeSavings >= 0);
+  const breakEvenYear = breakEvenRow?.year;
+
+  const finalGain = rows[projectionYears - 1]?.cumulativeSavings || 0;
+
+  const initialInvestment =
+    tableScenario === "financement" ? cashApport : installCost;
+
+  const roiPercent =
+    initialInvestment > 0
+      ? ((finalGain / initialInvestment) * 100).toFixed(0)
+      : 0;
   // 🧭 RENDER PRINCIPAL avec étapes
 
   // 3️⃣ BILAN / DASHBOARD COMPLET
@@ -4238,180 +4266,252 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     ============================================ */}
 
         <ModuleSection
-          id="synthese" // ✅ Modifié (pour matcher le mapping)
-          title="Synthèse d'Arbitrage Énergétique"
-          icon={<Bot className="text-blue-400" />}
+          id="calendrier"
+          title="Calendrier de Mise en Service"
+          icon={<Calendar className="text-blue-400" />}
           defaultOpen={false}
           onOpen={(id) => {
             setActiveModule(id);
           }}
         >
-          <p className="text-[10px] text-slate-500 italic mb-4 leading-relaxed">
-            Ici, il ne s'agit pas de décider — seulement de vérifier que c'est
-            logique. Une fois vérifié, on sécurise le dossier EDF, c'est une
-            simple formalité administrative.
-          </p>
-          <div className="bg-[#050505] border-2 border-white/5 rounded-[40px] p-8 md:p-10 relative overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.9)]">
-            <div className="relative z-10">
-              {/* ⭐ AJOUT CRITIQUE : PHRASE-CADRE ANTI-RÉFLEXION */}
-              <div className="text-[10px] text-slate-500 mb-4 italic">
-                On ne cherche pas "le meilleur calcul" — simplement ce qui est
-                raisonnable et adapté pour vous aujourd'hui.
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-8">
+            {/* HEADER NEUTRE */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-blue-500/10 rounded-xl">
+                <Calendar className="text-blue-400" size={28} />
               </div>
-
-              {/* HEADER */}
-              <div className="flex flex-col md:flex-row justify-between items-start gap-6 mb-10 border-b border-white/5 pb-8">
-                <div className="flex items-center gap-5">
-                  <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/20">
-                    <Bot className="w-8 h-8 text-blue-400" />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">
-                      Synthèse d'Arbitrage
-                    </h2>
-                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-                      {/* ✅ GARDER TA VERSION */}
-                      Projection sur {projectionYears} ans (Données Certifiées)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* MÉTRIQUES */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
-                {/* OPTION FINANCEMENT */}
-                <div className="bg-zinc-900/40 border-2 border-blue-500/40 rounded-[32px] p-8 relative group">
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xl font-black text-white uppercase italic">
-                      Option Financement
-                    </h3>
-                    {/* ✅ GARDER TON BADGE BLEU ORIGINAL */}
-                    <div className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded">
-                      Top Sécurité
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-6">
-                    <div className="bg-black/60 p-4 rounded-2xl text-center">
-                      <div className="text-3xl font-black text-emerald-400 italic">
-                        0€
-                      </div>
-                      <div className="text-[9px] text-slate-500 uppercase mt-2">
-                        Capital Immobilisé
-                      </div>
-                    </div>
-                    <div className="bg-black/60 p-4 rounded-2xl text-center">
-                      <div className="text-3xl font-black text-blue-400 italic">
-                        {calculationResult.breakEvenPoint}
-                      </div>
-                      <div className="text-[9px] text-slate-500 uppercase mt-2">
-                        Point Mort (ans)
-                      </div>
-                    </div>
-                    <div className="bg-black/60 p-4 rounded-2xl text-center border border-blue-500/20">
-                      <div
-                        className="text-2xl font-black text-white italic"
-                        data-testid="heritage-net-20y"
-                      >
-                        {formatMoney(calculationResult.totalSavingsProjected)}
-                      </div>
-                      <div className="text-[9px] text-slate-500 uppercase mt-2">
-                        Écart {projectionYears} ans
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-xs text-slate-400 italic">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-500" />
-                      <span>Aucun capital immobilisé — Épargne disponible</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-emerald-500" />
-                      <span>
-                        Effort année 1 : +
-                        {Math.round(calculationResult.monthlyEffortYear1)}€/mois
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* OPTION CASH */}
-                <div className="bg-zinc-900/20 border border-white/10 rounded-[32px] p-8 opacity-90">
-                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-xl font-black text-white uppercase italic">
-                      Option Cash
-                    </h3>
-                    {/* ✅ GARDER TON BADGE GRIS ORIGINAL */}
-                    <div className="px-3 py-1 border border-white/20 text-slate-400 text-[10px] font-black uppercase rounded">
-                      Performance maximale
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-3 mb-6">
-                    <div className="bg-black/40 p-4 rounded-2xl text-center">
-                      <div className="text-2xl font-black text-emerald-400 italic">
-                        {formatMoney(installCost)}
-                      </div>
-                      <div className="text-[9px] text-slate-500 uppercase mt-2">
-                        Capital investi
-                      </div>
-                    </div>
-                    <div className="bg-black/40 p-4 rounded-2xl text-center">
-                      <div className="text-3xl font-black text-blue-400 italic">
-                        {calculationResult.breakEvenPointCash}
-                      </div>
-                      <div className="text-[9px] text-slate-500 uppercase mt-2">
-                        Point Mort (ans)
-                      </div>
-                    </div>
-                    <div className="bg-black/40 p-4 rounded-2xl text-center">
-                      <div className="text-2xl font-black text-purple-400 italic">
-                        {formatMoney(
-                          calculationResult.totalSavingsProjectedCash
-                        )}
-                      </div>
-                      <div className="text-[9px] text-slate-500 uppercase mt-2">
-                        Écart {projectionYears} ans
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ARGUMENTAIRE TEXTUEL - VERSION SIMPLIFIÉE */}
-              <div className="space-y-6 mb-12 text-sm leading-relaxed text-slate-300 font-medium italic">
-                <p>
-                  {/* ⭐ VERSION SIMPLIFIÉE */}
-                  Pendant {Math.ceil(creditDurationMonths / 12)} ans, le
-                  financement transforme votre facture actuelle en installation
-                  patrimoniale.
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  Impact du Calendrier de Décision
+                </h2>
+                <p className="text-slate-400 text-[11px] mt-1 italic">
+                  Délai standard de mise en service : 8 à 12 semaines
                 </p>
-                <p>
-                  Après remboursement, vous économisez{" "}
-                  <span className="text-emerald-400 font-bold">
-                    {formatMoney(calculationResult.averageYearlyGain)} par an
-                  </span>
-                  , soit un gain cumulé de{" "}
-                  <span className="text-purple-400 font-bold underline">
-                    {formatMoney(calculationResult.totalSavingsProjected)} sur
-                    20 ans.
-                  </span>
-                </p>
-
-                {/* ⭐ AJOUT CRITIQUE : PHRASE ANTI-ANNULATION */}
-                <p className="text-[10px] text-slate-500 italic mt-4">
-                  Ce choix ne vous engage que si vous le validez maintenant,
-                  noir sur blanc, avec moi.
+                <p className="text-xs text-slate-600 mt-2 italic">
+                  À partir de cette date, l'installation est opérationnelle.
                 </p>
               </div>
-
-              {/* ACTIONS */}
-              <div
-                id="qualification-process"
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              ></div>
             </div>
+
+            {/* CARTES – OPTION 3 : 4 CARDS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {/* Card 1 - Coût énergétique actuel */}
+              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Coût énergétique actuel
+                </div>
+                <div className="text-2xl font-bold text-white mb-1">
+                  {formatMoney(calculationResult.lossIfWait1Year || 0)}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Facture annuelle fournisseur
+                </div>
+              </div>
+
+              {/* Card 2 - Économie disponible année 1 */}
+              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Économie disponible année 1
+                </div>
+                <div className="text-2xl font-bold text-emerald-400 mb-1">
+                  {formatMoney(
+                    calculationResult.details?.[0]?.solarSavingsValue || 0
+                  )}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Bénéfice première année
+                </div>
+              </div>
+
+              {/* Card 3 - Économie BRUTE période */}
+              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-2xl p-6">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Économie brute {projectionYears} ans
+                </div>
+                <div className="text-2xl font-bold text-emerald-400 mb-1">
+                  {formatMoney(
+                    calculationResult.details
+                      .slice(0, projectionYears)
+                      .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                  )}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Énergie produite totale
+                </div>
+              </div>
+
+              {/* Card 4 - Gain NET période AVEC INFOBULLE */}
+              <div className="bg-slate-900/40 border border-blue-500/20 rounded-2xl p-6 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[10px] font-medium uppercase tracking-wider">
+                    Gain net {projectionYears} ans
+                  </div>
+                  {/* ICÔNE INFO */}
+                  <div className="relative">
+                    <Info
+                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400"
+                      data-tooltip="gain-net"
+                    />
+                    {/* INFOBULLE */}
+                    <div className="absolute bottom-full right-0 mb-2 w-[320px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      {/* Flèche */}
+                      <div className="absolute -bottom-2 right-4 w-4 h-4 bg-slate-900 border-r-2 border-b-2 border-blue-500/30 transform rotate-45"></div>
+
+                      {/* Contenu */}
+                      <div className="relative z-10">
+                        <div className="text-xs font-bold text-blue-400 mb-3 uppercase tracking-wide">
+                          📊 Détail du calcul
+                        </div>
+
+                        <div className="space-y-3 text-[11px] text-slate-300">
+                          {/* Économie brute */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Économie brute totale
+                            </span>
+                            <span className="font-bold text-emerald-400">
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce(
+                                    (sum, d) => sum + d.solarSavingsValue,
+                                    0
+                                  )
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Coût du crédit */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Coût du crédit
+                            </span>
+                            <span className="font-bold text-red-400">
+                              -
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce((sum, d) => sum + d.creditPayment, 0)
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Facture résiduelle */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Facture résiduelle EDF
+                            </span>
+                            <span className="font-bold text-orange-400">
+                              -
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce((sum, d) => sum + d.edfResidue, 0)
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Résultat net */}
+                          <div className="flex justify-between items-start pt-2 bg-blue-950/30 rounded-lg p-2">
+                            <span className="font-bold text-white">
+                              Gain net
+                            </span>
+                            <span className="font-black text-blue-400 text-base">
+                              {formatMoney(
+                                calculationResult.totalSavingsProjected || 0
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Note explicative */}
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                            Le gain net représente ce qu'il vous reste{" "}
+                            <strong className="text-slate-300">
+                              après avoir payé le crédit et la facture
+                              résiduelle
+                            </strong>
+                            , par rapport à ne rien faire.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-2xl font-bold text-blue-400 mb-1">
+                  {formatMoney(calculationResult.totalSavingsProjected || 0)}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Après remboursement crédit
+                </div>
+              </div>
+            </div>
+
+            {/* MESSAGE FACTUEL */}
+            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded-xl mb-6">
+              <p className="text-slate-300 text-[11px] leading-relaxed italic">
+                Le délai de mise en service standard est de 8 à 12 semaines.
+                Chaque trimestre décalé déplace simplement le moment où vous
+                commencez à économiser.
+                <span className="text-slate-400 block mt-2">
+                  La question n'est pas "faut-il le faire", mais "quand commence
+                  l'économie".
+                </span>
+              </p>
+            </div>
+
+            {/* VISUALISATION TEMPORELLE - CORRIGÉE */}
+            <div className="p-5 bg-black/30 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-4 uppercase tracking-wider">
+                <Clock className="w-4 h-4" />
+                Impact du calendrier sur le début des économies :
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-lg">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 1)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[10px] mt-1">
+                    Économie année 1
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-lg">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 3)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[10px] mt-1">
+                    Cumul 3 ans
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-lg">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 5)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[10px] mt-1">
+                    Cumul 5 ans
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* PHRASE FINALE – TRANSFERT DE CONTRÔLE */}
+            <p className="text-[10px] text-slate-500 italic mt-6 text-center">
+              C'est juste du calendrier. La décision vous appartient.
+            </p>
           </div>
         </ModuleSection>
 
@@ -4548,7 +4648,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     Version finale optimale (ta version validée)
     ============================================ */}
         <ModuleSection
-          id="calendrier" // ✅ Simplifié pour matcher le mapping
+          id="calendrier"
           title="Calendrier de Mise en Service"
           icon={<Calendar className="text-blue-400" />}
           defaultOpen={false}
@@ -4556,70 +4656,258 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             setActiveModule(id);
           }}
         >
-          <div className="bg-black/40 border border-white/10 rounded-[32px] p-8">
-            {/* HEADER NEUTRE */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Calendar className="text-blue-400" size={28} />
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-4 sm:p-6 md:p-8">
+            {/* HEADER NEUTRE - RESPONSIVE */}
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
+              <div className="p-2 sm:p-3 bg-blue-500/10 rounded-xl">
+                <Calendar className="text-blue-400" size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-white">
                   Impact du Calendrier de Décision
                 </h2>
-                <p className="text-slate-400 text-[11px] mt-1 italic">
+                <p className="text-slate-400 text-[10px] sm:text-[11px] mt-1 italic">
                   Délai standard de mise en service : 8 à 12 semaines
                 </p>
-                <p className="text-xs text-slate-600 mt-2 italic">
+                <p className="text-[10px] sm:text-xs text-slate-600 mt-1 sm:mt-2 italic">
                   À partir de cette date, l'installation est opérationnelle.
                 </p>
               </div>
             </div>
 
-            {/* CARTES – FACTUEL, BASSE PRESSION */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* CARTES – OPTION 3 : 4 CARDS - RESPONSIVE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 md:mb-6">
               {/* Card 1 - Coût énergétique actuel */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+              <div className="bg-slate-900/40 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mb-2 uppercase tracking-wider">
                   Coût énergétique actuel
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">
+                <div className="text-xl sm:text-2xl font-bold text-white mb-1 break-words">
                   {formatMoney(calculationResult.lossIfWait1Year || 0)}
                 </div>
-                <div className="text-slate-500 text-[10px]">
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
                   Facture annuelle fournisseur
                 </div>
               </div>
 
               {/* Card 2 - Économie disponible année 1 */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+              <div className="bg-slate-900/40 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mb-2 uppercase tracking-wider">
                   Économie disponible année 1
                 </div>
-                <div className="text-2xl font-bold text-emerald-400 mb-1">
-                  {formatMoney(calculationResult.savingsLostIfWait1Year || 0)}
+                <div className="text-xl sm:text-2xl font-bold text-emerald-400 mb-1 break-words">
+                  {formatMoney(
+                    calculationResult.details?.[0]?.solarSavingsValue || 0
+                  )}
                 </div>
-                <div className="text-slate-500 text-[10px]">
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
                   Bénéfice première année
                 </div>
               </div>
 
-              {/* Card 3 - Économie sur période */}
-              <div className="bg-slate-900/40 border border-blue-500/20 rounded-2xl p-6">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Économie sur {projectionYears} ans
+              {/* Card 3 - Économie BRUTE période AVEC INFOBULLE */}
+              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium uppercase tracking-wider flex-1">
+                    Économie brute {projectionYears} ans
+                  </div>
+                  {/* ICÔNE INFO */}
+                  <div className="relative flex-shrink-0">
+                    <Info
+                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-emerald-400"
+                      data-tooltip="economie-brute"
+                    />
+                    {/* INFOBULLE - POSITIONNÉE EN BAS À DROITE */}
+                    <div className="absolute top-full right-0 mt-2 w-[280px] sm:w-[320px] bg-slate-900 border-2 border-emerald-500/30 rounded-xl p-3 sm:p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      {/* Flèche vers le haut */}
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-emerald-500/30 transform rotate-45"></div>
+
+                      {/* Contenu */}
+                      <div className="relative z-10">
+                        <div className="text-[11px] sm:text-xs font-bold text-emerald-400 mb-2 sm:mb-3 uppercase tracking-wide">
+                          💡 Économie brute
+                        </div>
+
+                        <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-[11px] text-slate-300">
+                          <p className="leading-relaxed">
+                            C'est la{" "}
+                            <strong className="text-white">
+                              valeur totale de l'électricité produite
+                            </strong>{" "}
+                            par vos panneaux sur {projectionYears} ans.
+                          </p>
+
+                          <div className="bg-emerald-950/30 rounded-lg p-2 sm:p-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-slate-400">
+                                Production annuelle
+                              </span>
+                              <span className="font-bold text-emerald-400">
+                                {calculationResult.details?.[0]
+                                  ?.solarSavingsValue
+                                  ? formatMoney(
+                                      calculationResult.details[0]
+                                        .solarSavingsValue
+                                    )
+                                  : "0 €"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-400">
+                                × {projectionYears} ans
+                              </span>
+                              <span className="font-bold text-emerald-400">
+                                ≈{" "}
+                                {formatMoney(
+                                  calculationResult.details
+                                    .slice(0, projectionYears)
+                                    .reduce(
+                                      (sum, d) => sum + d.solarSavingsValue,
+                                      0
+                                    )
+                                )}
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-[9px] sm:text-[10px] text-slate-500 italic leading-relaxed">
+                            Ce montant ne tient pas compte des coûts (crédit,
+                            facture résiduelle). C'est l'énergie{" "}
+                            <strong className="text-slate-300">
+                              que vous ne payez plus
+                            </strong>{" "}
+                            à votre fournisseur.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-2xl font-bold text-blue-400 mb-1">
+
+                <div className="text-xl sm:text-2xl font-bold text-emerald-400 mb-1 break-words">
+                  {formatMoney(
+                    calculationResult.details
+                      .slice(0, projectionYears)
+                      .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                  )}
+                </div>
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
+                  Énergie produite totale
+                </div>
+              </div>
+
+              {/* Card 4 - Gain NET période AVEC INFOBULLE */}
+              <div className="bg-slate-900/40 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium uppercase tracking-wider flex-1">
+                    Gain net {projectionYears} ans
+                  </div>
+                  {/* ICÔNE INFO */}
+                  <div className="relative flex-shrink-0">
+                    <Info
+                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400"
+                      data-tooltip="gain-net"
+                    />
+                    {/* INFOBULLE - POSITIONNÉE EN BAS À GAUCHE (pour éviter de sortir) */}
+                    <div className="absolute top-full left-auto right-0 mt-2 w-[280px] sm:w-[320px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-3 sm:p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      {/* Flèche vers le haut */}
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-blue-500/30 transform rotate-45"></div>
+
+                      {/* Contenu */}
+                      <div className="relative z-10">
+                        <div className="text-[11px] sm:text-xs font-bold text-blue-400 mb-2 sm:mb-3 uppercase tracking-wide">
+                          📊 Détail du calcul
+                        </div>
+
+                        <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-[11px] text-slate-300">
+                          {/* Économie brute */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Économie brute totale
+                            </span>
+                            <span className="font-bold text-emerald-400 text-right">
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce(
+                                    (sum, d) => sum + d.solarSavingsValue,
+                                    0
+                                  )
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Coût du crédit */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Coût du crédit
+                            </span>
+                            <span className="font-bold text-red-400 text-right">
+                              -
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce((sum, d) => sum + d.creditPayment, 0)
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Facture résiduelle */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Facture résiduelle EDF
+                            </span>
+                            <span className="font-bold text-orange-400 text-right">
+                              -
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce((sum, d) => sum + d.edfResidue, 0)
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Résultat net */}
+                          <div className="flex justify-between items-start pt-2 bg-blue-950/30 rounded-lg p-2">
+                            <span className="font-bold text-white">
+                              Gain net
+                            </span>
+                            <span className="font-black text-blue-400 text-sm sm:text-base">
+                              {formatMoney(
+                                calculationResult.totalSavingsProjected || 0
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Note explicative */}
+                        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/10">
+                          <p className="text-[9px] sm:text-[10px] text-slate-500 italic leading-relaxed">
+                            Le gain net représente ce qu'il vous reste{" "}
+                            <strong className="text-slate-300">
+                              après avoir payé le crédit et la facture
+                              résiduelle
+                            </strong>
+                            , par rapport à ne rien faire.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xl sm:text-2xl font-bold text-blue-400 mb-1 break-words">
                   {formatMoney(calculationResult.totalSavingsProjected || 0)}
                 </div>
-                <div className="text-slate-500 text-[10px]">
-                  Cumul sur période
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
+                  Après remboursement crédit
                 </div>
               </div>
             </div>
 
-            {/* MESSAGE FACTUEL – TA VERSION (MEILLEURE) */}
-            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded-xl mb-6">
-              <p className="text-slate-300 text-[11px] leading-relaxed italic">
+            {/* MESSAGE FACTUEL - RESPONSIVE */}
+            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-3 sm:p-4 rounded-xl mb-4 md:mb-6">
+              <p className="text-slate-300 text-[10px] sm:text-[11px] leading-relaxed italic">
                 Le délai de mise en service standard est de 8 à 12 semaines.
                 Chaque trimestre décalé déplace simplement le moment où vous
                 commencez à économiser.
@@ -4630,49 +4918,54 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </p>
             </div>
 
-            {/* VISUALISATION TEMPORELLE - CORRIGÉE */}
-            <div className="p-5 bg-black/30 rounded-xl border border-white/5">
-              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-4 uppercase tracking-wider">
-                <Clock className="w-4 h-4" />
+            {/* VISUALISATION TEMPORELLE - RESPONSIVE */}
+            <div className="p-3 sm:p-5 bg-black/30 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-slate-400 mb-3 sm:mb-4 uppercase tracking-wider">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                 Impact du calendrier sur le début des économies :
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
                 <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {/* ✅ CORRECTION : utiliser savingsLostIfWait1Year au lieu de savingsYear1 */}
-                    {formatMoney(calculationResult.savingsLostIfWait1Year || 0)}
+                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 1)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
                   </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
+                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
                     Économie année 1
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {/* ✅ CORRECTION : multiplier par 3 */}
+                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
                     {formatMoney(
-                      (calculationResult.savingsLostIfWait1Year || 0) * 3
+                      calculationResult.details
+                        .slice(0, 3)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
                     )}
                   </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
+                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
                     Cumul 3 ans
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {/* ✅ CORRECTION : multiplier par 5 */}
+                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
                     {formatMoney(
-                      (calculationResult.savingsLostIfWait1Year || 0) * 5
+                      calculationResult.details
+                        .slice(0, 5)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
                     )}
                   </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
+                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
                     Cumul 5 ans
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* PHRASE FINALE – TRANSFERT DE CONTRÔLE */}
-            <p className="text-[10px] text-slate-500 italic mt-6 text-center">
+            {/* PHRASE FINALE – RESPONSIVE */}
+            <p className="text-[9px] sm:text-[10px] text-slate-500 italic mt-4 sm:mt-6 text-center">
               C'est juste du calendrier. La décision vous appartient.
             </p>
           </div>
@@ -4682,7 +4975,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
    MODULE STRUCTURE DU BUDGET MENSUEL
    ============================================ */}
         <ModuleSection
-          id="budget" // ✅ Modifié pour matcher le mapping
+          id="budget"
           title="Structure du Budget (Mensuel)"
           icon={<Scale className="text-slate-400" />}
           defaultOpen={false}
@@ -4690,56 +4983,56 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             setActiveModule(id);
           }}
         >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
-            {/* ✅ UNE SEULE PHRASE (VERSION FINALE) */}
-            <div className="text-[10px] text-slate-500 italic mb-4">
+          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 md:p-8 transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+            {/* PHRASE D'INTRODUCTION - RESPONSIVE */}
+            <div className="text-[10px] sm:text-[11px] text-slate-500 italic mb-4 leading-relaxed">
               On regarde simplement comment votre budget actuel se réorganise —
               sans nouvelle charge.
             </div>
 
-            {/* HEADER */}
-            <div className="flex items-center justify-between mb-8">
+            {/* HEADER - RESPONSIVE */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 md:mb-8">
               <div className="flex items-center gap-3">
-                <Scale className="text-slate-400 w-6 h-6" />
-                <h2 className="text-xl font-black text-white uppercase tracking-tight">
+                <Scale className="text-slate-400 w-5 h-5 sm:w-6 sm:h-6" />
+                <h2 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
                   STRUCTURE DU BUDGET (MENSUEL)
                 </h2>
               </div>
-              <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded text-xs font-bold text-slate-400 border border-white/10">
+              <div className="bg-black/60 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-bold text-slate-400 border border-white/10">
                 Année 1 — Comparatif
               </div>
             </div>
 
-            <div className="space-y-12">
+            <div className="space-y-8 sm:space-y-10 md:space-y-12">
               {/* =======================  SITUATION ACTUELLE  ======================= */}
               <div>
-                <div className="flex justify-between text-sm font-bold uppercase text-slate-400 mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-xs sm:text-sm font-bold uppercase text-slate-400 mb-4 sm:mb-6">
                   <span>SITUATION ACTUELLE</span>
-                  <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                     {formatMoney(calculationResult.oldMonthlyBillYear1)} /mois
                   </span>
                 </div>
 
-                {/* Phrase ANTI-PRIX (pivot) */}
-                <div className="text-[11px] text-slate-400 italic mb-4 leading-relaxed">
+                {/* Phrase ANTI-PRIX - RESPONSIVE */}
+                <div className="text-[10px] sm:text-[11px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
                   Concrètement, on ne rajoute rien dans votre budget. On ne paie
                   rien en plus : on remplace une dépense existante par quelque
                   chose qui vous reste.
                 </div>
 
-                {/* Barre rouge 100% dépenses */}
-                <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
-                  <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
+                {/* Barre rouge 100% dépenses - RESPONSIVE */}
+                <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-xl sm:rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
 
-                    <div className="absolute inset-0 flex items-center justify-between px-8">
-                      <span className="text-white font-black text-2xl uppercase tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                    <div className="absolute inset-0 flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 md:px-8 gap-2 sm:gap-0">
+                      <span className="text-white font-black text-sm sm:text-lg md:text-2xl uppercase tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
                         FACTURE ACTUELLE
                       </span>
-                      <span className="text-white/30 font-black text-5xl uppercase tracking-tighter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                        100% dépenses — sans retour
+                      <span className="text-white/30 font-black text-xs sm:text-2xl md:text-5xl uppercase tracking-tighter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] text-right">
+                        100% dépenses
                       </span>
                     </div>
                   </div>
@@ -4748,29 +5041,29 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
               {/* =======================  INSTALLATION EDF – mise en place  ======================= */}
               <div>
-                <div className="flex justify-between items-center mb-6">
-                  <span className="text-sm font-bold uppercase text-slate-400">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4 sm:mb-6">
+                  <span className="text-xs sm:text-sm font-bold uppercase text-slate-400">
                     INSTALLATION EDF — mise en place
                   </span>
 
-                  <span className="text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] uppercase">
-                    {Math.round(
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] uppercase">
+                    {formatMoney(
                       calculationResult.year1.creditPayment / 12 +
                         calculationResult.year1.edfResidue / 12
                     )}{" "}
-                    € /mois
+                    /mois
                   </span>
                 </div>
 
-                {/* Phrase neutralisée */}
-                <div className="text-[11px] text-slate-400 italic mb-4 leading-relaxed">
+                {/* Phrase neutralisée - RESPONSIVE */}
+                <div className="text-[10px] sm:text-[11px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
                   Montant fixe — identique à ce que vous validez déjà
                   aujourd'hui. Rien ne change dans votre quotidien : c'est
                   simplement organisé autrement.
                 </div>
 
-                {/* Double barre */}
-                <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
+                {/* Double barre - RESPONSIVE */}
+                <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
                   {/* FINANCEMENT EDF */}
                   <div
                     className="relative bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
@@ -4784,14 +5077,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
 
-                    <div className="absolute inset-0 flex flex-col justify-center px-6">
-                      <span className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <div className="absolute inset-0 flex flex-col justify-center px-3 sm:px-4 md:px-6">
+                      <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-0.5 sm:mb-1">
                         FINANCEMENT EDF
                       </span>
-                      <span className="text-white font-black text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                      <span className="text-white font-black text-sm sm:text-lg md:text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] break-words">
                         {formatMoney(
                           calculationResult.year1.creditPayment / 12
                         )}
@@ -4800,7 +5093,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   </div>
 
                   {/* Séparateur */}
-                  <div className="w-1 bg-black/40"></div>
+                  <div className="w-0.5 sm:w-1 bg-black/40"></div>
 
                   {/* RESTE À CHARGE */}
                   <div
@@ -4815,14 +5108,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
 
-                    <div className="absolute inset-0 flex flex-col justify-center px-6">
-                      <span className="text-xs font-bold text-slate-300 uppercase tracking-wider mb-1">
+                    <div className="absolute inset-0 flex flex-col justify-center px-3 sm:px-4 md:px-6">
+                      <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-0.5 sm:mb-1">
                         RESTE À CHARGE
                       </span>
-                      <span className="text-slate-300 font-black text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]">
+                      <span className="text-slate-300 font-black text-sm sm:text-lg md:text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] break-words">
                         {formatMoney(calculationResult.year1.edfResidue / 12)}
                       </span>
                     </div>
@@ -4837,7 +5130,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
    MODULE 12.5 — IMPACT SUR VOTRE BUDGET MENSUEL (VERSION FINALE)
    ====================================================== */}
         <ModuleSection
-          id="impact" // ✅ Modifié pour matcher le mapping final
+          id="impact"
           title="Impact sur votre budget mensuel"
           icon={<Wallet className="text-blue-400" />}
           defaultOpen={false}
@@ -4845,74 +5138,264 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             setActiveModule(id);
           }}
         >
-          {/* 3 COLS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-red-950/30 to-black/40 border border-red-500/20 rounded-xl p-4">
-              <div className="text-red-400 text-[10px] uppercase font-bold tracking-wide mb-1 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-400"></span>
-                Facture actuelle
-              </div>
-              <div className="text-white text-3xl font-black">
-                {formatMoney(monthlyBill)}
-              </div>
-              <div className="text-slate-500 text-xs mt-1">/mois</div>
+          <div className="space-y-6">
+            {/* PHRASE D'INTRODUCTION */}
+            <div className="text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
+              Voici comment votre facture mensuelle évolue la première année,
+              avant de devenir des économies pures après remboursement du
+              crédit.
             </div>
 
-            <div className="bg-gradient-to-br from-blue-950/30 to-black/40 border border-blue-500/20 rounded-xl p-4">
-              <div className="text-blue-400 text-[10px] uppercase font-bold tracking-wide mb-1 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                Vous payez
+            {/* 3 CARDS - RESPONSIVE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {/* CARD 1 - FACTURE ACTUELLE */}
+              <div className="bg-gradient-to-br from-red-950/30 to-black/40 border border-red-500/20 rounded-xl p-4 sm:p-5 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-red-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
+                    <span>Facture actuelle</span>
+                  </div>
+                  {/* INFOBULLE */}
+                  <div className="relative flex-shrink-0">
+                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-red-400" />
+                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-red-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-red-500/30 transform rotate-45"></div>
+                      <div className="relative z-10">
+                        <div className="text-[11px] font-bold text-red-400 mb-2 uppercase">
+                          💸 Facture actuelle
+                        </div>
+                        <p className="text-[10px] text-slate-300 leading-relaxed">
+                          C'est ce que vous payez{" "}
+                          <strong className="text-white">
+                            actuellement chaque mois
+                          </strong>{" "}
+                          à votre fournisseur d'électricité, sans installation
+                          solaire.
+                        </p>
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-[9px] text-slate-500 italic">
+                            Base de calcul :{" "}
+                            {formatMoney(
+                              calculationResult.lossIfWait1Year || 0
+                            )}{" "}
+                            par an
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-white text-2xl sm:text-3xl font-black break-words">
+                  {formatMoney(monthlyBill)}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1">
+                  /mois
+                </div>
               </div>
-              <div className="text-white text-3xl font-black">
-                {formatMoney(totalMensuel)}
+
+              {/* CARD 2 - AVEC INSTALLATION */}
+              <div className="bg-gradient-to-br from-blue-950/30 to-black/40 border border-blue-500/20 rounded-xl p-4 sm:p-5 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-blue-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
+                    <span>Vous payez</span>
+                  </div>
+                  {/* INFOBULLE */}
+                  <div className="relative flex-shrink-0">
+                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400" />
+                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-blue-500/30 transform rotate-45"></div>
+                      <div className="relative z-10">
+                        <div className="text-[11px] font-bold text-blue-400 mb-2 uppercase">
+                          🔵 Avec installation
+                        </div>
+                        <div className="space-y-2 text-[10px] text-slate-300">
+                          <div className="flex justify-between pb-1 border-b border-white/10">
+                            <span>Mensualité crédit</span>
+                            <span className="font-bold text-white">
+                              {formatMoney(
+                                creditMonthlyPayment + insuranceMonthlyPayment
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pb-1 border-b border-white/10">
+                            <span>Facture résiduelle</span>
+                            <span className="font-bold text-white">
+                              {formatMoney(residuMensuelM0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 bg-blue-950/30 rounded p-1.5">
+                            <span className="font-bold">Total</span>
+                            <span className="font-black text-blue-400">
+                              {formatMoney(totalMensuel)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-[9px] text-slate-500 italic">
+                            Durée crédit :{" "}
+                            {Math.ceil(creditDurationMonths / 12)} ans
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-white text-2xl sm:text-3xl font-black break-words">
+                  {formatMoney(totalMensuel)}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
+                  /mois (crédit + reste facture)
+                </div>
               </div>
-              <div className="text-slate-500 text-xs mt-1">
-                /mois (crédit + reste facture)
+
+              {/* CARD 3 - DIFFÉRENCE */}
+              <div className="bg-gradient-to-br from-slate-950/30 to-black/40 border border-slate-600/20 rounded-xl p-4 sm:p-5 relative group sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
+                    <span>Différence — 1ère année</span>
+                  </div>
+                  {/* INFOBULLE */}
+                  <div className="relative flex-shrink-0">
+                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-slate-300" />
+                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-slate-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-slate-500/30 transform rotate-45"></div>
+                      <div className="relative z-10">
+                        <div className="text-[11px] font-bold text-slate-300 mb-2 uppercase">
+                          📊 Effort mensuel
+                        </div>
+                        <p className="text-[10px] text-slate-300 leading-relaxed mb-2">
+                          {diffMensuel > 0 ? (
+                            <>
+                              Vous payez{" "}
+                              <strong className="text-orange-400">
+                                {formatMoney(Math.abs(diffMensuel))} de plus
+                              </strong>{" "}
+                              par mois la première année pendant que vous
+                              financez l'installation.
+                            </>
+                          ) : (
+                            <>
+                              Vous payez{" "}
+                              <strong className="text-emerald-400">
+                                {formatMoney(Math.abs(diffMensuel))} de moins
+                              </strong>{" "}
+                              par mois dès la première année !
+                            </>
+                          )}
+                        </p>
+                        <div className="bg-emerald-950/30 rounded-lg p-2">
+                          <p className="text-[9px] text-emerald-300 font-bold mb-1">
+                            ✨ Après remboursement :
+                          </p>
+                          <p className="text-[9px] text-slate-400">
+                            Vous ne payez plus que la facture résiduelle (~
+                            {formatMoney(residuMensuelM0)}/mois), soit une
+                            économie de{" "}
+                            <strong className="text-emerald-400">
+                              {formatMoney(monthlyBill - residuMensuelM0)}/mois
+                            </strong>{" "}
+                            !
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`text-2xl sm:text-3xl font-black break-words ${
+                    diffMensuel > 0 ? "text-orange-400" : "text-emerald-400"
+                  }`}
+                >
+                  {diffMensuel > 0 ? "+" : ""}
+                  {formatMoney(diffMensuel)}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
+                  Puis → économies dès fin crédit
+                </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-950/30 to-black/40 border border-slate-600/20 rounded-xl p-4">
-              <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wide mb-1 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-slate-400"></span>
-                Différence — 1ère année
+            {/* SLIDER VISUEL - RESPONSIVE */}
+            <div className="bg-black/40 border border-white/10 rounded-xl p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-[9px] sm:text-[10px] text-slate-500 uppercase mb-3">
+                <span>Alignement avec votre budget actuel</span>
+                <span className="text-white font-bold text-sm sm:text-base">
+                  {((totalMensuel / monthlyBill) * 100).toFixed(0)}%
+                </span>
               </div>
-              <div className="text-3xl font-black text-white">
-                {diffMensuel > 0 ? "+" : ""}
-                {formatMoney(diffMensuel)}
+              <div className="h-3 sm:h-4 bg-slate-800/40 rounded-full overflow-hidden border border-white/10">
+                <div
+                  className={`h-full transition-all duration-700 ${
+                    totalMensuel / monthlyBill > 1
+                      ? "bg-gradient-to-r from-orange-500 to-orange-600"
+                      : "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (totalMensuel / monthlyBill) * 100,
+                      100
+                    )}%`,
+                  }}
+                ></div>
               </div>
-              <div className="text-slate-500 text-xs mt-1">
-                Puis → économies dès fin crédit
+              <div className="flex justify-between text-[9px] sm:text-[10px] text-slate-600 mt-2">
+                <span>0%</span>
+                <span className="text-slate-500">Budget actuel</span>
+                <span>150%</span>
               </div>
             </div>
+
+            {/* ÉVOLUTION APRÈS CRÉDIT - NOUVEAU BLOC */}
+            <div className="bg-gradient-to-br from-emerald-950/20 to-black/40 border border-emerald-500/20 rounded-xl p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingDown className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm sm:text-base font-bold text-emerald-400 uppercase">
+                  Après remboursement du crédit
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    Facture mensuelle
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                    {formatMoney(residuMensuelM0)}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Seulement le résiduel EDF
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    Économie mensuelle
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-white">
+                    {formatMoney(monthlyBill - residuMensuelM0)}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Par rapport à votre facture actuelle
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* LIEN VERS TABLEAU DÉTAILLÉ - RESPONSIVE */}
+            <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
+              Ces montants sont ceux de la 1ère année.
+              <button
+                onClick={() =>
+                  document
+                    .getElementById("tableau-detaille")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+                className="ml-1 text-blue-400 hover:text-blue-300 underline transition-colors"
+              >
+                Voir l'évolution complète sur {projectionYears} ans
+              </button>
+            </p>
           </div>
-
-          {/* SLIDER NOUVEAU FORMAT */}
-          <div className="my-8">
-            <div className="flex justify-between text-[10px] text-slate-500 uppercase mb-1">
-              <span>Alignement avec votre budget actuel</span>
-              <span>{((totalMensuel / monthlyBill) * 100).toFixed(0)}%</span>
-            </div>
-            <div className="h-2 bg-slate-800/40 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-500 transition-all duration-700"
-                style={{ width: `${(totalMensuel / monthlyBill) * 100}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <p className="text-center text-[11px] text-slate-500 italic">
-            Ces montants sont ceux de la 1ère année.
-            <button
-              onClick={() =>
-                document
-                  .getElementById("tableau-detaille")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="ml-1 text-blue-400 hover:text-blue-300 underline"
-            >
-              Voir l'évolution complète sur 20 ans
-            </button>
-          </p>
         </ModuleSection>
 
         {/* ═══════════════════════════════════════════════════════ */}
@@ -4935,15 +5418,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             title="PROJECTION FINANCIÈRE – ÉCART CONSTATÉ"
             icon={<Flame className="text-orange-500" />}
             defaultOpen={false}
+            onOpen={(id) => {
+              setActiveModule(id);
+            }}
           >
-            <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/10">
-              {/* HEADER – cadrage institutionnel + badge rentable */}
-              <div className="flex items-start md:items-center justify-between mb-10 gap-4">
+            <div className="bg-black/40 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 md:p-8 border border-white/10">
+              {/* HEADER – RESPONSIVE */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 md:mb-10 gap-3 sm:gap-4">
                 <div className="space-y-1">
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight">
                     PROJECTION FINANCIÈRE
                   </h2>
-                  <p className="text-slate-500 text-xs uppercase tracking-wide">
+                  <p className="text-slate-500 text-[10px] sm:text-xs uppercase tracking-wide">
                     Sur {projectionYears} ans — écart constaté
                   </p>
                 </div>
@@ -4955,12 +5441,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 />
               </div>
 
-              {/* GRAPHIQUE – triple-fusion (emotion + institutionnel) */}
-              <div className="h-[360px] md:h-[420px] w-full">
+              {/* GRAPHIQUE – RESPONSIVE */}
+              <div className="h-[280px] sm:h-[340px] md:h-[360px] lg:h-[420px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={gouffreChartData}
-                    margin={{ top: 20, right: 40, left: 20, bottom: 30 }}
+                    margin={{
+                      top: 20,
+                      right: window.innerWidth < 640 ? 10 : 40,
+                      left: window.innerWidth < 640 ? 10 : 20,
+                      bottom: 30,
+                    }}
                   >
                     <defs>
                       <linearGradient id="noSolar" x1="0" y1="0" x2="0" y2="1">
@@ -4994,75 +5485,91 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         />
                       </linearGradient>
                     </defs>
-                    {/* grille + couleur lisible */}
+
+                    {/* GRILLE */}
                     <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+
+                    {/* AXE X - RESPONSIVE */}
                     <XAxis
                       dataKey="year"
                       stroke="#9ca3af"
-                      tick={{ fontSize: 13, fill: "#d1d5db" }}
+                      tick={{
+                        fontSize: window.innerWidth < 640 ? 10 : 13,
+                        fill: "#d1d5db",
+                      }}
                       tickMargin={10}
+                      interval={window.innerWidth < 640 ? 2 : 0}
                     />
+
+                    {/* AXE Y - RESPONSIVE */}
                     <YAxis
                       domain={[0, (max) => max * 1.2]}
                       stroke="#9ca3af"
-                      tick={{ fontSize: 13, fill: "#e5e7eb" }}
+                      tick={{
+                        fontSize: window.innerWidth < 640 ? 10 : 13,
+                        fill: "#e5e7eb",
+                      }}
                       tickFormatter={(v) => {
                         if (v >= 1_000_000)
                           return `${(v / 1_000_000).toFixed(1)} M€`;
                         if (v >= 1_000) return `${Math.round(v / 1000)} k€`;
                         return `${v} €`;
                       }}
+                      width={window.innerWidth < 640 ? 50 : 80}
                     />
-                    {/* ZONE pré-rentabilité (rouge léger) */}
-                    TypeScript
-                    {/* ZONE pré-rentabilité (rouge léger) */}
+
+                    {/* ZONE PRÉ-RENTABILITÉ */}
                     <ReferenceArea
                       x1={0}
                       x2={calculationResult.paybackYear}
                       ifOverflow="visible"
-                      {...({
-                        fill: "#ef4444",
-                        fillOpacity: 0.05,
-                      } as any)}
+                      fill="#ef4444"
+                      fillOpacity={0.05}
                     />
-                    {/* POINT DE CROISEMENT (jalon psychologique) */}
+
+                    {/* POINT DE CROISEMENT - RESPONSIVE */}
                     <ReferenceLine
                       x={calculationResult.paybackYear}
                       stroke="#22c55e"
                       strokeWidth={2}
                       strokeDasharray="6 4"
-                      label={{
-                        value: `Point de croisement (${calculationResult.paybackYear} ans)`,
-                        position: "top",
-                        fill: "#22c55e",
-                        fontSize: 12,
-                        fontWeight: "bold",
-                      }}
+                      label={
+                        window.innerWidth >= 640
+                          ? {
+                              value: `Point de croisement (${calculationResult.paybackYear} ans)`,
+                              position: "top",
+                              fill: "#22c55e",
+                              fontSize: 12,
+                              fontWeight: "bold",
+                            }
+                          : undefined
+                      }
                     />
-                    {/* TOOLTIP – version détaillée (closing net) */}
+
+                    {/* TOOLTIP - RESPONSIVE */}
                     <RechartsTooltip
                       content={({ active, payload }) => {
                         if (!active || !payload?.length) return null;
                         const d = payload[0].payload;
                         return (
-                          <div className="bg-[#111] border border-white/20 rounded-xl p-4 shadow-xl text-xs text-slate-300">
+                          <div className="bg-[#111] border border-white/20 rounded-lg sm:rounded-xl p-3 sm:p-4 shadow-xl text-[10px] sm:text-xs text-slate-300">
                             <p className="font-bold text-slate-400 uppercase mb-2">
                               Année {d.year}
                             </p>
                             <div className="space-y-2">
                               <div>
-                                <p className="text-[10px] text-red-400 uppercase font-bold">
+                                <p className="text-[9px] sm:text-[10px] text-red-400 uppercase font-bold">
                                   Factures EDF cumulées
                                 </p>
-                                <p className="text-lg font-black text-red-500">
+                                <p className="text-base sm:text-lg font-black text-red-500">
                                   {formatMoney(d.cumulativeSpendNoSolar)}
                                 </p>
                               </div>
                               <div>
-                                <p className="text-[10px] text-blue-400 uppercase font-bold">
+                                <p className="text-[9px] sm:text-[10px] text-blue-400 uppercase font-bold">
                                   Avec installation
                                 </p>
-                                <p className="text-lg font-black text-blue-500">
+                                <p className="text-base sm:text-lg font-black text-blue-500">
                                   {formatMoney(d.cumulativeSpendSolar)}
                                 </p>
                               </div>
@@ -5071,12 +5578,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         );
                       }}
                     />
-                    {/* COURBES – wording lisible institutionnel */}
+
+                    {/* COURBES */}
                     <Area
                       type="monotone"
                       dataKey="cumulativeSpendNoSolar"
                       stroke="#ef4444"
-                      strokeWidth={3}
+                      strokeWidth={window.innerWidth < 640 ? 2 : 3}
                       fill="url(#noSolar)"
                       name="Factures EDF cumulées"
                     />
@@ -5084,7 +5592,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       type="monotone"
                       dataKey="cumulativeSpendSolar"
                       stroke="#3b82f6"
-                      strokeWidth={3}
+                      strokeWidth={window.innerWidth < 640 ? 2 : 3}
                       fill="url(#withSolar)"
                       name="Avec installation EDF"
                     />
@@ -5092,66 +5600,78 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </ResponsiveContainer>
               </div>
 
-              {/* ÉCART CUMULÉ – chiffre clé seul, pas d'explication (closing) */}
-              <div className="mt-6 bg-black/50 border border-white/10 py-5 rounded-xl text-center select-none">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+              {/* LÉGENDE MOBILE (si label caché) */}
+              {window.innerWidth < 640 && (
+                <div className="flex items-center justify-center gap-2 mt-2 text-[9px] text-emerald-400">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                  <span>
+                    Point de croisement : {calculationResult.paybackYear} ans
+                  </span>
+                </div>
+              )}
+
+              {/* ÉCART CUMULÉ – RESPONSIVE */}
+              <div className="mt-4 sm:mt-6 bg-black/50 border border-white/10 py-4 sm:py-5 rounded-xl text-center select-none">
+                <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                   Écart cumulé sur {projectionYears} ans
                 </p>
-                <p className="text-4xl font-black text-emerald-400 tabular-nums">
+                <p className="text-2xl sm:text-3xl md:text-4xl font-black text-emerald-400 tabular-nums break-words px-2">
                   {formatMoney(calculationResult.totalSavings)}
                 </p>
               </div>
-              {/* TRIGGERS POPUP (discrets – usage terrain uniquement) */}
-              <div className="flex flex-wrap gap-3 mt-4 text-[10px] text-slate-500 opacity-60 select-none">
+
+              {/* TRIGGERS POPUP - RESPONSIVE (GRID) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 mt-4 text-[9px] sm:text-[10px] text-slate-500 opacity-60 select-none">
                 <button
                   onClick={() => setPopup("inflation")}
-                  className="underline hover:text-white"
+                  className="underline hover:text-white transition-colors text-left"
                 >
                   Hypothèse inflation
                 </button>
                 <button
                   onClick={() => setPopup("demenagement")}
-                  className="underline hover:text-white"
+                  className="underline hover:text-white transition-colors text-left"
                 >
                   Et si je déménage ?
                 </button>
                 <button
                   onClick={() => setPopup("conjoint")}
-                  className="underline hover:text-white"
+                  className="underline hover:text-white transition-colors text-left"
                 >
                   Conjoint absent
                 </button>
                 <button
                   onClick={() => setPopup("tropTard")}
-                  className="underline hover:text-white"
+                  className="underline hover:text-white transition-colors text-left"
                 >
                   Trop tard
                 </button>
                 <button
                   onClick={() => setPopup("tauxRefus")}
-                  className="underline hover:text-white"
+                  className="underline hover:text-white transition-colors text-left"
                 >
                   Taux refusé
                 </button>
                 <button
                   onClick={() => setPopup("reflechir")}
-                  className="underline hover:text-white"
+                  className="underline hover:text-white transition-colors text-left"
                 >
                   Je vais réfléchir
                 </button>
               </div>
 
+              {/* POPUPS - RESPONSIVE */}
               {popup && (
                 <div
-                  className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50"
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
                   onClick={closePopup}
                 >
                   <div
-                    className="bg-[#0b0f13] border border-white/10 rounded-xl w-[420px] p-6 text-slate-200 relative"
+                    className="bg-[#0b0f13] border border-white/10 rounded-xl w-full max-w-[420px] p-4 sm:p-6 text-slate-200 relative max-h-[90vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
-                      className="absolute top-3 right-3 text-slate-500 hover:text-white transition"
+                      className="absolute top-3 right-3 text-slate-500 hover:text-white transition w-6 h-6 flex items-center justify-center"
                       onClick={closePopup}
                     >
                       ✕
@@ -5161,16 +5681,16 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                     {popup === "inflation" && (
                       <>
-                        <h2 className="text-sm font-bold uppercase mb-4">
+                        <h2 className="text-xs sm:text-sm font-bold uppercase mb-3 sm:mb-4 pr-6">
                           Hypothèse inflation
                         </h2>
-                        <p className="text-xs leading-relaxed">
-                          L’hypothèse retenue est prudente et issue de données
-                          publiques. Même si l’inflation devait tomber à 0 %,
-                          l’autoproduction reste une réduction directe de
+                        <p className="text-[11px] sm:text-xs leading-relaxed">
+                          L'hypothèse retenue est prudente et issue de données
+                          publiques. Même si l'inflation devait tomber à 0 %,
+                          l'autoproduction reste une réduction directe de
                           facture.
                         </p>
-                        <p className="mt-3 text-[10px] text-slate-500">
+                        <p className="mt-3 text-[9px] sm:text-[10px] text-slate-500">
                           EDF — projection factuelle, jamais spéculative.
                         </p>
                       </>
@@ -5178,17 +5698,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                     {popup === "demenagement" && (
                       <>
-                        <h2 className="text-sm font-bold uppercase mb-4">
+                        <h2 className="text-xs sm:text-sm font-bold uppercase mb-3 sm:mb-4 pr-6">
                           Et si je déménage ?
                         </h2>
-                        <p className="text-xs leading-relaxed">
-                          L’installation devient un élément du bien. Vous pouvez
+                        <p className="text-[11px] sm:text-xs leading-relaxed">
+                          L'installation devient un élément du bien. Vous pouvez
                           transmettre ou faire valoir sa valeur.
                         </p>
-                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2 text-[11px] text-emerald-400 mt-2">
+                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2 text-[10px] sm:text-[11px] text-emerald-400 mt-2">
                           ✔ Décision utile, même si la vie change.
                         </div>
-                        <p className="mt-3 text-[10px] text-slate-500">
+                        <p className="mt-3 text-[9px] sm:text-[10px] text-slate-500">
                           EDF — actif patrimonial, pas un achat consommable.
                         </p>
                       </>
@@ -5196,18 +5716,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                     {popup === "conjoint" && (
                       <>
-                        <h2 className="text-sm font-bold uppercase mb-4">
+                        <h2 className="text-xs sm:text-sm font-bold uppercase mb-3 sm:mb-4 pr-6">
                           Conjoint absent
                         </h2>
-                        <p className="text-xs leading-relaxed">
-                          On ne valide jamais un projet patrimonial si l’un des
-                          deux n’est pas aligné.
+                        <p className="text-[11px] sm:text-xs leading-relaxed">
+                          On ne valide jamais un projet patrimonial si l'un des
+                          deux n'est pas aligné.
                         </p>
-                        <div className="bg-black/20 border border-white/10 rounded-lg p-3 text-xs mt-2">
+                        <div className="bg-black/20 border border-white/10 rounded-lg p-3 text-[11px] sm:text-xs mt-2">
                           Option douce : un rapide échange à trois pour valider
                           ensemble.
                         </div>
-                        <p className="mt-3 text-[10px] text-slate-500">
+                        <p className="mt-3 text-[9px] sm:text-[10px] text-slate-500">
                           Objectif : confort durable, pas décision forcée.
                         </p>
                       </>
@@ -5215,18 +5735,18 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                     {popup === "tropTard" && (
                       <>
-                        <h2 className="text-sm font-bold uppercase mb-4">
+                        <h2 className="text-xs sm:text-sm font-bold uppercase mb-3 sm:mb-4 pr-6">
                           Timing & passage
                         </h2>
-                        <p className="text-xs leading-relaxed">
-                          Il n’y a aucune obligation d’agir ce soir. Il existe
+                        <p className="text-[11px] sm:text-xs leading-relaxed">
+                          Il n'y a aucune obligation d'agir ce soir. Il existe
                           juste un moment où la décision est plus simple.
                         </p>
-                        <div className="bg-black/20 border border-white/10 rounded-lg p-3 text-xs mt-2">
-                          Sécuriser l’étude = garder la main. La signature n’est
+                        <div className="bg-black/20 border border-white/10 rounded-lg p-3 text-[11px] sm:text-xs mt-2">
+                          Sécuriser l'étude = garder la main. La signature n'est
                           jamais un piège.
                         </div>
-                        <p className="mt-3 text-[10px] text-slate-500">
+                        <p className="mt-3 text-[9px] sm:text-[10px] text-slate-500">
                           EDF — progression par étapes, calme.
                         </p>
                       </>
@@ -5234,17 +5754,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                     {popup === "tauxRefus" && (
                       <>
-                        <h2 className="text-sm font-bold uppercase mb-4">
+                        <h2 className="text-xs sm:text-sm font-bold uppercase mb-3 sm:mb-4 pr-6">
                           Si le taux est refusé
                         </h2>
-                        <p className="text-xs leading-relaxed">
-                          Tant que validation bancaire non émise, rien n’est
+                        <p className="text-[11px] sm:text-xs leading-relaxed">
+                          Tant que validation bancaire non émise, rien n'est
                           engagé. Plusieurs solutions existent.
                         </p>
-                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2 text-[11px] text-emerald-400 mt-2">
+                        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded p-2 text-[10px] sm:text-[11px] text-emerald-400 mt-2">
                           ✔ Décision sécurisée, pas définitive.
                         </div>
-                        <p className="mt-3 text-[10px] text-slate-500">
+                        <p className="mt-3 text-[9px] sm:text-[10px] text-slate-500">
                           EDF — aucun verrou sans accord clair.
                         </p>
                       </>
@@ -5252,17 +5772,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                     {popup === "reflechir" && (
                       <>
-                        <h2 className="text-sm font-bold uppercase mb-4">
+                        <h2 className="text-xs sm:text-sm font-bold uppercase mb-3 sm:mb-4 pr-6">
                           Je vais réfléchir
                         </h2>
-                        <p className="text-xs leading-relaxed">
+                        <p className="text-[11px] sm:text-xs leading-relaxed">
                           La réflexion est naturelle. Ce qui compte est que la
-                          décision tienne demain — pas qu’elle soit impulsive.
+                          décision tienne demain — pas qu'elle soit impulsive.
                         </p>
-                        <div className="bg-emerald-500/10 border border-emerald-500/40 rounded p-2 text-[11px] text-emerald-400 mt-2">
+                        <div className="bg-emerald-500/10 border border-emerald-500/40 rounded p-2 text-[10px] sm:text-[11px] text-emerald-400 mt-2">
                           ✔ On confirme seulement ce qui ne sera pas regretté.
                         </div>
-                        <p className="mt-3 text-[10px] text-slate-500">
+                        <p className="mt-3 text-[9px] sm:text-[10px] text-slate-500">
                           EDF — pas de précipitation, seulement du solide.
                         </p>
                       </>
@@ -5271,12 +5791,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </div>
               )}
 
-              {/* BADGE FOOTER – institutionnel patrimonial */}
-              <div className="mt-6 text-center select-none">
-                <p className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">
+              {/* BADGE FOOTER – RESPONSIVE */}
+              <div className="mt-4 sm:mt-6 text-center select-none">
+                <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                   Installation garantie à vie — EDF
                 </p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+                <p className="text-[9px] sm:text-[10px] text-slate-500 uppercase tracking-wider">
                   Pièces, main d'œuvre et déplacement inclus
                 </p>
               </div>
@@ -5290,27 +5810,35 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
             title="CAPITAL PATRIMONIAL"
             icon={<Lock size={18} />}
             defaultOpen={false}
+            onOpen={(id) => {
+              setActiveModule(id);
+            }}
           >
-            <div id="where-money" className="space-y-10 mt-12">
+            <div
+              id="where-money"
+              className="space-y-6 sm:space-y-8 md:space-y-10 mt-8 sm:mt-10 md:mt-12"
+            >
               {/* ====================== CALCULATEUR PRINCIPAL ====================== */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
                 {/* LEFT COLUMN – CALCULATIONS */}
-                <div className="lg:col-span-8 bg-[#050505] border border-white/10 rounded-[40px] p-10 shadow-2xl">
-                  <div className="flex gap-2 mb-8">
-                    <div className="bg-black border border-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                      <Lock size={12} /> PROJECTION {projectionYears} ANS
+                <div className="lg:col-span-8 bg-[#050505] border border-white/10 rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 md:p-10 shadow-2xl">
+                  <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
+                    <div className="bg-black border border-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                      <Lock size={12} className="flex-shrink-0" /> PROJECTION{" "}
+                      {projectionYears} ANS
                     </div>
-                    <div className="bg-[#062c1e] border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                      <TrendingUp size={12} /> 0€ D'APPORT
+                    <div className="bg-[#062c1e] border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                      <TrendingUp size={12} className="flex-shrink-0" /> 0€
+                      D'APPORT
                     </div>
                   </div>
 
                   {/* TITLE + MAIN NUMBER */}
-                  <h2 className="text-xs text-slate-500 font-medium mb-2 uppercase tracking-wide">
+                  <h2 className="text-[10px] sm:text-xs text-slate-500 font-medium mb-2 uppercase tracking-wide">
                     Écart économique cumulé
                   </h2>
                   <div
-                    className="text-6xl font-black text-white mb-10 italic tracking-tight"
+                    className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 sm:mb-8 md:mb-10 italic tracking-tight break-words"
                     data-testid="gain-total"
                   >
                     {Math.round(
@@ -5320,29 +5848,29 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   </div>
 
                   {/* HOW IS IT CALCULÉ */}
-                  <div className="bg-[#0a0a0b] border border-white/5 rounded-3xl p-6 space-y-4 mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-                      <h3 className="text-[11px] font-black text-white uppercase italic tracking-widest">
+                  <div className="bg-[#0a0a0b] border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
+                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 flex-shrink-0" />
+                      <h3 className="text-[10px] sm:text-[11px] font-black text-white uppercase italic tracking-widest">
                         COMMENT EST CALCULÉ CET ÉCART ?
                       </h3>
                     </div>
 
-                    {/* SCENARIO */}
-                    <div className="bg-[#1a0f10] border border-red-950/30 rounded-2xl p-5 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <TrendingUp className="text-red-500 w-6 h-6" />
+                    {/* SCENARIO SANS */}
+                    <div className="bg-[#1a0f10] border border-red-950/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <TrendingUp className="text-red-500 w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
                         <div>
-                          <div className="text-[11px] font-black text-red-500 uppercase italic tracking-wide">
+                          <div className="text-[10px] sm:text-[11px] font-black text-red-500 uppercase italic tracking-wide">
                             SANS INSTALLATION
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-1">
+                          <div className="text-[9px] sm:text-[10px] text-slate-400 mt-1">
                             Dépense énergétique totale
                           </div>
                         </div>
                       </div>
                       <div
-                        className="text-4xl font-black text-red-500 italic tracking-tight"
+                        className="text-2xl sm:text-3xl md:text-4xl font-black text-red-500 italic tracking-tight break-words"
                         data-testid="no-solar-total-20y"
                       >
                         {Math.round(
@@ -5352,26 +5880,27 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-center text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
+                    <div className="text-center text-[10px] sm:text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
                       MOINS
                     </div>
 
-                    <div className="bg-[#0f141a] border border-blue-950/30 rounded-2xl p-5 flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-6 h-6 rounded-full border-2 border-blue-500 flex items-center justify-center">
-                          <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                    {/* SCENARIO AVEC */}
+                    <div className="bg-[#0f141a] border border-blue-950/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-blue-500 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
                         </div>
                         <div>
-                          <div className="text-[11px] font-black text-blue-500 uppercase italic tracking-wide">
+                          <div className="text-[10px] sm:text-[11px] font-black text-blue-500 uppercase italic tracking-wide">
                             AVEC INSTALLATION
                           </div>
-                          <div className="text-[10px] text-slate-400 italic mt-1">
+                          <div className="text-[9px] sm:text-[10px] text-slate-400 italic mt-1">
                             Réorganisation budget + facture résiduelle
                           </div>
                         </div>
                       </div>
                       <div
-                        className="text-4xl font-black text-blue-500 italic tracking-tight"
+                        className="text-2xl sm:text-3xl md:text-4xl font-black text-blue-500 italic tracking-tight break-words"
                         data-testid="solar-scenario-total-20y"
                       >
                         {Math.round(
@@ -5381,19 +5910,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-center text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
+                    <div className="text-center text-[10px] sm:text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
                       ÉGAL
                     </div>
 
                     {/* NET GAIN */}
-                    <div className="bg-[#0d1a14] border-2 border-emerald-500/40 rounded-2xl p-6 flex items-center justify-between shadow-lg">
-                      <div className="flex items-center gap-4">
-                        <Award className="text-emerald-500 w-7 h-7" />
-                        <div className="text-[13px] font-black text-emerald-500 uppercase tracking-wider italic">
+                    <div className="bg-[#0d1a14] border-2 border-emerald-500/40 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 shadow-lg">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <Award className="text-emerald-500 w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" />
+                        <div className="text-xs sm:text-[13px] font-black text-emerald-500 uppercase tracking-wider italic">
                           VOTRE GAIN NET
                         </div>
                       </div>
-                      <div className="text-6xl font-black text-emerald-400 italic tracking-tight">
+                      <div className="text-4xl sm:text-5xl md:text-6xl font-black text-emerald-400 italic tracking-tight break-words">
                         +
                         {Math.round(
                           calculationResult.totalSavingsProjected
@@ -5402,30 +5931,32 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="bg-[#1a160f] border-l-4 border-yellow-500 p-4 rounded-r-xl">
-                      <p className="text-[10px] text-yellow-200/90 leading-relaxed italic uppercase font-medium">
-                        ⚠ ANNÉE 1 : réorganisation du budget — ANNÉE 8 :
-                        économies nettes — APRÈS 15 ANS : revenu permanent.
+                    <div className="bg-[#1a160f] border-l-4 border-yellow-500 p-3 sm:p-4 rounded-r-xl">
+                      <p className="text-[9px] sm:text-[10px] text-yellow-200/90 leading-relaxed italic uppercase font-medium">
+                        ⚠ ANNÉE 1 : réorganisation du budget — ANNÉE{" "}
+                        {calculationResult.breakEvenPoint} : économies nettes —
+                        APRÈS {Math.ceil(creditDurationMonths / 12)} ANS :
+                        revenu permanent.
                       </p>
                     </div>
                   </div>
 
-                  {/* KPI ROW */}
-                  <div className="grid grid-cols-4 gap-4">
-                    <div className="bg-black border border-white/5 p-4 rounded-2xl">
-                      <div className="text-[9px] font-black text-emerald-500 uppercase mb-1">
+                  {/* KPI ROW - RESPONSIVE */}
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
+                      <div className="text-[8px] sm:text-[9px] font-black text-emerald-500 uppercase mb-1">
                         CAPITAL IMMOBILISÉ
                       </div>
-                      <div className="text-xl font-black text-emerald-400 italic">
+                      <div className="text-lg sm:text-xl font-black text-emerald-400 italic break-words">
                         0€
                       </div>
                     </div>
-                    <div className="bg-black border border-white/5 p-4 rounded-2xl">
-                      <div className="text-[9px] font-black text-blue-500 uppercase mb-1 italic">
+                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
+                      <div className="text-[8px] sm:text-[9px] font-black text-blue-500 uppercase mb-1 italic">
                         ÉCART MOYEN
                       </div>
                       <div
-                        className="text-xl font-black text-white italic"
+                        className="text-lg sm:text-xl font-black text-white italic break-words"
                         data-testid="gain-yearly"
                       >
                         +
@@ -5435,23 +5966,23 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         €/an
                       </div>
                     </div>
-                    <div className="bg-black border border-white/5 p-4 rounded-2xl">
-                      <div className="text-[9px] font-black text-slate-400 uppercase mb-1 italic">
+                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
+                      <div className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase mb-1 italic">
                         POINT MORT
                       </div>
                       <div
-                        className="text-xl font-black text-white italic"
+                        className="text-lg sm:text-xl font-black text-white italic break-words"
                         data-testid="break-even"
                       >
                         {calculationResult.breakEvenPoint} ans
                       </div>
                     </div>
-                    <div className="bg-black border border-white/5 p-4 rounded-2xl">
-                      <div className="text-[9px] font-black text-yellow-500 uppercase mb-1 italic">
+                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
+                      <div className="text-[8px] sm:text-[9px] font-black text-yellow-500 uppercase mb-1 italic leading-tight">
                         ÉQUIVALENT LIVRET A
                       </div>
                       <div
-                        className="text-xl font-black text-yellow-400 italic"
+                        className="text-lg sm:text-xl font-black text-yellow-400 italic break-words"
                         data-testid="equivalent-livret-a"
                       >
                         {formatMoney(
@@ -5463,17 +5994,17 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </div>
 
                 {/* ====================== RIGHT COLUMN (PLACEMENT + RÉALLOCATION) ====================== */}
-                <div className="lg:col-span-4 space-y-6 flex flex-col">
+                <div className="lg:col-span-4 space-y-4 sm:space-y-6 flex flex-col">
                   {/* BANK EQUIVALENT */}
-                  <div className="bg-[#050505] border border-blue-900/30 rounded-[32px] p-8 shadow-xl flex-1">
-                    <div className="flex items-center gap-3 mb-6">
-                      <Landmark className="text-blue-500 w-5 h-5" />
-                      <h3 className="text-[11px] font-black text-blue-400 uppercase tracking-widest italic">
+                  <div className="bg-[#050505] border border-blue-900/30 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-xl flex-1">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                      <Landmark className="text-blue-500 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                      <h3 className="text-[10px] sm:text-[11px] font-black text-blue-400 uppercase tracking-widest italic">
                         ÉQUIVALENT BANCAIRE
                       </h3>
                     </div>
 
-                    <p className="text-[11px] text-slate-400 mb-6 italic uppercase leading-relaxed">
+                    <p className="text-[10px] sm:text-[11px] text-slate-400 mb-4 sm:mb-6 italic uppercase leading-relaxed">
                       Pour générer{" "}
                       {Math.round(
                         calculationResult.averageYearlyGain
@@ -5482,7 +6013,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </p>
 
                     <div
-                      className="text-7xl font-black text-white mb-8 italic tracking-tighter leading-none"
+                      className="text-5xl sm:text-6xl md:text-7xl font-black text-white mb-6 sm:mb-8 italic tracking-tighter leading-none break-words"
                       data-testid="livret-a-capital"
                     >
                       {Math.round(
@@ -5491,27 +6022,30 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       €
                     </div>
 
-                    <div className="bg-blue-950/50 border border-blue-500/40 px-4 py-4 rounded-xl text-[11px] font-black text-blue-300 uppercase italic text-center shadow-inner tracking-widest">
+                    <div className="bg-blue-950/50 border border-blue-500/40 px-3 sm:px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-[11px] font-black text-blue-300 uppercase italic text-center shadow-inner tracking-widest">
                       ICI, VOUS NE BLOQUEZ RIEN.
                     </div>
 
-                    <p className="mt-6 text-[9px] text-slate-500 italic uppercase flex items-center gap-2">
-                      <Zap size={10} className="text-orange-500" /> votre
-                      capital reste disponible.
+                    <p className="mt-4 sm:mt-6 text-[9px] sm:text-[10px] text-slate-500 italic uppercase flex items-center gap-2">
+                      <Zap
+                        size={10}
+                        className="text-orange-500 flex-shrink-0"
+                      />{" "}
+                      votre capital reste disponible.
                     </p>
                   </div>
 
                   {/* RÉALLOCATION — YEAR 1 */}
-                  <div className="bg-[#050505] border border-orange-900/30 rounded-[32px] p-8 shadow-xl flex-1">
-                    <div className="flex items-center gap-3 mb-6">
-                      <Zap className="text-orange-500 w-5 h-5" />
-                      <h3 className="text-[11px] font-black text-orange-500 uppercase tracking-widest italic">
+                  <div className="bg-[#050505] border border-orange-900/30 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-xl flex-1">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                      <Zap className="text-orange-500 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
+                      <h3 className="text-[10px] sm:text-[11px] font-black text-orange-500 uppercase tracking-widest italic">
                         RÉALLOCATION ANNÉE 1
                       </h3>
                     </div>
 
                     <div
-                      className={`text-6xl font-black mb-8 italic tracking-tighter leading-none ${
+                      className={`text-4xl sm:text-5xl md:text-6xl font-black mb-6 sm:mb-8 italic tracking-tighter leading-none break-words ${
                         Math.round(calculationResult?.monthlyEffortYear1 || 0) >
                         40
                           ? "text-red-500"
@@ -5532,13 +6066,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     </div>
 
                     {/* NEW vs OLD BUDGET */}
-                    <div className="space-y-4 border-t border-white/5 pt-6 mt-6">
-                      <div className="flex justify-between items-center w-full">
-                        <span className="text-sm text-slate-400 font-medium">
+                    <div className="space-y-3 sm:space-y-4 border-t border-white/5 pt-4 sm:pt-6 mt-4 sm:mt-6">
+                      <div className="flex justify-between items-center w-full gap-2">
+                        <span className="text-xs sm:text-sm text-slate-400 font-medium">
                           Nouveau Budget :
                         </span>
                         <span
-                          className="text-2xl font-black text-white"
+                          className="text-xl sm:text-2xl font-black text-white break-words text-right"
                           data-testid="new-monthly-budget"
                         >
                           {Math.round(
@@ -5548,12 +6082,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex justify-between items-center w-full">
-                        <span className="text-sm text-slate-400 font-medium">
+                      <div className="flex justify-between items-center w-full gap-2">
+                        <span className="text-xs sm:text-sm text-slate-400 font-medium">
                           Ancien Budget :
                         </span>
                         <span
-                          className="text-2xl font-black text-red-500"
+                          className="text-xl sm:text-2xl font-black text-red-500 break-words text-right"
                           data-testid="old-monthly-budget"
                         >
                           {Math.round(
@@ -5563,12 +6097,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex justify-between items-center pt-4 border-t border-white/10 w-full">
-                        <span className="text-base font-black text-orange-500 italic uppercase tracking-wider">
+                      <div className="flex justify-between items-center pt-3 sm:pt-4 border-t border-white/10 w-full gap-2">
+                        <span className="text-sm sm:text-base font-black text-orange-500 italic uppercase tracking-wider">
                           = Réallocation
                         </span>
                         <span
-                          className={`text-3xl font-black italic ${
+                          className={`text-2xl sm:text-3xl font-black italic break-words text-right ${
                             Math.round(
                               calculationResult?.monthlyEffortYear1 || 0
                             ) > 40
@@ -5595,29 +6129,32 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               </div>
 
               {/* ====================== LOWER ROW (HERITAGE + GREEN VALUE) ====================== */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* HERITAGE CARD */}
-                <div className="bg-[#050505] border border-blue-500/20 rounded-[32px] p-8 flex flex-col justify-between relative shadow-2xl min-h-[480px]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                {/* HERITAGE CARD - CORRIGÉE */}
+                <div className="bg-[#050505] border border-blue-500/20 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 flex flex-col justify-between relative shadow-2xl min-h-[400px] sm:min-h-[480px]">
                   {/* BUTTON */}
-                  <div className="absolute top-6 right-6 z-50">
+                  <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50">
                     <button
                       onMouseEnter={() => setShowHeritageInfo(true)}
                       onMouseLeave={() => setShowHeritageInfo(false)}
-                      className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 hover:border-blue-500/50 transition-all"
+                      className="p-2 sm:p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 hover:border-blue-500/50 transition-all"
                     >
-                      <TrendingUp size={24} className="text-blue-500" />
+                      <TrendingUp
+                        size={20}
+                        className="sm:w-6 sm:h-6 text-blue-500"
+                      />
                     </button>
                   </div>
 
                   {/* INFOBULLE */}
                   {showHeritageInfo && (
-                    <div className="absolute inset-0 z-40 bg-[#0c0c0c]/95 backdrop-blur-lg p-8 flex flex-col animate-in fade-in duration-200 overflow-y-auto">
-                      <h4 className="text-blue-500 font-black italic mb-6 uppercase tracking-tighter text-xl border-b-2 border-blue-500/20 pb-4 mt-4">
+                    <div className="absolute inset-0 z-40 bg-[#0c0c0c]/95 backdrop-blur-lg p-6 sm:p-8 flex flex-col animate-in fade-in duration-200 overflow-y-auto rounded-[24px] sm:rounded-[32px]">
+                      <h4 className="text-blue-500 font-black italic mb-4 sm:mb-6 uppercase tracking-tighter text-lg sm:text-xl border-b-2 border-blue-500/20 pb-3 sm:pb-4 mt-2 sm:mt-4">
                         NOTE FISCALE ET PATRIMONIALE
                       </h4>
 
-                      <div className="space-y-4 text-slate-200 text-[11px] leading-relaxed">
-                        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+                      <div className="space-y-3 sm:space-y-4 text-slate-200 text-[10px] sm:text-[11px] leading-relaxed">
+                        <div className="p-3 sm:p-4 bg-white/5 border border-white/10 rounded-2xl">
                           <p className="text-blue-400 font-black uppercase mb-2 tracking-widest">
                             L'ABATTEMENT (LOI FRANÇAISE)
                           </p>
@@ -5629,24 +6166,24 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                             tous les 15 ans. Si le patrimoine transmis est
                             inférieur à ce montant :{" "}
                             <span className="text-emerald-400 font-bold">
-                              0 €
+                              0 € d'impôts
                             </span>
                             .
                           </p>
                         </div>
 
-                        <div className="p-4 bg-white/5 border border-white/10 rounded-2xl">
+                        <div className="p-3 sm:p-4 bg-white/5 border border-white/10 rounded-2xl">
                           <p className="text-red-400 font-black uppercase mb-2 tracking-widest">
                             LES TRANCHES (AU-DELÀ)
                           </p>
                           <p>
-                            Au-delà de 100 000 €, l’impôt devient progressif. La
+                            Au-delà de 100 000 €, l'impôt devient progressif. La
                             tranche majoritaire est{" "}
                             <span className="text-white font-bold">20%</span>.
                           </p>
                         </div>
 
-                        <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
+                        <div className="p-3 sm:p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
                           <p className="text-white font-black uppercase mb-2 tracking-widest italic">
                             NOTRE MÉTHODE DE CALCUL
                           </p>
@@ -5665,35 +6202,38 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                   {/* MAIN CARD CONTENT */}
                   <div>
-                    <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter">
+                    <h3 className="text-xl sm:text-2xl font-black uppercase italic text-white tracking-tighter">
                       HÉRITAGE NET
                     </h3>
-                    <p className="text-[10px] font-black text-blue-500 uppercase italic mb-6">
+                    <p className="text-[9px] sm:text-[10px] font-black text-blue-500 uppercase italic mb-4 sm:mb-6">
                       PROJECTION PATRIMONIALE RÉELLE
                     </p>
 
                     <div className="mb-2">
-                      <div className="text-7xl font-black text-white italic tracking-tighter leading-none">
+                      <div className="text-5xl sm:text-6xl md:text-7xl font-black text-white italic tracking-tighter leading-none break-words">
+                        {/* ✅ CORRIGÉ : (gains + valeur verte) × 0.8 */}
                         {(
-                          Math.round(
+                          (Math.round(
                             calculationResult?.totalSavingsProjected || 0
-                          ) * 0.8
+                          ) +
+                            Math.round(calculationResult?.greenValue || 0)) *
+                          0.8
                         ).toLocaleString("fr-FR")}{" "}
                         €
                       </div>
-                      <p className="text-[10px] font-black text-emerald-400 uppercase italic mt-2 tracking-[0.2em]">
+                      <p className="text-[9px] sm:text-[10px] font-black text-emerald-400 uppercase italic mt-2 tracking-[0.2em]">
                         Somme nette disponible sur {projectionYears} ans
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-6 bg-white/5 rounded-2xl p-5 border border-white/10">
-                    <div className="space-y-2 text-[11px] font-bold uppercase">
-                      <div className="flex justify-between">
+                  <div className="mt-4 sm:mt-6 bg-white/5 rounded-2xl p-4 sm:p-5 border border-white/10">
+                    <div className="space-y-2 text-[10px] sm:text-[11px] font-bold uppercase">
+                      <div className="flex justify-between gap-2">
                         <span className="text-slate-400 tracking-tighter">
                           Gains énergie (brut) :
                         </span>
-                        <span className="text-white">
+                        <span className="text-white text-right break-words">
                           +
                           {Math.round(
                             calculationResult?.totalSavingsProjected || 0
@@ -5702,29 +6242,47 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         </span>
                       </div>
 
-                      <div className="flex justify-between opacity-50 italic">
+                      {/* ✅ CORRIGÉ : Plus opacifié, valeur comptée */}
+                      <div className="flex justify-between gap-2">
                         <span className="text-slate-400 tracking-tighter">
                           Valeur verte maison :
                         </span>
-                        <span className="text-white">
+                        <span className="text-white text-right break-words">
                           +
                           {Math.round(
-                            calculationResult?.greenValue || 15000
+                            calculationResult?.greenValue || 0
                           ).toLocaleString("fr-FR")}{" "}
                           €
                         </span>
                       </div>
 
-                      <div className="flex justify-between pt-2 border-t border-white/10">
-                        <span className="text-red-400 italic">
-                          Provision succession (20 %) :
+                      <div className="flex justify-between pt-2 border-t border-white/10 gap-2">
+                        <span className="text-slate-400 italic tracking-tighter">
+                          Total patrimonial :
                         </span>
-                        <span className="text-red-400">
-                          -
+                        <span className="text-white font-black text-right break-words">
                           {(
                             Math.round(
                               calculationResult?.totalSavingsProjected || 0
-                            ) * 0.2
+                            ) + Math.round(calculationResult?.greenValue || 0)
+                          ).toLocaleString("fr-FR")}{" "}
+                          €
+                        </span>
+                      </div>
+
+                      {/* ✅ CORRIGÉ : Provision sur TOUT */}
+                      <div className="flex justify-between pt-2 border-t border-white/10 gap-2">
+                        <span className="text-red-400 italic tracking-tighter">
+                          Provision succession (20 %) :
+                        </span>
+                        <span className="text-red-400 text-right break-words">
+                          -
+                          {(
+                            (Math.round(
+                              calculationResult?.totalSavingsProjected || 0
+                            ) +
+                              Math.round(calculationResult?.greenValue || 0)) *
+                            0.2
                           ).toLocaleString("fr-FR")}{" "}
                           €
                         </span>
@@ -5733,36 +6291,39 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   </div>
                 </div>
 
-                {/* GREEN VALUE CARD */}
-                <div className="bg-[#050505] border border-orange-500/20 rounded-[32px] p-8 flex flex-col justify-between relative shadow-2xl min-h-[480px]">
+                {/* GREEN VALUE CARD - RESPONSIVE */}
+                <div className="bg-[#050505] border border-orange-500/20 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 flex flex-col justify-between relative shadow-2xl min-h-[400px] sm:min-h-[480px]">
                   {/* BUTTON */}
-                  <div className="absolute top-6 right-6 z-50">
+                  <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50">
                     <button
                       onMouseEnter={() => setShowGreenValueInfo(true)}
                       onMouseLeave={() => setShowGreenValueInfo(false)}
-                      className="p-3 bg-orange-500/10 rounded-xl border border-orange-500/20 hover:border-orange-500/50 transition-all"
+                      className="p-2 sm:p-3 bg-orange-500/10 rounded-xl border border-orange-500/20 hover:border-orange-500/50 transition-all"
                     >
-                      <Sun size={24} className="text-orange-500" />
+                      <Sun
+                        size={20}
+                        className="sm:w-6 sm:h-6 text-orange-500"
+                      />
                     </button>
                   </div>
 
                   {/* INFOBULLE */}
                   {showGreenValueInfo && (
-                    <div className="absolute inset-0 z-40 bg-[#0c0c0c]/95 backdrop-blur-lg p-10 flex flex-col animate-in fade-in duration-200 overflow-y-auto">
-                      <h4 className="text-orange-500 font-black italic mb-8 uppercase tracking-tighter text-xl border-b-2 border-orange-500/20 pb-4 mt-8">
+                    <div className="absolute inset-0 z-40 bg-[#0c0c0c]/95 backdrop-blur-lg p-6 sm:p-10 flex flex-col animate-in fade-in duration-200 overflow-y-auto rounded-[24px] sm:rounded-[32px]">
+                      <h4 className="text-orange-500 font-black italic mb-6 sm:mb-8 uppercase tracking-tighter text-lg sm:text-xl border-b-2 border-orange-500/20 pb-3 sm:pb-4 mt-4 sm:mt-8">
                         CADRE RÉGLEMENTAIRE & PATRIMONIAL
                       </h4>
 
-                      <div className="space-y-6 text-slate-200 italic text-[13px] leading-relaxed">
-                        <div className="p-5 bg-orange-500/10 border border-orange-500/30 rounded-2xl mb-2">
-                          <p className="text-white font-black uppercase text-[11px] mb-2 tracking-widest">
+                      <div className="space-y-4 sm:space-y-6 text-slate-200 italic text-xs sm:text-[13px] leading-relaxed">
+                        <div className="p-4 sm:p-5 bg-orange-500/10 border border-orange-500/30 rounded-2xl mb-2">
+                          <p className="text-white font-black uppercase text-[10px] sm:text-[11px] mb-2 tracking-widest">
                             INDICE DE VALORISATION :
                           </p>
-                          <div className="flex items-center gap-6">
-                            <p className="text-3xl text-orange-400 font-black tracking-tighter">
+                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
+                            <p className="text-2xl sm:text-3xl text-orange-400 font-black tracking-tighter">
                               COEFFICIENT 4%
                             </p>
-                            <p className="text-white text-[9px] font-bold uppercase tracking-widest leading-tight border-l border-white/20 pl-4">
+                            <p className="text-white text-[9px] font-bold uppercase tracking-widest leading-tight sm:border-l sm:border-white/20 sm:pl-4">
                               Moyenne constatée
                               <br />
                               Notaires de France
@@ -5771,21 +6332,21 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                         </div>
 
                         <p>
-                          <b className="text-white underline uppercase text-[12px]">
+                          <b className="text-white underline uppercase text-[11px] sm:text-[12px]">
                             01. Amélioration DPE :
                           </b>
-                          réduction de la consommation d’énergie primaire.
+                          réduction de la consommation d'énergie primaire.
                         </p>
 
                         <p>
-                          <b className="text-white underline uppercase text-[12px]">
+                          <b className="text-white underline uppercase text-[11px] sm:text-[12px]">
                             02. Référentiel ETALAB :
                           </b>
                           calcul indexé sur DVF (Data.gouv.fr).
                         </p>
 
                         <p>
-                          <b className="text-white underline uppercase text-[12px]">
+                          <b className="text-white underline uppercase text-[11px] sm:text-[12px]">
                             03. Notaires de France :
                           </b>
                           attestation de plus-value immobilière immédiate.
@@ -5796,17 +6357,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                   {/* MAIN CARD */}
                   <div>
-                    <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter">
+                    <h3 className="text-xl sm:text-2xl font-black uppercase italic text-white tracking-tighter">
                       VALEUR VERTE
                     </h3>
-                    <p className="text-[10px] font-black text-orange-500 uppercase italic mb-4">
+                    <p className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase italic mb-3 sm:mb-4">
                       Votre résidence à
-                      <span className="underline text-white ml-1 uppercase">
-                        {data?.address || "ADRESSE"}
+                      <span className="underline text-white ml-1 uppercase break-words">
+                        {greenValueData?.city ||
+                          data?.address ||
+                          "VOTRE SECTEUR"}
                       </span>
                     </p>
 
-                    <div className="text-7xl font-black text-orange-400 italic tracking-tighter mb-2 leading-none">
+                    <div className="text-5xl sm:text-6xl md:text-7xl font-black text-orange-400 italic tracking-tighter mb-2 leading-none break-words">
                       +
                       {Math.round(
                         calculationResult?.greenValue || 0
@@ -5814,29 +6377,32 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                       €
                     </div>
 
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 px-5 py-2 rounded-xl text-[12px] font-black text-emerald-400 uppercase italic mb-4 w-fit tracking-wider flex items-center gap-3">
-                      <CheckCircle2 size={18} /> Analyse réelle :{" "}
-                      {data?.address || "SECTEUR"}
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 px-4 sm:px-5 py-2 rounded-xl text-[11px] sm:text-[12px] font-black text-emerald-400 uppercase italic mb-3 sm:mb-4 w-fit tracking-wider flex items-center gap-2 sm:gap-3">
+                      <CheckCircle2
+                        size={16}
+                        className="sm:w-5 sm:h-5 flex-shrink-0"
+                      />
+                      Analyse réelle : {greenValueData?.city || "SECTEUR"}
                     </div>
 
-                    <p className="text-[14px] text-slate-300 leading-relaxed italic uppercase mb-4 max-w-[95%] font-medium">
+                    <p className="text-xs sm:text-[14px] text-slate-300 leading-relaxed italic uppercase mb-3 sm:mb-4 max-w-[95%] font-medium">
                       Plus-value estimée pour votre bien de
-                      <span className="text-white font-black underline decoration-orange-500">
+                      <span className="text-white font-black underline decoration-orange-500 mx-1">
                         {data?.houseSize || calculationResult?.houseSize || 120}{" "}
                         m²
-                      </span>{" "}
-                      dans votre secteur. C’est un
-                      <span className="text-orange-500 font-bold italic uppercase">
+                      </span>
+                      dans votre secteur. C'est un
+                      <span className="text-orange-500 font-bold italic uppercase mx-1">
                         actif immobilier
-                      </span>{" "}
+                      </span>
                       immédiat.
                     </p>
                   </div>
 
-                  <div className="bg-[#171412] rounded-2xl p-4 border border-white/5 shadow-inner mt-2 text-[11px] font-black uppercase tracking-widest italic text-slate-500">
-                    Calcul :{" "}
+                  <div className="bg-[#171412] rounded-2xl p-3 sm:p-4 border border-white/5 shadow-inner mt-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest italic text-slate-500 break-words">
+                    Calcul : Valeur maison (
                     {greenValueData?.pricePerSqm?.toLocaleString() || "3 200"}{" "}
-                    €/m² × {data?.houseSize || 120} m² × 4% ={" "}
+                    €/m² × {data?.houseSize || 120} m²) × 4% ={" "}
                     {Math.round(
                       calculationResult?.greenValue || 0
                     ).toLocaleString("fr-FR")}{" "}
@@ -5845,8 +6411,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </div>
               </div>
 
-              {/* ======== MICRO-VERROU CLOSING – ne pas supprimer ======== */}
-              <p className="text-center text-[11px] text-slate-500 italic mt-8 select-none">
+              {/* ======== MICRO-VERROU CLOSING ======== */}
+              <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic mt-6 sm:mt-8 select-none px-4">
                 Ce module ne sert pas à décider. Il sert à se projeter dans ce
                 que vous avez déjà choisi.
               </p>
@@ -5865,31 +6431,35 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               setActiveModule(id);
             }}
           >
-            <p className="text-[10px] text-slate-400 italic mb-3">
+            <p className="text-[10px] text-slate-400 italic mb-3 px-2">
               Ce qui suit ne sert pas à choisir — juste à vérifier qu'on ne fait
               pas une erreur.
             </p>
-            <div className="bg-black/40 backdrop-blur-xl rounded-2xl p-4 md:p-8 border border-white/10">
-              {/* HEADER */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+
+            <div className="bg-black/40 backdrop-blur-xl rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 border border-white/10">
+              {/* HEADER - RESPONSIVE */}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 sm:mb-8 gap-4">
                 <div className="flex items-center gap-3">
-                  <HelpCircle size={28} className="text-blue-500" />
+                  <HelpCircle
+                    size={24}
+                    className="sm:w-7 sm:h-7 text-blue-500 flex-shrink-0"
+                  />
                   <div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight">
                       Votre argent dans {projectionYears} ans
                     </h2>
-                    <p className="text-slate-500 text-sm mt-1">
+                    <p className="text-slate-500 text-xs sm:text-sm mt-1">
                       Visualisation factuelle — où vont vos dépenses selon votre
                       choix.
                     </p>
                   </div>
                 </div>
 
-                {/* SWITCH MODE */}
+                {/* SWITCH MODE - RESPONSIVE */}
                 <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10 shadow-inner">
                   <button
                     onClick={() => setWhereMoneyMode("financement")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                       whereMoneyMode === "financement"
                         ? "bg-blue-600 text-white"
                         : "text-slate-500 hover:text-white"
@@ -5899,7 +6469,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   </button>
                   <button
                     onClick={() => setWhereMoneyMode("cash")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                       whereMoneyMode === "cash"
                         ? "bg-emerald-600 text-white"
                         : "text-slate-500 hover:text-white"
@@ -5910,9 +6480,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </div>
               </div>
 
-              {/* CARDS – 5 / 10 / 20 ans */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {yearsToDisplay.map((year) => {
+              {/* CARDS – 5 / 10 / 20 ans - RESPONSIVE */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {[5, 10, projectionYears].map((year) => {
                   const data = getYearData(year);
                   const selectedData =
                     whereMoneyMode === "financement" ? data.credit : data.cash;
@@ -5933,7 +6503,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                     borderColor = "border-blue-500/30";
                     shadowColor =
                       "hover:shadow-[0_0_30px_rgba(59,130,246,0.25)]";
-                  } else if (year === 20) {
+                  } else if (year >= 20) {
                     headerColor = "text-emerald-500";
                     borderColor = "border-emerald-500/30";
                     shadowColor =
@@ -5943,102 +6513,118 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                   return (
                     <div
                       key={year}
-                      className={`relative bg-[#0b0b0b]/60 backdrop-blur-md border ${borderColor} rounded-2xl p-6 overflow-hidden group transition-all duration-300 hover:border-white/30 ${shadowColor}`}
+                      className={`relative bg-[#0b0b0b]/60 backdrop-blur-md border ${borderColor} rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group transition-all duration-300 hover:border-white/30 ${shadowColor}`}
                     >
-                      {/* watermark année */}
-                      <div className="absolute top-4 right-4 text-[130px] font-black text-white opacity-[0.03] leading-none select-none pointer-events-none">
+                      {/* watermark année - RESPONSIVE */}
+                      <div className="absolute top-2 sm:top-4 right-2 sm:right-4 text-[80px] sm:text-[100px] md:text-[130px] font-black text-white opacity-[0.03] leading-none select-none pointer-events-none">
                         {year}
                       </div>
 
                       <h3
-                        className={`${headerColor} font-bold text-sm uppercase mb-6 tracking-wider`}
+                        className={`${headerColor} font-bold text-xs sm:text-sm uppercase mb-4 sm:mb-6 tracking-wider`}
                       >
                         DANS {year} ANS
                       </h3>
 
-                      <div className="space-y-6 relative z-10">
+                      <div className="space-y-4 sm:space-y-6 relative z-10">
                         {/* SCENARIO SOLAIRE */}
-                        <div className="bg-gradient-to-br from-blue-950/30 to-blue-900/10 border border-blue-500/20 p-4 rounded-xl">
-                          <div className="flex items-center gap-2 mb-3">
-                            <CheckCircle2 size={14} className="text-blue-400" />
-                            <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">
+                        <div className="bg-gradient-to-br from-blue-950/30 to-blue-900/10 border border-blue-500/20 p-3 sm:p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                            <CheckCircle2
+                              size={12}
+                              className="sm:w-3.5 sm:h-3.5 text-blue-400 flex-shrink-0"
+                            />
+                            <span className="text-[9px] sm:text-[10px] text-blue-400 font-bold uppercase tracking-wider">
                               Avec installation solaire
                             </span>
                           </div>
 
-                          <div className="space-y-3">
+                          <div className="space-y-2 sm:space-y-3">
                             <div>
-                              <p className="text-[9px] text-slate-500 uppercase mb-1">
+                              <p className="text-[8px] sm:text-[9px] text-slate-500 uppercase mb-1">
                                 Total dépensé en énergie
                               </p>
-                              <p className="text-2xl font-black text-white tabular-nums">
+                              <p className="text-xl sm:text-2xl font-black text-white tabular-nums break-words">
                                 {formatMoney(youPaid)}
                               </p>
                             </div>
 
                             {difference > 0 && (
-                              <div className="bg-emerald-950/30 border border-emerald-500/30 p-3 rounded-lg">
-                                <p className="text-[9px] text-emerald-400 uppercase mb-1">
+                              <div className="bg-emerald-950/30 border border-emerald-500/30 p-2 sm:p-3 rounded-lg">
+                                <p className="text-[8px] sm:text-[9px] text-emerald-400 uppercase mb-1">
                                   Différence observée
                                 </p>
-                                <p className="text-3xl font-black text-emerald-400 tabular-nums">
+                                <p className="text-2xl sm:text-3xl font-black text-emerald-400 tabular-nums break-words">
                                   +{formatMoney(difference)}
                                 </p>
                               </div>
                             )}
 
-                            {difference <= 0 && (
-                              <div className="bg-orange-950/30 border border-orange-500/30 p-3 rounded-lg">
-                                <p className="text-[9px] text-orange-400 uppercase mb-1">
-                                  Phase d’équilibre
-                                </p>
-                                <p className="text-lg font-black text-orange-400">
-                                  Retour estimé dans{" "}
-                                  {calculationResult.breakEvenPoint - year} ans
-                                </p>
-                              </div>
-                            )}
+                            {/* ✅ CORRIGÉ : Utiliser le bon breakEvenPoint selon le mode */}
+                            {(() => {
+                              const breakEven =
+                                whereMoneyMode === "financement"
+                                  ? calculationResult.breakEvenPoint
+                                  : calculationResult.breakEvenPointCash;
+
+                              return (
+                                difference <= 0 &&
+                                year < breakEven && (
+                                  <div className="bg-orange-950/30 border border-orange-500/30 p-2 sm:p-3 rounded-lg">
+                                    <p className="text-[8px] sm:text-[9px] text-orange-400 uppercase mb-1">
+                                      Phase d'équilibre
+                                    </p>
+                                    <p className="text-sm sm:text-lg font-black text-orange-400 break-words">
+                                      Retour estimé dans {breakEven - year} ans
+                                    </p>
+                                  </div>
+                                )
+                              );
+                            })()}
                           </div>
                         </div>
 
                         {/* STATU QUO */}
-                        <div className="bg-gradient-to-br from-red-950/40 to-red-900/20 border border-red-500/20 p-4 rounded-xl">
-                          <div className="flex items-center gap-2 mb-3">
-                            <AlertTriangle size={14} className="text-red-400" />
-                            <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                        <div className="bg-gradient-to-br from-red-950/40 to-red-900/20 border border-red-500/20 p-3 sm:p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                            <AlertTriangle
+                              size={12}
+                              className="sm:w-3.5 sm:h-3.5 text-red-400 flex-shrink-0"
+                            />
+                            <span className="text-[9px] sm:text-[10px] text-red-400 font-bold uppercase tracking-wider leading-tight">
                               Sans changement (factures actuelles)
                             </span>
                           </div>
 
-                          <p className="text-[9px] text-red-300 uppercase mb-1">
+                          <p className="text-[8px] sm:text-[9px] text-red-300 uppercase mb-1">
                             Dépenses en énergie (non récupérables)
                           </p>
-                          <p className="text-2xl font-black text-red-400 tabular-nums">
+                          <p className="text-xl sm:text-2xl font-black text-red-400 tabular-nums break-words">
                             {formatMoney(youWouldHavePaid)}
                           </p>
 
                           {difference > 0 && (
-                            <div className="mt-3 pt-3 border-t border-red-900/30">
-                              <p className="text-[9px] text-red-500 uppercase mb-1">
+                            <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-red-900/30">
+                              <p className="text-[8px] sm:text-[9px] text-red-500 uppercase mb-1">
                                 Écart constaté
                               </p>
-                              <p className="text-xl font-black text-red-500 tabular-nums">
+                              <p className="text-lg sm:text-xl font-black text-red-500 tabular-nums break-words">
                                 {formatMoney(difference)}
                               </p>
                             </div>
                           )}
                         </div>
 
-                        {/* Résumé final (seulement 20 ans) */}
-                        {year === 20 && difference > 0 && (
-                          <div className="bg-emerald-600/15 border border-emerald-500/30 p-4 rounded-xl backdrop-blur-sm">
-                            <p className="text-[10px] text-emerald-400 font-bold uppercase text-center mb-1">
+                        {/* Résumé final (seulement dernière année) */}
+                        {year === projectionYears && difference > 0 && (
+                          <div className="bg-emerald-600/15 border border-emerald-500/30 p-3 sm:p-4 rounded-xl backdrop-blur-sm">
+                            <p className="text-[9px] sm:text-[10px] text-emerald-400 font-bold uppercase text-center mb-1">
                               Visualisation synthétique
                             </p>
-                            <p className="text-4xl font-black text-emerald-400 text-center tabular-nums">
+                            <p className="text-3xl sm:text-4xl font-black text-emerald-400 text-center tabular-nums break-words">
                               +{formatMoney(difference)}
                             </p>
-                            <p className="text-[9px] text-emerald-300 text-center mt-1 uppercase">
+                            <p className="text-[8px] sm:text-[9px] text-emerald-300 text-center mt-1 uppercase">
                               dans votre maison, au lieu de 0€
                             </p>
                           </div>
@@ -6046,7 +6632,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
                         {/* Phrase ANCRAGE – anti regret */}
                         {year === 10 && (
-                          <p className="mt-6 pt-6 border-t border-white/5 text-xs text-blue-400 font-medium uppercase">
+                          <p className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/5 text-[10px] sm:text-xs text-blue-400 font-medium uppercase leading-relaxed">
                             Ce graphique est un repère. La vraie décision
                             concerne votre maison, votre confort et la maîtrise
                             durable de vos dépenses.
@@ -6058,20 +6644,22 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 })}
               </div>
 
-              {/* URGENCE NEUTRALE */}
-              <div className="mt-10 bg-gradient-to-r from-orange-950/30 to-red-950/30 border-l-4 border-orange-500 p-6 rounded-xl">
-                <div className="flex items-start gap-4">
+              {/* URGENCE NEUTRALE - RESPONSIVE */}
+              <div className="mt-6 sm:mt-8 md:mt-10 bg-gradient-to-r from-orange-950/30 to-red-950/30 border-l-4 border-orange-500 p-4 sm:p-6 rounded-xl">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <Clock
-                    size={24}
-                    className="text-orange-400 flex-shrink-0 mt-1"
+                    size={20}
+                    className="sm:w-6 sm:h-6 text-orange-400 flex-shrink-0 mt-1"
                   />
                   <div>
-                    <h4 className="text-orange-400 font-bold text-lg mb-2">
+                    <h4 className="text-orange-400 font-bold text-base sm:text-lg mb-2">
                       Dépense mensuelle actuelle :{" "}
-                      {formatMoney(calculationResult.oldMonthlyBillYear1)}
+                      <span className="break-words">
+                        {formatMoney(calculationResult.oldMonthlyBillYear1)}
+                      </span>
                     </h4>
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                      Aujourd’hui, chaque mois représente ce montant dépensé en
+                    <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                      Aujourd'hui, chaque mois représente ce montant dépensé en
                       énergie. Avec installation solaire, cette même dépense
                       devient progressivement un investissement utile – sur{" "}
                       {projectionYears} ans.
@@ -6080,109 +6668,59 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
                 </div>
               </div>
             </div>
-            {/* 🎧 Coach – ultra discret en bas à gauche */}
-            <div
-              style={{
-                position: "fixed",
-                bottom: "12px",
-                left: "12px", // ✅ CHANGÉ
-                zIndex: 9999999,
-                pointerEvents: "auto",
-              }}
-            >
-              <button
-                onClick={() => setShowCoachTip((p) => !p)}
-                onMouseDown={(e) => e.preventDefault()}
-                onContextMenu={(e) => e.preventDefault()}
-                style={{
-                  width: "6px", // ✅ Plus petit
-                  height: "6px",
-                  borderRadius: "50%",
-                  background: "rgba(100,100,100,0.15)", // ✅ Gris discret
-                  border: "none",
-                  cursor: "pointer",
-                  transition: "0.3s ease",
-                  padding: 0,
-                  opacity: 0.3, // ✅ Quasi invisible
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.width = "58px";
-                  e.currentTarget.style.height = "20px";
-                  e.currentTarget.innerText = "coach";
-                  e.currentTarget.style.borderRadius = "6px";
-                  e.currentTarget.style.background = "rgba(0,0,0,0.75)";
-                  e.currentTarget.style.color = "rgba(255,255,255,0.7)";
-                  e.currentTarget.style.fontSize = "10px";
-                  e.currentTarget.style.fontWeight = "500";
-                  e.currentTarget.style.padding = "2px 8px";
-                  e.currentTarget.style.opacity = "1";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.width = "6px";
-                  e.currentTarget.style.height = "6px";
-                  e.currentTarget.innerText = "";
-                  e.currentTarget.style.borderRadius = "50%";
-                  e.currentTarget.style.background = "rgba(100,100,100,0.15)";
-                  e.currentTarget.style.color = "transparent";
-                  e.currentTarget.style.padding = "0";
-                  e.currentTarget.style.opacity = "0.3";
-                }}
-              />
 
-              {/* 🎧 Coach – PORTAL – bouton interne sécurisé */}
-              {createPortal(
-                <div
+            {/* ✅ CORRIGÉ : UN SEUL BOUTON COACH (Portal uniquement) */}
+            {createPortal(
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: "12px",
+                  left: "12px",
+                  zIndex: 999999999,
+                  pointerEvents: "auto",
+                }}
+              >
+                <button
+                  onClick={() => setShowCoachTip((p) => !p)}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
                   style={{
-                    position: "fixed",
-                    bottom: "12px",
-                    left: "12px", // ✅ CHANGÉ
-                    zIndex: 999999999,
-                    pointerEvents: "auto",
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: "rgba(100,100,100,0.15)",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "0.3s ease",
+                    padding: 0,
+                    opacity: 0.3,
                   }}
-                >
-                  <button
-                    onClick={() => setShowCoachTip((p) => !p)}
-                    onMouseDown={(e) => e.preventDefault()}
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                      width: "6px", // ✅ Plus petit
-                      height: "6px",
-                      borderRadius: "50%",
-                      background: "rgba(100,100,100,0.15)", // ✅ Gris discret
-                      border: "none",
-                      cursor: "pointer",
-                      transition: "0.3s ease",
-                      padding: 0,
-                      opacity: 0.3, // ✅ Quasi invisible
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.width = "58px";
-                      e.currentTarget.style.height = "20px";
-                      e.currentTarget.innerText = "coach";
-                      e.currentTarget.style.borderRadius = "6px";
-                      e.currentTarget.style.background = "rgba(0,0,0,0.75)";
-                      e.currentTarget.style.color = "rgba(255,255,255,0.7)";
-                      e.currentTarget.style.fontSize = "10px";
-                      e.currentTarget.style.fontWeight = "500";
-                      e.currentTarget.style.padding = "2px 8px";
-                      e.currentTarget.style.opacity = "1";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.width = "6px";
-                      e.currentTarget.style.height = "6px";
-                      e.currentTarget.innerText = "";
-                      e.currentTarget.style.borderRadius = "50%";
-                      e.currentTarget.style.background =
-                        "rgba(100,100,100,0.15)";
-                      e.currentTarget.style.color = "transparent";
-                      e.currentTarget.style.padding = "0";
-                      e.currentTarget.style.opacity = "0.3";
-                    }}
-                  />
-                </div>,
-                document.body
-              )}
-            </div>
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.width = "58px";
+                    e.currentTarget.style.height = "20px";
+                    e.currentTarget.innerText = "coach";
+                    e.currentTarget.style.borderRadius = "6px";
+                    e.currentTarget.style.background = "rgba(0,0,0,0.75)";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+                    e.currentTarget.style.fontSize = "10px";
+                    e.currentTarget.style.fontWeight = "500";
+                    e.currentTarget.style.padding = "2px 8px";
+                    e.currentTarget.style.opacity = "1";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.width = "6px";
+                    e.currentTarget.style.height = "6px";
+                    e.currentTarget.innerText = "";
+                    e.currentTarget.style.borderRadius = "50%";
+                    e.currentTarget.style.background = "rgba(100,100,100,0.15)";
+                    e.currentTarget.style.color = "transparent";
+                    e.currentTarget.style.padding = "0";
+                    e.currentTarget.style.opacity = "0.3";
+                  }}
+                />
+              </div>,
+              document.body
+            )}
           </ModuleSection>
 
           {/* ============================================
@@ -6422,29 +6960,36 @@ MODULE 5 : COMPARAISON – Vos autres options
             title="Comparaison avec vos autres options"
             icon={<Landmark className="text-purple-500" />}
             defaultOpen={false}
+            onOpen={(id) => {
+              setActiveModule(id);
+            }}
           >
-            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 relative">
-              <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                <Landmark size={120} className="text-purple-500" />
+            <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 md:p-8 relative">
+              <div className="absolute top-0 right-0 p-6 sm:p-8 opacity-10 pointer-events-none">
+                <Landmark
+                  size={80}
+                  className="sm:w-[100px] sm:h-[100px] md:w-[120px] md:h-[120px] text-purple-500"
+                />
               </div>
 
               <div className="relative z-10">
-                {/* HEADER */}
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="text-purple-500">
-                    <Landmark size={26} />
+                {/* HEADER - RESPONSIVE */}
+                <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                  <div className="text-purple-500 flex-shrink-0">
+                    <Landmark size={22} className="sm:w-[26px] sm:h-[26px]" />
                   </div>
-                  <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-black text-white uppercase tracking-tight">
                     Comparaison avec vos autres options
                   </h2>
                 </div>
-                <p className="text-[10px] text-slate-400 italic mb-3">
+
+                <p className="text-[10px] text-slate-400 italic mb-3 px-2">
                   Ce qui suit ne sert pas à choisir — juste à vérifier qu'on ne
                   fait pas une erreur.
                 </p>
 
-                {/* ✅ LIGNE 1 AVEC INFOBULLE */}
-                <div className="mb-4 bg-blue-950/30 border-l-4 border-blue-500 p-4 rounded text-sm text-gray-300 leading-relaxed flex items-start gap-3">
+                {/* ✅ LIGNE 1 - RESPONSIVE */}
+                <div className="mb-4 bg-blue-950/30 border-l-4 border-blue-500 p-3 sm:p-4 rounded text-xs sm:text-sm text-gray-300 leading-relaxed flex items-start gap-3">
                   <span className="flex-1">
                     Les deux scénarios sont présentés de manière strictement
                     symétrique. La différence observée provient uniquement du
@@ -6470,8 +7015,8 @@ MODULE 5 : COMPARAISON – Vos autres options
                   </InfoPopup>
                 </div>
 
-                {/* ✅ LIGNE 2 AVEC INFOBULLE */}
-                <div className="mb-6 bg-blue-950/30 border-l-4 border-blue-500 p-4 rounded text-sm text-gray-300 leading-relaxed flex items-start gap-3">
+                {/* ✅ LIGNE 2 - RESPONSIVE */}
+                <div className="mb-6 bg-blue-950/30 border-l-4 border-blue-500 p-3 sm:p-4 rounded text-xs sm:text-sm text-gray-300 leading-relaxed flex items-start gap-3">
                   <span className="flex-1">
                     Même avec une stagnation des prix de l'énergie,
                     l'installation reste pertinente car elle remplace une
@@ -6500,13 +7045,13 @@ MODULE 5 : COMPARAISON – Vos autres options
                   </InfoPopup>
                 </div>
 
-                {/* OPTIONS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {/* OPTIONS - RESPONSIVE */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                   {/* LIVRET A */}
                   <div className="flex flex-col gap-3">
-                    <div className="bg-black/60 backdrop-blur-md border border-blue-900/20 p-6 rounded-2xl">
+                    <div className="bg-black/60 backdrop-blur-md border border-blue-900/20 p-4 sm:p-6 rounded-2xl">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-blue-900/30 p-2 rounded-lg text-blue-400">
+                        <div className="bg-blue-900/30 p-2 rounded-lg text-blue-400 flex-shrink-0">
                           <Landmark size={20} />
                         </div>
                         <div>
@@ -6518,31 +7063,34 @@ MODULE 5 : COMPARAISON – Vos autres options
                           </p>
                         </div>
                       </div>
-                      <div className="text-4xl font-black text-blue-500 mb-2">
+                      <div className="text-3xl sm:text-4xl font-black text-blue-500 mb-2 break-words">
                         2.7%
                       </div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         PERFORMANCE ANNUELLE
                       </div>
                     </div>
-                    <div className="bg-blue-950/20 border border-blue-900/30 p-4 rounded-xl">
-                      <div className="text-[10px] text-blue-400 font-bold uppercase mb-1">
-                        Gain sur {projectionYears} ans
+                    <div className="bg-blue-950/20 border border-blue-900/30 p-3 sm:p-4 rounded-xl">
+                      <div className="text-[9px] sm:text-[10px] text-blue-400 font-bold uppercase mb-1">
+                        Gain net {projectionYears} ans
                       </div>
-                      <div className="text-xl font-black text-blue-400">
+                      <div className="text-lg sm:text-xl font-black text-blue-400 break-words">
                         {formatMoney(
                           installCost * Math.pow(1.027, projectionYears) -
                             installCost
                         )}
+                      </div>
+                      <div className="text-[8px] sm:text-[9px] text-slate-500 mt-1">
+                        (capital de {formatMoney(installCost)} bloqué)
                       </div>
                     </div>
                   </div>
 
                   {/* ASSURANCE VIE */}
                   <div className="flex flex-col gap-3">
-                    <div className="bg-black/60 backdrop-blur-md border border-purple-900/20 p-6 rounded-2xl">
+                    <div className="bg-black/60 backdrop-blur-md border border-purple-900/20 p-4 sm:p-6 rounded-2xl">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-purple-900/30 p-2 rounded-lg text-purple-400">
+                        <div className="bg-purple-900/30 p-2 rounded-lg text-purple-400 flex-shrink-0">
                           <ShieldCheck size={20} />
                         </div>
                         <div>
@@ -6554,31 +7102,34 @@ MODULE 5 : COMPARAISON – Vos autres options
                           </p>
                         </div>
                       </div>
-                      <div className="text-4xl font-black text-purple-500 mb-2">
+                      <div className="text-3xl sm:text-4xl font-black text-purple-500 mb-2 break-words">
                         3.5%
                       </div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         PERFORMANCE ANNUELLE
                       </div>
                     </div>
-                    <div className="bg-purple-950/20 border border-purple-900/30 p-4 rounded-xl">
-                      <div className="text-[10px] text-purple-400 font-bold uppercase mb-1">
-                        Gain sur {projectionYears} ans
+                    <div className="bg-purple-950/20 border border-purple-900/30 p-3 sm:p-4 rounded-xl">
+                      <div className="text-[9px] sm:text-[10px] text-purple-400 font-bold uppercase mb-1">
+                        Gain net {projectionYears} ans
                       </div>
-                      <div className="text-xl font-black text-purple-400">
+                      <div className="text-lg sm:text-xl font-black text-purple-400 break-words">
                         {formatMoney(
                           installCost * Math.pow(1.035, projectionYears) -
                             installCost
                         )}
+                      </div>
+                      <div className="text-[8px] sm:text-[9px] text-slate-500 mt-1">
+                        (capital de {formatMoney(installCost)} bloqué)
                       </div>
                     </div>
                   </div>
 
                   {/* SCPI */}
                   <div className="flex flex-col gap-3">
-                    <div className="bg-black/60 backdrop-blur-md border border-orange-900/20 p-6 rounded-2xl">
+                    <div className="bg-black/60 backdrop-blur-md border border-orange-900/20 p-4 sm:p-6 rounded-2xl">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-orange-900/30 p-2 rounded-lg text-orange-400">
+                        <div className="bg-orange-900/30 p-2 rounded-lg text-orange-400 flex-shrink-0">
                           <Home size={20} />
                         </div>
                         <div>
@@ -6590,36 +7141,39 @@ MODULE 5 : COMPARAISON – Vos autres options
                           </p>
                         </div>
                       </div>
-                      <div className="text-4xl font-black text-orange-500 mb-2">
+                      <div className="text-3xl sm:text-4xl font-black text-orange-500 mb-2 break-words">
                         4.5%
                       </div>
-                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         PERFORMANCE ANNUELLE
                       </div>
                     </div>
-                    <div className="bg-orange-950/20 border border-orange-900/30 p-4 rounded-xl">
-                      <div className="text-[10px] text-orange-400 font-bold uppercase mb-1">
-                        Gain sur {projectionYears} ans
+                    <div className="bg-orange-950/20 border border-orange-900/30 p-3 sm:p-4 rounded-xl">
+                      <div className="text-[9px] sm:text-[10px] text-orange-400 font-bold uppercase mb-1">
+                        Gain net {projectionYears} ans
                       </div>
-                      <div className="text-xl font-black text-orange-400">
+                      <div className="text-lg sm:text-xl font-black text-orange-400 break-words">
                         {formatMoney(
                           installCost * Math.pow(1.045, projectionYears) -
                             installCost
                         )}
+                      </div>
+                      <div className="text-[8px] sm:text-[9px] text-slate-500 mt-1">
+                        (capital de {formatMoney(installCost)} bloqué)
                       </div>
                     </div>
                   </div>
 
                   {/* SOLAIRE */}
                   <div className="flex flex-col gap-3">
-                    <div className="bg-[#022c22] border border-emerald-500 p-6 rounded-2xl relative shadow-[0_0_30px_rgba(16,185,129,0.3)]">
-                      {/* ✅ BADGE MODIFIÉ */}
-                      <div className="absolute top-3 right-3 bg-slate-700 text-slate-300 border border-slate-600 text-[9px] font-bold px-2 py-0.5 rounded uppercase">
-                        Garantie 25 ans incluse
+                    <div className="bg-[#022c22] border border-emerald-500 p-4 sm:p-6 rounded-2xl relative shadow-[0_0_30px_rgba(16,185,129,0.3)]">
+                      {/* ✅ BADGE CORRIGÉ */}
+                      <div className="absolute top-2 sm:top-3 right-2 sm:right-3 bg-emerald-900 text-emerald-300 border border-emerald-700 text-[8px] sm:text-[9px] font-bold px-2 py-0.5 rounded uppercase">
+                        Garantie À VIE
                       </div>
 
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="bg-emerald-500/20 p-2 rounded-lg text-emerald-400">
+                      <div className="flex items-center gap-3 mb-4 mt-2">
+                        <div className="bg-emerald-500/20 p-2 rounded-lg text-emerald-400 flex-shrink-0">
                           <Sun size={20} />
                         </div>
                         <div>
@@ -6627,48 +7181,63 @@ MODULE 5 : COMPARAISON – Vos autres options
                             SOLAIRE
                           </h3>
                           <p className="text-[10px] text-emerald-300">
-                            Sans immobiliser de capital
+                            Capital libre
                           </p>
                         </div>
                       </div>
-                      <div className="text-4xl font-black text-emerald-400 mb-2">
+                      <div className="text-3xl sm:text-4xl font-black text-emerald-400 mb-2 break-words">
                         0€
                       </div>
-                      <div className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-4">
+                      <div className="text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-4">
                         CAPITAL BLOQUÉ
                       </div>
                       <div className="border-t border-emerald-500/30 pt-3 text-xs font-bold text-white flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-emerald-400" />
-                        Vous réduisez votre dépendance au réseau
+                        <CheckCircle2
+                          size={14}
+                          className="text-emerald-400 flex-shrink-0"
+                        />
+                        <span className="leading-tight">
+                          Vous réduisez votre dépendance au réseau
+                        </span>
                       </div>
                     </div>
-                    <div className="bg-emerald-950/40 border border-emerald-500/50 p-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-                      <div className="text-[10px] text-emerald-400 font-bold uppercase mb-1">
-                        Écart sur {projectionYears} ans
+                    <div className="bg-emerald-950/40 border border-emerald-500/50 p-3 sm:p-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+                      <div className="text-[9px] sm:text-[10px] text-emerald-400 font-bold uppercase mb-1">
+                        Écart net {projectionYears} ans
                       </div>
-                      <div className="text-xl font-black text-emerald-400">
+                      <div className="text-lg sm:text-xl font-black text-emerald-400 break-words">
                         {formatMoney(calculationResult.totalSavingsProjected)}
                       </div>
-                      <div className="text-[9px] text-emerald-300 mt-1">
-                        Équivalent à{" "}
-                        {formatMoney(calculationResult.bankEquivalentCapital)}{" "}
-                        sur un Livret A
+                      <div className="text-[8px] sm:text-[9px] text-emerald-300 mt-1 leading-tight">
+                        <strong>+ Votre épargne reste libre</strong> (
+                        {formatMoney(installCost)} disponible)
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* FOOTER */}
-                <div className="mt-8 bg-black/40 backdrop-blur-md border border-white/10 p-4 rounded-xl flex items-start gap-3 text-sm text-slate-300 leading-relaxed">
+                {/* FOOTER - RESPONSIVE */}
+                <div className="mt-6 sm:mt-8 bg-black/40 backdrop-blur-md border border-white/10 p-3 sm:p-4 rounded-xl flex items-start gap-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
                   <Lightbulb
-                    size={20}
-                    className="text-yellow-500 flex-shrink-0 mt-0.5"
+                    size={18}
+                    className="sm:w-5 sm:h-5 text-yellow-500 flex-shrink-0 mt-0.5"
                   />
                   <p>
-                    <strong className="text-white">La différence ?</strong> Les
-                    placements immobilisent votre capital. Le solaire permet de
-                    redistribuer dans le temps une dépense énergétique
-                    existante, tout en conservant votre épargne disponible.
+                    <strong className="text-white">
+                      La vraie différence ?
+                    </strong>{" "}
+                    Avec un Livret A, vous bloquez {formatMoney(installCost)}{" "}
+                    pour gagner{" "}
+                    {formatMoney(
+                      installCost * Math.pow(1.027, projectionYears) -
+                        installCost
+                    )}
+                    . Avec le solaire,{" "}
+                    <strong className="text-emerald-400">
+                      vous gardez votre épargne libre
+                    </strong>{" "}
+                    ET vous économisez{" "}
+                    {formatMoney(calculationResult.totalSavingsProjected)}.
                   </p>
                 </div>
               </div>
@@ -6685,51 +7254,99 @@ MODULE 5 : COMPARAISON – Vos autres options
             title="Bilan Total sur X ans"
             icon={<Scale className="text-slate-400" />}
             defaultOpen={false}
+            onOpen={(id) => {
+              setActiveModule(id);
+            }}
           >
-            <div className="bg-black/40 backdrop-blur-xl rounded-[32px] p-8 border border-white/10 relative">
+            <div className="bg-black/40 backdrop-blur-xl rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 md:p-8 border border-white/10 relative">
               {/* ============================================
-        BOUTON SCRIPTS COACH (invisible client)
-        ============================================ */}
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  setShowScripts((p) => !p);
-                }}
-                onMouseDown={(e) => e.preventDefault()}
-                onContextMenu={(e) => e.preventDefault()}
-                className="absolute top-4 right-4 p-2 bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 rounded-lg transition-all opacity-50 hover:opacity-100"
-                title="."
-              >
-                <MessageSquare size={16} className="text-slate-400" />
-              </button>
+    BOUTON SCRIPTS COACH (ULTRA DISCRET comme bouton coach)
+    ============================================ */}
+              {createPortal(
+                <div
+                  style={{
+                    position: "fixed",
+                    bottom: "12px",
+                    left: "80px", // À côté du bouton coach
+                    zIndex: 999999999,
+                    pointerEvents: "auto",
+                  }}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowScripts((p) => !p);
+                    }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                      width: "6px",
+                      height: "6px",
+                      borderRadius: "50%",
+                      background: "rgba(100,100,100,0.15)",
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "0.3s ease",
+                      padding: 0,
+                      opacity: 0.3,
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.width = "68px";
+                      e.currentTarget.style.height = "20px";
+                      e.currentTarget.innerText = "scripts";
+                      e.currentTarget.style.borderRadius = "6px";
+                      e.currentTarget.style.background = "rgba(0,0,0,0.75)";
+                      e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+                      e.currentTarget.style.fontSize = "10px";
+                      e.currentTarget.style.fontWeight = "500";
+                      e.currentTarget.style.padding = "2px 8px";
+                      e.currentTarget.style.opacity = "1";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.width = "6px";
+                      e.currentTarget.style.height = "6px";
+                      e.currentTarget.innerText = "";
+                      e.currentTarget.style.borderRadius = "50%";
+                      e.currentTarget.style.background =
+                        "rgba(100,100,100,0.15)";
+                      e.currentTarget.style.color = "transparent";
+                      e.currentTarget.style.padding = "0";
+                      e.currentTarget.style.opacity = "0.3";
+                    }}
+                  />
+                </div>,
+                document.body
+              )}
 
               {/* ============================================
-        PANEL SCRIPTS — avec transition douce
-        ⚠️ CORRECTION 2 : glissement smooth
-        ============================================ */}
+    PANEL SCRIPTS — RESPONSIVE
+    ============================================ */}
               {showScripts && (
-                <div className="absolute top-16 right-4 z-50 w-96 bg-black/95 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl animate-slideIn">
+                <div className="fixed bottom-16 left-4 z-[999999999] w-[calc(100vw-2rem)] sm:w-80 md:w-96 max-h-[80vh] overflow-y-auto bg-black/95 backdrop-blur-xl border border-white/20 rounded-2xl p-4 sm:p-6 shadow-2xl animate-slideIn">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
                     <div className="flex items-center gap-2">
-                      <MessageSquare size={16} className="text-blue-400" />
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                      <MessageSquare
+                        size={14}
+                        className="sm:w-4 sm:h-4 text-blue-400 flex-shrink-0"
+                      />
+                      <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
                         Scripts Terrain
                       </h3>
                     </div>
                     <button
                       onClick={() => setShowScripts(false)}
-                      className="text-slate-500 hover:text-white transition-colors"
+                      className="text-slate-500 hover:text-white transition-colors flex-shrink-0"
                     >
-                      <X size={16} />
+                      <X size={14} className="sm:w-4 sm:h-4" />
                     </button>
                   </div>
 
-                  {/* Sélecteur profil */}
+                  {/* Sélecteur profil - RESPONSIVE */}
                   <div className="flex gap-2 mb-4">
                     <button
                       onClick={() => setScriptProfile("standard")}
-                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all ${
+                      className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all ${
                         scriptProfile === "standard"
                           ? "bg-blue-600 text-white"
                           : "bg-slate-800 text-slate-400 hover:text-white"
@@ -6739,7 +7356,7 @@ MODULE 5 : COMPARAISON – Vos autres options
                     </button>
                     <button
                       onClick={() => setScriptProfile("banquier")}
-                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all ${
+                      className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all ${
                         scriptProfile === "banquier"
                           ? "bg-emerald-600 text-white"
                           : "bg-slate-800 text-slate-400 hover:text-white"
@@ -6749,7 +7366,7 @@ MODULE 5 : COMPARAISON – Vos autres options
                     </button>
                     <button
                       onClick={() => setScriptProfile("senior")}
-                      className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold uppercase transition-all ${
+                      className={`flex-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold uppercase transition-all ${
                         scriptProfile === "senior"
                           ? "bg-purple-600 text-white"
                           : "bg-slate-800 text-slate-400 hover:text-white"
@@ -6759,67 +7376,70 @@ MODULE 5 : COMPARAISON – Vos autres options
                     </button>
                   </div>
 
-                  {/* Scripts selon profil */}
-                  <div className="space-y-4">
+                  {/* Scripts selon profil - RESPONSIVE */}
+                  <div className="space-y-3 sm:space-y-4">
                     {/* STANDARD */}
                     {scriptProfile === "standard" && (
                       <>
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-blue-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-blue-400">
                                 1
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Avant ouverture
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
                             "Je vous montre juste les faits, pour que vous
                             décidiez sereinement."
                           </p>
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-blue-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-blue-400">
                                 2
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Pendant (après 6-7 sec)
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic mb-2">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic mb-2">
                             "Vous dépensez déjà cette somme. Ici, on choisit
                             simplement où elle va."
                           </p>
-                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
-                            <Clock size={12} className="text-orange-400" />
-                            <span className="text-xs text-orange-400 font-bold">
+                          <div className="flex items-center gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/5">
+                            <Clock
+                              size={10}
+                              className="sm:w-3 sm:h-3 text-orange-400 flex-shrink-0"
+                            />
+                            <span className="text-[10px] sm:text-xs text-orange-400 font-bold">
                               SILENCE 2 SEC OBLIGATOIRE
                             </span>
                           </div>
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-blue-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-blue-400">
                                 3
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Après (ancrage)
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
                             "Sur la seule logique financière… ça tient la route
                             pour vous ?"
                           </p>
-                          <p className="text-xs text-slate-500 mt-2">
+                          <p className="text-[10px] sm:text-xs text-slate-500 mt-2">
                             ⚠️ Attendre réponse — ne rien ajouter
                           </p>
                         </div>
@@ -6829,62 +7449,65 @@ MODULE 5 : COMPARAISON – Vos autres options
                     {/* BANQUIER */}
                     {scriptProfile === "banquier" && (
                       <>
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-emerald-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-emerald-400">
                                 1
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Avant ouverture
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
                             "Je vous affiche simplement les données, pour que
                             vous puissiez arbitrer."
                           </p>
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-emerald-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-emerald-400">
                                 2
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Pendant (après 6-7 sec)
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic mb-2">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic mb-2">
                             "Ce n'est pas un surcoût. C'est un arbitrage
                             budgétaire."
                           </p>
-                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
-                            <Clock size={12} className="text-orange-400" />
-                            <span className="text-xs text-orange-400 font-bold">
+                          <div className="flex items-center gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/5">
+                            <Clock
+                              size={10}
+                              className="sm:w-3 sm:h-3 text-orange-400 flex-shrink-0"
+                            />
+                            <span className="text-[10px] sm:text-xs text-orange-400 font-bold">
                               SILENCE 2 SEC OBLIGATOIRE
                             </span>
                           </div>
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-emerald-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-emerald-400">
                                 3
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Après (ancrage)
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
                             "Sur la base des chiffres, l'arbitrage vous paraît
                             rationnel ?"
                           </p>
-                          <p className="text-xs text-slate-500 mt-2">
+                          <p className="text-[10px] sm:text-xs text-slate-500 mt-2">
                             ⚠️ Attendre réponse — ne rien ajouter
                           </p>
                         </div>
@@ -6894,61 +7517,64 @@ MODULE 5 : COMPARAISON – Vos autres options
                     {/* SENIOR */}
                     {scriptProfile === "senior" && (
                       <>
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-purple-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-purple-400">
                                 1
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Avant ouverture
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
                             "Je vous montre juste les faits, pour que vous
                             décidiez sereinement."
                           </p>
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-purple-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-purple-400">
                                 2
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Pendant (après 6-7 sec)
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic mb-2">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic mb-2">
                             "On ne dépense pas plus. On sécurise simplement une
                             dépense existante."
                           </p>
-                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
-                            <Clock size={12} className="text-orange-400" />
-                            <span className="text-xs text-orange-400 font-bold">
+                          <div className="flex items-center gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/5">
+                            <Clock
+                              size={10}
+                              className="sm:w-3 sm:h-3 text-orange-400 flex-shrink-0"
+                            />
+                            <span className="text-[10px] sm:text-xs text-orange-400 font-bold">
                               SILENCE 2 SEC OBLIGATOIRE
                             </span>
                           </div>
                         </div>
 
-                        <div className="bg-slate-900/50 rounded-xl p-4 border border-white/5">
+                        <div className="bg-slate-900/50 rounded-xl p-3 sm:p-4 border border-white/5">
                           <div className="flex items-center gap-2 mb-2">
-                            <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center">
-                              <span className="text-xs font-bold text-purple-400">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                              <span className="text-[10px] sm:text-xs font-bold text-purple-400">
                                 3
                               </span>
                             </div>
-                            <span className="text-xs text-slate-500 uppercase font-medium">
+                            <span className="text-[10px] sm:text-xs text-slate-500 uppercase font-medium">
                               Après (ancrage)
                             </span>
                           </div>
-                          <p className="text-sm text-slate-200 leading-relaxed italic">
+                          <p className="text-xs sm:text-sm text-slate-200 leading-relaxed italic">
                             "Pour votre tranquillité, ça vous paraît logique ?"
                           </p>
-                          <p className="text-xs text-slate-500 mt-2">
+                          <p className="text-[10px] sm:text-xs text-slate-500 mt-2">
                             ⚠️ Attendre réponse — ne rien ajouter
                           </p>
                         </div>
@@ -6957,8 +7583,8 @@ MODULE 5 : COMPARAISON – Vos autres options
                   </div>
 
                   {/* Note importante */}
-                  <div className="mt-4 pt-4 border-t border-white/10">
-                    <p className="text-xs text-slate-500 italic">
+                  <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-white/10">
+                    <p className="text-[10px] sm:text-xs text-slate-500 italic">
                       💡 Regard écran pendant silence, pas client
                     </p>
                   </div>
@@ -6966,33 +7592,29 @@ MODULE 5 : COMPARAISON – Vos autres options
               )}
 
               {/* ============================================
-        HEADER
-        ============================================ */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+    HEADER - RESPONSIVE
+    ============================================ */}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 sm:mb-8 gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-white/5 rounded-xl border border-white/10">
-                    <Scale className="text-slate-400 w-5 h-5" />
+                  <div className="p-2 sm:p-2.5 bg-white/5 rounded-xl border border-white/10 flex-shrink-0">
+                    <Scale className="text-slate-400 w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black text-white uppercase tracking-tight">
+                    <h2 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
                       BILAN TOTAL SUR {projectionYears} ANS
                     </h2>
-                    {/* ============================================
-              ⚠️ CORRECTION 1 : Ligne d'introduction neutre
-              Protège closing NET si conseiller oublie phrase
-              ============================================ */}
-                    <p className="text-[10px] text-slate-500 mt-1 italic">
+                    <p className="text-[9px] sm:text-[10px] text-slate-500 mt-1 italic">
                       Comparatif objectif – destiné uniquement à éclairer la
                       décision
                     </p>
                   </div>
                 </div>
 
-                {/* Switch Financement/Cash */}
+                {/* Switch Financement/Cash - RESPONSIVE */}
                 <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
                   <button
                     onClick={() => setGouffreMode("financement")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                       gouffreMode === "financement"
                         ? "bg-blue-600 text-white"
                         : "text-slate-500 hover:text-white"
@@ -7002,7 +7624,7 @@ MODULE 5 : COMPARAISON – Vos autres options
                   </button>
                   <button
                     onClick={() => setGouffreMode("cash")}
-                    className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                    className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                       gouffreMode === "cash"
                         ? "bg-emerald-600 text-white"
                         : "text-slate-500 hover:text-white"
@@ -7013,19 +7635,19 @@ MODULE 5 : COMPARAISON – Vos autres options
                 </div>
               </div>
 
-              <div className="space-y-12">
+              <div className="space-y-8 sm:space-y-10 md:space-y-12">
                 {/* ============================================
-          BARRE ROUGE - Sans Solaire
-          ============================================ */}
+      BARRE ROUGE - Sans Solaire - RESPONSIVE
+      ============================================ */}
                 <div className="relative group">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
                     <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                      <span className="text-sm font-bold text-slate-300 uppercase tracking-widest">
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500/80 flex-shrink-0"></div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-300 uppercase tracking-widest">
                         Sans Solaire (Dépense énergétique)
                       </span>
                     </div>
-                    <span className="text-4xl font-black text-white">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white break-words">
                       {formatMoney(
                         gouffreMode === "financement"
                           ? calculationResult.totalSpendNoSolar
@@ -7034,45 +7656,40 @@ MODULE 5 : COMPARAISON – Vos autres options
                     </span>
                   </div>
 
-                  {/* BARRE MASSIVE 3D - ROUGE */}
-                  <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
-                    <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
-                      {/* Shimmer allégé */}
+                  {/* BARRE MASSIVE 3D - ROUGE - RESPONSIVE */}
+                  <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
+                    <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-xl sm:rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-
-                      {/* Highlight top */}
-                      <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
-
-                      {/* Shadow bottom */}
-                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                      <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+                      <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
                     </div>
                   </div>
 
-                  {/* Message neutralisé */}
-                  <div className="flex items-center gap-2 mt-3 text-slate-400 text-sm italic">
-                    <div className="w-1 h-1 rounded-full bg-slate-500"></div>
-                    Dépense énergétique actuelle.
+                  {/* Message VENDEUR */}
+                  <div className="flex items-center gap-2 mt-2 sm:mt-3 text-slate-400 text-xs sm:text-sm italic">
+                    <div className="w-1 h-1 rounded-full bg-slate-500 flex-shrink-0"></div>
+                    Argent parti sans retour.
                   </div>
                 </div>
 
                 {/* ============================================
-          BARRE BLEUE/VERTE - Avec Solaire
-          ============================================ */}
+      BARRE BLEUE/VERTE - Avec Solaire - RESPONSIVE
+      ============================================ */}
                 <div className="relative group">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-2">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`w-3 h-3 rounded-full ${
+                        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0 ${
                           gouffreMode === "cash"
                             ? "bg-emerald-500/80"
                             : "bg-blue-500/80"
                         }`}
                       ></div>
-                      <span className="text-sm font-bold text-slate-300 uppercase tracking-widest">
+                      <span className="text-xs sm:text-sm font-bold text-slate-300 uppercase tracking-widest">
                         Avec Solaire (Investissement valorisé)
                       </span>
                     </div>
-                    <span className="text-4xl font-black text-white">
+                    <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white break-words">
                       {formatMoney(
                         gouffreMode === "financement"
                           ? calculationResult.totalSpendSolar
@@ -7081,14 +7698,11 @@ MODULE 5 : COMPARAISON – Vos autres options
                     </span>
                   </div>
 
-                  {/* BARRE MASSIVE 3D - PROPORTIONNELLE */}
-                  <div className="relative h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-                    {/* Fond grisé */}
+                  {/* BARRE MASSIVE 3D - PROPORTIONNELLE - RESPONSIVE */}
+                  <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
                     <div className="absolute inset-0 bg-gradient-to-b from-slate-800/30 to-slate-900/30"></div>
-
-                    {/* Barre proportionnelle */}
                     <div
-                      className={`absolute inset-y-0 left-0 rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ${
+                      className={`absolute inset-y-0 left-0 rounded-xl sm:rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-1000 ${
                         gouffreMode === "cash"
                           ? "bg-gradient-to-b from-emerald-500 via-emerald-600 to-emerald-700"
                           : "bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700"
@@ -7105,35 +7719,38 @@ MODULE 5 : COMPARAISON – Vos autres options
                         }%`,
                       }}
                     >
-                      {/* Shimmer allégé */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
-
-                      {/* Highlight/Shadow */}
-                      <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
-                      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+                      <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+                      <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center mt-3">
-                    {/* Message neutralisé */}
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 sm:mt-3 gap-3">
+                    {/* Message VENDEUR */}
                     <div
-                      className={`flex items-center gap-2 text-sm italic ${
+                      className={`flex items-center gap-2 text-xs sm:text-sm italic ${
                         gouffreMode === "cash"
                           ? "text-emerald-400/70"
                           : "text-blue-400/70"
                       }`}
                     >
-                      <Zap size={14} />
-                      Investissement valorisé sur 25+ ans.
+                      <Zap
+                        size={12}
+                        className="sm:w-3.5 sm:h-3.5 flex-shrink-0"
+                      />
+                      Actif patrimonial pendant 25+ ans.
                     </div>
 
-                    {/* Badge différence */}
-                    <div className="bg-black/60 backdrop-blur-md border border-emerald-500/30 px-5 py-3 rounded-xl flex items-center gap-3">
-                      <Coins size={16} className="text-emerald-400" />
-                      <span className="text-xs text-emerald-400/70 font-bold uppercase tracking-wider">
+                    {/* Badge différence - RESPONSIVE */}
+                    <div className="bg-black/60 backdrop-blur-md border border-emerald-500/30 px-3 sm:px-5 py-2 sm:py-3 rounded-xl flex items-center gap-2 sm:gap-3">
+                      <Coins
+                        size={14}
+                        className="sm:w-4 sm:h-4 text-emerald-400 flex-shrink-0"
+                      />
+                      <span className="text-[10px] sm:text-xs text-emerald-400/70 font-bold uppercase tracking-wider">
                         Différence :
                       </span>
-                      <span className="text-2xl font-black text-emerald-400">
+                      <span className="text-lg sm:text-xl md:text-2xl font-black text-emerald-400 break-words">
                         {formatMoney(
                           gouffreMode === "financement"
                             ? calculationResult.totalSavingsProjected
@@ -7145,16 +7762,16 @@ MODULE 5 : COMPARAISON – Vos autres options
                 </div>
               </div>
 
-              {/* Message explicatif */}
-              <div className="mt-8 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-6 flex items-start gap-4">
-                <div className="p-2 bg-white/5 rounded-lg border border-white/10 flex-shrink-0">
-                  <Info size={16} className="text-slate-400" />
+              {/* Message explicatif - RESPONSIVE */}
+              <div className="mt-6 sm:mt-8 bg-black/60 backdrop-blur-md border border-white/10 rounded-xl p-4 sm:p-6 flex items-start gap-3 sm:gap-4">
+                <div className="p-1.5 sm:p-2 bg-white/5 rounded-lg border border-white/10 flex-shrink-0">
+                  <Info size={14} className="sm:w-4 sm:h-4 text-slate-400" />
                 </div>
                 <div>
-                  <h3 className="text-white font-bold text-sm mb-2 uppercase tracking-wider">
+                  <h3 className="text-white font-bold text-xs sm:text-sm mb-2 uppercase tracking-wider">
                     Lecture du bilan
                   </h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
                     Le scénario{" "}
                     <strong className="text-red-400">sans solaire</strong>{" "}
                     représente votre dépense énergétique actuelle. Le scénario{" "}
@@ -7175,39 +7792,86 @@ MODULE 5 : COMPARAISON – Vos autres options
             id="tableau-detaille"
             title="Projection Financière — 20 ans"
             icon={<Table2 className="text-slate-400" />}
-            defaultOpen={false} // fermé par défaut — on ne l’ouvre QUE si demandé
+            defaultOpen={false}
+            onOpen={(id) => {
+              setActiveModule(id);
+            }}
           >
-            <p className="text-[10px] text-slate-400 italic mb-3">
+            <p className="text-[10px] text-slate-400 italic mb-3 px-2">
               Ce qui suit ne sert pas à choisir — juste à vérifier qu'on ne fait
               pas une erreur.
             </p>
-            {/* Coach bouton */}
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-xs text-slate-500 uppercase tracking-wide">
-                Analyse long terme – pour confirmer que la décision est
-                rationnelle
-              </p>
-              <button
-                onClick={() => setShowCoachPanel(!showCoachPanel)}
-                className="text-xs text-slate-600 hover:text-slate-400 transition-colors flex items-center gap-1"
-              >
-                <MessageCircle className="w-3 h-3" />
-                Coach
-              </button>
-            </div>
 
-            {/* Bloc coach terrain */}
+            {/* ============================================
+  BOUTON COACH ULTRA-DISCRET
+  ============================================ */}
+            {createPortal(
+              <div
+                style={{
+                  position: "fixed",
+                  bottom: "12px",
+                  left: "160px", // Après coach et scripts
+                  zIndex: 999999999,
+                  pointerEvents: "auto",
+                }}
+              >
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowCoachPanel((p) => !p);
+                  }}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
+                  style={{
+                    width: "6px",
+                    height: "6px",
+                    borderRadius: "50%",
+                    background: "rgba(100,100,100,0.15)",
+                    border: "none",
+                    cursor: "pointer",
+                    transition: "0.3s ease",
+                    padding: 0,
+                    opacity: 0.3,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.width = "78px";
+                    e.currentTarget.style.height = "20px";
+                    e.currentTarget.innerText = "tableau";
+                    e.currentTarget.style.borderRadius = "6px";
+                    e.currentTarget.style.background = "rgba(0,0,0,0.75)";
+                    e.currentTarget.style.color = "rgba(255,255,255,0.7)";
+                    e.currentTarget.style.fontSize = "10px";
+                    e.currentTarget.style.fontWeight = "500";
+                    e.currentTarget.style.padding = "2px 8px";
+                    e.currentTarget.style.opacity = "1";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.width = "6px";
+                    e.currentTarget.style.height = "6px";
+                    e.currentTarget.innerText = "";
+                    e.currentTarget.style.borderRadius = "50%";
+                    e.currentTarget.style.background = "rgba(100,100,100,0.15)";
+                    e.currentTarget.style.color = "transparent";
+                    e.currentTarget.style.padding = "0";
+                    e.currentTarget.style.opacity = "0.3";
+                  }}
+                />
+              </div>,
+              document.body
+            )}
+
+            {/* Bloc coach terrain - RESPONSIVE */}
             {showCoachPanel && (
-              <div className="mb-4 bg-blue-950/20 border border-blue-500/30 rounded-lg p-3 text-xs">
+              <div className="mb-4 bg-blue-950/20 border border-blue-500/30 rounded-lg p-3 text-xs sm:text-sm">
                 <p className="font-bold text-blue-400 mb-1">
                   Wording terrain recommandé
                 </p>
                 <p className="text-slate-200 italic leading-relaxed">
-                  “Ce tableau n’est pas pour prendre la décision. La décision se
-                  prend sur ce qui se passe aujourd’hui dans votre vie. Ici, on
+                  "Ce tableau n'est pas pour prendre la décision. La décision se
+                  prend sur ce qui se passe aujourd'hui dans votre vie. Ici, on
                   regarde juste comment cette décision se comporte dans le temps
-                  — et ça confirme que ce n’est pas un choix émotionnel, mais
-                  factuel et rationnel.”
+                  — et ça confirme que ce n'est pas un choix émotionnel, mais
+                  factuel et rationnel."
                 </p>
 
                 <details className="mt-2">
@@ -7215,21 +7879,21 @@ MODULE 5 : COMPARAISON – Vos autres options
                     Variante Banquier (chiffres)
                   </summary>
                   <p className="mt-2 text-slate-400 text-[11px] italic">
-                    “Année {Math.floor(creditDurationMonths / 12)} : le crédit
+                    "Année {Math.floor(creditDurationMonths / 12)} : le crédit
                     se termine. À partir de là, la trésorerie devient positive.
-                    C’est la ligne que vous sécurisez aujourd’hui.”
+                    C'est la ligne que vous sécurisez aujourd'hui."
                   </p>
                 </details>
               </div>
             )}
 
-            {/* Contrôles : Scénario et affichage */}
-            <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
+            {/* Contrôles : Scénario et affichage - RESPONSIVE */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
               {/* Financement / Cash */}
               <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
                 <button
                   onClick={() => setTableScenario("financement")}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                     tableScenario === "financement"
                       ? "bg-blue-600 text-white"
                       : "text-slate-500 hover:text-slate-300"
@@ -7239,7 +7903,7 @@ MODULE 5 : COMPARAISON – Vos autres options
                 </button>
                 <button
                   onClick={() => setTableScenario("cash")}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                     tableScenario === "cash"
                       ? "bg-emerald-600 text-white"
                       : "text-slate-500 hover:text-slate-300"
@@ -7253,7 +7917,7 @@ MODULE 5 : COMPARAISON – Vos autres options
               <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
                 <button
                   onClick={() => setTableMode("annuel")}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                     tableMode === "annuel"
                       ? "bg-slate-700 text-white"
                       : "text-slate-500 hover:text-slate-300"
@@ -7264,7 +7928,7 @@ MODULE 5 : COMPARAISON – Vos autres options
 
                 <button
                   onClick={() => setTableMode("mensuel")}
-                  className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase transition-all ${
+                  className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
                     tableMode === "mensuel"
                       ? "bg-blue-600 text-white"
                       : "text-slate-500 hover:text-slate-300"
@@ -7274,291 +7938,344 @@ MODULE 5 : COMPARAISON – Vos autres options
                 </button>
               </div>
             </div>
+            {/* ===== LECTURE BUSINESS ===== */}
+            <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-black/50 border border-white/10 rounded-lg p-3">
+                <p className="text-[10px] uppercase text-slate-400 tracking-wider">
+                  Point de bascule
+                </p>
+                <p className="text-lg font-black text-white">
+                  {breakEvenYear ? `Année ${breakEvenYear}` : "—"}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Moment où l’investissement est totalement absorbé
+                </p>
+              </div>
 
-            {/* TABLEAU */}
-            <div className="overflow-x-auto">
-              <table
-                id="detailed-finance-table"
-                className="w-full text-left border-collapse"
-              >
-                <thead>
-                  <tr className="border-b border-white/10 text-[10px] uppercase text-slate-500 font-bold tracking-wider">
-                    <th className="py-3 px-4">Année</th>
-                    <th className="py-3 px-4 text-red-400">Sans Solaire</th>
+              <div className="bg-black/50 border border-white/10 rounded-lg p-3">
+                <p className="text-[10px] uppercase text-slate-400 tracking-wider">
+                  Gain total
+                </p>
+                <p className="text-lg font-black text-emerald-400">
+                  {formatMoney(finalGain)}
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Trésorerie nette à {projectionYears} ans
+                </p>
+              </div>
 
-                    {/* Mode banquier = détails */}
-                    {showDetails && (
-                      <>
-                        <th className="py-3 px-4 text-blue-400">Crédit</th>
-                        <th className="py-3 px-4 text-yellow-400">
-                          Facture restante
-                        </th>
-                      </>
-                    )}
-
-                    <th className="py-3 px-4 text-white">Avec Solaire</th>
-                    <th className="py-3 px-4 text-slate-300">
-                      Différence {tableMode === "annuel" ? "/an" : "/mois"}
-                    </th>
-                    <th className="py-3 px-4 text-emerald-400 text-right">
-                      Trésorerie cumulée
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="text-sm font-mono text-slate-300">
-                  {/* Année 0 */}
-                  <tr className="border-b border-white/5 bg-[#1a1505]/30">
-                    <td className="py-4 px-4 text-yellow-500 font-bold">
-                      Année 0
-                    </td>
-                    <td className="py-4 px-4 opacity-50">-</td>
-                    {showDetails && <td className="py-4 px-4 opacity-50">-</td>}
-                    {showDetails && <td className="py-4 px-4 opacity-50">-</td>}
-                    <td className="py-4 px-4 text-yellow-400 font-bold uppercase">
-                      APPORT :{" "}
-                      {formatMoney(
-                        tableScenario === "financement"
-                          ? cashApport
-                          : installCost
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-red-400 font-bold">
-                      {formatMoney(
-                        (tableScenario === "financement"
-                          ? cashApport
-                          : installCost) / (tableMode === "mensuel" ? 12 : 1)
-                      )}
-                    </td>
-                    <td className="py-4 px-4 text-right text-red-500 font-bold">
-                      -
-                      {formatMoney(
-                        tableScenario === "financement"
-                          ? cashApport
-                          : installCost
-                      )}
-                    </td>
-                  </tr>
-
-                  {(tableScenario === "financement"
-                    ? calculationResult.details
-                    : calculationResult.detailsCash
-                  )
-                    .slice(0, projectionYears)
-                    .map((row, i) => {
-                      const isCreditActive =
-                        i < creditDurationMonths / 12 &&
-                        tableScenario === "financement";
-                      const creditAmountYearly = isCreditActive
-                        ? (creditMonthlyPayment + insuranceMonthlyPayment) * 12
-                        : 0;
-                      const divider = tableMode === "mensuel" ? 12 : 1;
-
-                      const noSolar = row.edfBillWithoutSolar / divider;
-                      const credit = creditAmountYearly / divider;
-                      const residue = row.edfResidue / divider;
-                      const totalWithSolar = credit + residue;
-                      const eff = totalWithSolar - noSolar;
-
-                      return (
-                        <tr
-                          key={row.year}
-                          className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                        >
-                          <td className="py-3 px-4 text-slate-500">
-                            {row.year}
-                          </td>
-                          <td className="py-3 px-4 text-red-400/80">
-                            {formatMoney(noSolar)}
-                          </td>
-
-                          {showDetails && (
-                            <>
-                              <td className="py-3 px-4 text-blue-400/80">
-                                {formatMoney(credit)}
-                              </td>
-                              <td className="py-3 px-4 text-yellow-400/80">
-                                {formatMoney(residue)}
-                              </td>
-                            </>
-                          )}
-
-                          <td className="py-3 px-4 font-bold text-white">
-                            {formatMoney(totalWithSolar)}
-                          </td>
-                          <td
-                            className={`py-3 px-4 font-bold ${
-                              eff > 0 ? "text-white" : "text-emerald-400"
-                            }`}
-                          >
-                            {eff > 0 ? "+" : ""}
-                            {formatMoney(eff)}
-                          </td>
-                          <td
-                            className={`py-3 px-4 text-right font-bold ${
-                              row.cumulativeSavings >= 0
-                                ? "text-emerald-500"
-                                : "text-red-500"
-                            }`}
-                          >
-                            {formatMoney(row.cumulativeSavings)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                </tbody>
-
-                {/* Footer total */}
-                <tfoot className="sticky bottom-0 bg-black/95 backdrop-blur-xl border-t-2 border-emerald-500/30">
-                  <tr>
-                    <td
-                      colSpan={showDetails ? 6 : 4}
-                      className="py-3 px-4 text-right text-xs font-bold text-slate-400 uppercase"
-                    >
-                      Gain total sur {projectionYears} ans
-                    </td>
-                    <td className="py-3 px-4 text-right text-xl font-black text-emerald-400">
-                      {formatMoney(
-                        (tableScenario === "financement"
-                          ? calculationResult.details
-                          : calculationResult.detailsCash)[projectionYears - 1]
-                          ?.cumulativeSavings || 0
-                      )}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+              <div className="bg-black/50 border border-white/10 rounded-lg p-3">
+                <p className="text-[10px] uppercase text-slate-400 tracking-wider">
+                  Lecture investissement
+                </p>
+                <p className="text-lg font-black text-blue-400">
+                  {roiPercent}% ROI
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Rapport entre mise de départ et gain final
+                </p>
+              </div>
             </div>
 
-            {/* Toggle vue simplifiée / banquier */}
+            <p className="mb-3 text-[11px] text-slate-400 italic">
+              Les premières années, vous remplacez une facture par un
+              investissement. À partir de{" "}
+              <span className="text-white font-bold">
+                l’année {breakEvenYear}
+              </span>
+              , le système devient structurellement positif.
+            </p>
+
+            {/* TABLEAU - RESPONSIVE */}
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+                <table
+                  id="detailed-finance-table"
+                  className="w-full text-left border-collapse"
+                >
+                  <thead>
+                    <tr className="border-b border-white/10 text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold tracking-wider">
+                      <th className="py-2 sm:py-3 px-2 sm:px-4 whitespace-nowrap">
+                        Année
+                      </th>
+                      <th className="py-2 sm:py-3 px-2 sm:px-4 text-red-400 whitespace-nowrap">
+                        Sans Solaire
+                      </th>
+
+                      {showDetails && (
+                        <>
+                          <th className="py-2 sm:py-3 px-2 sm:px-4 text-blue-400 whitespace-nowrap">
+                            Crédit
+                          </th>
+                          <th className="py-2 sm:py-3 px-2 sm:px-4 text-yellow-400 whitespace-nowrap">
+                            Facture restante
+                          </th>
+                        </>
+                      )}
+
+                      <th className="py-2 sm:py-3 px-2 sm:px-4 text-white whitespace-nowrap">
+                        Avec Solaire
+                      </th>
+                      <th className="py-2 sm:py-3 px-2 sm:px-4 text-slate-300 whitespace-nowrap">
+                        Différence {tableMode === "annuel" ? "/an" : "/mois"}
+                      </th>
+                      <th className="py-2 sm:py-3 px-2 sm:px-4 text-emerald-400 text-right whitespace-nowrap">
+                        Trésorerie cumulée
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="text-xs sm:text-sm font-mono text-slate-300">
+                    {/* Année 0 - CORRIGÉE */}
+                    <tr className="border-b border-white/5 bg-[#1a1505]/30">
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-yellow-500 font-bold whitespace-nowrap">
+                        Année 0
+                      </td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 opacity-50">
+                        -
+                      </td>
+                      {showDetails && (
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 opacity-50">
+                          -
+                        </td>
+                      )}
+                      {showDetails && (
+                        <td className="py-3 sm:py-4 px-2 sm:px-4 opacity-50">
+                          -
+                        </td>
+                      )}
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-yellow-400 font-bold uppercase text-[10px] sm:text-xs whitespace-nowrap">
+                        APPORT :{" "}
+                        {formatMoney(
+                          tableScenario === "financement"
+                            ? cashApport
+                            : installCost
+                        )}
+                      </td>
+                      {/* ✅ CORRIGÉ : Pas de division par 12 */}
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-red-400 font-bold whitespace-nowrap">
+                        -
+                        {formatMoney(
+                          tableScenario === "financement"
+                            ? cashApport
+                            : installCost
+                        )}
+                      </td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-right text-red-500 font-bold whitespace-nowrap">
+                        -
+                        {formatMoney(
+                          tableScenario === "financement"
+                            ? cashApport
+                            : installCost
+                        )}
+                      </td>
+                    </tr>
+
+                    {(tableScenario === "financement"
+                      ? calculationResult.details
+                      : calculationResult.detailsCash
+                    )
+                      .slice(0, projectionYears)
+                      .map((row, i) => {
+                        const isCreditActive =
+                          i < creditDurationMonths / 12 &&
+                          tableScenario === "financement";
+                        const creditAmountYearly = isCreditActive
+                          ? (creditMonthlyPayment + insuranceMonthlyPayment) *
+                            12
+                          : 0;
+                        const divider = tableMode === "mensuel" ? 12 : 1;
+
+                        const noSolar = row.edfBillWithoutSolar / divider;
+                        const credit = creditAmountYearly / divider;
+                        const residue = row.edfResidue / divider;
+                        const totalWithSolar = credit + residue;
+                        const eff = totalWithSolar - noSolar;
+
+                        return (
+                          <tr
+                            key={row.year}
+                            className={`border-b border-white/5 transition-colors ${
+                              breakEvenYear === row.year
+                                ? "bg-emerald-500/10 ring-1 ring-emerald-500/30"
+                                : "hover:bg-white/5"
+                            }`}
+                          >
+                            <td className="py-2 sm:py-3 px-2 sm:px-4 text-slate-500 whitespace-nowrap">
+                              {row.year}
+                            </td>
+                            <td className="py-2 sm:py-3 px-2 sm:px-4 text-red-400/80 whitespace-nowrap">
+                              {formatMoney(noSolar)}
+                            </td>
+
+                            {showDetails && (
+                              <>
+                                <td className="py-2 sm:py-3 px-2 sm:px-4 text-blue-400/80 whitespace-nowrap">
+                                  {formatMoney(credit)}
+                                </td>
+                                <td className="py-2 sm:py-3 px-2 sm:px-4 text-yellow-400/80 whitespace-nowrap">
+                                  {formatMoney(residue)}
+                                </td>
+                              </>
+                            )}
+
+                            <td className="py-2 sm:py-3 px-2 sm:px-4 font-bold text-white whitespace-nowrap">
+                              {formatMoney(totalWithSolar)}
+                            </td>
+                            <td
+                              className={`py-2 sm:py-3 px-2 sm:px-4 font-bold whitespace-nowrap ${
+                                eff > 0 ? "text-white" : "text-emerald-400"
+                              }`}
+                            >
+                              {eff > 0 ? "+" : ""}
+                              {formatMoney(eff)}
+                            </td>
+                            <td
+                              className={`py-2 sm:py-3 px-2 sm:px-4 text-right font-bold whitespace-nowrap ${
+                                row.cumulativeSavings >= 0
+                                  ? "text-emerald-500"
+                                  : "text-red-500"
+                              }`}
+                            >
+                              {formatMoney(row.cumulativeSavings)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+
+                  {/* Footer total - CORRIGÉ */}
+                  <tfoot className="sticky bottom-0 bg-black/95 backdrop-blur-xl border-t-2 border-emerald-500/30">
+                    <tr>
+                      {/* ✅ CORRIGÉ : colspan adapté */}
+                      <td
+                        colSpan={showDetails ? 6 : 5}
+                        className="py-2 sm:py-3 px-2 sm:px-4 text-right text-[10px] sm:text-xs font-bold text-slate-400 uppercase"
+                      >
+                        Gain total sur {projectionYears} ans
+                      </td>
+                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-right text-lg sm:text-xl font-black text-emerald-400 whitespace-nowrap">
+                        {formatMoney(
+                          (tableScenario === "financement"
+                            ? calculationResult.details
+                            : calculationResult.detailsCash)[
+                            projectionYears - 1
+                          ]?.cumulativeSavings || 0
+                        )}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Toggle vue simplifiée / banquier - RESPONSIVE */}
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="mt-4 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              className="mt-4 text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors"
             >
               {showDetails ? "Vue globale" : "Vue complète"}
             </button>
           </ModuleSection>
-        </ModuleSection>
-        {/* ============================================
+
+          {/* ============================================
 MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
 ============================================ */}
 
-        <ModuleSection
-          id="054888f4-10e4-4eae-8c44-08dd0680f68" // L'ID de ta capture !
-          title="PROTOCOLE DE QUALIFICATION"
-          icon={<ShieldCheck className="text-emerald-500" />}
-          defaultOpen={true}
-        >
-          <div
-            id="qualification-process"
-            className="mb-12 bg-[#050505] rounded-[40px] border-2 border-white/5 shadow-[0_40px_80px_rgba(0,0,0,0.9)] overflow-hidden relative group"
+          <ModuleSection
+            id="054888f4-10e4-4eae-8c44-08dd0680f68" // L'ID de ta capture !
+            title="PROTOCOLE DE QUALIFICATION"
+            icon={<ShieldCheck className="text-emerald-500" />}
+            defaultOpen={true}
           >
-            {/* Aura */}
-            <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/5 blur-[100px] pointer-events-none" />
+            <div
+              id="qualification-process"
+              className="mb-12 bg-[#050505] rounded-[40px] border-2 border-white/5 shadow-[0_40px_80px_rgba(0,0,0,0.9)] overflow-hidden relative group"
+            >
+              {/* Aura */}
+              <div className="absolute -top-24 -left-24 w-64 h-64 bg-emerald-500/5 blur-[100px] pointer-events-none" />
 
-            {/* Header */}
-            <div className="px-10 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-                  <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-500 animate-ping opacity-40" />
-                </div>
-                <span className="text-white text-xs font-black uppercase tracking-[0.3em]">
-                  PROTOCOLE DE QUALIFICATION TERMINAL
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 bg-black/40 px-3 py-1 rounded-full border border-white/5">
-                <Clock size={12} className="text-emerald-500" />
-                <span className="uppercase">Session Active : ~15 min</span>
-              </div>
-            </div>
-
-            {/* Timeline */}
-            <div className="px-10 py-16 relative">
-              <div className="absolute top-[108px] left-[10%] right-[10%] h-[3px] bg-white/5" />
-              <div
-                className="absolute top-[108px] left-[10%] h-[3px] bg-gradient-to-r from-emerald-600 via-emerald-400 to-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all duration-700 ease-out"
-                style={{ width: "100%" }}
-              />
-
-              <div className="flex justify-between items-start relative z-10">
-                {[
-                  { label: "Audit Énergétique", sub: "Analysé" },
-                  { label: "Étude Solaire", sub: "Gisement OK" },
-                  {
-                    label: "Éligibilité Aides",
-                    sub: "Prime Auto-Consommation 0.08cts/W",
-                  },
-                  { label: "Synthèse Projet", sub: "Validé" },
-                ].map((step, i) => (
-                  <div key={i} className="flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-[24px] flex items-center justify-center border-2 bg-[#050505] border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)]">
-                      <CheckCircle2
-                        className="text-emerald-400"
-                        size={32}
-                        strokeWidth={2.5}
-                      />
-                    </div>
-                    <div className="text-center mt-6">
-                      <div className="text-[11px] text-white font-black uppercase tracking-widest mb-1">
-                        {step.label}
-                      </div>
-                      <div className="text-[10px] text-slate-500 font-bold uppercase italic tracking-tighter">
-                        {step.sub}
-                      </div>
-                    </div>
+              {/* Header */}
+              <div className="px-10 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="absolute inset-0 w-3 h-3 rounded-full bg-emerald-500 animate-ping opacity-40" />
                   </div>
-                ))}
+                  <span className="text-white text-xs font-black uppercase tracking-[0.3em]">
+                    PROTOCOLE DE QUALIFICATION TERMINAL
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] font-mono text-slate-500 bg-black/40 px-3 py-1 rounded-full border border-white/5">
+                  <Clock size={12} className="text-emerald-500" />
+                  <span className="uppercase">Session Active : ~15 min</span>
+                </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="px-10 py-8 bg-white/[0.02] border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                  <PenLine className="text-blue-400" size={24} />
+              {/* Timeline */}
+              <div className="px-10 py-16 relative">
+                <div className="absolute top-[108px] left-[10%] right-[10%] h-[3px] bg-white/5" />
+                <div
+                  className="absolute top-[108px] left-[10%] h-[3px] bg-gradient-to-r from-emerald-600 via-emerald-400 to-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all duration-700 ease-out"
+                  style={{ width: "100%" }}
+                />
+
+                <div className="flex justify-between items-start relative z-10">
+                  {[
+                    { label: "Audit Énergétique", sub: "Analysé" },
+                    { label: "Étude Solaire", sub: "Gisement OK" },
+                    {
+                      label: "Éligibilité Aides",
+                      sub: "Prime Auto-Consommation 0.08cts/W",
+                    },
+                    { label: "Synthèse Projet", sub: "Validé" },
+                  ].map((step, i) => (
+                    <div key={i} className="flex flex-col items-center">
+                      <div className="w-20 h-20 rounded-[24px] flex items-center justify-center border-2 bg-[#050505] border-emerald-500/50 shadow-[0_0_25px_rgba(16,185,129,0.2)]">
+                        <CheckCircle2
+                          className="text-emerald-400"
+                          size={32}
+                          strokeWidth={2.5}
+                        />
+                      </div>
+                      <div className="text-center mt-6">
+                        <div className="text-[11px] text-white font-black uppercase tracking-widest mb-1">
+                          {step.label}
+                        </div>
+                        <div className="text-[10px] text-slate-500 font-bold uppercase italic tracking-tighter">
+                          {step.sub}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <h4 className="text-white font-black text-sm uppercase italic tracking-tight">
-                    Votre projet est cohérent
-                  </h4>
-                  <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
-                    Projet EDF confirmé pour{" "}
-                    {clientCity
-                      ? clientCity.toUpperCase()
-                      : data?.address
-                      ? data.address.split(",").pop().trim().toUpperCase()
-                      : "VOTRE SECTEUR"}
-                  </p>
+              </div>
+
+              {/* Footer */}
+              <div className="px-10 py-8 bg-white/[0.02] border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                    <PenLine className="text-blue-400" size={24} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-black text-sm uppercase italic tracking-tight">
+                      Votre projet est cohérent
+                    </h4>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-widest">
+                      Projet EDF confirmé pour{" "}
+                      {clientCity
+                        ? clientCity.toUpperCase()
+                        : data?.address
+                        ? data.address.split(",").pop().trim().toUpperCase()
+                        : "VOTRE SECTEUR"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </ModuleSection>
         </ModuleSection>
 
-        {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
-
-        <ModuleTauxUltraPremium
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxPrivilege
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxStandard
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
         {/* ============================================
    💼 WIDGET COMPTEUR - AVEC INFO-BULLE
    ============================================ */}
@@ -7747,7 +8464,29 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
             </button>
           </div>
         </div>
+        {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
 
+        <ModuleTauxUltraPremium
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
+        <ModuleTauxPrivilege
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
+        <ModuleTauxStandard
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
         {/* ==== POPUP NOM DU CLIENT (STYLE IOS PREMIUM) ==== */}
         {__footerPopup && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
@@ -7898,5 +8637,3 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
 };
 
 export default ResultsDashboard;
- 
- 
