@@ -3341,7 +3341,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           id="securite-edf-groupe" // ✅ CHANGÉ
           title="Sécurité EDF – Groupe d'État" // ✅ CHANGÉ
           icon={<ShieldCheck className="text-emerald-500" />}
-          defaultOpen={true} // ✅ DÉJÀ BON
+          defaultOpen={false} // ✅ DÉJÀ BON
         >
           <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-black/40 p-8 backdrop-blur-xl">
             {/* LUEUR AMBIANTE */}
