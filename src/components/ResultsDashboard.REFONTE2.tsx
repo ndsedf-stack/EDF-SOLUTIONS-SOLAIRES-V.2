@@ -2234,66 +2234,6 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       console.log("✅ ÉTUDE CRÉÉE AVEC SUCCÈS:", study.id);
 
       // ═══════════════════════════════════════════════════════════
-      // ✉️ AJOUT EMAIL FILE D'ATTENTE
-      // ═══════════════════════════════════════════════════════════
-      const emailResult = await supabase
-        .from("email_queue")
-        .insert({
-          client_id: clientId,
-          study_id: study.id,
-          email_type: "STUDY_READY",
-          status: "processing",
-          scheduled_for: new Date().toISOString(),
-          payload: {
-            guestview_url: guestUrl,
-          },
-        })
-        .select()
-        .single();
-
-      console.log("📧 Email queue créé:", emailResult);
-
-      if (emailResult.error) {
-        console.error("⚠️ Erreur email queue:", emailResult.error);
-      } else if (emailResult.data) {
-        // ✅ ENVOIE L'EMAIL IMMÉDIATEMENT VIA EDGE FUNCTION
-        console.log("📨 Déclenchement envoi email...");
-
-        try {
-          const response = await fetch(
-            `${
-              import.meta.env.VITE_SUPABASE_URL
-            }/functions/v1/send_email_from_queue`, // ✅
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${
-                  import.meta.env.VITE_SUPABASE_ANON_KEY
-                }`, // ✅
-              },
-              body: JSON.stringify({
-                record: emailResult.data,
-                type: "INSERT",
-                table: "email_queue",
-              }),
-            }
-          );
-
-          const sendResult = await response.json();
-          console.log("✅ Réponse envoi email:", sendResult);
-
-          if (!response.ok) {
-            console.error("❌ Erreur lors de l'envoi:", sendResult);
-          } else {
-            console.log("🎉 Email envoyé avec succès !");
-          }
-        } catch (emailError) {
-          console.error("❌ Erreur appel Edge Function:", emailError);
-        }
-      }
-
-      // ═══════════════════════════════════════════════════════════
       // 🟢 UI
       // ═══════════════════════════════════════════════════════════
       setEncodedUrl(guestUrl);

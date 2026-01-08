@@ -670,6 +670,7 @@
       const SUPABASE_URL = "https://ugwqfvwclwctzgtxcakp.supabase.co";
       const SUPABASE_KEY =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE";
+      const FRONTEND_URL = "https://nicolas-edf-solutions-solaires.vercel.app";
       const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       let fullData = [];
@@ -1089,7 +1090,7 @@
 <tr class="transition-all duration-300 group ${hasAlert ? "bg-red-500/5" : ""}">
 
 
-   <td class="p-7" onclick="window.open('${window.location.origin}/guest/${
+  <td class="p-7" onclick="window.open('${FRONTEND_URL}/guest/${
               s.id
             }', '_blank')" style="cursor: pointer;">
     <div class="flex items-center gap-3">
