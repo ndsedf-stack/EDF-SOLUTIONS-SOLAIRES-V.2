@@ -151,7 +151,7 @@ export default function GuestView() {
 
         const { data, error } = await supabase
           .from("studies")
-          .select("id, status, study_data")
+          .select("id, status, study_data, expires_at, created_at")
           .eq("id", studyId)
           .maybeSingle();
 
