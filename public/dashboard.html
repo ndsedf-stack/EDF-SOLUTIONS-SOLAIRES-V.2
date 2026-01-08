@@ -729,8 +729,10 @@
               .select(
                 "id, status, created_at, deposit_paid, deposit_paid_at, clients(first_name, last_name, email)"
               )
+              .neq("status", "cancelled") // ⬅️ MASQUE LES ANNULÉS
               .order("created_at", { ascending: false })
               .limit(1000),
+
             supabaseClient
               .from("studies_activity_summary")
               .select("*")
@@ -940,6 +942,99 @@
         };
       }
 
+      function forceSign(studyId, clientName) {
+        const modal = document.getElementById("override-modal");
+        const text = document.getElementById("justification-text");
+        modal.showModal();
+
+        document.getElementById("confirm-override-btn").onclick = async () => {
+          const justification = text.value.trim();
+          if (!justification) return alert("Justification obligatoire.");
+
+          await signStudySafe(studyId, clientName, true, justification);
+
+          text.value = "";
+          modal.close();
+        };
+      }
+
+      async function cancelStudySafe(studyId, clientName) {
+        console.log("CANCEL CLICK", { studyId, clientName });
+
+        if (!confirm("Confirmer l'annulation complète de ce dossier ?")) return;
+
+        // 1. Annule l'étude
+        const { error: e1 } = await supabaseClient
+          .from("studies")
+          .update({ status: "cancelled" })
+          .eq("id", studyId);
+
+        if (e1) {
+          alert("Erreur annulation study");
+          return;
+        }
+
+        // 2. Stoppe tous les emails liés
+        const { error: e2 } = await supabaseClient
+          .from("email_queue")
+          .update({ status: "cancelled" })
+          .eq("study_id", studyId)
+          .in("status", ["pending", "scheduled"]);
+
+        if (e2) {
+          alert("Erreur arrêt emails");
+          return;
+        }
+
+        // 3. Log de sécurité
+        await supabaseClient.from("decision_logs").insert({
+          study_id: studyId,
+          client_name: clientName || "Inconnu",
+          action_performed: "CANCELLED",
+          justification: "Annulation depuis dashboard",
+        });
+
+        alert("Dossier annulé. Emails stoppés.");
+        loadData();
+      }
+      async function signStudySafe(
+        studyId,
+        clientName,
+        forced = false,
+        justification = null
+      ) {
+        console.log("SIGN CLICK", studyId);
+
+        if (!forced) {
+          if (!confirm("Confirmer : dossier SIGNÉ ?")) return;
+        }
+
+        const { data, error } = await supabaseClient
+          .from("studies")
+          .update({ status: "signed" })
+          .eq("id", studyId)
+          .neq("status", "signed")
+          .select()
+          .single();
+
+        console.log("SIGN RESULT", { data, error });
+
+        if (error || !data) {
+          alert("Impossible de signer : déjà signé ou erreur.");
+          return;
+        }
+
+        await supabaseClient.from("decision_logs").insert({
+          study_id: studyId,
+          client_name: clientName,
+          action_performed: forced ? "FORCED_TO_SIGNED" : "SIGNED",
+          justification: forced ? justification : "Signature depuis dashboard",
+        });
+
+        alert("Dossier signé. Automatisations déclenchées.");
+        loadData();
+      }
+
       function togglePriority() {
         isPriorityMode = !isPriorityMode;
         document
@@ -961,6 +1056,7 @@
         tbody.innerHTML = list
           .map((s) => {
             const hasAlert = anomaliesDetected.includes(s.id);
+            const safeName = s.name.replace(/'/g, "\\'");
 
             const statusClass =
               s.status === "signed"
@@ -978,15 +1074,26 @@
               : "updateStatus('" + s.id + "', this.value)";
 
             const onClickSigned = hasAlert
-              ? "forceAction('" +
+              ? "forceSign('" +
                 s.id +
                 "', '" +
                 s.name.replace(/'/g, "\\'") +
-                "', 'signed')"
-              : "updateStatus('" + s.id + "', 'signed')";
+                "')"
+              : "signStudySafe('" +
+                s.id +
+                "', '" +
+                s.name.replace(/'/g, "\\'") +
+                "')";
 
             return `
-<tr class="transition-all duration-300 group ${hasAlert ? "bg-red-500/5" : ""}">
+<tr 
+onclick="window.open('${window.location.origin}/guest/${s.id}', '_blank')"
+
+  class="transition-all duration-300 group cursor-pointer ${
+    hasAlert ? "bg-red-500/5" : ""
+  }"
+>
+
 
   <td class="p-7">
     <div class="flex items-center gap-3">
@@ -1108,10 +1215,11 @@
           </div>
           ${
             !s.deposit_paid
-              ? `<button onclick="markDepositPaid('${s.id}')" 
-                  class="ml-auto px-2 py-1 rounded bg-emerald-500 text-black font-bold text-[9px] hover:scale-105 transition-all">
-                  ✓
-                </button>`
+              ? `<button 
+     onclick="event.stopPropagation(); markDepositPaid('${s.id}')"
+     class="ml-auto px-2 py-1 rounded bg-emerald-500 text-black font-bold text-[9px] hover:scale-105 transition-all">
+     ✓
+   </button>`
               : ""
           }
         </div>
@@ -1149,16 +1257,18 @@
           <span class="tooltiptext">Remettre en brouillon</span>
         </div>
 
-        <!-- BOUTON ANNULER -->
-        <div class="tooltip">
-          <button
-            onclick="updateStatus('${s.id}', 'cancelled')"
-            class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500 hover:text-white transition-all text-lg font-bold"
-          >
-            ✕
-          </button>
-          <span class="tooltiptext">Annuler le dossier</span>
-        </div>
+      <!-- BOUTON ANNULER -->
+<div class="tooltip">
+  <button
+    onclick="event.stopPropagation(); cancelStudySafe('${s.id}', '${safeName}')"
+    class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500 hover:text-white transition-all text-lg font-bold"
+  >
+    ✕
+  </button>
+  <span class="tooltiptext">Annuler le dossier</span>
+</div>
+
+
         
       </div>
     </div>
@@ -1243,7 +1353,7 @@
           .map((l) => {
             const c = l.clients;
             if (!c) return "";
-
+            const safeEmail = (c.email || "").replace(/'/g, "\\'");
             return `
                   <tr class="hover:bg-white/[0.02] transition-all duration-300">
                     <td class="p-5">
@@ -1272,12 +1382,17 @@
                     </td>
 
                     <td class="p-5 text-center">
-                      ${
-                        c.email_optout
-                          ? `<span class="text-red-400 text-xs font-black uppercase tracking-wider">OUI</span>`
-                          : `<button onclick="setOptOut('${c.email}')" class="action-button px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">STOP EMAILS</button>`
-                      }
-                    </td>
+  ${
+    c.email_optout
+      ? `<span class="text-red-400 text-xs font-black uppercase tracking-wider">OUI</span>`
+      : `<button 
+           onclick="setOptOut('${safeEmail}')"
+           class="action-button px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+           STOP EMAILS
+         </button>`
+  }
+</td>
+
                   </tr>
                 `;
           })
@@ -1296,19 +1411,32 @@
       async function markDepositPaid(studyId) {
         if (!confirm("Confirmer la réception de l'acompte (1500 €) ?")) return;
 
-        const { error } = await supabaseClient
+        // 1. Update study
+        const { data, error } = await supabaseClient
           .from("studies")
           .update({
             deposit_paid: true,
             deposit_paid_at: new Date().toISOString(),
           })
-          .eq("id", studyId);
+          .eq("id", studyId)
+          .eq("deposit_paid", false) // anti double déclenchement
+          .select()
+          .single();
 
-        if (error) {
-          alert("Erreur lors de l'enregistrement de l'acompte");
-        } else {
-          loadData();
+        if (error || !data) {
+          alert("Erreur ou acompte déjà validé.");
+          return;
         }
+
+        // 2. Log
+        await supabaseClient.from("decision_logs").insert({
+          study_id: studyId,
+          action_performed: "DEPOSIT_PAID",
+          justification: "Validation acompte depuis dashboard",
+        });
+
+        alert("Acompte confirmé. Automatisations déclenchées.");
+        loadData();
       }
 
       loadData();
@@ -1318,6 +1446,3 @@
     </script>
   </body>
 </html>
- 
- 
- 

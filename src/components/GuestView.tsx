@@ -45,6 +45,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { createClient } from "@supabase/supabase-js";
+import { useParams } from "react-router-dom";
 
 // ⚙️ CONFIGURATION
 const STUDY_CONFIG = {
@@ -58,6 +59,16 @@ const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
   import.meta.env.VITE_SUPABASE_ANON_KEY!
 );
+
+// 🔍 LOGS DE DÉBOGAGE - À SUPPRIMER APRÈS
+console.log("🔑 URL Supabase:", import.meta.env.VITE_SUPABASE_URL);
+console.log("🔑 Clé existe:", !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+console.log("🔌 Client créé:", !!supabase);
+
+// Exposer pour tests console (temporaire)
+if (typeof window !== "undefined") {
+  (window as any).supabaseClient = supabase;
+}
 
 // Composant ModuleSection
 const ModuleSection: React.FC<{
@@ -129,45 +140,36 @@ export default function GuestView() {
   );
   const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("mensuel");
   const [showDetails, setShowDetails] = useState(false);
+  const { studyId } = useParams<{ studyId: string }>();
 
   useEffect(() => {
     const loadStudy = async () => {
       try {
-        const studyId = window.location.pathname.split("/guest/")[1];
-
         if (!studyId) {
-          throw new Error("ID d'étude manquant dans l'URL");
+          throw new Error("ID d'étude manquant");
         }
 
-        console.log("🔍 Chargement de l'étude:", studyId);
-
-        const { data: studyData, error } = await supabase
+        const { data, error } = await supabase
           .from("studies")
-          .select("*")
+          .select("id, status, study_data")
           .eq("id", studyId)
           .maybeSingle();
 
-        if (error) {
-          console.error("❌ Erreur Supabase:", error);
-          throw error;
-        }
+        if (error) throw error;
+        if (!data) throw new Error("Étude introuvable");
 
-        if (!studyData) {
-          throw new Error("Étude introuvable");
-        }
-
-        setStudy(studyData);
-        setData(studyData.study_data);
+        setStudy(data);
+        setData(data.study_data);
         setLoading(false);
-      } catch (err: any) {
-        console.error("❌ Erreur chargement:", err);
-        setError(err.message);
+      } catch (e: any) {
+        console.error("Erreur chargement étude:", e);
+        setError(e.message || "Erreur inconnue");
         setLoading(false);
       }
     };
 
     loadStudy();
-  }, []);
+  }, [studyId]);
 
   useEffect(() => {
     if (!study?.expires_at) return;
@@ -244,6 +246,22 @@ export default function GuestView() {
     );
   }
 
+  if (!data.details || !data.detailsCash) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">
+            Étude incomplète
+          </h2>
+          <p className="text-slate-400">
+            Cette étude ne contient pas les données nécessaires pour un
+            affichage certifié.
+          </p>
+        </div>
+      </div>
+    );
+  }
   const safeData = {
     n: data.n || "Client",
     e: data.e || 0,
@@ -267,8 +285,19 @@ export default function GuestView() {
     totalSpendSolar: data.totalSpendSolar || null,
     greenValue: data.greenValue || null,
     details: data.details || [],
+    roiPercent: data.roiPercent ?? null,
     detailsCash: data.detailsCash || [],
   };
+  const rows =
+    tableScenario === "financement" ? safeData.details : safeData.detailsCash;
+
+  const certifiedBreakEvenYear = safeData.breakEven;
+  const certifiedFinalGain =
+    rows[safeData.projectionYears - 1]?.cumulativeSavings || null;
+  const certifiedROI = safeData.roiPercent || null;
+  const certifiedAverageGain = safeData.averageYearlyGain || null;
+  const certifiedTotalNoSolar = safeData.totalSpendNoSolar || null;
+  const certifiedTotalSolar = safeData.totalSpendSolar || null;
 
   const formatMoney = (val: number) =>
     new Intl.NumberFormat("fr-FR", {
@@ -293,35 +322,33 @@ export default function GuestView() {
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
-  const monthlyBill = (safeData.conso * safeData.elecPrice) / 12;
-  const monthlyCredit = safeData.m;
-  const monthlyResidue =
-    ((safeData.conso - (safeData.prod * safeData.selfCons) / 100) *
-      safeData.elecPrice) /
-    12;
-  const totalMensuel = monthlyCredit + monthlyResidue;
-  const diffMensuel = totalMensuel - monthlyBill;
+  const firstYearRow =
+    (tableScenario === "financement"
+      ? safeData.details
+      : safeData.detailsCash)?.[0] || null;
 
-  const calculationResult = {
-    oldMonthlyBillYear1: monthlyBill,
-    totalSavings: safeData.e || 0,
-    totalSavingsProjected: safeData.e || 0,
-    breakEvenPoint: safeData.breakEven || Math.round((safeData.d / 12) * 0.67),
-    paybackYear: safeData.breakEven || Math.round((safeData.d / 12) * 0.67),
-    averageYearlyGain:
-      safeData.averageYearlyGain || safeData.e / safeData.projectionYears,
-    greenValue:
-      safeData.greenValue || safeData.prod * safeData.projectionYears * 0.5,
-    totalSpendNoSolar:
-      safeData.totalSpendNoSolar ||
-      monthlyBill * 12 * safeData.projectionYears * 1.05,
-    totalSpendSolar: safeData.totalSpendSolar || totalMensuel * safeData.d,
-  };
+  const monthlyBill = firstYearRow
+    ? firstYearRow.edfBillWithoutSolar / 12
+    : null;
 
-  const gouffreChartData = Array.from({ length: 20 }, (_, i) => ({
-    year: i + 1,
-    cumulativeSpendNoSolar: monthlyBill * 12 * (i + 1) * 1.05,
-    cumulativeSpendSolar: totalMensuel * 12 * (i + 1),
+  const monthlyCredit = firstYearRow?.creditPayment
+    ? firstYearRow.creditPayment / 12
+    : 0;
+
+  const monthlyResidue = firstYearRow ? firstYearRow.edfResidue / 12 : null;
+
+  const totalMensuel = firstYearRow
+    ? tableScenario === "cash"
+      ? firstYearRow.totalWithSolar / 12
+      : monthlyCredit + monthlyResidue
+    : null;
+
+  const diffMensuel = firstYearRow ? totalMensuel - monthlyBill : null;
+
+  const gouffreChartData = rows?.map((r) => ({
+    year: r.year,
+    cumulativeSpendNoSolar: r.cumulativeSpendNoSolar,
+    cumulativeSpendSolar: r.cumulativeSpendSolar,
   }));
 
   const handleCall = () => {
@@ -549,7 +576,7 @@ export default function GuestView() {
                     Retour investissement
                   </div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {calculationResult.breakEvenPoint} ans
+                    {certifiedBreakEvenYear} ans
                   </div>
                   <div className="text-xs text-purple-600 mt-1">
                     puis gain net
@@ -563,8 +590,8 @@ export default function GuestView() {
                   Installation dimensionnée pour couvrir {safeData.selfCons}% de
                   vos besoins annuels. Budget mensuel inférieur à votre facture
                   actuelle dès la première année, puis économies nettes après{" "}
-                  {calculationResult.breakEvenPoint} ans. Projet économiquement
-                  cohérent et techniquement sécurisé.
+                  {certifiedBreakEvenYear} ans. Projet économiquement cohérent
+                  et techniquement sécurisé.
                 </p>
               </div>
             </div>
