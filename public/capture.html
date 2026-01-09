@@ -2,13 +2,17 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>📸 Capture Lead EDF</title>
     <style>
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
       }
 
       body {
@@ -75,7 +79,9 @@
         display: block;
       }
 
+      /* CORRECTION IPHONE : Utilisation d'un label comme zone de clic */
       .upload-area {
+        display: block;
         border: 2px dashed #3b82f6;
         border-radius: 12px;
         padding: 40px 20px;
@@ -86,14 +92,8 @@
         margin-bottom: 20px;
       }
 
-      .upload-area:hover {
-        background: rgba(59, 130, 246, 0.1);
-        border-color: #10b981;
-      }
-
-      .upload-area.dragover {
-        background: rgba(16, 185, 129, 0.1);
-        border-color: #10b981;
+      .upload-area:active {
+        background: rgba(59, 130, 246, 0.2);
       }
 
       .upload-icon {
@@ -106,8 +106,16 @@
         font-size: 14px;
       }
 
-      input[type="file"] {
-        display: none;
+      /* Cache l'input mais le laisse fonctionnel */
+      #photoInput {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
       }
 
       .preview-image {
@@ -134,16 +142,6 @@
         font-family: inherit;
       }
 
-      textarea:focus {
-        outline: none;
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-      }
-
-      textarea::placeholder {
-        color: #64748b;
-      }
-
       .btn-container {
         display: flex;
         gap: 10px;
@@ -160,21 +158,11 @@
         cursor: pointer;
         transition: all 0.2s;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
       }
 
       .btn-send {
         background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
-      }
-
-      .btn-send:active {
-        transform: scale(0.98);
-      }
-
-      .btn-send:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
       }
 
       .btn-clear {
@@ -194,35 +182,17 @@
 
       .status.show {
         display: block;
-        animation: slideIn 0.3s ease;
       }
-
-      @keyframes slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-
       .status.loading {
         background: rgba(59, 130, 246, 0.2);
-        border: 1px solid rgba(59, 130, 246, 0.4);
         color: #3b82f6;
       }
-
       .status.success {
         background: rgba(16, 185, 129, 0.2);
-        border: 1px solid rgba(16, 185, 129, 0.4);
         color: #10b981;
       }
-
       .status.error {
         background: rgba(239, 68, 68, 0.2);
-        border: 1px solid rgba(239, 68, 68, 0.4);
         color: #ef4444;
       }
 
@@ -233,22 +203,10 @@
         padding: 15px;
         margin-bottom: 20px;
         display: none;
-        font-size: 13px;
       }
 
       .extracted-data.show {
         display: block;
-      }
-
-      .extracted-data h3 {
-        color: #10b981;
-        margin-bottom: 10px;
-        font-size: 14px;
-      }
-
-      .extracted-data p {
-        margin: 5px 0;
-        color: white;
       }
     </style>
   </head>
@@ -258,47 +216,41 @@
       <p class="subtitle">EDF Solutions Solaires</p>
 
       <div class="tabs">
-        <div class="tab active" onclick="switchTab('photo')">📷 Photo</div>
-        <div class="tab" onclick="switchTab('text')">✍️ Texte</div>
+        <div id="tab-photo" class="tab active" onclick="switchTab('photo')">
+          📷 Photo
+        </div>
+        <div id="tab-text" class="tab" onclick="switchTab('text')">
+          ✍️ Texte
+        </div>
       </div>
 
-      <!-- TAB PHOTO -->
       <div id="photo-tab" class="tab-content active">
-        <div
-          class="upload-area"
-          id="uploadArea"
-          onclick="document.getElementById('photoInput').click()"
-        >
+        <label for="photoInput" class="upload-area" id="uploadArea">
           <div class="upload-icon">📸</div>
           <div class="upload-text">
-            <strong>Prendre une photo ou importer</strong><br />
-            Le texte sera extrait automatiquement
+            <strong>PRENDRE UNE PHOTO</strong><br />
+            ou importer un document
           </div>
-        </div>
+        </label>
         <input
           type="file"
           id="photoInput"
           accept="image/*"
           capture="environment"
         />
+
         <img id="previewImage" class="preview-image" />
         <div id="extractedData" class="extracted-data"></div>
       </div>
 
-      <!-- TAB TEXTE -->
       <div id="text-tab" class="tab-content">
-        <textarea
-          id="ocr-text"
-          placeholder="Collez ici le texte extrait du formulaire...
-
-Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
-        ></textarea>
+        <textarea id="ocr-text" placeholder="Collez ici le texte..."></textarea>
       </div>
 
       <div class="btn-container">
-        <button class="btn-clear" onclick="clearAll()">🗑️ Effacer</button>
+        <button class="btn-clear" onclick="clearAll()">🗑️</button>
         <button class="btn-send" id="sendBtn" onclick="sendOCR()">
-          🚀 Envoyer
+          🚀 Envoyer Lead
         </button>
       </div>
 
@@ -309,37 +261,31 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
     <script>
       const EDGE_FUNCTION_URL =
         "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
-
       let currentTab = "photo";
       let extractedText = "";
 
-      // Switch tabs
       function switchTab(tab) {
         currentTab = tab;
         document
-          .querySelectorAll(".tab")
-          .forEach((t) => t.classList.remove("active"));
+          .getElementById("photo-tab")
+          .classList.toggle("active", tab === "photo");
         document
-          .querySelectorAll(".tab-content")
-          .forEach((t) => t.classList.remove("active"));
-
-        if (tab === "photo") {
-          document.querySelector(".tab:first-child").classList.add("active");
-          document.getElementById("photo-tab").classList.add("active");
-        } else {
-          document.querySelector(".tab:last-child").classList.add("active");
-          document.getElementById("text-tab").classList.add("active");
-        }
+          .getElementById("text-tab")
+          .classList.toggle("active", tab === "text");
+        document
+          .getElementById("tab-photo")
+          .classList.toggle("active", tab === "photo");
+        document
+          .getElementById("tab-text")
+          .classList.toggle("active", tab === "text");
       }
 
-      // Handle file input
       document
         .getElementById("photoInput")
         .addEventListener("change", async (e) => {
           const file = e.target.files[0];
           if (!file) return;
 
-          // Show preview
           const reader = new FileReader();
           reader.onload = (event) => {
             const img = document.getElementById("previewImage");
@@ -348,85 +294,32 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
           };
           reader.readAsDataURL(file);
 
-          // Extract text with Tesseract
-          showStatus("loading", "🔍 Extraction du texte en cours...");
+          showStatus("loading", "🔍 Analyse en cours...");
 
           try {
             const {
               data: { text },
-            } = await Tesseract.recognize(file, "fra", {
-              logger: (m) => {
-                if (m.status === "recognizing text") {
-                  showStatus(
-                    "loading",
-                    `🔍 Extraction: ${Math.round(m.progress * 100)}%`
-                  );
-                }
-              },
-            });
-
+            } = await Tesseract.recognize(file, "fra");
             extractedText = text;
-
-            // Show extracted data
             displayExtractedData(text);
-            showStatus("success", "✅ Texte extrait avec succès !");
+            showStatus("success", "✅ Analyse terminée");
           } catch (error) {
-            console.error(error);
-            showStatus("error", "❌ Erreur lors de l'extraction du texte");
+            showStatus("error", "❌ Erreur de lecture");
           }
         });
 
-      // Display extracted data preview
       function displayExtractedData(text) {
-        const civilite = /madame/i.test(text)
-          ? "Madame"
-          : /monsieur/i.test(text)
-          ? "Monsieur"
-          : "Non détecté";
-        const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-        const email = emailMatch ? emailMatch[0] : "Non détecté";
-        const nomMatch = text.match(/(?:Monsieur|Madame)\s+([A-ZÀ-Ÿ\- ]+)/i);
-        const nom = nomMatch ? nomMatch[1].trim() : "Non détecté";
-        const dateMatch = text.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
-        const date = dateMatch
-          ? `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`
-          : "Non détectée";
-
-        document.getElementById("extractedData").innerHTML = `
-        <h3>📋 Données extraites :</h3>
-        <p><strong>Civilité :</strong> ${civilite}</p>
-        <p><strong>Nom :</strong> ${nom}</p>
-        <p><strong>Email :</strong> ${email}</p>
-        <p><strong>Date :</strong> ${date}</p>
-      `;
-        document.getElementById("extractedData").classList.add("show");
+        const email =
+          text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)?.[0] ||
+          "Non détecté";
+        const display = document.getElementById("extractedData");
+        display.innerHTML = `<h3>Données trouvées :</h3><p><strong>Email :</strong> ${email}</p><p style="font-size:10px; margin-top:10px; opacity:0.6">${text.substring(
+          0,
+          100
+        )}...</p>`;
+        display.classList.add("show");
       }
 
-      // Drag & Drop
-      const uploadArea = document.getElementById("uploadArea");
-
-      uploadArea.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        uploadArea.classList.add("dragover");
-      });
-
-      uploadArea.addEventListener("dragleave", () => {
-        uploadArea.classList.remove("dragover");
-      });
-
-      uploadArea.addEventListener("drop", (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove("dragover");
-        const file = e.dataTransfer.files[0];
-        if (file && file.type.startsWith("image/")) {
-          document.getElementById("photoInput").files = e.dataTransfer.files;
-          document
-            .getElementById("photoInput")
-            .dispatchEvent(new Event("change"));
-        }
-      });
-
-      // Clear all
       function clearAll() {
         document.getElementById("ocr-text").value = "";
         document.getElementById("previewImage").classList.remove("show");
@@ -436,19 +329,14 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
         document.getElementById("status").className = "status";
       }
 
-      // Send OCR data
       async function sendOCR() {
         let text =
           currentTab === "photo"
             ? extractedText
             : document.getElementById("ocr-text").value.trim();
+        if (!text) return showStatus("error", "❌ Aucun contenu");
 
-        if (!text) {
-          showStatus("error", "❌ Veuillez ajouter une photo ou du texte");
-          return;
-        }
-
-        showStatus("loading", "⏳ Envoi en cours...");
+        showStatus("loading", "⏳ Envoi...");
 
         try {
           const response = await fetch(EDGE_FUNCTION_URL, {
@@ -457,22 +345,14 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
             body: JSON.stringify({ ocr_text: text }),
           });
 
-          const data = await response.json();
-
           if (response.ok) {
-            showStatus(
-              "success",
-              "✅ Lead capturé et email envoyé avec succès !"
-            );
-            setTimeout(() => {
-              clearAll();
-            }, 3000);
+            showStatus("success", "🚀 Lead envoyé avec succès !");
+            setTimeout(clearAll, 3000);
           } else {
-            throw new Error(data.message || "Erreur serveur");
+            throw new Error("Erreur serveur");
           }
         } catch (err) {
-          console.error(err);
-          showStatus("error", "❌ Erreur : " + err.message);
+          showStatus("error", "❌ " + err.message);
         }
       }
 
