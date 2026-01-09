@@ -1,289 +1,486 @@
-<artifact
-  identifier="ocr-lead-capture"
-  type="text/html"
-  title="Page Capture Lead OCR Mobile"
->
-  <!DOCTYPE html>
-  <html lang="fr">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>📸 Capture Lead EDF</title>
-      <style>
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-        }
-        body {
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
-            sans-serif;
-          padding: 20px;
-          background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
-          color: white;
-          min-height: 100vh;
-        }
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>📸 Capture Lead EDF</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        .container {
-          max-width: 500px;
-          margin: 0 auto;
-        }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+          sans-serif;
+        padding: 20px;
+        background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
+        color: white;
+        min-height: 100vh;
+      }
 
-        h1 {
-          font-size: 28px;
-          font-weight: 900;
-          margin-bottom: 10px;
-          text-align: center;
-          background: linear-gradient(135deg, #3b82f6, #10b981);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
+      .container {
+        max-width: 500px;
+        margin: 0 auto;
+      }
 
-        .subtitle {
-          text-align: center;
-          color: #94a3b8;
-          font-size: 14px;
-          margin-bottom: 30px;
-        }
+      h1 {
+        font-size: 28px;
+        font-weight: 900;
+        margin-bottom: 10px;
+        text-align: center;
+        background: linear-gradient(135deg, #3b82f6, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
 
-        .instructions {
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.3);
-          border-radius: 12px;
-          padding: 15px;
-          margin-bottom: 20px;
-          font-size: 13px;
-          line-height: 1.6;
-        }
+      .subtitle {
+        text-align: center;
+        color: #94a3b8;
+        font-size: 14px;
+        margin-bottom: 30px;
+      }
 
-        .instructions strong {
-          color: #3b82f6;
-        }
+      .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
 
-        textarea {
-          width: 100%;
-          min-height: 300px;
-          padding: 15px;
-          font-size: 16px;
-          border: 2px solid #3b82f6;
-          border-radius: 12px;
-          background: #1a1a2e;
-          color: white;
-          resize: vertical;
-          font-family: inherit;
-        }
+      .tab {
+        flex: 1;
+        padding: 15px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 600;
+      }
 
-        textarea:focus {
-          outline: none;
-          border-color: #10b981;
-          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
+      .tab.active {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: #3b82f6;
+        color: #3b82f6;
+      }
 
-        textarea::placeholder {
-          color: #64748b;
-        }
+      .tab-content {
+        display: none;
+      }
 
-        .btn-container {
-          display: flex;
-          gap: 10px;
-          margin-top: 20px;
-        }
+      .tab-content.active {
+        display: block;
+      }
 
-        button {
-          flex: 1;
-          padding: 18px;
-          font-size: 16px;
-          font-weight: bold;
-          border: none;
-          border-radius: 12px;
-          cursor: pointer;
-          transition: all 0.2s;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
+      .upload-area {
+        border: 2px dashed #3b82f6;
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        background: rgba(59, 130, 246, 0.05);
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-bottom: 20px;
+      }
 
-        .btn-send {
-          background: linear-gradient(135deg, #3b82f6, #2563eb);
-          color: white;
-        }
+      .upload-area:hover {
+        background: rgba(59, 130, 246, 0.1);
+        border-color: #10b981;
+      }
 
-        .btn-send:active {
-          transform: scale(0.98);
-        }
+      .upload-area.dragover {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: #10b981;
+      }
 
-        .btn-clear {
-          background: rgba(255, 255, 255, 0.1);
-          color: #94a3b8;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-        }
+      .upload-icon {
+        font-size: 48px;
+        margin-bottom: 10px;
+      }
 
-        .status {
-          margin-top: 20px;
-          padding: 15px;
-          border-radius: 12px;
-          display: none;
-          font-weight: 600;
-          text-align: center;
-        }
+      .upload-text {
+        color: #94a3b8;
+        font-size: 14px;
+      }
 
-        .status.show {
-          display: block;
-          animation: slideIn 0.3s ease;
-        }
+      input[type="file"] {
+        display: none;
+      }
 
-        @keyframes slideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
+      .preview-image {
+        max-width: 100%;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        display: none;
+      }
 
-        .status.loading {
-          background: rgba(59, 130, 246, 0.2);
-          border: 1px solid rgba(59, 130, 246, 0.4);
-          color: #3b82f6;
-        }
+      .preview-image.show {
+        display: block;
+      }
 
-        .status.success {
-          background: rgba(16, 185, 129, 0.2);
-          border: 1px solid rgba(16, 185, 129, 0.4);
-          color: #10b981;
-        }
+      textarea {
+        width: 100%;
+        min-height: 300px;
+        padding: 15px;
+        font-size: 16px;
+        border: 2px solid #3b82f6;
+        border-radius: 12px;
+        background: #1a1a2e;
+        color: white;
+        resize: vertical;
+        font-family: inherit;
+      }
 
-        .status.error {
-          background: rgba(239, 68, 68, 0.2);
-          border: 1px solid rgba(239, 68, 68, 0.4);
-          color: #ef4444;
-        }
+      textarea:focus {
+        outline: none;
+        border-color: #10b981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      }
 
-        .info-box {
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
-          padding: 15px;
-          margin-top: 30px;
-          font-size: 12px;
-          color: #94a3b8;
-        }
+      textarea::placeholder {
+        color: #64748b;
+      }
 
-        .info-box strong {
-          color: white;
-          display: block;
-          margin-bottom: 5px;
+      .btn-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+      }
+
+      button {
+        flex: 1;
+        padding: 18px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .btn-send {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+      }
+
+      .btn-send:active {
+        transform: scale(0.98);
+      }
+
+      .btn-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-clear {
+        background: rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .status {
+        margin-top: 20px;
+        padding: 15px;
+        border-radius: 12px;
+        display: none;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      .status.show {
+        display: block;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
         }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <h1>📸 CAPTURE LEAD OCR</h1>
-        <p class="subtitle">EDF Solutions Solaires</p>
-        <div class="instructions">
-          <strong>📋 Mode d'emploi :</strong><br />
-          1. Prenez une photo du formulaire client<br />
-          2. Utilisez l'OCR de votre téléphone pour copier le texte<br />
-          3. Collez-le ci-dessous et envoyez
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .status.loading {
+        background: rgba(59, 130, 246, 0.2);
+        border: 1px solid rgba(59, 130, 246, 0.4);
+        color: #3b82f6;
+      }
+
+      .status.success {
+        background: rgba(16, 185, 129, 0.2);
+        border: 1px solid rgba(16, 185, 129, 0.4);
+        color: #10b981;
+      }
+
+      .status.error {
+        background: rgba(239, 68, 68, 0.2);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #ef4444;
+      }
+
+      .extracted-data {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: none;
+        font-size: 13px;
+      }
+
+      .extracted-data.show {
+        display: block;
+      }
+
+      .extracted-data h3 {
+        color: #10b981;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .extracted-data p {
+        margin: 5px 0;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📸 CAPTURE LEAD OCR</h1>
+      <p class="subtitle">EDF Solutions Solaires</p>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('photo')">📷 Photo</div>
+        <div class="tab" onclick="switchTab('text')">✍️ Texte</div>
+      </div>
+
+      <!-- TAB PHOTO -->
+      <div id="photo-tab" class="tab-content active">
+        <div
+          class="upload-area"
+          id="uploadArea"
+          onclick="document.getElementById('photoInput').click()"
+        >
+          <div class="upload-icon">📸</div>
+          <div class="upload-text">
+            <strong>Prendre une photo ou importer</strong><br />
+            Le texte sera extrait automatiquement
+          </div>
         </div>
+        <input
+          type="file"
+          id="photoInput"
+          accept="image/*"
+          capture="environment"
+        />
+        <img id="previewImage" class="preview-image" />
+        <div id="extractedData" class="extracted-data"></div>
+      </div>
 
+      <!-- TAB TEXTE -->
+      <div id="text-tab" class="tab-content">
         <textarea
           id="ocr-text"
           placeholder="Collez ici le texte extrait du formulaire...
-Exemple :
-Monsieur DUPONT
-jean.dupont@gmail.com
-Demande du 15/01/2025
-..."
+
+Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
         ></textarea>
-        <div class="btn-container">
-          <button class="btn-clear" onclick="clearText()">🗑️ Effacer</button>
-          <button class="btn-send" onclick="sendOCR()">🚀 Envoyer</button>
-        </div>
-
-        <div id="status" class="status"></div>
-
-        <div class="info-box">
-          <strong>ℹ️ Informations détectées automatiquement :</strong>
-          • Civilité (Monsieur/Madame)<br />
-          • Nom de famille<br />
-          • Email<br />
-          • Date de demande<br />
-          <br />
-          Un email de suivi sera envoyé automatiquement au client.
-        </div>
       </div>
-      <script>
-        // 🔧 CONFIGUREZ VOTRE URL D'EDGE FUNCTION ICI
-        const EDGE_FUNCTION_URL =
-          "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
 
-        function clearText() {
-          document.getElementById("ocr-text").value = "";
-          document.getElementById("status").className = "status";
+      <div class="btn-container">
+        <button class="btn-clear" onclick="clearAll()">🗑️ Effacer</button>
+        <button class="btn-send" id="sendBtn" onclick="sendOCR()">
+          🚀 Envoyer
+        </button>
+      </div>
+
+      <div id="status" class="status"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script>
+      const EDGE_FUNCTION_URL =
+        "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
+
+      let currentTab = "photo";
+      let extractedText = "";
+
+      // Switch tabs
+      function switchTab(tab) {
+        currentTab = tab;
+        document
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        document
+          .querySelectorAll(".tab-content")
+          .forEach((t) => t.classList.remove("active"));
+
+        if (tab === "photo") {
+          document.querySelector(".tab:first-child").classList.add("active");
+          document.getElementById("photo-tab").classList.add("active");
+        } else {
+          document.querySelector(".tab:last-child").classList.add("active");
+          document.getElementById("text-tab").classList.add("active");
         }
+      }
 
-        async function sendOCR() {
-          const text = document.getElementById("ocr-text").value.trim();
-          const statusEl = document.getElementById("status");
+      // Handle file input
+      document
+        .getElementById("photoInput")
+        .addEventListener("change", async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
 
-          if (!text) {
-            showStatus("error", "❌ Veuillez coller du texte avant d'envoyer");
-            return;
-          }
+          // Show preview
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = document.getElementById("previewImage");
+            img.src = event.target.result;
+            img.classList.add("show");
+          };
+          reader.readAsDataURL(file);
 
-          showStatus("loading", "⏳ Traitement en cours...");
+          // Extract text with Tesseract
+          showStatus("loading", "🔍 Extraction du texte en cours...");
 
           try {
-            const response = await fetch(EDGE_FUNCTION_URL, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization:
-                  "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE", // Optionnel si fonction publique
+            const {
+              data: { text },
+            } = await Tesseract.recognize(file, "fra", {
+              logger: (m) => {
+                if (m.status === "recognizing text") {
+                  showStatus(
+                    "loading",
+                    `🔍 Extraction: ${Math.round(m.progress * 100)}%`
+                  );
+                }
               },
-              body: JSON.stringify({ ocr_text: text }),
             });
 
-            const data = await response.json();
+            extractedText = text;
 
-            if (response.ok) {
-              showStatus(
-                "success",
-                "✅ Lead capturé et email envoyé avec succès !"
-              );
-
-              // Efface après 3 secondes
-              setTimeout(() => {
-                clearText();
-              }, 3000);
-            } else {
-              throw new Error(data.message || "Erreur serveur");
-            }
-          } catch (err) {
-            console.error(err);
-            showStatus("error", "❌ Erreur : " + err.message);
+            // Show extracted data
+            displayExtractedData(text);
+            showStatus("success", "✅ Texte extrait avec succès !");
+          } catch (error) {
+            console.error(error);
+            showStatus("error", "❌ Erreur lors de l'extraction du texte");
           }
-        }
-
-        function showStatus(type, message) {
-          const statusEl = document.getElementById("status");
-          statusEl.className = `status ${type} show`;
-          statusEl.textContent = message;
-        }
-
-        // Support du collé automatique
-        document.getElementById("ocr-text").addEventListener("paste", () => {
-          setTimeout(() => {
-            const text = document.getElementById("ocr-text").value;
-            if (text.length > 50) {
-              showStatus("loading", "📝 Texte détecté, prêt à envoyer");
-            }
-          }, 100);
         });
-      </script>
-    </body>
-  </html>
-</artifact>
+
+      // Display extracted data preview
+      function displayExtractedData(text) {
+        const civilite = /madame/i.test(text)
+          ? "Madame"
+          : /monsieur/i.test(text)
+          ? "Monsieur"
+          : "Non détecté";
+        const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+        const email = emailMatch ? emailMatch[0] : "Non détecté";
+        const nomMatch = text.match(/(?:Monsieur|Madame)\s+([A-ZÀ-Ÿ\- ]+)/i);
+        const nom = nomMatch ? nomMatch[1].trim() : "Non détecté";
+        const dateMatch = text.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+        const date = dateMatch
+          ? `${dateMatch[1]}/${dateMatch[2]}/${dateMatch[3]}`
+          : "Non détectée";
+
+        document.getElementById("extractedData").innerHTML = `
+        <h3>📋 Données extraites :</h3>
+        <p><strong>Civilité :</strong> ${civilite}</p>
+        <p><strong>Nom :</strong> ${nom}</p>
+        <p><strong>Email :</strong> ${email}</p>
+        <p><strong>Date :</strong> ${date}</p>
+      `;
+        document.getElementById("extractedData").classList.add("show");
+      }
+
+      // Drag & Drop
+      const uploadArea = document.getElementById("uploadArea");
+
+      uploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadArea.classList.add("dragover");
+      });
+
+      uploadArea.addEventListener("dragleave", () => {
+        uploadArea.classList.remove("dragover");
+      });
+
+      uploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+          document.getElementById("photoInput").files = e.dataTransfer.files;
+          document
+            .getElementById("photoInput")
+            .dispatchEvent(new Event("change"));
+        }
+      });
+
+      // Clear all
+      function clearAll() {
+        document.getElementById("ocr-text").value = "";
+        document.getElementById("previewImage").classList.remove("show");
+        document.getElementById("extractedData").classList.remove("show");
+        document.getElementById("photoInput").value = "";
+        extractedText = "";
+        document.getElementById("status").className = "status";
+      }
+
+      // Send OCR data
+      async function sendOCR() {
+        let text =
+          currentTab === "photo"
+            ? extractedText
+            : document.getElementById("ocr-text").value.trim();
+
+        if (!text) {
+          showStatus("error", "❌ Veuillez ajouter une photo ou du texte");
+          return;
+        }
+
+        showStatus("loading", "⏳ Envoi en cours...");
+
+        try {
+          const response = await fetch(EDGE_FUNCTION_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ocr_text: text }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showStatus(
+              "success",
+              "✅ Lead capturé et email envoyé avec succès !"
+            );
+            setTimeout(() => {
+              clearAll();
+            }, 3000);
+          } else {
+            throw new Error(data.message || "Erreur serveur");
+          }
+        } catch (err) {
+          console.error(err);
+          showStatus("error", "❌ Erreur : " + err.message);
+        }
+      }
+
+      function showStatus(type, message) {
+        const statusEl = document.getElementById("status");
+        statusEl.className = `status ${type} show`;
+        statusEl.textContent = message;
+      }
+    </script>
+  </body>
+</html>
