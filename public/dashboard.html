@@ -824,306 +824,306 @@
     </dialog>
 
     <script>
-            const SUPABASE_URL = "https://ugwqfvwclwctzgtxcakp.supabase.co";
-            const SUPABASE_KEY =
-              "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE";
-            const FRONTEND_URL = "https://nicolas-edf-solutions-solaires.vercel.app";
-            const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      const SUPABASE_URL = "https://ugwqfvwclwctzgtxcakp.supabase.co";
+      const SUPABASE_KEY =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE";
+      const FRONTEND_URL = "https://nicolas-edf-solutions-solaires.vercel.app";
+      const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-            let fullData = [];
-            let allLeadsData = [];
-            let logsData = [];
-            let isPriorityMode = false;
-            let isZenMode = false;
-            let anomaliesDetected = [];
-            let settings = { view_threshold: 5, day_threshold: 3 };
+      let fullData = [];
+      let allLeadsData = [];
+      let logsData = [];
+      let isPriorityMode = false;
+      let isZenMode = false;
+      let anomaliesDetected = [];
+      let settings = { view_threshold: 5, day_threshold: 3 };
 
-            let activeFilters = {
-              search: "",
-              views: null,
-              clicks: null,
-              status: null,
-              optout: false,
+      let activeFilters = {
+        search: "",
+        views: null,
+        clicks: null,
+        status: null,
+        optout: false,
+      };
+
+      let activeLeadFilters = {
+        search: "",
+        today: false,
+        optedOut: false,
+      };
+
+      function toggleFilter(type, value) {
+        const btn = document.getElementById(
+          `filter-${type}-${value.replace("+", "")}`
+        );
+
+        if (activeFilters[type] === value) {
+          activeFilters[type] = null;
+          btn.classList.remove("active");
+        } else {
+          if (type === "views") {
+            document
+              .querySelectorAll('[id^="filter-views"]')
+              .forEach((b) => b.classList.remove("active"));
+          } else if (type === "clicks") {
+            document
+              .querySelectorAll('[id^="filter-clicks"]')
+              .forEach((b) => b.classList.remove("active"));
+          } else if (type === "status") {
+            document
+              .querySelectorAll('[id^="filter-status"]')
+              .forEach((b) => b.classList.remove("active"));
+          } else if (type === "optout") {
+            activeFilters.optout = !activeFilters.optout;
+            btn.classList.toggle("active", activeFilters.optout);
+            render();
+            return;
+          }
+
+          activeFilters[type] = value;
+          btn.classList.add("active");
+        }
+
+        render();
+      }
+
+      function applyFilters() {
+        activeFilters.search = document
+          .getElementById("search-input")
+          .value.toLowerCase();
+        render();
+      }
+
+      function resetFilters() {
+        activeFilters = {
+          search: "",
+          views: null,
+          clicks: null,
+          status: null,
+          optout: false,
+        };
+        document.getElementById("search-input").value = "";
+        document
+          .querySelectorAll(".filter-chip")
+          .forEach((btn) => btn.classList.remove("active"));
+        render();
+      }
+
+      function toggleLeadFilter(type) {
+        const btn = document.getElementById(`filter-lead-${type}`);
+
+        if (type === "today") {
+          activeLeadFilters.today = !activeLeadFilters.today;
+          btn.classList.toggle("active", activeLeadFilters.today);
+        } else if (type === "opted-out") {
+          activeLeadFilters.optedOut = !activeLeadFilters.optedOut;
+          btn.classList.toggle("active", activeLeadFilters.optedOut);
+        }
+
+        renderEmailLeads();
+      }
+
+      function applyLeadsFilters() {
+        activeLeadFilters.search = document
+          .getElementById("search-leads-input")
+          .value.toLowerCase();
+        renderEmailLeads();
+      }
+
+      function resetLeadsFilters() {
+        activeLeadFilters = {
+          search: "",
+          today: false,
+          optedOut: false,
+        };
+        document.getElementById("search-leads-input").value = "";
+        document
+          .querySelectorAll("#filter-lead-today, #filter-lead-optout")
+          .forEach((btn) => btn.classList.remove("active"));
+        renderEmailLeads();
+      }
+
+      function getTimeSince(date) {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 3600;
+        if (interval > 24) return `ACTIF IL Y A ${Math.floor(interval / 24)}J`;
+        if (interval >= 1) return `ACTIF IL Y A ${Math.floor(interval)}H`;
+        return `ACTIF IL Y A ${Math.floor(seconds / 60)}MIN`;
+      }
+
+      function toggleZen() {
+        isZenMode = !isZenMode;
+        document.body.classList.toggle("mode-zen", isZenMode);
+        document.getElementById("btn-zen").innerText = isZenMode
+          ? "👁️ Mode Normal"
+          : "🕊️ Mode Calme";
+      }
+
+      function setTemplate(t) {
+        document.getElementById("justification-text").value = t;
+      }
+
+      function toggleRule(id) {
+        const el = document.getElementById(`rule-${id}`);
+        el.classList.toggle("hidden");
+      }
+
+      async function loadSettings() {
+        try {
+          const { data } = await supabaseClient
+            .from("system_settings")
+            .select("key, value_int");
+          if (data) data.forEach((s) => (settings[s.key] = s.value_int));
+        } catch (e) {
+          console.warn("Settings error");
+        }
+      }
+
+      async function loadData() {
+        alert("DASHBOARD JS CHARGÉ - " + new Date().toISOString()); // 👈 TEST
+        await loadSettings();
+        try {
+          const [
+            { data: studies },
+            { data: stats },
+            { count: queueCount },
+            { data: logs },
+          ] = await Promise.all([
+            supabaseClient
+              .from("studies")
+              .select(
+                "id, status, created_at, deposit_paid, deposit_paid_at, clients(id, first_name, last_name, email, email_optout)"
+              )
+              .neq("status", "cancelled")
+              .order("created_at", { ascending: false })
+              .limit(1000),
+
+            supabaseClient
+              .from("studies_activity_summary_v2")
+              .select("*")
+              .limit(1000),
+
+            supabaseClient
+              .from("email_queue")
+              .select("*", { count: "exact", head: true })
+              .eq("status", "pending"),
+            supabaseClient
+              .from("decision_logs")
+              .select("*")
+              .order("created_at", { ascending: false })
+              .limit(20),
+          ]);
+
+          logsData = logs || [];
+          fullData = (studies || []).map((s) => {
+            const st = (stats || []).find((item) => item.id === s.id) || {};
+            const diffDays =
+              (new Date() - new Date(s.created_at)) / (1000 * 60 * 60 * 24);
+            return {
+              id: s.id,
+              client_id: s.clients?.id || null,
+              name: s.clients
+                ? `${s.clients.first_name || ""} ${
+                    s.clients.last_name || ""
+                  }`.trim()
+                : "Inconnu",
+              email: s.clients?.email || "Pas d'email",
+              status: s.status,
+              created_at: s.created_at,
+              views: st.email_opens || 0,
+              clicks: st.interactions || 0,
+              diffDays: Math.floor(diffDays),
+              hasLog: logsData.some((l) => l.study_id === s.id),
+              deposit_paid: s.deposit_paid || false,
+              deposit_paid_at: s.deposit_paid_at || null,
+              email_optout: s.clients?.email_optout || false,
             };
+          });
 
-            let activeLeadFilters = {
-              search: "",
-              today: false,
-              optedOut: false,
+          const { data: j0Emails } = await supabaseClient
+            .from("email_queue")
+            .select("study_id, email_type, sent_at")
+            .in("email_type", [
+              "anti_j0_cash_deposit_request",
+              "anti_j0_financement_deposit_request",
+            ])
+            .eq("status", "sent");
+
+          fullData = fullData.map((s) => {
+            const j0 = j0Emails?.find((e) => e.study_id === s.id);
+            return {
+              ...s,
+              rib_sent_at: j0?.sent_at || null,
             };
+          });
 
-            function toggleFilter(type, value) {
-              const btn = document.getElementById(
-                `filter-${type}-${value.replace("+", "")}`
-              );
+          updateKPIs(queueCount || 0);
+          detectAnomalies();
+          render();
+          renderLogs();
+        } catch (err) {
+          console.error(err);
+        }
+      }
 
-              if (activeFilters[type] === value) {
-                activeFilters[type] = null;
-                btn.classList.remove("active");
-              } else {
-                if (type === "views") {
-                  document
-                    .querySelectorAll('[id^="filter-views"]')
-                    .forEach((b) => b.classList.remove("active"));
-                } else if (type === "clicks") {
-                  document
-                    .querySelectorAll('[id^="filter-clicks"]')
-                    .forEach((b) => b.classList.remove("active"));
-                } else if (type === "status") {
-                  document
-                    .querySelectorAll('[id^="filter-status"]')
-                    .forEach((b) => b.classList.remove("active"));
-                } else if (type === "optout") {
-                  activeFilters.optout = !activeFilters.optout;
-                  btn.classList.toggle("active", activeFilters.optout);
-                  render();
-                  return;
-                }
+      async function deleteLeadPermanently(clientId, email, clientName) {
+        if (
+          !confirm(
+            `⚠️ SUPPRESSION DÉFINITIVE\n\nVoulez-vous vraiment supprimer définitivement :\n\n${clientName}\n${email}\n\nCette action est IRRÉVERSIBLE !`
+          )
+        ) {
+          return;
+        }
 
-                activeFilters[type] = value;
-                btn.classList.add("active");
-              }
+        const confirmText = prompt(
+          `Pour confirmer, tapez le nom : ${clientName}`
+        );
+        if (confirmText !== clientName) {
+          alert("Annulé");
+          return;
+        }
 
-              render();
-            }
+        try {
+          await supabaseClient
+            .from("studies")
+            .delete()
+            .eq("client_id", clientId);
 
-            function applyFilters() {
-              activeFilters.search = document
-                .getElementById("search-input")
-                .value.toLowerCase();
-              render();
-            }
+          await supabaseClient
+            .from("email_queue")
+            .delete()
+            .eq("client_id", clientId);
 
-            function resetFilters() {
-              activeFilters = {
-                search: "",
-                views: null,
-                clicks: null,
-                status: null,
-                optout: false,
-              };
-              document.getElementById("search-input").value = "";
-              document
-                .querySelectorAll(".filter-chip")
-                .forEach((btn) => btn.classList.remove("active"));
-              render();
-            }
+          await supabaseClient
+            .from("email_leads")
+            .delete()
+            .eq("client_id", clientId);
 
-            function toggleLeadFilter(type) {
-              const btn = document.getElementById(`filter-lead-${type}`);
+          await supabaseClient.from("clients").delete().eq("id", clientId);
 
-              if (type === "today") {
-                activeLeadFilters.today = !activeLeadFilters.today;
-                btn.classList.toggle("active", activeLeadFilters.today);
-              } else if (type === "opted-out") {
-                activeLeadFilters.optedOut = !activeLeadFilters.optedOut;
-                btn.classList.toggle("active", activeLeadFilters.optedOut);
-              }
+          await supabaseClient.from("decision_logs").insert({
+            action_performed: "LEAD_DELETED_PERMANENTLY",
+            client_name: clientName,
+            justification: `Suppression définitive ${email}`,
+          });
 
-              renderEmailLeads();
-            }
+          alert("✅ Lead supprimé définitivement");
+          loadData();
+          loadEmailLeads();
+        } catch (err) {
+          alert("❌ Erreur : " + err.message);
+        }
+      }
 
-            function applyLeadsFilters() {
-              activeLeadFilters.search = document
-                .getElementById("search-leads-input")
-                .value.toLowerCase();
-              renderEmailLeads();
-            }
-
-            function resetLeadsFilters() {
-              activeLeadFilters = {
-                search: "",
-                today: false,
-                optedOut: false,
-              };
-              document.getElementById("search-leads-input").value = "";
-              document
-                .querySelectorAll("#filter-lead-today, #filter-lead-optout")
-                .forEach((btn) => btn.classList.remove("active"));
-              renderEmailLeads();
-            }
-
-            function getTimeSince(date) {
-              const seconds = Math.floor((new Date() - new Date(date)) / 1000);
-              let interval = seconds / 3600;
-              if (interval > 24) return `ACTIF IL Y A ${Math.floor(interval / 24)}J`;
-              if (interval >= 1) return `ACTIF IL Y A ${Math.floor(interval)}H`;
-              return `ACTIF IL Y A ${Math.floor(seconds / 60)}MIN`;
-            }
-
-            function toggleZen() {
-              isZenMode = !isZenMode;
-              document.body.classList.toggle("mode-zen", isZenMode);
-              document.getElementById("btn-zen").innerText = isZenMode
-                ? "👁️ Mode Normal"
-                : "🕊️ Mode Calme";
-            }
-
-            function setTemplate(t) {
-              document.getElementById("justification-text").value = t;
-            }
-
-            function toggleRule(id) {
-              const el = document.getElementById(`rule-${id}`);
-              el.classList.toggle("hidden");
-            }
-
-            async function loadSettings() {
-              try {
-                const { data } = await supabaseClient
-                  .from("system_settings")
-                  .select("key, value_int");
-                if (data) data.forEach((s) => (settings[s.key] = s.value_int));
-              } catch (e) {
-                console.warn("Settings error");
-              }
-            }
-
-            async function loadData() {
-              alert("DASHBOARD JS CHARGÉ - " + new Date().toISOString()); // 👈 TEST
-              await loadSettings();
-              try {
-                const [
-                  { data: studies },
-                  { data: stats },
-                  { count: queueCount },
-                  { data: logs },
-                ] = await Promise.all([
-                  supabaseClient
-                    .from("studies")
-                    .select(
-                      "id, status, created_at, deposit_paid, deposit_paid_at, clients(id, first_name, last_name, email, email_optout)"
-                    )
-                    .neq("status", "cancelled")
-                    .order("created_at", { ascending: false })
-                    .limit(1000),
-
-                  supabaseClient
-                    .from("studies_activity_summary_v2")
-                    .select("*")
-                    .limit(1000),
-
-                  supabaseClient
-                    .from("email_queue")
-                    .select("*", { count: "exact", head: true })
-                    .eq("status", "pending"),
-                  supabaseClient
-                    .from("decision_logs")
-                    .select("*")
-                    .order("created_at", { ascending: false })
-                    .limit(20),
-                ]);
-
-                logsData = logs || [];
-                fullData = (studies || []).map((s) => {
-                  const st = (stats || []).find((item) => item.id === s.id) || {};
-                  const diffDays =
-                    (new Date() - new Date(s.created_at)) / (1000 * 60 * 60 * 24);
-                  return {
-                    id: s.id,
-                    client_id: s.clients?.id || null,
-                    name: s.clients
-                      ? `${s.clients.first_name || ""} ${
-                          s.clients.last_name || ""
-                        }`.trim()
-                      : "Inconnu",
-                    email: s.clients?.email || "Pas d'email",
-                    status: s.status,
-                    created_at: s.created_at,
-                    views: st.email_opens || 0,
-                    clicks: st.interactions || 0,
-                    diffDays: Math.floor(diffDays),
-                    hasLog: logsData.some((l) => l.study_id === s.id),
-                    deposit_paid: s.deposit_paid || false,
-                    deposit_paid_at: s.deposit_paid_at || null,
-                    email_optout: s.clients?.email_optout || false,
-                  };
-                });
-
-                const { data: j0Emails } = await supabaseClient
-                  .from("email_queue")
-                  .select("study_id, email_type, sent_at")
-                  .in("email_type", [
-                    "anti_j0_cash_deposit_request",
-                    "anti_j0_financement_deposit_request",
-                  ])
-                  .eq("status", "sent");
-
-                fullData = fullData.map((s) => {
-                  const j0 = j0Emails?.find((e) => e.study_id === s.id);
-                  return {
-                    ...s,
-                    rib_sent_at: j0?.sent_at || null,
-                  };
-                });
-
-                updateKPIs(queueCount || 0);
-                detectAnomalies();
-                render();
-                renderLogs();
-              } catch (err) {
-                console.error(err);
-              }
-            }
-
-            async function deleteLeadPermanently(clientId, email, clientName) {
-              if (
-                !confirm(
-                  `⚠️ SUPPRESSION DÉFINITIVE\n\nVoulez-vous vraiment supprimer définitivement :\n\n${clientName}\n${email}\n\nCette action est IRRÉVERSIBLE !`
-                )
-              ) {
-                return;
-              }
-
-              const confirmText = prompt(
-                `Pour confirmer, tapez le nom : ${clientName}`
-              );
-              if (confirmText !== clientName) {
-                alert("Annulé");
-                return;
-              }
-
-              try {
-                await supabaseClient
-                  .from("studies")
-                  .delete()
-                  .eq("client_id", clientId);
-
-                await supabaseClient
-                  .from("email_queue")
-                  .delete()
-                  .eq("client_id", clientId);
-
-                await supabaseClient
-                  .from("email_leads")
-                  .delete()
-                  .eq("client_id", clientId);
-
-                await supabaseClient.from("clients").delete().eq("id", clientId);
-
-                await supabaseClient.from("decision_logs").insert({
-                  action_performed: "LEAD_DELETED_PERMANENTLY",
-                  client_name: clientName,
-                  justification: `Suppression définitive ${email}`,
-                });
-
-                alert("✅ Lead supprimé définitivement");
-                loadData();
-                loadEmailLeads();
-              } catch (err) {
-                alert("❌ Erreur : " + err.message);
-              }
-            }
-
-            function renderLogs() {
-              const container = document.getElementById("logs-container");
-              if (logsData.length === 0) {
-                container.innerHTML = `<div class="p-12 text-center text-slate-600 text-[11px] uppercase tracking-widest italic">Aucune archive de forçage...</div>`;
-                return;
-              }
-              container.innerHTML = logsData
-                .map(
-                  (l) => `
+      function renderLogs() {
+        const container = document.getElementById("logs-container");
+        if (logsData.length === 0) {
+          container.innerHTML = `<div class="p-12 text-center text-slate-600 text-[11px] uppercase tracking-widest italic">Aucune archive de forçage...</div>`;
+          return;
+        }
+        container.innerHTML = logsData
+          .map(
+            (l) => `
                           <div class="p-6 flex justify-between items-center hover:bg-white/[0.02] transition-all duration-300">
                             <div class="flex flex-col">
                               <span class="text-[9px] text-orange-400 font-black uppercase tracking-[0.2em] mb-1">${
@@ -1142,56 +1142,56 @@
                               ).toLocaleString()}</div>
                             </div>
                           </div>`
-                )
-                .join("");
-            }
+          )
+          .join("");
+      }
 
-            function detectAnomalies() {
-              const anomalies = [];
-              fullData.forEach((s) => {
-                if (
-                  s.status === "sent" &&
-                  s.views > settings.view_threshold &&
-                  s.clicks === 0
-                ) {
-                  anomalies.push({
-                    id: s.id,
-                    name: s.name,
-                    type: "INTÉRÊT STAGNANT",
-                    desc: `Vue ${s.views} fois sans clic.`,
-                    rule: `Règle : SI statut=SENT ET vues>${settings.view_threshold} ET clics=0`,
-                    obs: `Données observées : Vues=${s.views}, Clics=0`,
-                  });
-                }
-                if (
-                  s.status === "signed" &&
-                  s.diffDays > settings.day_threshold &&
-                  s.views < 2
-                ) {
-                  anomalies.push({
-                    id: s.id,
-                    name: s.name,
-                    type: "SILENCE POST-SIGNATURE",
-                    desc: `Aucune lecture depuis ${s.diffDays}j.`,
-                    rule: `Règle : SI statut=SIGNED ET jours>${settings.day_threshold} ET vues<2`,
-                    obs: `Données observées : Jours=${s.diffDays}, Vues=${s.views}`,
-                  });
-                }
-              });
+      function detectAnomalies() {
+        const anomalies = [];
+        fullData.forEach((s) => {
+          if (
+            s.status === "sent" &&
+            s.views > settings.view_threshold &&
+            s.clicks === 0
+          ) {
+            anomalies.push({
+              id: s.id,
+              name: s.name,
+              type: "INTÉRÊT STAGNANT",
+              desc: `Vue ${s.views} fois sans clic.`,
+              rule: `Règle : SI statut=SENT ET vues>${settings.view_threshold} ET clics=0`,
+              obs: `Données observées : Vues=${s.views}, Clics=0`,
+            });
+          }
+          if (
+            s.status === "signed" &&
+            s.diffDays > settings.day_threshold &&
+            s.views < 2
+          ) {
+            anomalies.push({
+              id: s.id,
+              name: s.name,
+              type: "SILENCE POST-SIGNATURE",
+              desc: `Aucune lecture depuis ${s.diffDays}j.`,
+              rule: `Règle : SI statut=SIGNED ET jours>${settings.day_threshold} ET vues<2`,
+              obs: `Données observées : Jours=${s.diffDays}, Vues=${s.views}`,
+            });
+          }
+        });
 
-              anomaliesDetected = anomalies.map((a) => a.id);
-              const anomalyZone = document.getElementById("anomaly-zone");
-              const calmZone = document.getElementById("calm-zone");
-              const calmMessage = document.getElementById("system-info-calm");
-              const calmTotal = document.getElementById("calm-total");
-              const lastCheck = document.getElementById("last-check");
+        anomaliesDetected = anomalies.map((a) => a.id);
+        const anomalyZone = document.getElementById("anomaly-zone");
+        const calmZone = document.getElementById("calm-zone");
+        const calmMessage = document.getElementById("system-info-calm");
+        const calmTotal = document.getElementById("calm-total");
+        const lastCheck = document.getElementById("last-check");
 
-              if (anomalies.length > 0) {
-                anomalyZone.classList.remove("hidden");
-                calmZone.classList.add("hidden");
-                document.getElementById("anomaly-list").innerHTML = anomalies
-                  .map(
-                    (a) => `
+        if (anomalies.length > 0) {
+          anomalyZone.classList.remove("hidden");
+          calmZone.classList.add("hidden");
+          document.getElementById("anomaly-list").innerHTML = anomalies
+            .map(
+              (a) => `
                           <div class="anomaly-card p-6 rounded-2xl border-l-4 border-l-red-500 hover:border-l-red-400 transition-all duration-300">
                             <div class="text-[10px] font-black text-red-400 mb-2 tracking-[0.2em]">${a.type}</div>
                             <div class="text-xl font-bold mb-2">${a.name}</div>
@@ -1202,251 +1202,251 @@
                               <div class="mt-2">${a.obs}</div>
                             </div>
                           </div>`
-                  )
-                  .join("");
-              } else {
-                anomalyZone.classList.add("hidden");
-                calmZone.classList.remove("hidden");
-                calmMessage.innerHTML = `Aujourd'hui : 0 anomalie, 0 urgence`;
-                if (calmTotal) calmTotal.innerText = fullData.length;
-                if (lastCheck)
-                  lastCheck.innerText = new Date().toLocaleTimeString("fr-FR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
-              }
-            }
+            )
+            .join("");
+        } else {
+          anomalyZone.classList.add("hidden");
+          calmZone.classList.remove("hidden");
+          calmMessage.innerHTML = `Aujourd'hui : 0 anomalie, 0 urgence`;
+          if (calmTotal) calmTotal.innerText = fullData.length;
+          if (lastCheck)
+            lastCheck.innerText = new Date().toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+        }
+      }
 
-            function updateKPIs(queue) {
-              document.getElementById("stat-total").innerText = fullData.length;
-              document.getElementById("stat-sent").innerText = fullData.filter(
-                (s) => s.status === "sent"
-              ).length;
-              document.getElementById("stat-signed").innerText = fullData.filter(
-                (s) => s.status === "signed"
-              ).length;
-              document.getElementById("stat-queue").innerText = queue;
-              document.getElementById("row-count").innerText = fullData.length;
-            }
+      function updateKPIs(queue) {
+        document.getElementById("stat-total").innerText = fullData.length;
+        document.getElementById("stat-sent").innerText = fullData.filter(
+          (s) => s.status === "sent"
+        ).length;
+        document.getElementById("stat-signed").innerText = fullData.filter(
+          (s) => s.status === "signed"
+        ).length;
+        document.getElementById("stat-queue").innerText = queue;
+        document.getElementById("row-count").innerText = fullData.length;
+      }
 
-            async function updateStatus(id, newStatus) {
-              const { error } = await supabaseClient
-                .from("studies")
-                .update({ status: newStatus })
-                .eq("id", id);
-              if (!error) loadData();
-            }
+      async function updateStatus(id, newStatus) {
+        const { error } = await supabaseClient
+          .from("studies")
+          .update({ status: newStatus })
+          .eq("id", id);
+        if (!error) loadData();
+      }
 
-            async function forceAction(id, name, newStatus) {
-              const modal = document.getElementById("override-modal");
-              const text = document.getElementById("justification-text");
-              modal.showModal();
-              document.getElementById("confirm-override-btn").onclick = async () => {
-                const justification = text.value.trim();
-                if (!justification) return alert("Justification obligatoire.");
-                const { error: logError } = await supabaseClient
-                  .from("decision_logs")
-                  .insert({
-                    study_id: id,
-                    client_name: name,
-                    action_performed: `FORCED_TO_${newStatus.toUpperCase()}`,
-                    justification: justification,
-                  });
-                if (logError) return alert("Erreur log.");
-                await updateStatus(id, newStatus);
-                text.value = "";
-                modal.close();
-              };
-            }
+      async function forceAction(id, name, newStatus) {
+        const modal = document.getElementById("override-modal");
+        const text = document.getElementById("justification-text");
+        modal.showModal();
+        document.getElementById("confirm-override-btn").onclick = async () => {
+          const justification = text.value.trim();
+          if (!justification) return alert("Justification obligatoire.");
+          const { error: logError } = await supabaseClient
+            .from("decision_logs")
+            .insert({
+              study_id: id,
+              client_name: name,
+              action_performed: `FORCED_TO_${newStatus.toUpperCase()}`,
+              justification: justification,
+            });
+          if (logError) return alert("Erreur log.");
+          await updateStatus(id, newStatus);
+          text.value = "";
+          modal.close();
+        };
+      }
 
-            function forceSign(studyId, clientName) {
-              const modal = document.getElementById("override-modal");
-              const text = document.getElementById("justification-text");
-              modal.showModal();
+      function forceSign(studyId, clientName) {
+        const modal = document.getElementById("override-modal");
+        const text = document.getElementById("justification-text");
+        modal.showModal();
 
-              document.getElementById("confirm-override-btn").onclick = async () => {
-                const justification = text.value.trim();
-                if (!justification) return alert("Justification obligatoire.");
+        document.getElementById("confirm-override-btn").onclick = async () => {
+          const justification = text.value.trim();
+          if (!justification) return alert("Justification obligatoire.");
 
-                await signStudySafe(studyId, clientName, true, justification);
+          await signStudySafe(studyId, clientName, true, justification);
 
-                text.value = "";
-                modal.close();
-              };
-            }
+          text.value = "";
+          modal.close();
+        };
+      }
 
-            async function cancelStudySafe(studyId, clientName) {
-              if (!confirm("Confirmer l'annulation complète de ce dossier ?")) return;
+      async function cancelStudySafe(studyId, clientName) {
+        if (!confirm("Confirmer l'annulation complète de ce dossier ?")) return;
 
-              const { error: e1 } = await supabaseClient
-                .from("studies")
-                .update({ status: "cancelled" })
-                .eq("id", studyId);
+        const { error: e1 } = await supabaseClient
+          .from("studies")
+          .update({ status: "cancelled" })
+          .eq("id", studyId);
 
-              if (e1) {
-                alert("Erreur annulation study");
-                return;
-              }
+        if (e1) {
+          alert("Erreur annulation study");
+          return;
+        }
 
-              const { error: e2 } = await supabaseClient
-                .from("email_queue")
-                .update({ status: "cancelled" })
-                .eq("study_id", studyId)
-                .in("status", ["pending", "scheduled"]);
+        const { error: e2 } = await supabaseClient
+          .from("email_queue")
+          .update({ status: "cancelled" })
+          .eq("study_id", studyId)
+          .in("status", ["pending", "scheduled"]);
 
-              if (e2) {
-                alert("Erreur arrêt emails");
-                return;
-              }
+        if (e2) {
+          alert("Erreur arrêt emails");
+          return;
+        }
 
-              await supabaseClient.from("decision_logs").insert({
-                study_id: studyId,
-                client_name: clientName || "Inconnu",
-                action_performed: "CANCELLED",
-                justification: "Annulation depuis dashboard",
-              });
+        await supabaseClient.from("decision_logs").insert({
+          study_id: studyId,
+          client_name: clientName || "Inconnu",
+          action_performed: "CANCELLED",
+          justification: "Annulation depuis dashboard",
+        });
 
-              alert("Dossier annulé. Emails stoppés.");
-              loadData();
-            }
+        alert("Dossier annulé. Emails stoppés.");
+        loadData();
+      }
 
-            async function signStudySafe(
-              studyId,
-              clientName,
-              forced = false,
-              justification = null
-            ) {
-              if (!forced) {
-                if (!confirm("Confirmer : dossier SIGNÉ ?")) return;
-              }
+      async function signStudySafe(
+        studyId,
+        clientName,
+        forced = false,
+        justification = null
+      ) {
+        if (!forced) {
+          if (!confirm("Confirmer : dossier SIGNÉ ?")) return;
+        }
 
-              const { data, error } = await supabaseClient
-                .from("studies")
-                .update({ status: "signed" })
-                .eq("id", studyId)
-                .neq("status", "signed")
-                .select()
-                .single();
+        const { data, error } = await supabaseClient
+          .from("studies")
+          .update({ status: "signed" })
+          .eq("id", studyId)
+          .neq("status", "signed")
+          .select()
+          .single();
 
-              if (error || !data) {
-                alert("Impossible de signer : déjà signé ou erreur.");
-                return;
-              }
+        if (error || !data) {
+          alert("Impossible de signer : déjà signé ou erreur.");
+          return;
+        }
 
-              await supabaseClient.from("decision_logs").insert({
-                study_id: studyId,
-                client_name: clientName,
-                action_performed: forced ? "FORCED_TO_SIGNED" : "SIGNED",
-                justification: forced ? justification : "Signature depuis dashboard",
-              });
+        await supabaseClient.from("decision_logs").insert({
+          study_id: studyId,
+          client_name: clientName,
+          action_performed: forced ? "FORCED_TO_SIGNED" : "SIGNED",
+          justification: forced ? justification : "Signature depuis dashboard",
+        });
 
-              alert("Dossier signé. Automatisations déclenchées.");
-              loadData();
-            }
+        alert("Dossier signé. Automatisations déclenchées.");
+        loadData();
+      }
 
-            function togglePriority() {
-              isPriorityMode = !isPriorityMode;
-              document
-                .getElementById("btn-priority")
-                .classList.toggle("bg-orange-600", isPriorityMode);
-              render();
-            }
+      function togglePriority() {
+        isPriorityMode = !isPriorityMode;
+        document
+          .getElementById("btn-priority")
+          .classList.toggle("bg-orange-600", isPriorityMode);
+        render();
+      }
 
-            function render() {
-              const tbody = document.getElementById("table-body");
+      function render() {
+        const tbody = document.getElementById("table-body");
 
-              let list = isPriorityMode
-                ? fullData.filter(
-                    (s) =>
-                      anomaliesDetected.includes(s.id) || s.views >= 3 || s.clicks > 0
-                  )
-                : fullData;
+        let list = isPriorityMode
+          ? fullData.filter(
+              (s) =>
+                anomaliesDetected.includes(s.id) || s.views >= 3 || s.clicks > 0
+            )
+          : fullData;
 
-              // APPLIQUER LES FILTRES
-              list = list.filter((s) => {
-                if (activeFilters.search) {
-                  const searchLower = activeFilters.search;
-                  const matchName = s.name.toLowerCase().includes(searchLower);
-                  const matchEmail = s.email.toLowerCase().includes(searchLower);
-                  if (!matchName && !matchEmail) return false;
-                }
+        // APPLIQUER LES FILTRES
+        list = list.filter((s) => {
+          if (activeFilters.search) {
+            const searchLower = activeFilters.search;
+            const matchName = s.name.toLowerCase().includes(searchLower);
+            const matchEmail = s.email.toLowerCase().includes(searchLower);
+            if (!matchName && !matchEmail) return false;
+          }
 
-                if (activeFilters.views) {
-                  const threshold = parseInt(activeFilters.views);
-                  if (s.views < threshold) return false;
-                }
+          if (activeFilters.views) {
+            const threshold = parseInt(activeFilters.views);
+            if (s.views < threshold) return false;
+          }
 
-                if (activeFilters.clicks) {
-                  const threshold = parseInt(activeFilters.clicks);
-                  if (s.clicks < threshold) return false;
-                }
+          if (activeFilters.clicks) {
+            const threshold = parseInt(activeFilters.clicks);
+            if (s.clicks < threshold) return false;
+          }
 
-                if (activeFilters.status && s.status !== activeFilters.status) {
-                  return false;
-                }
+          if (activeFilters.status && s.status !== activeFilters.status) {
+            return false;
+          }
 
-                if (activeFilters.optout && !s.email_optout) {
-                  return false;
-                }
+          if (activeFilters.optout && !s.email_optout) {
+            return false;
+          }
 
-                return true;
-              });
+          return true;
+        });
 
-              document.getElementById("filtered-count").innerText = list.length;
+        document.getElementById("filtered-count").innerText = list.length;
 
-              tbody.innerHTML = list
-                .map((s) => {
-                  const hasAlert = anomaliesDetected.includes(s.id);
-                  const safeName = s.name.replace(/'/g, "\\'");
-                  const isOptedOut = s.email_optout || false;
-                  const isCancelled = s.status === "cancelled";
-                  const isInactive = isOptedOut || isCancelled;
+        tbody.innerHTML = list
+          .map((s) => {
+            const hasAlert = anomaliesDetected.includes(s.id);
+            const safeName = s.name.replace(/'/g, "\\'");
+            const isOptedOut = s.email_optout || false;
+            const isCancelled = s.status === "cancelled";
+            const isInactive = isOptedOut || isCancelled;
 
-                  const rowClass = isInactive
-                    ? "bg-red-900/10 opacity-50"
-                    : hasAlert
-                    ? "bg-red-500/5"
-                    : "";
-                  const nameStyle = isInactive
-                    ? "text-slate-600 line-through"
-                    : "text-slate-100";
-                  const statusBadge = isOptedOut
-                    ? '<span class="ml-2 px-2 py-1 bg-red-500 text-white text-[9px] font-black rounded uppercase">DÉSABONNÉ</span>'
-                    : isCancelled
-                    ? '<span class="ml-2 px-2 py-1 bg-slate-600 text-white text-[9px] font-black rounded uppercase">ANNULÉ</span>'
-                    : "";
-                  const statusClass =
-                    s.status === "signed"
-                      ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
-                      : s.status === "sent"
-                      ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
-                      : "border-slate-600/50 text-slate-400";
+            const rowClass = isInactive
+              ? "bg-red-900/10 opacity-50"
+              : hasAlert
+              ? "bg-red-500/5"
+              : "";
+            const nameStyle = isInactive
+              ? "text-slate-600 line-through"
+              : "text-slate-100";
+            const statusBadge = isOptedOut
+              ? '<span class="ml-2 px-2 py-1 bg-red-500 text-white text-[9px] font-black rounded uppercase">DÉSABONNÉ</span>'
+              : isCancelled
+              ? '<span class="ml-2 px-2 py-1 bg-slate-600 text-white text-[9px] font-black rounded uppercase">ANNULÉ</span>'
+              : "";
+            const statusClass =
+              s.status === "signed"
+                ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+                : s.status === "sent"
+                ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
+                : "border-slate-600/50 text-slate-400";
 
-                  const onChangeStatus = hasAlert
-                    ? "forceAction('" +
-                      s.id +
-                      "', '" +
-                      s.name.replace(/'/g, "\\'") +
-                      "', this.value)"
-                    : "updateStatus('" + s.id + "', this.value)";
+            const onChangeStatus = hasAlert
+              ? "forceAction('" +
+                s.id +
+                "', '" +
+                s.name.replace(/'/g, "\\'") +
+                "', this.value)"
+              : "updateStatus('" + s.id + "', this.value)";
 
-                  const onClickSigned = hasAlert
-                    ? "forceSign('" +
-                      s.id +
-                      "', '" +
-                      s.name.replace(/'/g, "\\'") +
-                      "')"
-                    : "signStudySafe('" +
-                      s.id +
-                      "', '" +
-                      s.name.replace(/'/g, "\\'") +
-                      "')";
+            const onClickSigned = hasAlert
+              ? "forceSign('" +
+                s.id +
+                "', '" +
+                s.name.replace(/'/g, "\\'") +
+                "')"
+              : "signStudySafe('" +
+                s.id +
+                "', '" +
+                s.name.replace(/'/g, "\\'") +
+                "')";
 
-                  return `
+            return `
                   <tr class="transition-all duration-300 group ${rowClass}">
                     <td class="p-7" onclick="window.open('${FRONTEND_URL}/guest/${
-                    s.id
-                  }', '_blank')" style="cursor: pointer;">
+              s.id
+            }', '_blank')" style="cursor: pointer;">
                       <div class="flex items-center gap-3">
                        <div class="text-xl font-bold ${nameStyle} group-hover:text-blue-400 transition-colors">
                     ${s.name}
@@ -1476,7 +1476,9 @@
                           } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
                           <div class="relative">
                             <div class="text-3xl ${
-                              s.views >= 3 ? "text-orange-400" : "text-slate-400"
+                              s.views >= 3
+                                ? "text-orange-400"
+                                : "text-slate-400"
                             } tracking-tight">${s.views}</div>
                             <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">VUES</div>
                           </div>
@@ -1492,7 +1494,9 @@
                           } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
                           <div class="relative">
                             <div class="text-3xl ${
-                              s.clicks > 0 ? "text-purple-400" : "text-slate-400"
+                              s.clicks > 0
+                                ? "text-purple-400"
+                                : "text-slate-400"
                             } tracking-tight">${s.clicks}</div>
                             <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">CLICS</div>
                           </div>
@@ -1535,13 +1539,12 @@
                               } text-xs">
                                 ${
                                   s.rib_sent_at
-                                    ? new Date(s.rib_sent_at).toLocaleDateString(
-                                        "fr-FR",
-                                        {
-                                          day: "2-digit",
-                                          month: "2-digit",
-                                        }
-                                      )
+                                    ? new Date(
+                                        s.rib_sent_at
+                                      ).toLocaleDateString("fr-FR", {
+                                        day: "2-digit",
+                                        month: "2-digit",
+                                      })
                                     : "—"
                                 }
                               </div>
@@ -1558,7 +1561,9 @@
                             }</span>
                             <div>
                               <div class="text-[8px] ${
-                                s.deposit_paid ? "text-emerald-400" : "text-slate-600"
+                                s.deposit_paid
+                                  ? "text-emerald-400"
+                                  : "text-slate-600"
                               } uppercase font-bold tracking-wide">ACOMPTE</div>
                               ${
                                 s.deposit_paid
@@ -1596,7 +1601,9 @@
                           : ""
                       }
                       onclick="${
-                        isInactive ? "" : `event.stopPropagation(); ${onClickSigned}`
+                        isInactive
+                          ? ""
+                          : `event.stopPropagation(); ${onClickSigned}`
                       }"
                       class="action-button px-6 py-2 ${
                         hasAlert && !isInactive
@@ -1664,123 +1671,123 @@
                     </td>
 
                   </tr>`;
-                })
-                .join("");
-            }
+          })
+          .join("");
+      }
 
-            async function loadEmailLeads() {
-              try {
-                const { data, error } = await supabaseClient
-                  .from("email_leads")
-                  .select(
-                    "id, client_id, last_email_sent_at, next_email_scheduled_at, email_step, total_opens, total_clicks, clients!inner(id, first_name, last_name, email, email_optout)"
-                  )
-                  .order("next_email_scheduled_at", { ascending: true });
+      async function loadEmailLeads() {
+        try {
+          const { data, error } = await supabaseClient
+            .from("email_leads")
+            .select(
+              "id, client_id, last_email_sent_at, next_email_scheduled_at, email_step, total_opens, total_clicks, clients!inner(id, first_name, last_name, email, email_optout)"
+            )
+            .order("next_email_scheduled_at", { ascending: true });
 
-                if (error) {
-                  console.error("Erreur chargement leads:", error);
-                  return;
-                }
+          if (error) {
+            console.error("Erreur chargement leads:", error);
+            return;
+          }
 
-                allLeadsData = (data || []).map((l) => ({
-                  id: l.id,
-                  client_id: l.client_id,
-                  name: l.clients
-                    ? `${l.clients.first_name || ""} ${
-                        l.clients.last_name || ""
-                      }`.trim()
-                    : "Inconnu",
-                  email: l.clients?.email || "Pas d'email",
-                  last_email_sent: l.last_email_sent_at || null,
-                  next_email_date: l.next_email_scheduled_at || null,
-                  email_sequence_step: l.email_step || 0,
-                  opted_out: l.clients?.email_optout || false,
-                  total_opens: l.total_opens || 0,
-                  total_clicks: l.total_clicks || 0,
-                }));
+          allLeadsData = (data || []).map((l) => ({
+            id: l.id,
+            client_id: l.client_id,
+            name: l.clients
+              ? `${l.clients.first_name || ""} ${
+                  l.clients.last_name || ""
+                }`.trim()
+              : "Inconnu",
+            email: l.clients?.email || "Pas d'email",
+            last_email_sent: l.last_email_sent_at || null,
+            next_email_date: l.next_email_scheduled_at || null,
+            email_sequence_step: l.email_step || 0,
+            opted_out: l.clients?.email_optout || false,
+            total_opens: l.total_opens || 0,
+            total_clicks: l.total_clicks || 0,
+          }));
 
-                renderEmailLeads();
-              } catch (err) {
-                console.error(err);
-              }
-            }
+          renderEmailLeads();
+        } catch (err) {
+          console.error(err);
+        }
+      }
 
-            async function setOptOut(email) {
-              if (!confirm("Confirmer l'exclusion de ce lead ?")) return;
-              await supabaseClient
-                .from("clients")
-                .update({ email_optout: true })
-                .eq("email", email);
-              await loadEmailLeads();
-              await loadData();
-            }
+      async function setOptOut(email) {
+        if (!confirm("Confirmer l'exclusion de ce lead ?")) return;
+        await supabaseClient
+          .from("clients")
+          .update({ email_optout: true })
+          .eq("email", email);
+        await loadEmailLeads();
+        await loadData();
+      }
 
-            function renderEmailLeads() {
-              const tbody = document.getElementById("leads-email-body");
-              const today = new Date().toISOString().split("T")[0];
+      function renderEmailLeads() {
+        const tbody = document.getElementById("leads-email-body");
+        const today = new Date().toISOString().split("T")[0];
 
-              let list = [...allLeadsData];
+        let list = [...allLeadsData];
 
-              // APPLIQUER LES FILTRES LEADS
-              list = list.filter((l) => {
-                if (activeLeadFilters.search) {
-                  const searchLower = activeLeadFilters.search;
-                  const matchName = l.name.toLowerCase().includes(searchLower);
-                  const matchEmail = l.email.toLowerCase().includes(searchLower);
-                  if (!matchName && !matchEmail) return false;
-                }
+        // APPLIQUER LES FILTRES LEADS
+        list = list.filter((l) => {
+          if (activeLeadFilters.search) {
+            const searchLower = activeLeadFilters.search;
+            const matchName = l.name.toLowerCase().includes(searchLower);
+            const matchEmail = l.email.toLowerCase().includes(searchLower);
+            if (!matchName && !matchEmail) return false;
+          }
 
-                if (activeLeadFilters.today) {
-                  const nextDate = l.next_email_date?.split("T")[0];
-                  if (nextDate !== today || l.opted_out) return false;
-                }
+          if (activeLeadFilters.today) {
+            const nextDate = l.next_email_date?.split("T")[0];
+            if (nextDate !== today || l.opted_out) return false;
+          }
 
-                if (activeLeadFilters.optedOut && !l.opted_out) {
-                  return false;
-                }
+          if (activeLeadFilters.optedOut && !l.opted_out) {
+            return false;
+          }
 
-                return true;
-              });
+          return true;
+        });
 
-              document.getElementById("filtered-lead-count").innerText = list.length;
+        document.getElementById("filtered-lead-count").innerText = list.length;
 
-              const todayCount = allLeadsData.filter(
-                (l) => l.next_email_date?.split("T")[0] === today && !l.opted_out
-              ).length;
-              document.getElementById("email-today-count").innerText = todayCount;
+        const todayCount = allLeadsData.filter(
+          (l) => l.next_email_date?.split("T")[0] === today && !l.opted_out
+        ).length;
+        document.getElementById("email-today-count").innerText = todayCount;
 
-              tbody.innerHTML = list
-                .map((l) => {
-                  const nextDate = l.next_email_date?.split("T")[0];
-                  const isToday = nextDate === today;
-                  const lastSent = l.last_email_sent
-                    ? new Date(l.last_email_sent).toLocaleDateString("fr-FR")
-                    : "Jamais";
-                  const nextSend = l.next_email_date
-                    ? new Date(l.next_email_date).toLocaleDateString("fr-FR")
-                    : "Non planifié";
-                  const isOptedOut = l.opted_out;
+        tbody.innerHTML = list
+          .map((l) => {
+            const nextDate = l.next_email_date?.split("T")[0];
+            const isToday = nextDate === today;
+            const lastSent = l.last_email_sent
+              ? new Date(l.last_email_sent).toLocaleDateString("fr-FR")
+              : "Jamais";
+            const nextSend = l.next_email_date
+              ? new Date(l.next_email_date).toLocaleDateString("fr-FR")
+              : "Non planifié";
+            const isOptedOut = l.opted_out;
 
-                  const rowClass = isOptedOut
-                    ? "bg-red-900/10 opacity-50"
-                    : isToday
-                    ? "bg-orange-500/5"
-                    : "";
-                  const nameStyle = isOptedOut
-                    ? "text-slate-600 line-through"
-                    : "text-slate-100";
-                  const statusBadge = isOptedOut
-                    ? '<span class="ml-2 px-2 py-1 bg-red-500 text-white text-[9px] font-black rounded uppercase">DÉSABONNÉ</span>'
-                    : "";
+            const rowClass = isOptedOut
+              ? "bg-red-900/10 opacity-50"
+              : isToday
+              ? "bg-orange-500/5"
+              : "";
+            const nameStyle = isOptedOut
+              ? "text-slate-600 line-through"
+              : "text-slate-100";
+            const statusBadge = isOptedOut
+              ? '<span class="ml-2 px-2 py-1 bg-red-500 text-white text-[9px] font-black rounded uppercase">DÉSABONNÉ</span>'
+              : "";
 
-                  return `
+            return `
             <tr class="${rowClass}">
               <td colspan="4" class="p-0">
                 <div class="grid grid-cols-[30%_15%_20%_20%_15%] px-6 py-5 items-center transition-all duration-300 hover:bg-white/[0.02]">
                   <div>
                     <div class="text-lg font-bold ${nameStyle}">${
-                    l.name
-                  }${statusBadge}</div>
+              l.name
+            }${statusBadge}</div>
                     <div class="text-xs text-slate-500 font-medium mt-1">${
                       l.email
                     }</div>
@@ -1799,7 +1806,9 @@
                         } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
                         <div class="relative">
                           <div class="text-2xl ${
-                            l.total_opens > 0 ? "text-blue-400" : "text-slate-400"
+                            l.total_opens > 0
+                              ? "text-blue-400"
+                              : "text-slate-400"
                           } tracking-tight">${l.total_opens}</div>
                           <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">👁️</div>
                         </div>
@@ -1813,7 +1822,9 @@
                         } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
                         <div class="relative">
                           <div class="text-2xl ${
-                            l.total_clicks > 0 ? "text-green-400" : "text-slate-400"
+                            l.total_clicks > 0
+                              ? "text-green-400"
+                              : "text-slate-400"
                           } tracking-tight">${l.total_clicks}</div>
                           <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">🖱️</div>
                         </div>
@@ -1846,7 +1857,12 @@
                 DÉSABONNÉ
               </button>
 
-              <button onclick="deleteLeadPermanently('${l.client_id}', '${l.email.replace(/'/g, "\\'")}', '${l.name.replace(/'/g, "\\'")}')"
+              <button onclick="deleteLeadPermanently('${
+                l.client_id
+              }', '${l.email.replace(/'/g, "\\'")}', '${l.name.replace(
+                /'/g,
+                "\\'"
+              )}')"
                 class="ml-2 px-4 py-2 bg-red-600/20 border border-red-600/60 text-red-400 font-black rounded-lg hover:bg-red-600/30 transition-all uppercase text-[9px] tracking-wider">
                 🗑️ SUPPRIMER
               </button>
@@ -1858,48 +1874,53 @@
               </button>
             `
         }
-      </div>
+                  </div>
+                </div>
+              </td>
+            </tr>`;
+          })
+          .join("");
+      }
 
+      async function markDepositPaid(studyId) {
+        if (!confirm("Confirmer la réception de l'acompte (1500 €) ?")) return;
 
-            async function markDepositPaid(studyId) {
-              if (!confirm("Confirmer la réception de l'acompte (1500 €) ?")) return;
+        const { data, error } = await supabaseClient
+          .from("studies")
+          .update({
+            deposit_paid: true,
+            deposit_paid_at: new Date().toISOString(),
+          })
+          .eq("id", studyId)
+          .eq("deposit_paid", false)
+          .select()
+          .single();
 
-              const { data, error } = await supabaseClient
-                .from("studies")
-                .update({
-                  deposit_paid: true,
-                  deposit_paid_at: new Date().toISOString(),
-                })
-                .eq("id", studyId)
-                .eq("deposit_paid", false)
-                .select()
-                .single();
+        if (error || !data) {
+          alert("Erreur ou acompte déjà validé.");
+          return;
+        }
 
-              if (error || !data) {
-                alert("Erreur ou acompte déjà validé.");
-                return;
-              }
+        await supabaseClient.from("decision_logs").insert({
+          study_id: studyId,
+          action_performed: "DEPOSIT_PAID",
+          justification: "Validation acompte depuis dashboard",
+        });
 
-              await supabaseClient.from("decision_logs").insert({
-                study_id: studyId,
-                action_performed: "DEPOSIT_PAID",
-                justification: "Validation acompte depuis dashboard",
-              });
+        alert("Acompte confirmé. Automatisations déclenchées.");
+        await loadData(); // refresh études
+        await loadEmailLeads(); // au cas où des règles emails dépendent de ça
+      }
 
-              alert("Acompte confirmé. Automatisations déclenchées.");
-              await loadData(); // refresh études
-              await loadEmailLeads(); // au cas où des règles emails dépendent de ça
-            }
+      document.addEventListener("DOMContentLoaded", () => {
+        loadData();
+        loadEmailLeads();
+        setInterval(loadData, 60000);
+        setInterval(loadEmailLeads, 60000);
+      });
 
-            document.addEventListener("DOMContentLoaded", () => {
-              loadData();
-              loadEmailLeads();
-              setInterval(loadData, 60000);
-              setInterval(loadEmailLeads, 60000);
-            });
-
-            const statusEl = document.getElementById("system-status");
-            statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse stable-indicator"></span> SYSTÈME OPÉRATIONNEL`;
+      const statusEl = document.getElementById("system-status");
+      statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse stable-indicator"></span> SYSTÈME OPÉRATIONNEL`;
     </script>
   </body>
 </html>
