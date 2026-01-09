@@ -158,6 +158,16 @@ export default function GuestView() {
         if (error) throw error;
         if (!data) throw new Error("Étude introuvable");
 
+        // 👁️ TRACKING DE LA VUE
+        try {
+          await supabase.from("tracking_events").insert({
+            study_id: studyId,
+            event_type: "view_study",
+          });
+        } catch (e) {
+          console.error("View tracking error:", e);
+        }
+
         setStudy(data);
         setData(data.study_data);
         setLoading(false);
@@ -1478,11 +1488,17 @@ export default function GuestView() {
         {isMobile ? (
           <a
             href={`tel:${phone}`}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8 hover:from-blue-500 hover:to-blue-400 transition-all no-underline shadow-xl active:opacity-80"
-            style={{
-              WebkitTapHighlightColor: "transparent",
-              textDecoration: "none",
+            onClick={async () => {
+              try {
+                await supabase.from("tracking_events").insert({
+                  study_id: studyId,
+                  event_type: "email_click",
+                });
+              } catch (e) {
+                console.error("Tracking error:", e);
+              }
             }}
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-black py-7 rounded-3xl uppercase text-sm flex items-center justify-center gap-4 mb-8 hover:from-blue-500 hover:to-blue-400 transition-all no-underline shadow-xl active:opacity-80"
           >
             <Phone size={20} fill="currentColor" />
             <span>On sécurise le projet ensemble</span>
@@ -1490,7 +1506,16 @@ export default function GuestView() {
         ) : (
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
+              try {
+                await supabase.from("tracking_events").insert({
+                  study_id: studyId,
+                  event_type: "email_click",
+                });
+              } catch (e) {
+                console.error("Tracking error:", e);
+              }
+
               navigator.clipboard.writeText(phone);
               alert("Numéro copié : " + phone);
             }}
