@@ -43,50 +43,32 @@
         margin-bottom: 30px;
       }
 
-      .tabs {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 20px;
-      }
-
-      .tab {
-        flex: 1;
-        padding: 15px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-weight: 600;
-      }
-
-      .tab.active {
-        background: rgba(59, 130, 246, 0.2);
-        border-color: #3b82f6;
-        color: #3b82f6;
-      }
-
-      .tab-content {
-        display: none;
-      }
-
-      .tab-content.active {
-        display: block;
-      }
-
       .photo-button {
         width: 100%;
-        padding: 50px 20px;
-        background: rgba(59, 130, 246, 0.1);
-        border: 2px dashed #3b82f6;
-        border-radius: 12px;
+        padding: 60px 20px;
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.2),
+          rgba(16, 185, 129, 0.2)
+        );
+        border: 3px dashed #3b82f6;
+        border-radius: 16px;
         text-align: center;
-        font-size: 18px;
+        font-size: 20px;
         font-weight: bold;
         color: white;
         cursor: pointer;
         margin-bottom: 20px;
+        transition: all 0.3s;
+      }
+
+      .photo-button:active {
+        transform: scale(0.98);
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.3),
+          rgba(16, 185, 129, 0.3)
+        );
       }
 
       input[type="file"] {
@@ -98,33 +80,11 @@
         border-radius: 12px;
         margin-bottom: 20px;
         display: none;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       }
 
       .preview-image.show {
         display: block;
-      }
-
-      textarea {
-        width: 100%;
-        min-height: 300px;
-        padding: 15px;
-        font-size: 16px;
-        border: 2px solid #3b82f6;
-        border-radius: 12px;
-        background: #1a1a2e;
-        color: white;
-        resize: vertical;
-        font-family: inherit;
-      }
-
-      textarea:focus {
-        outline: none;
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-      }
-
-      textarea::placeholder {
-        color: #64748b;
       }
 
       .btn-container {
@@ -135,8 +95,8 @@
 
       button {
         flex: 1;
-        padding: 18px;
-        font-size: 16px;
+        padding: 20px;
+        font-size: 18px;
         font-weight: bold;
         border: none;
         border-radius: 12px;
@@ -168,11 +128,12 @@
 
       .status {
         margin-top: 20px;
-        padding: 15px;
+        padding: 18px;
         border-radius: 12px;
         display: none;
         font-weight: 600;
         text-align: center;
+        font-size: 16px;
       }
 
       .status.show {
@@ -213,25 +174,30 @@
         background: rgba(16, 185, 129, 0.1);
         border: 1px solid rgba(16, 185, 129, 0.3);
         border-radius: 12px;
-        padding: 15px;
+        padding: 18px;
         margin-bottom: 20px;
         display: none;
-        font-size: 13px;
+        font-size: 14px;
       }
 
       .extracted-data.show {
         display: block;
+        animation: slideIn 0.3s ease;
       }
 
       .extracted-data h3 {
         color: #10b981;
-        margin-bottom: 10px;
-        font-size: 14px;
+        margin-bottom: 12px;
+        font-size: 16px;
       }
 
       .extracted-data p {
-        margin: 5px 0;
+        margin: 8px 0;
         color: white;
+      }
+
+      .extracted-data strong {
+        color: #3b82f6;
       }
     </style>
   </head>
@@ -240,44 +206,30 @@
       <h1>📸 CAPTURE LEAD OCR</h1>
       <p class="subtitle">EDF Solutions Solaires</p>
 
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab('photo')">📷 Photo</div>
-        <div class="tab" onclick="switchTab('text')">✍️ Texte</div>
-      </div>
-
-      <!-- TAB PHOTO -->
-      <div id="photo-tab" class="tab-content active">
-        <button
-          class="photo-button"
-          onclick="document.getElementById('photoInput').click()"
+      <button
+        class="photo-button"
+        onclick="document.getElementById('photoInput').click()"
+      >
+        📸<br /><br />
+        <strong>PRENDRE UNE PHOTO</strong><br />
+        <small style="font-size: 14px; opacity: 0.8"
+          >L'OCR se lance automatiquement</small
         >
-          📸<br /><br />
-          <strong>PRENDRE UNE PHOTO</strong><br />
-          ou importer une image
-        </button>
-        <input
-          type="file"
-          id="photoInput"
-          accept="image/*"
-          capture="environment"
-        />
-        <img id="previewImage" class="preview-image" />
-        <div id="extractedData" class="extracted-data"></div>
-      </div>
+      </button>
 
-      <!-- TAB TEXTE -->
-      <div id="text-tab" class="tab-content">
-        <textarea
-          id="ocr-text"
-          placeholder="Collez ici le texte extrait du formulaire...
+      <input
+        type="file"
+        id="photoInput"
+        accept="image/*"
+        capture="environment"
+      />
 
-Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
-        ></textarea>
-      </div>
+      <img id="previewImage" class="preview-image" />
+      <div id="extractedData" class="extracted-data"></div>
 
       <div class="btn-container">
         <button class="btn-clear" onclick="clearAll()">🗑️ Effacer</button>
-        <button class="btn-send" id="sendBtn" onclick="sendOCR()">
+        <button class="btn-send" id="sendBtn" onclick="sendOCR()" disabled>
           🚀 Envoyer
         </button>
       </div>
@@ -288,31 +240,11 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
     <script>
       const EDGE_FUNCTION_URL =
         "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
+      const OCR_API_KEY = "K87899142388957"; // Clé gratuite publique OCR.space
 
-      let currentTab = "photo";
       let extractedText = "";
-      let photoBase64 = "";
 
-      // Switch tabs
-      function switchTab(tab) {
-        currentTab = tab;
-        document
-          .querySelectorAll(".tab")
-          .forEach((t) => t.classList.remove("active"));
-        document
-          .querySelectorAll(".tab-content")
-          .forEach((t) => t.classList.remove("active"));
-
-        if (tab === "photo") {
-          document.querySelector(".tab:first-child").classList.add("active");
-          document.getElementById("photo-tab").classList.add("active");
-        } else {
-          document.querySelector(".tab:last-child").classList.add("active");
-          document.getElementById("text-tab").classList.add("active");
-        }
-      }
-
-      // Handle file input - SANS OCR CLIENT
+      // Handle file input
       document
         .getElementById("photoInput")
         .addEventListener("change", async (e) => {
@@ -322,14 +254,54 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
           // Show preview
           const reader = new FileReader();
           reader.onload = (event) => {
-            photoBase64 = event.target.result;
             const img = document.getElementById("previewImage");
-            img.src = photoBase64;
+            img.src = event.target.result;
             img.classList.add("show");
           };
           reader.readAsDataURL(file);
 
-          showStatus("success", "✅ Photo prête ! Cliquez sur Envoyer");
+          // OCR avec OCR.space
+          showStatus("loading", "🔍 Extraction du texte en cours...");
+          document.getElementById("sendBtn").disabled = true;
+
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("language", "fre");
+            formData.append("isOverlayRequired", "false");
+            formData.append("detectOrientation", "true");
+            formData.append("scale", "true");
+
+            const response = await fetch("https://api.ocr.space/parse/image", {
+              method: "POST",
+              headers: {
+                apikey: OCR_API_KEY,
+              },
+              body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.ParsedResults && data.ParsedResults[0]) {
+              extractedText = data.ParsedResults[0].ParsedText;
+
+              if (extractedText.trim().length > 0) {
+                displayExtractedData(extractedText);
+                showStatus(
+                  "success",
+                  "✅ Texte extrait ! Vérifiez et cliquez sur Envoyer"
+                );
+                document.getElementById("sendBtn").disabled = false;
+              } else {
+                throw new Error("Aucun texte détecté dans l'image");
+              }
+            } else {
+              throw new Error(data.ErrorMessage || "Erreur OCR");
+            }
+          } catch (error) {
+            console.error(error);
+            showStatus("error", "❌ Erreur OCR : " + error.message);
+          }
         });
 
       // Display extracted data preview
@@ -341,7 +313,9 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
           : "Non détecté";
         const emailMatch = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
         const email = emailMatch ? emailMatch[0] : "Non détecté";
-        const nomMatch = text.match(/(?:Monsieur|Madame)\s+([A-ZÀ-Ÿ\- ]+)/i);
+        const nomMatch = text.match(
+          /(?:Monsieur|Madame)\s+([A-ZÀ-Ÿ][a-zà-ÿ\-]+(?: [A-ZÀ-Ÿ][a-zà-ÿ\-]+)*)/i
+        );
         const nom = nomMatch ? nomMatch[1].trim() : "Non détecté";
         const dateMatch = text.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
         const date = dateMatch
@@ -354,57 +328,44 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
         <p><strong>Nom :</strong> ${nom}</p>
         <p><strong>Email :</strong> ${email}</p>
         <p><strong>Date :</strong> ${date}</p>
+        <p style="margin-top: 12px; font-size: 12px; opacity: 0.7;">
+          <strong>Texte brut :</strong><br>
+          ${text.substring(0, 200)}...
+        </p>
       `;
         document.getElementById("extractedData").classList.add("show");
       }
 
       // Clear all
       function clearAll() {
-        document.getElementById("ocr-text").value = "";
         document.getElementById("previewImage").classList.remove("show");
         document.getElementById("extractedData").classList.remove("show");
         document.getElementById("photoInput").value = "";
         extractedText = "";
-        photoBase64 = "";
         document.getElementById("status").className = "status";
+        document.getElementById("sendBtn").disabled = true;
       }
 
       // Send OCR data
       async function sendOCR() {
-        let payload = {};
-
-        if (currentTab === "photo") {
-          if (!photoBase64) {
-            showStatus("error", "❌ Veuillez prendre une photo");
-            return;
-          }
-          // Envoyer la photo en base64 pour OCR côté serveur
-          payload.photo_base64 = photoBase64;
-        } else {
-          const text = document.getElementById("ocr-text").value.trim();
-          if (!text) {
-            showStatus("error", "❌ Veuillez ajouter du texte");
-            return;
-          }
-          payload.ocr_text = text;
+        if (!extractedText) {
+          showStatus("error", "❌ Veuillez d'abord prendre une photo");
+          return;
         }
 
-        showStatus("loading", "⏳ Envoi et extraction en cours...");
+        showStatus("loading", "⏳ Envoi du lead en cours...");
+        document.getElementById("sendBtn").disabled = true;
 
         try {
           const response = await fetch(EDGE_FUNCTION_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ ocr_text: extractedText }),
           });
 
           const data = await response.json();
 
           if (response.ok) {
-            if (data.extracted_text) {
-              extractedText = data.extracted_text;
-              displayExtractedData(data.extracted_text);
-            }
             showStatus(
               "success",
               "✅ Lead capturé et email envoyé avec succès !"
@@ -413,11 +374,12 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
               clearAll();
             }, 3000);
           } else {
-            throw new Error(data.message || "Erreur serveur");
+            throw new Error(data.error || data.message || "Erreur serveur");
           }
         } catch (err) {
           console.error(err);
           showStatus("error", "❌ Erreur : " + err.message);
+          document.getElementById("sendBtn").disabled = false;
         }
       }
 
