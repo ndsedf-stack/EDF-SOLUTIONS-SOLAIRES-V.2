@@ -75,7 +75,6 @@
         display: block;
       }
 
-      /* BOUTON PHOTO SIMPLE */
       .photo-button {
         width: 100%;
         padding: 50px 20px;
@@ -286,13 +285,13 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
       <div id="status" class="status"></div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
       const EDGE_FUNCTION_URL =
         "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
 
       let currentTab = "photo";
       let extractedText = "";
+      let photoBase64 = "";
 
       // Switch tabs
       function switchTab(tab) {
@@ -313,7 +312,7 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
         }
       }
 
-      // Handle file input
+      // Handle file input - SANS OCR CLIENT
       document
         .getElementById("photoInput")
         .addEventListener("change", async (e) => {
@@ -323,38 +322,14 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
           // Show preview
           const reader = new FileReader();
           reader.onload = (event) => {
+            photoBase64 = event.target.result;
             const img = document.getElementById("previewImage");
-            img.src = event.target.result;
+            img.src = photoBase64;
             img.classList.add("show");
           };
           reader.readAsDataURL(file);
 
-          // Extract text with Tesseract
-          showStatus("loading", "🔍 Extraction du texte en cours...");
-
-          try {
-            const {
-              data: { text },
-            } = await Tesseract.recognize(file, "fra", {
-              logger: (m) => {
-                if (m.status === "recognizing text") {
-                  showStatus(
-                    "loading",
-                    `🔍 Extraction: ${Math.round(m.progress * 100)}%`
-                  );
-                }
-              },
-            });
-
-            extractedText = text;
-
-            // Show extracted data
-            displayExtractedData(text);
-            showStatus("success", "✅ Texte extrait avec succès !");
-          } catch (error) {
-            console.error(error);
-            showStatus("error", "❌ Erreur lors de l'extraction du texte");
-          }
+          showStatus("success", "✅ Photo prête ! Cliquez sur Envoyer");
         });
 
       // Display extracted data preview
@@ -390,33 +365,46 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
         document.getElementById("extractedData").classList.remove("show");
         document.getElementById("photoInput").value = "";
         extractedText = "";
+        photoBase64 = "";
         document.getElementById("status").className = "status";
       }
 
       // Send OCR data
       async function sendOCR() {
-        let text =
-          currentTab === "photo"
-            ? extractedText
-            : document.getElementById("ocr-text").value.trim();
+        let payload = {};
 
-        if (!text) {
-          showStatus("error", "❌ Veuillez ajouter une photo ou du texte");
-          return;
+        if (currentTab === "photo") {
+          if (!photoBase64) {
+            showStatus("error", "❌ Veuillez prendre une photo");
+            return;
+          }
+          // Envoyer la photo en base64 pour OCR côté serveur
+          payload.photo_base64 = photoBase64;
+        } else {
+          const text = document.getElementById("ocr-text").value.trim();
+          if (!text) {
+            showStatus("error", "❌ Veuillez ajouter du texte");
+            return;
+          }
+          payload.ocr_text = text;
         }
 
-        showStatus("loading", "⏳ Envoi en cours...");
+        showStatus("loading", "⏳ Envoi et extraction en cours...");
 
         try {
           const response = await fetch(EDGE_FUNCTION_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ocr_text: text }),
+            body: JSON.stringify(payload),
           });
 
           const data = await response.json();
 
           if (response.ok) {
+            if (data.extracted_text) {
+              extractedText = data.extracted_text;
+              displayExtractedData(data.extracted_text);
+            }
             showStatus(
               "success",
               "✅ Lead capturé et email envoyé avec succès !"
