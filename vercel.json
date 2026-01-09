@@ -8,11 +8,11 @@
   "rewrites": [
     {
       "source": "/capture",
-      "destination": "/public/capture.html"
+      "destination": "/capture.html"
     },
     {
       "source": "/dashboard",
-      "destination": "/public/dashboard.html"
+      "destination": "/dashboard.html"
     },
     {
       "source": "/(.*)",
