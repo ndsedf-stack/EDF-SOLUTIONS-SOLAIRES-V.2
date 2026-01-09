@@ -2,17 +2,13 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>📸 Capture Lead EDF</title>
     <style>
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
       }
 
       body {
@@ -22,7 +18,6 @@
         background: linear-gradient(135deg, #0a0a1a 0%, #1a1a2e 100%);
         color: white;
         min-height: 100vh;
-        overflow-x: hidden;
       }
 
       .container {
@@ -64,7 +59,6 @@
         cursor: pointer;
         transition: all 0.2s;
         font-weight: 600;
-        user-select: none;
       }
 
       .tab.active {
@@ -81,44 +75,23 @@
         display: block;
       }
 
-      .upload-area {
+      /* BOUTON PHOTO SIMPLE */
+      .photo-button {
+        width: 100%;
+        padding: 50px 20px;
+        background: rgba(59, 130, 246, 0.1);
         border: 2px dashed #3b82f6;
         border-radius: 12px;
-        padding: 40px 20px;
         text-align: center;
-        background: rgba(59, 130, 246, 0.05);
+        font-size: 18px;
+        font-weight: bold;
+        color: white;
         cursor: pointer;
-        transition: all 0.2s;
         margin-bottom: 20px;
-        position: relative;
-        display: block;
-      }
-
-      .upload-area:active {
-        background: rgba(59, 130, 246, 0.15);
-        border-color: #10b981;
-      }
-
-      .upload-icon {
-        font-size: 48px;
-        margin-bottom: 10px;
-        pointer-events: none;
-      }
-
-      .upload-text {
-        color: #94a3b8;
-        font-size: 14px;
-        pointer-events: none;
       }
 
       input[type="file"] {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
+        display: none;
       }
 
       .preview-image {
@@ -275,19 +248,20 @@
 
       <!-- TAB PHOTO -->
       <div id="photo-tab" class="tab-content active">
-        <label class="upload-area">
-          <input
-            type="file"
-            id="photoInput"
-            accept="image/*"
-            capture="environment"
-          />
-          <div class="upload-icon">📸</div>
-          <div class="upload-text">
-            <strong>Prendre une photo ou importer</strong><br />
-            Le texte sera extrait automatiquement
-          </div>
-        </label>
+        <button
+          class="photo-button"
+          onclick="document.getElementById('photoInput').click()"
+        >
+          📸<br /><br />
+          <strong>PRENDRE UNE PHOTO</strong><br />
+          ou importer une image
+        </button>
+        <input
+          type="file"
+          id="photoInput"
+          accept="image/*"
+          capture="environment"
+        />
         <img id="previewImage" class="preview-image" />
         <div id="extractedData" class="extracted-data"></div>
       </div>
@@ -312,6 +286,7 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
       <div id="status" class="status"></div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script>
       const EDGE_FUNCTION_URL =
         "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
@@ -338,23 +313,6 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
         }
       }
 
-      // Load Tesseract dynamically
-      function loadTesseract() {
-        return new Promise((resolve, reject) => {
-          if (window.Tesseract) {
-            resolve();
-            return;
-          }
-
-          const script = document.createElement("script");
-          script.src =
-            "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js";
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error("Failed to load Tesseract"));
-          document.head.appendChild(script);
-        });
-      }
-
       // Handle file input
       document
         .getElementById("photoInput")
@@ -372,14 +330,9 @@ Exemple : Monsieur DUPONT jean.dupont@gmail.com Demande du 15/01/2025 ..."
           reader.readAsDataURL(file);
 
           // Extract text with Tesseract
-          showStatus("loading", "🔍 Chargement de l'OCR...");
+          showStatus("loading", "🔍 Extraction du texte en cours...");
 
           try {
-            // Load Tesseract if not loaded
-            await loadTesseract();
-
-            showStatus("loading", "🔍 Extraction du texte en cours...");
-
             const {
               data: { text },
             } = await Tesseract.recognize(file, "fra", {
