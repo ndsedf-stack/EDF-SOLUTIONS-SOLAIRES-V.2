@@ -235,6 +235,7 @@
       <h1>📸 IMPORT CONTACTS EN MASSE</h1>
       <p class="subtitle">
         Uploadez une capture d'écran de vos contacts - Extraction automatique
+        via Supabase
       </p>
 
       <div
@@ -278,9 +279,12 @@
     </div>
 
     <script>
-      const EDGE_FUNCTION_URL =
+      // ✅ NOUVELLE URL : Fonction Supabase OCR Table
+      const OCR_FUNCTION_URL =
+        "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/ocr-table";
+
+      const IMPORT_FUNCTION_URL =
         "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/import-contacts-batch";
-      const OCR_API_KEY = "K87899142388957";
 
       let extractedContacts = [];
 
@@ -340,63 +344,6 @@
         });
       }
 
-      // Parser pour extraire plusieurs contacts du texte OCR
-      function parseContacts(text) {
-        const contacts = [];
-        const lines = text.split("\n");
-
-        let currentContact = {};
-
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (!line) continue;
-
-          // Détection email
-          const emailMatch = line.match(
-            /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i
-          );
-          if (emailMatch) {
-            if (currentContact.email) {
-              // Nouveau contact détecté
-              if (currentContact.nom || currentContact.email) {
-                contacts.push({ ...currentContact });
-              }
-              currentContact = {};
-            }
-            currentContact.email = emailMatch[0];
-          }
-
-          // Détection téléphone
-          const telMatch = line.match(/(?:0|\+33)[1-9](?:[\s\.]?\d{2}){4}/);
-          if (telMatch && !currentContact.telephone) {
-            currentContact.telephone = telMatch[0].replace(/\s/g, "");
-          }
-
-          // Détection nom (Monsieur/Madame + Nom)
-          const nomMatch = line.match(
-            /(?:Monsieur|Madame|M\.|Mme)\s+([A-ZÀ-Ÿ][a-zà-ÿ\-]+(?: [A-ZÀ-Ÿ][a-zà-ÿ\-]+)*)/i
-          );
-          if (nomMatch && !currentContact.nom) {
-            currentContact.civilite = /madame|mme/i.test(nomMatch[0])
-              ? "Madame"
-              : "Monsieur";
-            currentContact.nom = nomMatch[1].trim();
-          }
-
-          // Si pas de civilité détectée mais qu'on a un nom en majuscules
-          if (!currentContact.nom && /^[A-ZÀ-Ÿ\- ]{3,}$/.test(line)) {
-            currentContact.nom = line;
-          }
-        }
-
-        // Ajouter le dernier contact
-        if (currentContact.nom || currentContact.email) {
-          contacts.push(currentContact);
-        }
-
-        return contacts;
-      }
-
       // Handle file input
       document
         .getElementById("photoInput")
@@ -416,43 +363,48 @@
             img.src = dataUrl;
             img.classList.add("show");
 
-            showStatus("loading", "🔍 Extraction des contacts en cours...");
+            showStatus(
+              "loading",
+              "🔍 Extraction des contacts en cours via Supabase..."
+            );
 
+            // ✅ APPEL À LA FONCTION SUPABASE OCR-TABLE
             const formData = new FormData();
-            formData.append("file", compressedFile);
-            formData.append("language", "fre");
-            formData.append("isOverlayRequired", "false");
-            formData.append("detectOrientation", "true");
-            formData.append("scale", "true");
+            formData.append("image", compressedFile);
 
-            const response = await fetch("https://api.ocr.space/parse/image", {
+            const response = await fetch(OCR_FUNCTION_URL, {
               method: "POST",
-              headers: {
-                apikey: OCR_API_KEY,
-              },
-              body: formData,
+              body: formData, // Pas de headers Content-Type avec FormData
             });
 
             const data = await response.json();
 
-            if (data.ParsedResults && data.ParsedResults[0]) {
-              const extractedText = data.ParsedResults[0].ParsedText;
-              extractedContacts = parseContacts(extractedText);
+            if (!response.ok) {
+              throw new Error(data.error || data.details || "Erreur OCR");
+            }
 
-              if (extractedContacts.length > 0) {
-                displayContacts(extractedContacts);
-                showStatus(
-                  "success",
-                  `✅ ${extractedContacts.length} contact(s) détecté(s) !`
-                );
-              } else {
-                throw new Error("Aucun contact détecté dans l'image");
-              }
+            if (data.success && data.rows && data.rows.length > 0) {
+              // Convertir les rows en format contacts
+              extractedContacts = data.rows.map((row) => ({
+                nom: row[0] || "",
+                prenom: row[1] || "",
+                email: row[2] || "",
+                telephone: row[3] || "",
+                codePostal: row[4] || "",
+                ville: row[5] || "",
+                adresse: row[6] || "",
+              }));
+
+              displayContacts(extractedContacts);
+              showStatus(
+                "success",
+                `✅ ${extractedContacts.length} contact(s) détecté(s) !`
+              );
             } else {
-              throw new Error(data.ErrorMessage || "Erreur OCR");
+              throw new Error("Aucun contact détecté dans l'image");
             }
           } catch (error) {
-            console.error(error);
+            console.error("Erreur extraction:", error);
             showStatus("error", "❌ Erreur : " + error.message);
           }
         });
@@ -471,14 +423,17 @@
             (contact, index) => `
           <div class="contact-item">
             <h3>👤 Contact ${index + 1}</h3>
-            <p><strong>Civilité:</strong> ${
-              contact.civilite || "Non détecté"
-            }</p>
             <p><strong>Nom:</strong> ${contact.nom || "Non détecté"}</p>
+            <p><strong>Prénom:</strong> ${contact.prenom || "Non détecté"}</p>
             <p><strong>Email:</strong> ${contact.email || "Non détecté"}</p>
             <p><strong>Téléphone:</strong> ${
               contact.telephone || "Non détecté"
             }</p>
+            <p><strong>Code Postal:</strong> ${
+              contact.codePostal || "Non détecté"
+            }</p>
+            <p><strong>Ville:</strong> ${contact.ville || "Non détecté"}</p>
+            <p><strong>Adresse:</strong> ${contact.adresse || "Non détecté"}</p>
           </div>
         `
           )
@@ -503,7 +458,7 @@
         document.getElementById("importBtn").disabled = true;
 
         try {
-          const response = await fetch(EDGE_FUNCTION_URL, {
+          const response = await fetch(IMPORT_FUNCTION_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ contacts: extractedContacts }),
@@ -514,7 +469,9 @@
           if (response.ok) {
             showStatus(
               "success",
-              `✅ ${data.imported} lead(s) importé(s) avec succès !`
+              `✅ ${
+                data.imported || extractedContacts.length
+              } lead(s) importé(s) avec succès !`
             );
             setTimeout(() => {
               clearAll();
@@ -523,7 +480,7 @@
             throw new Error(data.error || data.message || "Erreur serveur");
           }
         } catch (err) {
-          console.error(err);
+          console.error("Erreur import:", err);
           showStatus("error", "❌ Erreur : " + err.message);
           document.getElementById("importBtn").disabled = false;
         }

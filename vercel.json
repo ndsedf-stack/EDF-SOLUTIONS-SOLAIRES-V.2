@@ -11,8 +11,12 @@
       "destination": "/public/capture.html"
     },
     {
+      "source": "/dashboard",
+      "destination": "/public/dashboard.html"
+    },
+    {
       "source": "/(.*)",
-      "destination": "/capture.html"
+      "destination": "/index.html"
     }
   ],
   "headers": [

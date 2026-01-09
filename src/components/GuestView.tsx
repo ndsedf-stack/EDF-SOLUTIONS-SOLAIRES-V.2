@@ -153,7 +153,7 @@ export default function GuestView() {
           .from("studies")
           .select("id, status, study_data, expires_at, created_at")
           .eq("id", studyId)
-          .maybeSingle();
+          .single();
 
         if (error) throw error;
         if (!data) throw new Error("Étude introuvable");

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<title>OCR CRM</title>
+<style>
+body{background:#0f172a;color:white;font-family:system-ui;padding:30px}
+.upload{border:2px dashed #6366f1;border-radius:12px;padding:40px;text-align:center;cursor:pointer}
+table{width:100%;margin-top:20px;border-collapse:collapse}
+th,td{border-bottom:1px solid #1e293b;padding:8px;font-size:14px}
+th{color:#a5b4fc}
+</style>
+</head>
+<body>
+<h1>TEST PAGE OCR</h1>
+
+<h2>📊 OCR CRM</h2>
+
+<div class="upload" onclick="file.click()">Clique ou glisse une capture</div>
+<input type="file" id="file" hidden accept="image/*"/>
+
+<div id="status"></div>
+<div id="out"></div>
+
+<script>
+alert("JS OK");
+
+const API = "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/ocr-table";
+const KEY = "TON_ANON_KEY_ICI";
+
+file.onchange = async () => {
+  status.innerText = "⏳ OCR en cours...";
+  const fd = new FormData();
+  fd.append("image", file.files[0]);
+
+  const r = await fetch(API,{
+    method:"POST",
+    headers:{apikey:KEY,Authorization:`Bearer ${KEY}`},
+    body:fd
+  });
+
+  const data = await r.json();
+  render(data);
+};
+
+function render(data){
+  let html="<table><tr>";
+  data.headers.forEach(h=>html+=`<th>${h}</th>`);
+  html+="</tr>";
+  data.rows.forEach(r=>{
+    html+="<tr>";
+    r.forEach(c=>html+=`<td>${c}</td>`);
+    html+="</tr>";
+  });
+  html+="</table>";
+  out.innerHTML=html;
+  status.innerText="✅ Terminé";
+}
+</script>
+</body>
+</html>
+

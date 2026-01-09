@@ -27,6 +27,12 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "src"),
       },
     },
+    preview: {
+      port: 3000,
+    },
+    build: {
+      outDir: "dist",
+    },
     test: {
       environment: "jsdom",
       globals: true,
