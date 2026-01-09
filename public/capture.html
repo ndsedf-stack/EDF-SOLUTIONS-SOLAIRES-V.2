@@ -213,7 +213,7 @@
         📸<br /><br />
         <strong>PRENDRE UNE PHOTO</strong><br />
         <small style="font-size: 14px; opacity: 0.8"
-          >L'OCR se lance automatiquement</small
+          >Compression automatique incluse</small
         >
       </button>
 
@@ -240,9 +240,72 @@
     <script>
       const EDGE_FUNCTION_URL =
         "https://ugwqfvwclwctzgtxcakp.supabase.co/functions/v1/create-lead-and-send-mail";
-      const OCR_API_KEY = "K87899142388957"; // Clé gratuite publique OCR.space
+      const OCR_API_KEY = "K87899142388957";
 
       let extractedText = "";
+
+      // Fonction pour compresser l'image
+      function compressImage(file, maxSizeKB = 900) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              let width = img.width;
+              let height = img.height;
+
+              // Réduire les dimensions si trop grande
+              const maxDimension = 1920;
+              if (width > maxDimension || height > maxDimension) {
+                if (width > height) {
+                  height = (height / width) * maxDimension;
+                  width = maxDimension;
+                } else {
+                  width = (width / height) * maxDimension;
+                  height = maxDimension;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, width, height);
+
+              // Commencer avec qualité 0.8 et réduire si nécessaire
+              let quality = 0.8;
+              let compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+
+              // Si toujours trop gros, réduire la qualité
+              while (
+                compressedDataUrl.length > maxSizeKB * 1024 * 1.37 &&
+                quality > 0.1
+              ) {
+                quality -= 0.1;
+                compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+              }
+
+              // Convertir en Blob
+              fetch(compressedDataUrl)
+                .then((res) => res.blob())
+                .then((blob) => {
+                  const compressedFile = new File([blob], file.name, {
+                    type: "image/jpeg",
+                    lastModified: Date.now(),
+                  });
+                  console.log(
+                    `✅ Image compressée: ${file.size} → ${compressedFile.size} bytes (qualité: ${quality})`
+                  );
+                  resolve({ file: compressedFile, dataUrl: compressedDataUrl });
+                });
+            };
+          };
+          reader.onerror = reject;
+        });
+      }
 
       // Handle file input
       document
@@ -251,22 +314,26 @@
           const file = e.target.files[0];
           if (!file) return;
 
-          // Show preview
-          const reader = new FileReader();
-          reader.onload = (event) => {
-            const img = document.getElementById("previewImage");
-            img.src = event.target.result;
-            img.classList.add("show");
-          };
-          reader.readAsDataURL(file);
-
-          // OCR avec OCR.space
-          showStatus("loading", "🔍 Extraction du texte en cours...");
-          document.getElementById("sendBtn").disabled = true;
+          showStatus("loading", "🔄 Compression de l'image...");
 
           try {
+            // Compresser l'image
+            const { file: compressedFile, dataUrl } = await compressImage(
+              file,
+              900
+            );
+
+            // Show preview
+            const img = document.getElementById("previewImage");
+            img.src = dataUrl;
+            img.classList.add("show");
+
+            // OCR avec OCR.space
+            showStatus("loading", "🔍 Extraction du texte en cours...");
+            document.getElementById("sendBtn").disabled = true;
+
             const formData = new FormData();
-            formData.append("file", file);
+            formData.append("file", compressedFile);
             formData.append("language", "fre");
             formData.append("isOverlayRequired", "false");
             formData.append("detectOrientation", "true");
@@ -300,7 +367,7 @@
             }
           } catch (error) {
             console.error(error);
-            showStatus("error", "❌ Erreur OCR : " + error.message);
+            showStatus("error", "❌ Erreur : " + error.message);
           }
         });
 
