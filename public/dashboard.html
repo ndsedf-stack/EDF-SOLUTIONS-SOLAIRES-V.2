@@ -6,6 +6,20 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
+      .cockpit-block {
+        position: relative;
+      }
+
+      .cockpit-block::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 1.5rem;
+        pointer-events: none;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+          0 0 40px rgba(0, 0, 0, 0.4);
+      }
+
       body {
         background: linear-gradient(
           135deg,
@@ -245,8 +259,53 @@
       }
 
       .filter-chip.active {
-        background: rgba(59, 130, 246, 0.2);
-        border-color: rgba(59, 130, 246, 0.5);
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.25),
+          rgba(59, 130, 246, 0.08)
+        );
+        border-color: rgba(59, 130, 246, 0.6);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4),
+          0 0 20px rgba(59, 130, 246, 0.25);
+        transform: translateY(-1px) scale(1.03);
+      }
+      /* ============================= */
+      /* 🔥 BUSINESS TEMPERATURE BADGES */
+      /* ============================= */
+
+      .temp-cold {
+        background: rgba(100, 116, 139, 0.15);
+        border: 1px solid rgba(100, 116, 139, 0.4);
+        color: #94a3b8;
+      }
+
+      .temp-warm {
+        background: rgba(59, 130, 246, 0.18);
+        border: 1px solid rgba(59, 130, 246, 0.5);
+        color: #93c5fd;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+      }
+
+      .temp-hot {
+        background: linear-gradient(
+          135deg,
+          rgba(168, 85, 247, 0.25),
+          rgba(251, 146, 60, 0.25)
+        );
+        border: 1px solid rgba(251, 146, 60, 0.6);
+        color: #fde68a;
+        box-shadow: 0 0 18px rgba(251, 146, 60, 0.45);
+      }
+
+      .temp-signed {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.35),
+          rgba(6, 182, 212, 0.2)
+        );
+        border: 1px solid rgba(16, 185, 129, 0.8);
+        color: #a7f3d0;
+        box-shadow: 0 0 22px rgba(16, 185, 129, 0.6);
       }
     </style>
   </head>
@@ -527,11 +586,21 @@
             </div>
           </div>
         </div>
+        <div class="mb-4 flex items-center gap-3">
+          <div
+            class="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.8)]"
+          ></div>
+          <h2
+            class="text-[11px] font-black uppercase tracking-[0.4em] text-blue-400"
+          >
+            AXE A — PILOTAGE COMMERCIAL
+          </h2>
+        </div>
 
         <!-- 🔍 BARRE DE RECHERCHE CLIENTS -->
         <div class="mb-8 space-y-4">
           <div
-            class="search-bar rounded-2xl p-6"
+            class="search-bar cockpit-block rounded-2xl p-6"
             style="
               background: rgba(15, 17, 26, 0.95);
               backdrop-filter: blur(20px);
@@ -621,7 +690,7 @@
           </div>
         </div>
 
-        <div class="glass rounded-3xl overflow-hidden shadow-2xl relative">
+        <div class="glass cockpit-block rounded-3xl overflow-hidden">
           <div
             class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-emerald-500/5 pointer-events-none"
           ></div>
@@ -645,17 +714,21 @@
         </div>
 
         <div class="mt-20">
-          <h2
-            class="text-slate-400 text-[11px] font-black uppercase tracking-[0.35em] mb-8 flex items-center gap-3"
-          >
-            <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
-            📧 SUIVI AUTOPILOTE LEADS EMAIL
-          </h2>
+          <div class="mb-4 flex items-center gap-3">
+            <div
+              class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.8)] animate-pulse"
+            ></div>
+            <h2
+              class="text-[11px] font-black uppercase tracking-[0.4em] text-orange-400"
+            >
+              AXE B — AUTOMATISATION EMAIL
+            </h2>
+          </div>
 
           <!-- 🔍 BARRE DE RECHERCHE LEADS -->
           <div class="mb-6 space-y-4">
             <div
-              class="search-bar rounded-2xl p-6"
+              class="search-bar cockpit-block rounded-2xl p-6"
               style="
                 background: rgba(15, 17, 26, 0.95);
                 backdrop-filter: blur(20px);
@@ -980,7 +1053,6 @@
       }
 
       async function loadData() {
-        alert("DASHBOARD JS CHARGÉ - " + new Date().toISOString()); // 👈 TEST
         await loadSettings();
         try {
           const [
@@ -1401,12 +1473,47 @@
             const isOptedOut = s.email_optout || false;
             const isCancelled = s.status === "cancelled";
             const isInactive = isOptedOut || isCancelled;
+            let tempLabel = "FROID";
+            let tempClass = "temp-cold";
 
-            const rowClass = isInactive
-              ? "bg-red-900/10 opacity-50"
-              : hasAlert
-              ? "bg-red-500/5"
-              : "";
+            if (s.status === "signed") {
+              tempLabel = "SIGNÉ";
+              tempClass = "temp-signed";
+            } else if (s.clicks > 0) {
+              tempLabel = "CHAUD";
+              tempClass = "temp-hot";
+            } else if (s.views >= 2) {
+              tempLabel = "TIÈDE";
+              tempClass = "temp-warm";
+            }
+
+            let businessBadge = "";
+
+            if (s.status === "signed") {
+              businessBadge = `<span class="shrink-0 whitespace-nowrap ml-2 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-400 text-emerald-400 text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(16,185,129,0.15)]">CLIENT SIGNÉ</span>`;
+            } else if (s.status === "sent" || s.status === "draft") {
+              businessBadge = `<span class="shrink-0 whitespace-nowrap ml-2 px-3 py-1 rounded-full bg-orange-500/15 border border-orange-400 text-orange-400 text-[9px] font-black uppercase tracking-widest">EN ATTENTE</span>`;
+            }
+
+            let rowClass = "";
+
+            // BASE BUSINESS
+            if (isInactive) {
+              rowClass = "bg-slate-900/60 opacity-50";
+            } else if (s.status === "signed") {
+              rowClass =
+                "bg-emerald-500/10 border-l-4 border-emerald-400 shadow-[inset_0_0_40px_rgba(16,185,129,0.25)]";
+            } else if (s.status === "sent" || s.status === "draft") {
+              rowClass =
+                "bg-blue-500/10 border-l-4 border-blue-400 shadow-[inset_0_0_40px_rgba(59,130,246,0.2)]";
+            }
+
+            // OVERLAY ANOMALIE (sans casser la couleur)
+            if (hasAlert && !isInactive) {
+              rowClass +=
+                " ring-1 ring-red-500/40 shadow-[inset_0_0_25px_rgba(239,68,68,0.25)]";
+            }
+
             const nameStyle = isInactive
               ? "text-slate-600 line-through"
               : "text-slate-100";
@@ -1443,28 +1550,42 @@
                 "')";
 
             return `
-                  <tr class="transition-all duration-300 group ${rowClass}">
+                 <tr class="transition-all duration-300 group ${rowClass}">
+
                     <td class="p-7" onclick="window.open('${FRONTEND_URL}/guest/${
               s.id
             }', '_blank')" style="cursor: pointer;">
-                      <div class="flex items-center gap-3">
-                       <div class="text-xl font-bold ${nameStyle} group-hover:text-blue-400 transition-colors">
-                    ${s.name}
-                    ${statusBadge}
-                  </div>
-                        ${
-                          s.hasLog
-                            ? '<span class="tooltip"><span class="text-orange-400 text-sm cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>'
-                            : ""
-                        }
-                      </div>
-                      <div class="text-xs text-slate-500 font-medium mt-1">${
-                        s.email
-                      }</div>
-                      <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-[0.2em]">
-                        ${getTimeSince(s.created_at)}
-                      </div>
-                    </td>
+  <div class="flex flex-col gap-2 max-w-full">
+
+    <div class="flex flex-wrap items-center gap-3 max-w-full">
+      <div class="text-xl font-bold ${nameStyle} group-hover:text-blue-400 transition-colors break-words max-w-full">
+        ${s.name}
+      </div>
+      ${statusBadge}
+
+<span class="shrink-0 whitespace-nowrap px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${tempClass}">
+  ${tempLabel}
+</span>
+
+${businessBadge}
+
+    </div>
+
+    ${
+      s.hasLog
+        ? '<span class="tooltip"><span class="text-orange-400 text-sm cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>'
+        : ""
+    }
+
+    <div class="text-xs text-slate-500 font-medium mt-1">${s.email}</div>
+
+    <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-[0.2em]">
+      ${getTimeSince(s.created_at)}
+    </div>
+
+  </div>
+</td>
+
 
                     <td class="p-7 text-center">
                       <div class="flex justify-center gap-14 font-black">
@@ -1868,7 +1989,8 @@
               </button>
             `
             : `
-              <button onclick="setOptOut('${l.email.replace(/'/g, "\\'")})"
+              <button onclick="setOptOut('${l.email.replace(/'/g, "\\'")}')"
+
                 class="action-button px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
                 STOP EMAILS
               </button>

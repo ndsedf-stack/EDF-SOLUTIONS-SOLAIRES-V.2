@@ -141,6 +141,7 @@ export default function GuestView() {
   const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("mensuel");
   const [showDetails, setShowDetails] = useState(false);
   const { studyId } = useParams<{ studyId: string }>();
+  const [isSigned, setIsSigned] = useState(false);
 
   useEffect(() => {
     const loadStudy = async () => {
@@ -157,6 +158,9 @@ export default function GuestView() {
 
         if (error) throw error;
         if (!data) throw new Error("Étude introuvable");
+        if (data.status === "signed") {
+          setIsSigned(true);
+        }
 
         // 👁️ TRACKING DE LA VUE
         try {
@@ -370,6 +374,25 @@ export default function GuestView() {
 
   const phone = "+336683623329";
   const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
+  if (isSigned) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white p-8">
+        <div className="max-w-xl text-center">
+          <div className="text-5xl mb-6">🔒</div>
+          <h1 className="text-3xl font-black mb-4">Dossier sécurisé</h1>
+          <p className="text-white/70 text-lg leading-relaxed">
+            Ce projet a déjà été validé avec votre conseiller.
+            <br />
+            Votre dossier est en cours de traitement administratif.
+          </p>
+          <p className="text-white/40 text-sm mt-6">
+            Vous serez contacté prochainement pour la suite.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#020202] text-white p-4 md:p-6">
@@ -1510,7 +1533,7 @@ export default function GuestView() {
               try {
                 await supabase.from("tracking_events").insert({
                   study_id: studyId,
-                  event_type: "email_click",
+                  event_type: "call_click",
                 });
               } catch (e) {
                 console.error("Tracking error:", e);

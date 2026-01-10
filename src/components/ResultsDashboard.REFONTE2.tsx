@@ -1296,6 +1296,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [__footerPopup, __setFooterPopup] = React.useState(false);
   const [inputValue, setInputValue] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
+  const [currentStudyId, setCurrentStudyId] = useState<string | null>(null);
+  const [isSigned, setIsSigned] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
   const [inputClientName, setInputClientName] = useState("");
@@ -1336,8 +1338,63 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         inputClientEmail, // ← AJOUTÉ
         inputClientPhone // ← AJOUTÉ
       );
+      // ✅ reset signature car nouvelle étude
+      setIsSigned(false);
     } catch (error) {
       console.error("Erreur:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  const handleSignStudy = async () => {
+    console.log("🔐 SIGN CLICK");
+
+    if (!confirm("⚠️ Confirmer que le client a SIGNÉ le projet ?")) return;
+
+    try {
+      setIsLoading(true);
+
+      // 🔎 On récupère la DERNIÈRE étude créée
+      const { data: study, error: fetchError } = await supabase
+        .from("studies")
+        .select("id, status")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (fetchError || !study) {
+        alert("❌ Impossible de retrouver l’étude");
+        return;
+      }
+
+      if (study.status === "signed") {
+        alert("⚠️ Cette étude est déjà signée.");
+        return;
+      }
+
+      // ✅ On signe
+      const { error: updateError } = await supabase
+        .from("studies")
+        .update({
+          status: "signed",
+          signed_at: new Date().toISOString(),
+        })
+        .eq("id", study.id);
+
+      if (updateError) throw updateError;
+      setIsSigned(true);
+
+      // 🧾 Log métier
+      await supabase.from("decision_logs").insert({
+        study_id: study.id,
+        action_performed: "SIGNED_FROM_RESULTS_DASHBOARD",
+        justification: "Signature client depuis ResultsDashboard",
+      });
+
+      alert("✅ Client signé. Séquence anti-annulation déclenchée.");
+    } catch (e) {
+      console.error("SIGN ERROR:", e);
+      alert("❌ Erreur lors de la signature");
     } finally {
       setIsLoading(false);
     }
@@ -1619,6 +1676,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     interestRate,
     creditDurationMonths,
   ]);
+
   const calculationResult = useMemo((): any => {
     if (!data?.params) return null;
 
@@ -2192,22 +2250,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       const expiresAt = new Date();
       expiresAt.setDate(expiresAt.getDate() + 7);
 
-      const studyId = crypto.randomUUID();
-      const guestUrl = `${window.location.origin}/guest/${studyId}`;
-
-      console.log("🔵 Study ID généré:", studyId);
-      console.log("🔵 Client ID:", clientId);
-
       // ═══════════════════════════════════════════════════════════
       // 📊 INSERTION ÉTUDE
       // ═══════════════════════════════════════════════════════════
       const result = await supabase
         .from("studies")
         .insert({
-          id: studyId,
           study_data: payload,
           expires_at: expiresAt.toISOString(),
-          guest_view_url: guestUrl,
           client_id: clientId,
           client_name: cleanedClientName,
           client_email: cleanedEmail || null,
@@ -2221,17 +2271,31 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         .single();
 
       console.log("🟥 INSERT STUDY RESULT =", result);
-      console.log("📊 STUDY DATA:", result.data);
-      console.log("📌 STUDY ID:", result.data?.id);
 
-      if (result.error) {
-        alert("❌ ERREUR SUPABASE : " + result.error.message);
+      if (result.error || !result.data) {
+        alert("❌ ERREUR SUPABASE : " + result.error?.message);
         console.error("❌ SUPABASE ERROR FULL =", result.error);
         return;
       }
 
-      const study = result.data;
-      console.log("✅ ÉTUDE CRÉÉE AVEC SUCCÈS:", study.id);
+      // ✅ ID OFFICIEL SUPABASE
+      const realStudyId = result.data.id;
+
+      // ✅ URL guest basée sur le vrai ID
+      const guestUrl = `${window.location.origin}/guest/${realStudyId}`;
+
+      console.log("✅ ÉTUDE CRÉÉE AVEC SUCCÈS:", realStudyId);
+
+      // ✅ on stocke l’id pour le bouton SIGNÉ
+      setCurrentStudyId(realStudyId);
+
+      // ═══════════════════════════════════════════════════════════
+      // 🔗 UPDATE guest_view_url
+      // ═══════════════════════════════════════════════════════════
+      await supabase
+        .from("studies")
+        .update({ guest_view_url: guestUrl })
+        .eq("id", realStudyId);
 
       // ═══════════════════════════════════════════════════════════
       // 🟢 UI
@@ -2241,11 +2305,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       setShowQRCode(true);
 
       alert(
-        `✅ Étude générée avec succès !\n\nID: ${
-          study.id
-        }\nClient ID: ${clientId}\nExpire le: ${expiresAt.toLocaleDateString(
-          "fr-FR"
-        )}`
+        `✅ Étude générée avec succès !
+ID: ${realStudyId}
+Client ID: ${clientId}
+Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
       );
     } catch (error: any) {
       console.error("❌ Erreur catch:", error);
@@ -8365,21 +8428,60 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
           </div>
         )}
 
-        {/* BOUTON SÉCURISATION FINAL */}
-        <button
-          onClick={() => __setFooterPopup(true)}
-          className="w-full h-24 bg-gradient-to-b from-white to-slate-200 text-black rounded-[28px] border border-black/10 shadow-[0_6px_40px_rgba(255,255,255,0.2)] transition-all duration-300 hover:shadow-[0_6px_60px_rgba(255,255,255,0.28)] active:scale-[0.98] flex items-center justify-center gap-4"
-        >
-          <Smartphone size={26} className="opacity-60" />
-          <div className="text-left leading-tight">
-            <span className="block text-lg font-black uppercase">
-              Sécurisation du dossier EDF
-            </span>
-            <span className="block text-[10px] font-bold uppercase opacity-50 tracking-widest">
-              Étape administrative — 2 minutes
-            </span>
+        {isSigned ? (
+          <div className="w-full mt-10 p-10 rounded-[28px] bg-emerald-500/10 border border-emerald-400/30 text-center">
+            <div className="text-4xl mb-4">🔒</div>
+            <div className="text-2xl font-black text-white mb-2">
+              Dossier sécurisé
+            </div>
+            <p className="text-white/70">
+              Ce projet a été validé avec votre conseiller.
+              <br />
+              Il est maintenant en cours de traitement.
+            </p>
           </div>
-        </button>
+        ) : (
+          <>
+            {/* BOUTON SÉCURISATION FINAL */}
+            <button
+              disabled={isSigned}
+              onClick={async () => {
+                if (isSigned) return;
+                await handleSignStudy();
+                __setFooterPopup(true);
+              }}
+              className={`w-full h-24 ... ${
+                isSigned ? "opacity-40 cursor-not-allowed" : ""
+              }`}
+            >
+              <Smartphone size={26} className="opacity-60" />
+              <div className="text-left leading-tight">
+                <span className="block text-lg font-black uppercase">
+                  Sécurisation du dossier EDF
+                </span>
+                <span className="block text-[10px] font-bold uppercase opacity-50 tracking-widest">
+                  Étape administrative — 2 minutes
+                </span>
+              </div>
+            </button>
+
+            <button
+              onClick={handleSignStudy}
+              className="w-full mt-4 h-20 bg-gradient-to-b from-green-500 to-green-600 text-white rounded-[26px] border border-green-700 shadow-xl transition-all duration-300 hover:shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4"
+            >
+              <span className="text-xl">✅</span>
+              <div className="text-left leading-tight">
+                <span className="block text-lg font-black uppercase">
+                  Client signé
+                </span>
+                <span className="block text-[10px] font-bold uppercase opacity-80 tracking-widest">
+                  Déclencher contrat & emails
+                </span>
+              </div>
+            </button>
+          </>
+        )}
+
         {/* ==== FOOTER EXPORT + ACCÈS CLIENT ==== */}
         <div className="w-full mt-24 border-t border-white/10 pt-12 pb-32">
           <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
