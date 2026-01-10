@@ -1835,12 +1835,53 @@ ${businessBadge}
 
       async function setOptOut(email) {
         if (!confirm("Confirmer l'exclusion de ce lead ?")) return;
-        await supabaseClient
-          .from("clients")
-          .update({ email_optout: true })
-          .eq("email", email);
-        await loadEmailLeads();
-        await loadData();
+
+        try {
+          const { data, error } = await supabaseClient
+            .from("clients")
+            .update({
+              email_optout: true,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("email", email)
+            .select();
+
+          if (error) {
+            console.error("❌ Erreur Supabase:", error);
+            alert("❌ ERREUR : " + error.message);
+            return;
+          }
+
+          if (!data || data.length === 0) {
+            alert("❌ ERREUR : Aucun client trouvé avec cet email");
+            return;
+          }
+
+          // Annuler les emails en attente
+          const { error: queueError } = await supabaseClient
+            .from("email_queue")
+            .update({ status: "cancelled" })
+            .eq("client_id", data[0].id)
+            .in("status", ["pending", "scheduled"]);
+
+          if (queueError) {
+            console.warn("⚠️ Erreur annulation emails:", queueError);
+          }
+
+          // Logger l'action
+          await supabaseClient.from("decision_logs").insert({
+            client_name: data[0].first_name + " " + data[0].last_name,
+            action_performed: "EMAIL_OPTOUT",
+            justification: "Désabonnement depuis dashboard",
+          });
+
+          alert("✅ Client désabonné avec succès !");
+          await loadEmailLeads();
+          await loadData();
+        } catch (err) {
+          console.error("❌ Erreur critique:", err);
+          alert("❌ ERREUR CRITIQUE : " + err.message);
+        }
       }
 
       function renderEmailLeads() {

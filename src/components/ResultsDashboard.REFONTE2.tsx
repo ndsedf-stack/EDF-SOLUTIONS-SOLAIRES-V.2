@@ -2134,13 +2134,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       });
 
       if (!clientId && cleanedEmail) {
-        const { data: existingClient } = await supabase
+        const { data: existingClient, error: findError } = await supabase
           .from("clients")
           .select("id")
           .eq("email", cleanedEmail)
           .maybeSingle();
 
-        if (existingClient) {
+        if (findError) {
+          console.error("❌ Erreur recherche client:", findError);
+          alert("❌ Impossible de vérifier le client existant.");
+          return;
+        }
+
+        if (existingClient?.id) {
           clientId = existingClient.id;
           console.log("✅ Client existant:", clientId);
 
@@ -8428,6 +8434,29 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
           </div>
         )}
 
+        {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
+
+        <ModuleTauxUltraPremium
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
+        <ModuleTauxPrivilege
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
+        <ModuleTauxStandard
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
         {isSigned ? (
           <div className="w-full mt-10 p-10 rounded-[28px] bg-emerald-500/10 border border-emerald-400/30 text-center">
             <div className="text-4xl mb-4">🔒</div>
@@ -8506,29 +8535,7 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
             </button>
           </div>
         </div>
-        {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
 
-        <ModuleTauxUltraPremium
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxPrivilege
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxStandard
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
         {/* ==== POPUP NOM DU CLIENT (STYLE IOS PREMIUM) ==== */}
         {__footerPopup && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
