@@ -66,6 +66,8 @@ import {
   Legend,
 } from "recharts";
 import {
+  Plane,
+  Heart,
   PenLine,
   Download,
   Sun,
@@ -121,6 +123,7 @@ import {
   MessageSquare,
   MessageCircle,
   EyeOff,
+  ChevronRight, // ← À AJOUTER
 } from "lucide-react";
 import { InputSlider } from "./InputSlider";
 
@@ -1043,6 +1046,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   onProfileChange,
   studyId,
 }) => {
+  const greenPositioning = data?.greenPositioning;
   const didLogValidation = useRef(false);
   const [projectionYears, setProjectionYears] = useState<number>(
     initialProjectionYears || 10
@@ -1087,6 +1091,10 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   }, [data.profile, profile]);
 
   // Reste de tes states
+  // Dans ton composant, avec les autres useState
+  const [showBudgetProtectionInfo, setShowBudgetProtectionInfo] =
+    useState(false);
+  const [showCapitalInfo, setShowCapitalInfo] = useState(false);
   const [showCoach, setShowCoach] = useState(false);
   const [showQuiz, setShowQuiz] = useState(false);
   const [step, setStep] = useState<"dashboard" | "coach" | "results">(
@@ -1422,6 +1430,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const hasInitializedRate = useRef(false);
   const hasInitializedParams = useRef(false);
   const setCreditInterestRate = setInterestRate;
+  const [showTransition, setShowTransition] = useState(false);
 
   const [insuranceRate, setInsuranceRate] = useState<number>(0);
   const [buybackRate, setBuybackRate] = useState<number>(0.04);
@@ -4270,260 +4279,606 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
             </p>
           </div>
         </ModuleSection>
+
         {/* ============================================
-    MODULE :Synthèse d'Arbitrage Énergétique
-    ============================================ */}
+        MODULE : Synthèse d'Arbitrage Énergétique
+        VERSION CORRIGÉE - RÉORGANISATION MODULES BAS
+         ============================================ */}
 
         <ModuleSection
-          id="calendrier"
-          title="Calendrier de Mise en Service"
+          id="synthese"
+          title="Synthèse d'Arbitrage Énergétique"
           icon={<Calendar className="text-blue-400" />}
           defaultOpen={false}
           onOpen={(id) => {
             setActiveModule(id);
           }}
         >
-          <div className="bg-black/40 border border-white/10 rounded-[32px] p-8">
-            {/* HEADER NEUTRE */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Calendar className="text-blue-400" size={28} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">
-                  Impact du Calendrier de Décision
+          <div id="Synthèse d'Arbitrage Énergétique" className="space-y-6 mt-8">
+            {/* RANGÉE SUPÉRIEURE : CALCULS + CARTES DROITE */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* PARTIE GAUCHE - CALCULATEUR */}
+              <div className="lg:col-span-8 bg-[#050505] border border-white/10 rounded-[40px] p-8 shadow-2xl">
+                <div className="flex gap-2 mb-6">
+                  <div className="bg-black border border-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Lock size={12} /> PROJECTION 20 ANS
+                  </div>
+                  <div className="bg-[#062c1e] border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
+                    <TrendingUp size={12} /> 0€ D'APPORT
+                  </div>
+                </div>
+
+                {/* ✅ TITRE + GROS CHIFFRE PRINCIPAL */}
+                <h2 className="text-sm text-slate-400 font-medium mb-2 uppercase tracking-wide">
+                  Écart Économique Cumulé
                 </h2>
-                <p className="text-slate-400 text-[11px] mt-1 italic">
-                  Délai standard de mise en service : 8 à 12 semaines
-                </p>
-                <p className="text-xs text-slate-600 mt-2 italic">
-                  À partir de cette date, l'installation est opérationnelle.
-                </p>
+                <div
+                  className="text-5xl font-black text-white mb-8 italic tracking-tighter"
+                  data-testid="gain-total"
+                >
+                  {Math.round(
+                    calculationResult.totalSavingsProjected
+                  ).toLocaleString()}{" "}
+                  €
+                </div>
+
+                {/* TABLEAU DE CALCUL */}
+                <div className="bg-[#0a0a0b] border border-white/5 rounded-3xl p-6 space-y-4 mb-8">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    <h3 className="text-[11px] font-black text-white uppercase italic tracking-widest">
+                      COMMENT EST CALCULÉ CET ÉCART ?
+                    </h3>
+                  </div>
+
+                  {/* ✅ SCÉNARIO SANS SOLAIRE - MONTANT EXACT */}
+                  <div className="bg-[#1a0f10] border border-red-950/30 rounded-2xl p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <TrendingUp className="text-red-500 w-6 h-6" />
+                      <div>
+                        <div className="text-[11px] font-black text-red-500 uppercase italic tracking-wide">
+                          SCÉNARIO SANS SOLAIRE
+                        </div>
+                        <div className="text-[10px] text-slate-400 mt-1">
+                          Dépense énergétique totale sur 20 ans
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="text-4xl font-black text-red-500 italic tracking-tight"
+                      data-testid="no-solar-total-20y"
+                    >
+                      {Math.round(
+                        calculationResult?.totalSpendNoSolar ?? 0
+                      ).toLocaleString()}{" "}
+                      €
+                    </div>
+                  </div>
+
+                  <div className="text-center text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
+                    MOINS
+                  </div>
+
+                  {/* ✅ SCÉNARIO AVEC SOLAIRE - MONTANT EXACT */}
+                  <div className="bg-[#0f141a] border border-blue-950/30 rounded-2xl p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-6 h-6 rounded-full border-2 border-blue-500 flex items-center justify-center">
+                        <CheckCircle2 className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] font-black text-blue-500 uppercase italic tracking-wide">
+                          SCÉNARIO AVEC SOLAIRE
+                        </div>
+                        <div className="text-[10px] text-slate-400 italic mt-1">
+                          Réorganisation budget + facture résiduelle
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      className="text-4xl font-black text-blue-500 italic tracking-tight"
+                      data-testid="solar-scenario-total-20y"
+                    >
+                      {Math.round(
+                        calculationResult?.totalSpendSolar ?? 0
+                      ).toLocaleString()}{" "}
+                      €
+                    </div>
+                  </div>
+
+                  <div className="text-center text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
+                    EGAL
+                  </div>
+
+                  {/* ✅ GAIN NET */}
+                  <div className="bg-[#0d1a14] border-2 border-emerald-500/40 rounded-2xl p-6 flex items-center justify-between shadow-lg">
+                    <div className="flex items-center gap-4">
+                      <Award className="text-emerald-500 w-7 h-7" />
+                      <div className="text-[13px] font-black text-emerald-500 uppercase tracking-wider italic">
+                        VOTRE GAIN NET
+                      </div>
+                    </div>
+                    <div className="text-5xl font-black text-emerald-400 italic tracking-tight">
+                      +
+                      {Math.round(
+                        calculationResult.totalSavingsProjected
+                      ).toLocaleString("fr-FR")}
+                      &nbsp;€
+                    </div>
+                  </div>
+
+                  {/* 🔥 OPTIMISATION 1 : ANCRAGE COMPTABLE */}
+                  <div className="mt-3 px-4">
+                    <p className="text-[10px] text-slate-500 italic leading-relaxed tracking-wide">
+                      Ce chiffre n'est pas une promesse. C'est la conséquence
+                      mécanique de vos factures actuelles projetées sur 20 ans.
+                    </p>
+                  </div>
+
+                  {/* 🔥 CORRECTION : NOTE NEUTRE ET POSITIVE (V2) */}
+                  <div className="bg-blue-950/10 border-l-4 border-blue-500 p-4 rounded-r-xl">
+                    <p className="text-[11px] text-blue-200/90 leading-relaxed italic uppercase font-medium">
+                      <span className="text-blue-400 font-black">
+                        ✓ RÉORGANISATION BUDGÉTAIRE PROGRESSIVE
+                      </span>{" "}
+                      VOTRE BUDGET MENSUEL RESTE ÉQUILIBRÉ. APRÈS REMBOURSEMENT
+                      DU FINANCEMENT, LES ÉCONOMIES DEVIENNENT PERMANENTES ET
+                      MASSIVES.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 🔥 KPI MINI GRID - VERSION V2 OPTIMISÉE */}
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-black border border-white/5 p-4 rounded-2xl">
+                    <div className="text-[9px] font-black text-emerald-500 uppercase mb-1">
+                      CAPITAL IMMOBILISÉ
+                    </div>
+                    <div className="text-xl font-black text-emerald-400 italic">
+                      0€
+                    </div>
+                  </div>
+                  <div className="bg-black border border-white/5 p-4 rounded-2xl">
+                    <div className="text-[9px] font-black text-blue-500 uppercase mb-1 italic">
+                      ÉCART MOYEN
+                    </div>
+                    <div
+                      className="text-xl font-black text-white italic"
+                      data-testid="gain-yearly"
+                    >
+                      +
+                      {Math.round(
+                        calculationResult.averageYearlyGain
+                      ).toLocaleString()}{" "}
+                      €/an
+                    </div>
+                  </div>
+                  {/* 🔥 CORRECTION : AUTONOMIE ATTEINTE (V2) */}
+                  <div className="bg-black border border-white/5 p-4 rounded-2xl">
+                    <div className="text-[9px] font-black text-emerald-500 uppercase mb-1 italic">
+                      AUTONOMIE ATTEINTE
+                    </div>
+                    <div
+                      className="text-xl font-black text-white italic"
+                      data-testid="break-even"
+                    >
+                      An {calculationResult.breakEvenPoint}
+                    </div>
+                  </div>
+                  <div className="bg-black border border-white/5 p-4 rounded-2xl">
+                    <div className="text-[9px] font-black text-yellow-500 uppercase mb-1 italic">
+                      RENDEMENT PROJET
+                    </div>
+                    <div
+                      className="text-xl font-black text-yellow-400 italic"
+                      data-testid="project-return"
+                    >
+                      {(
+                        (calculationResult.averageYearlyGain / installCost) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 🔥 DROITE : RÉORGANISATION (V2 - RÉALLOCATION EN HAUT) */}
+              <div className="lg:col-span-4 space-y-6 flex flex-col">
+                {/* 🔥 CARTE 1 : RÉALLOCATION ANNÉE 1 (V2 + FIX V1 : "RÉALLOCATION") */}
+                <div className="bg-[#050505] border border-orange-900/30 rounded-[32px] p-8 shadow-xl flex-1">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Zap className="text-orange-500 w-5 h-5" />
+                    <h3 className="text-[11px] font-black text-orange-500 uppercase tracking-widest italic">
+                      NOUVEL ÉQUILIBRE BUDGÉTAIRE
+                    </h3>
+                  </div>
+
+                  {/* 🔥 CORRECTION V2 : TOUJOURS BLANC, JAMAIS ROUGE */}
+                  <div
+                    className="text-6xl font-black text-white mb-8 italic tracking-tighter leading-none drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]"
+                    data-testid="monthly-gain"
+                  >
+                    {(() => {
+                      const monthlyReallocationYear1 = Math.round(
+                        calculationResult?.monthlyEffortYear1 || 0
+                      );
+                      return `${
+                        monthlyReallocationYear1 > 0 ? "+" : ""
+                      }${monthlyReallocationYear1} €`;
+                    })()}
+                  </div>
+
+                  <div className="space-y-4 border-t border-white/5 pt-6 mt-6">
+                    <div className="flex justify-between items-center w-full">
+                      <span className="text-sm text-slate-400 font-medium">
+                        Nouveau Budget :
+                      </span>
+                      <span
+                        className="text-2xl font-black text-white"
+                        data-testid="new-monthly-budget"
+                      >
+                        {Math.round(
+                          calculationResult?.newMonthlyBillYear1 || 0
+                        ).toLocaleString()}{" "}
+                        €
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center w-full">
+                      <span className="text-sm text-slate-400 font-medium">
+                        Ancien Budget :
+                      </span>
+                      <span
+                        className="text-2xl font-black text-red-500"
+                        data-testid="old-monthly-budget"
+                      >
+                        {Math.round(
+                          calculationResult?.oldMonthlyBillYear1 || 0
+                        ).toLocaleString()}{" "}
+                        €
+                      </span>
+                    </div>
+
+                    <div className="flex justify-between items-center pt-4 border-t border-white/10 w-full">
+                      {/* 🔥 OPTIMISATION 2 : "RÉALLOCATION" AU LIEU DE "RÉAJUSTEMENT" */}
+                      <span className="text-base font-black text-orange-500 italic uppercase tracking-wider">
+                        = Réallocation
+                      </span>
+                      <span
+                        className="text-3xl font-black text-white italic"
+                        data-testid="monthly-reallocation"
+                      >
+                        {(() => {
+                          const monthlyReallocationYear1 = Math.round(
+                            calculationResult?.monthlyEffortYear1 || 0
+                          );
+                          return `${
+                            monthlyReallocationYear1 > 0 ? "+" : ""
+                          }${monthlyReallocationYear1} €`;
+                        })()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 bg-orange-500/5 border border-orange-500/20 p-4 rounded-xl">
+                    <p className="text-[10px] text-orange-500/90 italic uppercase font-bold text-center tracking-tighter leading-relaxed">
+                      VOTRE CAPACITÉ D'ÉPARGNE S'ACCÉLÈRE À CHAQUE AUGMENTATION
+                      DU TARIF DE L'ÉNERGIE.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 🔥 CARTE 2 : RENDEMENT COMPARATIF (V2) */}
+                <div className="bg-[#050505] border border-blue-900/30 rounded-[32px] p-8 shadow-xl flex-1">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Landmark className="text-blue-500 w-5 h-5" />
+                    <h3 className="text-[11px] font-black text-blue-400 uppercase tracking-widest italic">
+                      RENDEMENT COMPARATIF
+                    </h3>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 mb-6 italic uppercase leading-relaxed">
+                    Votre investissement de{" "}
+                    <span className="text-white font-black">
+                      {formatMoney(installCost)}
+                    </span>{" "}
+                    génère l'équivalent de{" "}
+                    <span className="text-white font-black">
+                      {Math.round(
+                        calculationResult.averageYearlyGain
+                      ).toLocaleString()}{" "}
+                      €/an
+                    </span>
+                  </p>
+
+                  {/* 🔥 GROS CHIFFRE : RENDEMENT EN % */}
+                  <div className="text-6xl font-black text-white mb-8 italic tracking-tighter">
+                    {(
+                      (calculationResult.averageYearlyGain / installCost) *
+                      100
+                    ).toFixed(1)}
+                    %
+                  </div>
+
+                  {/* 🔥 COMPARAISON VISUELLE CLAIRE */}
+                  <div className="bg-blue-950/50 border border-blue-500/40 px-4 py-4 rounded-xl mb-6">
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase">
+                      <div className="text-slate-400">LIVRET A</div>
+                      <div className="text-slate-500">3,0%</div>
+                    </div>
+                    <div className="h-px bg-white/10 my-3"></div>
+                    <div className="flex items-center justify-between text-[11px] font-black uppercase">
+                      <div className="text-blue-400">VOTRE PROJET</div>
+                      <div className="text-blue-400">
+                        {(
+                          (calculationResult.averageYearlyGain / installCost) *
+                          100
+                        ).toFixed(1)}
+                        %
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="mt-6 text-[9px] text-slate-500 italic uppercase flex items-center gap-2">
+                    <Zap size={10} className="text-orange-500" /> RENDEMENT
+                    CALCULÉ SUR LA DURÉE TOTALE DE PROJECTION
+                  </p>
+                </div>
               </div>
             </div>
 
-            {/* CARTES – OPTION 3 : 4 CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {/* Card 1 - Coût énergétique actuel */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Coût énergétique actuel
+            {/* RANGÉE INFÉRIEURE : CAPITAL DISPONIBLE + VALEUR VERTE */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
+              {/* 🔥 CARTE ACTIF ÉNERGÉTIQUE — ANTI-OBJECTIONS */}
+              <div className="bg-[#050505] border border-emerald-500/20 rounded-[32px] p-8 flex flex-col justify-between relative shadow-2xl min-h-[520px] overflow-hidden">
+                {/* 🔎 INFO */}
+                <div className="absolute top-6 right-6 z-50">
+                  <button
+                    onMouseEnter={() => setShowCapitalInfo(true)}
+                    onMouseLeave={() => setShowCapitalInfo(false)}
+                    className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 hover:border-emerald-500/50 transition-all"
+                  >
+                    <Wallet size={24} className="text-emerald-500" />
+                  </button>
                 </div>
-                <div className="text-2xl font-bold text-white mb-1">
-                  {formatMoney(calculationResult.lossIfWait1Year || 0)}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Facture annuelle fournisseur
-                </div>
-              </div>
 
-              {/* Card 2 - Économie disponible année 1 */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-2xl p-6">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Économie disponible année 1
-                </div>
-                <div className="text-2xl font-bold text-emerald-400 mb-1">
-                  {formatMoney(
-                    calculationResult.details?.[0]?.solarSavingsValue || 0
-                  )}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Bénéfice première année
-                </div>
-              </div>
+                {/* 🔥 CONTENU PRINCIPAL */}
+                <div>
+                  <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter">
+                    ACTIF ÉNERGÉTIQUE
+                  </h3>
 
-              {/* Card 3 - Économie BRUTE période */}
-              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-2xl p-6">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Économie brute {projectionYears} ans
-                </div>
-                <div className="text-2xl font-bold text-emerald-400 mb-1">
-                  {formatMoney(
-                    calculationResult.details
-                      .slice(0, projectionYears)
-                      .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                  )}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Énergie produite totale
-                </div>
-              </div>
+                  <p className="text-[10px] font-black text-emerald-500 uppercase italic mb-6">
+                    VOTRE MAISON COMMENCE À PRODUIRE POUR VOUS
+                  </p>
 
-              {/* Card 4 - Gain NET période AVEC INFOBULLE */}
-              <div className="bg-slate-900/40 border border-blue-500/20 rounded-2xl p-6 relative group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-slate-400 text-[10px] font-medium uppercase tracking-wider">
-                    Gain net {projectionYears} ans
+                  {/* ✅ GROS CHIFFRE */}
+                  <div className="mb-4">
+                    <div className="text-7xl font-black text-emerald-400 italic tracking-tighter leading-none">
+                      {Math.round(
+                        calculationResult?.savingsAfterBreakEven ||
+                          calculationResult?.totalSavingsProjected * 0.6 ||
+                          0
+                      ).toLocaleString("fr-FR")}
+                      &nbsp;€
+                    </div>
+
+                    <p className="text-[10px] font-black text-white uppercase italic mt-2 tracking-[0.2em]">
+                      VALEUR D'USAGE CRÉÉE PAR VOTRE MAISON
+                    </p>
+
+                    <p className="text-[9px] text-slate-400 italic mt-1">
+                      Que vous y restiez, que vous louiez ou que vous revendiez.
+                    </p>
                   </div>
-                  {/* ICÔNE INFO */}
-                  <div className="relative">
-                    <Info
-                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400"
-                      data-tooltip="gain-net"
-                    />
-                    {/* INFOBULLE */}
-                    <div className="absolute bottom-full right-0 mb-2 w-[320px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      {/* Flèche */}
-                      <div className="absolute -bottom-2 right-4 w-4 h-4 bg-slate-900 border-r-2 border-b-2 border-blue-500/30 transform rotate-45"></div>
 
-                      {/* Contenu */}
-                      <div className="relative z-10">
-                        <div className="text-xs font-bold text-blue-400 mb-3 uppercase tracking-wide">
-                          📊 Détail du calcul
-                        </div>
-
-                        <div className="space-y-3 text-[11px] text-slate-300">
-                          {/* Économie brute */}
-                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                            <span className="text-slate-400">
-                              Économie brute totale
-                            </span>
-                            <span className="font-bold text-emerald-400">
-                              {formatMoney(
-                                calculationResult.details
-                                  .slice(0, projectionYears)
-                                  .reduce(
-                                    (sum, d) => sum + d.solarSavingsValue,
-                                    0
-                                  )
-                              )}
-                            </span>
-                          </div>
-
-                          {/* Coût du crédit */}
-                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                            <span className="text-slate-400">
-                              Coût du crédit
-                            </span>
-                            <span className="font-bold text-red-400">
-                              -
-                              {formatMoney(
-                                calculationResult.details
-                                  .slice(0, projectionYears)
-                                  .reduce((sum, d) => sum + d.creditPayment, 0)
-                              )}
-                            </span>
-                          </div>
-
-                          {/* Facture résiduelle */}
-                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                            <span className="text-slate-400">
-                              Facture résiduelle EDF
-                            </span>
-                            <span className="font-bold text-orange-400">
-                              -
-                              {formatMoney(
-                                calculationResult.details
-                                  .slice(0, projectionYears)
-                                  .reduce((sum, d) => sum + d.edfResidue, 0)
-                              )}
-                            </span>
-                          </div>
-
-                          {/* Résultat net */}
-                          <div className="flex justify-between items-start pt-2 bg-blue-950/30 rounded-lg p-2">
-                            <span className="font-bold text-white">
-                              Gain net
-                            </span>
-                            <span className="font-black text-blue-400 text-base">
-                              {formatMoney(
-                                calculationResult.totalSavingsProjected || 0
-                              )}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Note explicative */}
-                        <div className="mt-3 pt-3 border-t border-white/10">
-                          <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                            Le gain net représente ce qu'il vous reste{" "}
-                            <strong className="text-slate-300">
-                              après avoir payé le crédit et la facture
-                              résiduelle
-                            </strong>
-                            , par rapport à ne rien faire.
-                          </p>
-                        </div>
+                  {/* EXEMPLES */}
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-6">
+                    <p className="text-[10px] font-black text-emerald-500 uppercase mb-2 tracking-widest">
+                      UTILISATION LIBRE :
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-[9px] text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <Plane size={12} className="text-emerald-400" />
+                        <span>Confort / voyages</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Home size={12} className="text-emerald-400" />
+                        <span>Amélioration habitat</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Heart size={12} className="text-emerald-400" />
+                        <span>Liberté financière</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Shield size={12} className="text-emerald-400" />
+                        <span>Sécurité budgétaire</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-2xl font-bold text-blue-400 mb-1">
-                  {formatMoney(calculationResult.totalSavingsProjected || 0)}
+                {/* 🔥 BLOC PSYCHOLOGIQUE ANTI-ÂGE / ANTI-VENTE */}
+                <div className="mt-2 bg-[#0b1220] border border-blue-500/20 rounded-2xl p-5">
+                  <p className="text-[12px] text-slate-200 italic leading-relaxed">
+                    Ce projet n'est pas pensé pour "dans 20 ans".
+                    <br />
+                    <span className="text-white font-bold">
+                      Il est pensé pour que votre maison vous coûte moins et
+                      vous apporte plus dès maintenant.
+                    </span>
+                    <br />
+                    <br />
+                    La durée n'est pas une condition. C'est simplement ce qui
+                    amplifie l'effet.
+                  </p>
                 </div>
-                <div className="text-slate-500 text-[10px]">
-                  Après remboursement crédit
+
+                {/* FOOTER DÉTAIL */}
+                <div className="mt-auto">
+                  <div className="bg-white/5 rounded-2xl p-5 border border-white/10 mb-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-[11px] font-bold uppercase">
+                        <span className="text-slate-400 tracking-tight max-w-[70%]">
+                          Ce que votre maison vous rapporte une fois le système
+                          amorti
+                        </span>
+                        <span className="text-emerald-400">
+                          +
+                          {Math.round(
+                            calculationResult?.savingsAfterBreakEven ||
+                              calculationResult?.totalSavingsProjected * 0.6 ||
+                              0
+                          ).toLocaleString("fr-FR")}{" "}
+                          €
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between text-[11px] font-bold uppercase pt-3 border-t border-white/10">
+                        <span className="text-slate-400 tracking-tight max-w-[70%] italic">
+                          Ce que votre maison vous permet déjà d'économiser
+                          pendant qu'elle se rembourse
+                        </span>
+                        <span className="text-blue-400">
+                          +
+                          {Math.round(
+                            calculationResult?.totalSavingsProjected * 0.4 || 0
+                          ).toLocaleString("fr-FR")}{" "}
+                          €
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3">
+                    <p className="text-[9px] text-slate-400 italic">
+                      Actif économique domestique — valeur d'usage indépendante
+                      du temps de détention
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 🔥 BOUTON POINT CENTRAL CLIQUABLE */}
+              <button
+                onClick={() => setShowTransition(!showTransition)}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 hidden md:flex items-center justify-center w-14 h-14 bg-gradient-to-br from-emerald-500/20 to-orange-500/20 backdrop-blur-xl border-2 border-white/20 rounded-full shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_rgba(16,185,129,0.5)] hover:scale-110 transition-all duration-300 group"
+                aria-label="Afficher la transition"
+              >
+                <div className="relative">
+                  {showTransition ? (
+                    <X className="w-5 h-5 text-white" />
+                  ) : (
+                    <ChevronRight className="w-6 h-6 text-white group-hover:translate-x-0.5 transition-transform" />
+                  )}
+                </div>
+              </button>
+
+              {/* 🔥 ÉTAPE 5 — POSITIONNEMENT PATRIMONIAL */}
+              <div className="bg-[#050505] border border-orange-500/20 rounded-[32px] p-8 flex flex-col justify-between relative shadow-2xl min-h-[480px] overflow-hidden">
+                {/* HEADER */}
+                <div>
+                  <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter">
+                    POSITIONNEMENT PATRIMONIAL
+                  </h3>
+
+                  <p className="text-[10px] font-black text-orange-500 uppercase italic mb-2">
+                    VOTRE RÉSIDENCE À{" "}
+                    <span className="underline text-white ml-1 uppercase">
+                      {greenPositioning?.city?.toUpperCase() ||
+                        data?.params?.address?.split(",")[0]?.toUpperCase() ||
+                        "SECTEUR"}
+                    </span>
+                  </p>
+
+                  <p className="text-[11px] text-slate-400 italic uppercase tracking-wide">
+                    Analyse d'impact énergétique sur la valeur et l'attractivité
+                    du bien
+                  </p>
+                </div>
+
+                {/* 🧠 PROFIL D'IMPACT */}
+                <div className="mt-8">
+                  <div className="text-orange-400 font-black uppercase tracking-widest text-sm mb-2">
+                    {greenPositioning?.impactProfile}
+                  </div>
+
+                  <p className="text-[15px] text-slate-200 leading-relaxed italic max-w-[95%]">
+                    {greenPositioning?.impactNarrative}
+                  </p>
+                </div>
+
+                {/* 📊 INDICATEURS (si pertinents) */}
+                {(greenPositioning?.impactPercentRange ||
+                  greenPositioning?.greenValueIndicative) && (
+                  <div className="mt-8 bg-[#111] border border-white/10 rounded-2xl p-6 space-y-4">
+                    {greenPositioning?.impactPercentRange && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] text-slate-400 uppercase font-bold">
+                          Impact observé marché :
+                        </span>
+                        <span className="text-lg font-black text-orange-400">
+                          {greenPositioning.impactPercentRange}
+                        </span>
+                      </div>
+                    )}
+
+                    {greenPositioning?.greenValueIndicative &&
+                      greenPositioning.propertyClass !== "patrimonial" && (
+                        <div className="flex justify-between items-center pt-3 border-t border-white/10">
+                          <span className="text-[11px] text-slate-400 uppercase font-bold">
+                            Ordre de grandeur économique :
+                          </span>
+                          <span className="text-2xl font-black text-orange-400 italic">
+                            +
+                            {greenPositioning.greenValueIndicative.toLocaleString()}{" "}
+                            €
+                          </span>
+                        </div>
+                      )}
+                  </div>
+                )}
+
+                {/* 🏛️ CAS PATRIMONIAL */}
+                {greenPositioning?.propertyClass === "patrimonial" && (
+                  <div className="mt-8 bg-blue-950/30 border border-blue-500/30 rounded-2xl p-6">
+                    <p className="text-blue-300 text-[13px] italic leading-relaxed">
+                      Sur ce type de patrimoine, la performance énergétique
+                      n'est pas un levier de hausse mécanique.
+                      <br />
+                      <strong className="text-white">
+                        C'est un levier de protection de valeur, de désirabilité
+                        et de conformité long terme.
+                      </strong>
+                    </p>
+                  </div>
+                )}
+
+                {/* FOOTER SOURCE */}
+                <div className="mt-6 bg-[#171412] rounded-2xl p-4 border border-white/5 shadow-inner">
+                  <p className="text-[9px] text-slate-500 uppercase tracking-wide font-black italic">
+                    Positionnement basé sur tendances notariales, DPE & marchés
+                    locaux — ordre de grandeur non estimatif
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* MESSAGE FACTUEL */}
-            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded-xl mb-6">
-              <p className="text-slate-300 text-[11px] leading-relaxed italic">
-                Le délai de mise en service standard est de 8 à 12 semaines.
-                Chaque trimestre décalé déplace simplement le moment où vous
-                commencez à économiser.
-                <span className="text-slate-400 block mt-2">
-                  La question n'est pas "faut-il le faire", mais "quand commence
-                  l'économie".
-                </span>
-              </p>
-            </div>
-
-            {/* VISUALISATION TEMPORELLE - CORRIGÉE */}
-            <div className="p-5 bg-black/30 rounded-xl border border-white/5">
-              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-4 uppercase tracking-wider">
-                <Clock className="w-4 h-4" />
-                Impact du calendrier sur le début des économies :
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {formatMoney(
-                      calculationResult.details
-                        .slice(0, 1)
-                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
-                    Économie année 1
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {formatMoney(
-                      calculationResult.details
-                        .slice(0, 3)
-                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
-                    Cumul 3 ans
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {formatMoney(
-                      calculationResult.details
-                        .slice(0, 5)
-                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
-                    Cumul 5 ans
-                  </div>
+            {/* 🔥 TRANSITION PLIABLE */}
+            {showTransition && (
+              <div className="relative w-full py-6 flex items-center justify-center bg-gradient-to-r from-black via-emerald-950/10 to-black border-y border-emerald-500/20 animate-in slide-in-from-top duration-300">
+                <div className="max-w-3xl text-center px-6">
+                  <p className="text-2xl md:text-3xl font-black italic text-white leading-tight mb-3">
+                    À partir d'ici, votre maison ne se contente plus de coûter.
+                  </p>
+                  <p className="text-xl md:text-2xl font-black italic text-emerald-400 leading-tight">
+                    Elle commence concrètement à vous rapporter.
+                  </p>
                 </div>
               </div>
-            </div>
-
-            {/* PHRASE FINALE – TRANSFERT DE CONTRÔLE */}
-            <p className="text-[10px] text-slate-500 italic mt-6 text-center">
-              C'est juste du calendrier. La décision vous appartient.
-            </p>
+            )}
           </div>
         </ModuleSection>
-
         {/* ============================================
     MODULE – PREUVE SOCIALE LOCALE (EDF – FINAL)
     ============================================ */}
@@ -5811,622 +6166,6 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
               </div>
             </div>
           </ModuleSection>
-          {/* ============================================================
-    MODULE 4 : CAPITAL PATRIMONIAL (WHERE MONEY) – PATCH FINAL
-============================================================ */}
-          <ModuleSection
-            id="securisation-edf"
-            title="CAPITAL PATRIMONIAL"
-            icon={<Lock size={18} />}
-            defaultOpen={false}
-            onOpen={(id) => {
-              setActiveModule(id);
-            }}
-          >
-            <div
-              id="where-money"
-              className="space-y-6 sm:space-y-8 md:space-y-10 mt-8 sm:mt-10 md:mt-12"
-            >
-              {/* ====================== CALCULATEUR PRINCIPAL ====================== */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-                {/* LEFT COLUMN – CALCULATIONS */}
-                <div className="lg:col-span-8 bg-[#050505] border border-white/10 rounded-[32px] sm:rounded-[40px] p-6 sm:p-8 md:p-10 shadow-2xl">
-                  <div className="flex flex-wrap gap-2 mb-6 sm:mb-8">
-                    <div className="bg-black border border-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                      <Lock size={12} className="flex-shrink-0" /> PROJECTION{" "}
-                      {projectionYears} ANS
-                    </div>
-                    <div className="bg-[#062c1e] border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-md text-[9px] sm:text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                      <TrendingUp size={12} className="flex-shrink-0" /> 0€
-                      D'APPORT
-                    </div>
-                  </div>
-
-                  {/* TITLE + MAIN NUMBER */}
-                  <h2 className="text-[10px] sm:text-xs text-slate-500 font-medium mb-2 uppercase tracking-wide">
-                    Écart économique cumulé
-                  </h2>
-                  <div
-                    className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 sm:mb-8 md:mb-10 italic tracking-tight break-words"
-                    data-testid="gain-total"
-                  >
-                    {Math.round(
-                      calculationResult.totalSavingsProjected
-                    ).toLocaleString("fr-FR")}{" "}
-                    €
-                  </div>
-
-                  {/* HOW IS IT CALCULÉ */}
-                  <div className="bg-[#0a0a0b] border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2">
-                      <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 flex-shrink-0" />
-                      <h3 className="text-[10px] sm:text-[11px] font-black text-white uppercase italic tracking-widest">
-                        COMMENT EST CALCULÉ CET ÉCART ?
-                      </h3>
-                    </div>
-
-                    {/* SCENARIO SANS */}
-                    <div className="bg-[#1a0f10] border border-red-950/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <TrendingUp className="text-red-500 w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
-                        <div>
-                          <div className="text-[10px] sm:text-[11px] font-black text-red-500 uppercase italic tracking-wide">
-                            SANS INSTALLATION
-                          </div>
-                          <div className="text-[9px] sm:text-[10px] text-slate-400 mt-1">
-                            Dépense énergétique totale
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="text-2xl sm:text-3xl md:text-4xl font-black text-red-500 italic tracking-tight break-words"
-                        data-testid="no-solar-total-20y"
-                      >
-                        {Math.round(
-                          calculationResult.totalSpendNoSolar ?? 0
-                        ).toLocaleString("fr-FR")}{" "}
-                        €
-                      </div>
-                    </div>
-
-                    <div className="text-center text-[10px] sm:text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
-                      MOINS
-                    </div>
-
-                    {/* SCENARIO AVEC */}
-                    <div className="bg-[#0f141a] border border-blue-950/30 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-blue-500 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                        </div>
-                        <div>
-                          <div className="text-[10px] sm:text-[11px] font-black text-blue-500 uppercase italic tracking-wide">
-                            AVEC INSTALLATION
-                          </div>
-                          <div className="text-[9px] sm:text-[10px] text-slate-400 italic mt-1">
-                            Réorganisation budget + facture résiduelle
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="text-2xl sm:text-3xl md:text-4xl font-black text-blue-500 italic tracking-tight break-words"
-                        data-testid="solar-scenario-total-20y"
-                      >
-                        {Math.round(
-                          calculationResult.totalSpendSolar ?? 0
-                        ).toLocaleString("fr-FR")}{" "}
-                        €
-                      </div>
-                    </div>
-
-                    <div className="text-center text-[10px] sm:text-[11px] font-black text-slate-600 tracking-widest uppercase italic">
-                      ÉGAL
-                    </div>
-
-                    {/* NET GAIN */}
-                    <div className="bg-[#0d1a14] border-2 border-emerald-500/40 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 shadow-lg">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <Award className="text-emerald-500 w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0" />
-                        <div className="text-xs sm:text-[13px] font-black text-emerald-500 uppercase tracking-wider italic">
-                          VOTRE GAIN NET
-                        </div>
-                      </div>
-                      <div className="text-4xl sm:text-5xl md:text-6xl font-black text-emerald-400 italic tracking-tight break-words">
-                        +
-                        {Math.round(
-                          calculationResult.totalSavingsProjected
-                        ).toLocaleString("fr-FR")}{" "}
-                        €
-                      </div>
-                    </div>
-
-                    <div className="bg-[#1a160f] border-l-4 border-yellow-500 p-3 sm:p-4 rounded-r-xl">
-                      <p className="text-[9px] sm:text-[10px] text-yellow-200/90 leading-relaxed italic uppercase font-medium">
-                        ⚠ ANNÉE 1 : réorganisation du budget — ANNÉE{" "}
-                        {calculationResult.breakEvenPoint} : économies nettes —
-                        APRÈS {Math.ceil(creditDurationMonths / 12)} ANS :
-                        revenu permanent.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* KPI ROW - RESPONSIVE */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
-                      <div className="text-[8px] sm:text-[9px] font-black text-emerald-500 uppercase mb-1">
-                        CAPITAL IMMOBILISÉ
-                      </div>
-                      <div className="text-lg sm:text-xl font-black text-emerald-400 italic break-words">
-                        0€
-                      </div>
-                    </div>
-                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
-                      <div className="text-[8px] sm:text-[9px] font-black text-blue-500 uppercase mb-1 italic">
-                        ÉCART MOYEN
-                      </div>
-                      <div
-                        className="text-lg sm:text-xl font-black text-white italic break-words"
-                        data-testid="gain-yearly"
-                      >
-                        +
-                        {Math.round(
-                          calculationResult.averageYearlyGain
-                        ).toLocaleString("fr-FR")}{" "}
-                        €/an
-                      </div>
-                    </div>
-                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
-                      <div className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase mb-1 italic">
-                        POINT MORT
-                      </div>
-                      <div
-                        className="text-lg sm:text-xl font-black text-white italic break-words"
-                        data-testid="break-even"
-                      >
-                        {calculationResult.breakEvenPoint} ans
-                      </div>
-                    </div>
-                    <div className="bg-black border border-white/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl">
-                      <div className="text-[8px] sm:text-[9px] font-black text-yellow-500 uppercase mb-1 italic leading-tight">
-                        ÉQUIVALENT LIVRET A
-                      </div>
-                      <div
-                        className="text-lg sm:text-xl font-black text-yellow-400 italic break-words"
-                        data-testid="equivalent-livret-a"
-                      >
-                        {formatMoney(
-                          calculationResult?.bankEquivalentCapital || 0
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* ====================== RIGHT COLUMN (PLACEMENT + RÉALLOCATION) ====================== */}
-                <div className="lg:col-span-4 space-y-4 sm:space-y-6 flex flex-col">
-                  {/* BANK EQUIVALENT */}
-                  <div className="bg-[#050505] border border-blue-900/30 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-xl flex-1">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                      <Landmark className="text-blue-500 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                      <h3 className="text-[10px] sm:text-[11px] font-black text-blue-400 uppercase tracking-widest italic">
-                        ÉQUIVALENT BANCAIRE
-                      </h3>
-                    </div>
-
-                    <p className="text-[10px] sm:text-[11px] text-slate-400 mb-4 sm:mb-6 italic uppercase leading-relaxed">
-                      Pour générer{" "}
-                      {Math.round(
-                        calculationResult.averageYearlyGain
-                      ).toLocaleString("fr-FR")}{" "}
-                      €/an avec un Livret A, il faudrait bloquer :
-                    </p>
-
-                    <div
-                      className="text-5xl sm:text-6xl md:text-7xl font-black text-white mb-6 sm:mb-8 italic tracking-tighter leading-none break-words"
-                      data-testid="livret-a-capital"
-                    >
-                      {Math.round(
-                        calculationResult.bankEquivalentCapital
-                      ).toLocaleString("fr-FR")}{" "}
-                      €
-                    </div>
-
-                    <div className="bg-blue-950/50 border border-blue-500/40 px-3 sm:px-4 py-3 sm:py-4 rounded-xl text-[10px] sm:text-[11px] font-black text-blue-300 uppercase italic text-center shadow-inner tracking-widest">
-                      ICI, VOUS NE BLOQUEZ RIEN.
-                    </div>
-
-                    <p className="mt-4 sm:mt-6 text-[9px] sm:text-[10px] text-slate-500 italic uppercase flex items-center gap-2">
-                      <Zap
-                        size={10}
-                        className="text-orange-500 flex-shrink-0"
-                      />{" "}
-                      votre capital reste disponible.
-                    </p>
-                  </div>
-
-                  {/* RÉALLOCATION — YEAR 1 */}
-                  <div className="bg-[#050505] border border-orange-900/30 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 shadow-xl flex-1">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-                      <Zap className="text-orange-500 w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" />
-                      <h3 className="text-[10px] sm:text-[11px] font-black text-orange-500 uppercase tracking-widest italic">
-                        RÉALLOCATION ANNÉE 1
-                      </h3>
-                    </div>
-
-                    <div
-                      className={`text-4xl sm:text-5xl md:text-6xl font-black mb-6 sm:mb-8 italic tracking-tighter leading-none break-words ${
-                        Math.round(calculationResult?.monthlyEffortYear1 || 0) >
-                        40
-                          ? "text-red-500"
-                          : Math.round(
-                              calculationResult?.monthlyEffortYear1 || 0
-                            ) < 0
-                          ? "text-emerald-400"
-                          : "text-white"
-                      }`}
-                      data-testid="monthly-gain"
-                    >
-                      {(() => {
-                        const effort = Math.round(
-                          calculationResult?.monthlyEffortYear1 || 0
-                        );
-                        return `${effort > 0 ? "+" : ""}${effort} €`;
-                      })()}
-                    </div>
-
-                    {/* NEW vs OLD BUDGET */}
-                    <div className="space-y-3 sm:space-y-4 border-t border-white/5 pt-4 sm:pt-6 mt-4 sm:mt-6">
-                      <div className="flex justify-between items-center w-full gap-2">
-                        <span className="text-xs sm:text-sm text-slate-400 font-medium">
-                          Nouveau Budget :
-                        </span>
-                        <span
-                          className="text-xl sm:text-2xl font-black text-white break-words text-right"
-                          data-testid="new-monthly-budget"
-                        >
-                          {Math.round(
-                            calculationResult?.newMonthlyBillYear1 || 0
-                          ).toLocaleString("fr-FR")}{" "}
-                          €
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center w-full gap-2">
-                        <span className="text-xs sm:text-sm text-slate-400 font-medium">
-                          Ancien Budget :
-                        </span>
-                        <span
-                          className="text-xl sm:text-2xl font-black text-red-500 break-words text-right"
-                          data-testid="old-monthly-budget"
-                        >
-                          {Math.round(
-                            calculationResult?.oldMonthlyBillYear1 || 0
-                          ).toLocaleString("fr-FR")}{" "}
-                          €
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between items-center pt-3 sm:pt-4 border-t border-white/10 w-full gap-2">
-                        <span className="text-sm sm:text-base font-black text-orange-500 italic uppercase tracking-wider">
-                          = Réallocation
-                        </span>
-                        <span
-                          className={`text-2xl sm:text-3xl font-black italic break-words text-right ${
-                            Math.round(
-                              calculationResult?.monthlyEffortYear1 || 0
-                            ) > 40
-                              ? "text-red-500"
-                              : Math.round(
-                                  calculationResult?.monthlyEffortYear1 || 0
-                                ) < 0
-                              ? "text-emerald-400"
-                              : "text-white"
-                          }`}
-                          data-testid="monthly-reallocation"
-                        >
-                          {(() => {
-                            const effort = Math.round(
-                              calculationResult?.monthlyEffortYear1 || 0
-                            );
-                            return `${effort > 0 ? "+" : ""}${effort} €`;
-                          })()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* ====================== LOWER ROW (HERITAGE + GREEN VALUE) ====================== */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                {/* HERITAGE CARD - CORRIGÉE */}
-                <div className="bg-[#050505] border border-blue-500/20 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 flex flex-col justify-between relative shadow-2xl min-h-[400px] sm:min-h-[480px]">
-                  {/* BUTTON */}
-                  <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50">
-                    <button
-                      onMouseEnter={() => setShowHeritageInfo(true)}
-                      onMouseLeave={() => setShowHeritageInfo(false)}
-                      className="p-2 sm:p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 hover:border-blue-500/50 transition-all"
-                    >
-                      <TrendingUp
-                        size={20}
-                        className="sm:w-6 sm:h-6 text-blue-500"
-                      />
-                    </button>
-                  </div>
-
-                  {/* INFOBULLE */}
-                  {showHeritageInfo && (
-                    <div className="absolute inset-0 z-40 bg-[#0c0c0c]/95 backdrop-blur-lg p-6 sm:p-8 flex flex-col animate-in fade-in duration-200 overflow-y-auto rounded-[24px] sm:rounded-[32px]">
-                      <h4 className="text-blue-500 font-black italic mb-4 sm:mb-6 uppercase tracking-tighter text-lg sm:text-xl border-b-2 border-blue-500/20 pb-3 sm:pb-4 mt-2 sm:mt-4">
-                        NOTE FISCALE ET PATRIMONIALE
-                      </h4>
-
-                      <div className="space-y-3 sm:space-y-4 text-slate-200 text-[10px] sm:text-[11px] leading-relaxed">
-                        <div className="p-3 sm:p-4 bg-white/5 border border-white/10 rounded-2xl">
-                          <p className="text-blue-400 font-black uppercase mb-2 tracking-widest">
-                            L'ABATTEMENT (LOI FRANÇAISE)
-                          </p>
-                          <p>
-                            Chaque enfant bénéficie d'un abattement de{" "}
-                            <span className="text-white font-bold">
-                              100 000 €
-                            </span>{" "}
-                            tous les 15 ans. Si le patrimoine transmis est
-                            inférieur à ce montant :{" "}
-                            <span className="text-emerald-400 font-bold">
-                              0 € d'impôts
-                            </span>
-                            .
-                          </p>
-                        </div>
-
-                        <div className="p-3 sm:p-4 bg-white/5 border border-white/10 rounded-2xl">
-                          <p className="text-red-400 font-black uppercase mb-2 tracking-widest">
-                            LES TRANCHES (AU-DELÀ)
-                          </p>
-                          <p>
-                            Au-delà de 100 000 €, l'impôt devient progressif. La
-                            tranche majoritaire est{" "}
-                            <span className="text-white font-bold">20%</span>.
-                          </p>
-                        </div>
-
-                        <div className="p-3 sm:p-4 bg-blue-500/10 border border-blue-500/30 rounded-2xl">
-                          <p className="text-white font-black uppercase mb-2 tracking-widest italic">
-                            NOTRE MÉTHODE DE CALCUL
-                          </p>
-                          <p className="italic">
-                            Nous provisionnons{" "}
-                            <span className="text-white font-bold text-sm">
-                              20%
-                            </span>{" "}
-                            du capital généré afin de garantir un montant{" "}
-                            <u>net minimum</u>.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* MAIN CARD CONTENT */}
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black uppercase italic text-white tracking-tighter">
-                      HÉRITAGE NET
-                    </h3>
-                    <p className="text-[9px] sm:text-[10px] font-black text-blue-500 uppercase italic mb-4 sm:mb-6">
-                      PROJECTION PATRIMONIALE RÉELLE
-                    </p>
-
-                    <div className="mb-2">
-                      <div className="text-5xl sm:text-6xl md:text-7xl font-black text-white italic tracking-tighter leading-none break-words">
-                        {/* ✅ CORRIGÉ : (gains + valeur verte) × 0.8 */}
-                        {(
-                          (Math.round(
-                            calculationResult?.totalSavingsProjected || 0
-                          ) +
-                            Math.round(calculationResult?.greenValue || 0)) *
-                          0.8
-                        ).toLocaleString("fr-FR")}{" "}
-                        €
-                      </div>
-                      <p className="text-[9px] sm:text-[10px] font-black text-emerald-400 uppercase italic mt-2 tracking-[0.2em]">
-                        Somme nette disponible sur {projectionYears} ans
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 sm:mt-6 bg-white/5 rounded-2xl p-4 sm:p-5 border border-white/10">
-                    <div className="space-y-2 text-[10px] sm:text-[11px] font-bold uppercase">
-                      <div className="flex justify-between gap-2">
-                        <span className="text-slate-400 tracking-tighter">
-                          Gains énergie (brut) :
-                        </span>
-                        <span className="text-white text-right break-words">
-                          +
-                          {Math.round(
-                            calculationResult?.totalSavingsProjected || 0
-                          ).toLocaleString("fr-FR")}{" "}
-                          €
-                        </span>
-                      </div>
-
-                      {/* ✅ CORRIGÉ : Plus opacifié, valeur comptée */}
-                      <div className="flex justify-between gap-2">
-                        <span className="text-slate-400 tracking-tighter">
-                          Valeur verte maison :
-                        </span>
-                        <span className="text-white text-right break-words">
-                          +
-                          {Math.round(
-                            calculationResult?.greenValue || 0
-                          ).toLocaleString("fr-FR")}{" "}
-                          €
-                        </span>
-                      </div>
-
-                      <div className="flex justify-between pt-2 border-t border-white/10 gap-2">
-                        <span className="text-slate-400 italic tracking-tighter">
-                          Total patrimonial :
-                        </span>
-                        <span className="text-white font-black text-right break-words">
-                          {(
-                            Math.round(
-                              calculationResult?.totalSavingsProjected || 0
-                            ) + Math.round(calculationResult?.greenValue || 0)
-                          ).toLocaleString("fr-FR")}{" "}
-                          €
-                        </span>
-                      </div>
-
-                      {/* ✅ CORRIGÉ : Provision sur TOUT */}
-                      <div className="flex justify-between pt-2 border-t border-white/10 gap-2">
-                        <span className="text-red-400 italic tracking-tighter">
-                          Provision succession (20 %) :
-                        </span>
-                        <span className="text-red-400 text-right break-words">
-                          -
-                          {(
-                            (Math.round(
-                              calculationResult?.totalSavingsProjected || 0
-                            ) +
-                              Math.round(calculationResult?.greenValue || 0)) *
-                            0.2
-                          ).toLocaleString("fr-FR")}{" "}
-                          €
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* GREEN VALUE CARD - RESPONSIVE */}
-                <div className="bg-[#050505] border border-orange-500/20 rounded-[24px] sm:rounded-[32px] p-6 sm:p-8 flex flex-col justify-between relative shadow-2xl min-h-[400px] sm:min-h-[480px]">
-                  {/* BUTTON */}
-                  <div className="absolute top-4 sm:top-6 right-4 sm:right-6 z-50">
-                    <button
-                      onMouseEnter={() => setShowGreenValueInfo(true)}
-                      onMouseLeave={() => setShowGreenValueInfo(false)}
-                      className="p-2 sm:p-3 bg-orange-500/10 rounded-xl border border-orange-500/20 hover:border-orange-500/50 transition-all"
-                    >
-                      <Sun
-                        size={20}
-                        className="sm:w-6 sm:h-6 text-orange-500"
-                      />
-                    </button>
-                  </div>
-
-                  {/* INFOBULLE */}
-                  {showGreenValueInfo && (
-                    <div className="absolute inset-0 z-40 bg-[#0c0c0c]/95 backdrop-blur-lg p-6 sm:p-10 flex flex-col animate-in fade-in duration-200 overflow-y-auto rounded-[24px] sm:rounded-[32px]">
-                      <h4 className="text-orange-500 font-black italic mb-6 sm:mb-8 uppercase tracking-tighter text-lg sm:text-xl border-b-2 border-orange-500/20 pb-3 sm:pb-4 mt-4 sm:mt-8">
-                        CADRE RÉGLEMENTAIRE & PATRIMONIAL
-                      </h4>
-
-                      <div className="space-y-4 sm:space-y-6 text-slate-200 italic text-xs sm:text-[13px] leading-relaxed">
-                        <div className="p-4 sm:p-5 bg-orange-500/10 border border-orange-500/30 rounded-2xl mb-2">
-                          <p className="text-white font-black uppercase text-[10px] sm:text-[11px] mb-2 tracking-widest">
-                            INDICE DE VALORISATION :
-                          </p>
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
-                            <p className="text-2xl sm:text-3xl text-orange-400 font-black tracking-tighter">
-                              COEFFICIENT 4%
-                            </p>
-                            <p className="text-white text-[9px] font-bold uppercase tracking-widest leading-tight sm:border-l sm:border-white/20 sm:pl-4">
-                              Moyenne constatée
-                              <br />
-                              Notaires de France
-                            </p>
-                          </div>
-                        </div>
-
-                        <p>
-                          <b className="text-white underline uppercase text-[11px] sm:text-[12px]">
-                            01. Amélioration DPE :
-                          </b>
-                          réduction de la consommation d'énergie primaire.
-                        </p>
-
-                        <p>
-                          <b className="text-white underline uppercase text-[11px] sm:text-[12px]">
-                            02. Référentiel ETALAB :
-                          </b>
-                          calcul indexé sur DVF (Data.gouv.fr).
-                        </p>
-
-                        <p>
-                          <b className="text-white underline uppercase text-[11px] sm:text-[12px]">
-                            03. Notaires de France :
-                          </b>
-                          attestation de plus-value immobilière immédiate.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* MAIN CARD */}
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-black uppercase italic text-white tracking-tighter">
-                      VALEUR VERTE
-                    </h3>
-                    <p className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase italic mb-3 sm:mb-4">
-                      Votre résidence à
-                      <span className="underline text-white ml-1 uppercase break-words">
-                        {greenValueData?.city ||
-                          data?.address ||
-                          "VOTRE SECTEUR"}
-                      </span>
-                    </p>
-
-                    <div className="text-5xl sm:text-6xl md:text-7xl font-black text-orange-400 italic tracking-tighter mb-2 leading-none break-words">
-                      +
-                      {Math.round(
-                        calculationResult?.greenValue || 0
-                      ).toLocaleString("fr-FR")}{" "}
-                      €
-                    </div>
-
-                    <div className="bg-emerald-500/10 border border-emerald-500/30 px-4 sm:px-5 py-2 rounded-xl text-[11px] sm:text-[12px] font-black text-emerald-400 uppercase italic mb-3 sm:mb-4 w-fit tracking-wider flex items-center gap-2 sm:gap-3">
-                      <CheckCircle2
-                        size={16}
-                        className="sm:w-5 sm:h-5 flex-shrink-0"
-                      />
-                      Analyse réelle : {greenValueData?.city || "SECTEUR"}
-                    </div>
-
-                    <p className="text-xs sm:text-[14px] text-slate-300 leading-relaxed italic uppercase mb-3 sm:mb-4 max-w-[95%] font-medium">
-                      Plus-value estimée pour votre bien de
-                      <span className="text-white font-black underline decoration-orange-500 mx-1">
-                        {data?.houseSize || calculationResult?.houseSize || 120}{" "}
-                        m²
-                      </span>
-                      dans votre secteur. C'est un
-                      <span className="text-orange-500 font-bold italic uppercase mx-1">
-                        actif immobilier
-                      </span>
-                      immédiat.
-                    </p>
-                  </div>
-
-                  <div className="bg-[#171412] rounded-2xl p-3 sm:p-4 border border-white/5 shadow-inner mt-2 text-[10px] sm:text-[11px] font-black uppercase tracking-widest italic text-slate-500 break-words">
-                    Calcul : Valeur maison (
-                    {greenValueData?.pricePerSqm?.toLocaleString() || "3 200"}{" "}
-                    €/m² × {data?.houseSize || 120} m²) × 4% ={" "}
-                    {Math.round(
-                      calculationResult?.greenValue || 0
-                    ).toLocaleString("fr-FR")}{" "}
-                    €
-                  </div>
-                </div>
-              </div>
-
-              {/* ======== MICRO-VERROU CLOSING ======== */}
-              <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic mt-6 sm:mt-8 select-none px-4">
-                Ce module ne sert pas à décider. Il sert à se projeter dans ce
-                que vous avez déjà choisi.
-              </p>
-            </div>
-          </ModuleSection>
 
           {/* ============================================
    MODULE 4 : VOTRE ARGENT DANS X ANS – PATCH EDF (version multi-cartes)
@@ -6491,7 +6230,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
 
               {/* CARDS – 5 / 10 / 20 ans - RESPONSIVE */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                {[5, 10, projectionYears].map((year) => {
+                {[5, 10, projectionYears].map((year, idx) => {
                   const data = getYearData(year);
                   const selectedData =
                     whereMoneyMode === "financement" ? data.credit : data.cash;
@@ -6521,7 +6260,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
 
                   return (
                     <div
-                      key={year}
+                      key={`card-${year}-${idx}`} // ← CHANGEMENT ICI
                       className={`relative bg-[#0b0b0b]/60 backdrop-blur-md border ${borderColor} rounded-xl sm:rounded-2xl p-4 sm:p-6 overflow-hidden group transition-all duration-300 hover:border-white/30 ${shadowColor}`}
                     >
                       {/* watermark année - RESPONSIVE */}
@@ -8195,7 +7934,7 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
             id="054888f4-10e4-4eae-8c44-08dd0680f68" // L'ID de ta capture !
             title="PROTOCOLE DE QUALIFICATION"
             icon={<ShieldCheck className="text-emerald-500" />}
-            defaultOpen={true}
+            defaultOpen={false}
           >
             <div
               id="qualification-process"
@@ -8284,7 +8023,29 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
             </div>
           </ModuleSection>
         </ModuleSection>
+        {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
 
+        <ModuleTauxUltraPremium
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
+        <ModuleTauxPrivilege
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
+        <ModuleTauxStandard
+          taux={interestRate}
+          mensualite={creditMonthlyPayment}
+          duree={creditDurationMonths}
+          montantFinance={remainingToFinance}
+          hasPromoCode={codeValidated}
+        />
         {/* ============================================
    💼 WIDGET COMPTEUR - AVEC INFO-BULLE
    ============================================ */}
@@ -8434,29 +8195,6 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
           </div>
         )}
 
-        {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
-
-        <ModuleTauxUltraPremium
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxPrivilege
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxStandard
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
         {isSigned ? (
           <div className="w-full mt-10 p-10 rounded-[28px] bg-emerald-500/10 border border-emerald-400/30 text-center">
             <div className="text-4xl mb-4">🔒</div>
@@ -8482,29 +8220,16 @@ MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET
               className={`w-full h-24 ... ${
                 isSigned ? "opacity-40 cursor-not-allowed" : ""
               }`}
-            >
-              <Smartphone size={26} className="opacity-60" />
-              <div className="text-left leading-tight">
-                <span className="block text-lg font-black uppercase">
-                  Sécurisation du dossier EDF
-                </span>
-                <span className="block text-[10px] font-bold uppercase opacity-50 tracking-widest">
-                  Étape administrative — 2 minutes
-                </span>
-              </div>
-            </button>
+            ></button>
 
             <button
               onClick={handleSignStudy}
-              className="w-full mt-4 h-20 bg-gradient-to-b from-green-500 to-green-600 text-white rounded-[26px] border border-green-700 shadow-xl transition-all duration-300 hover:shadow-2xl active:scale-[0.98] flex items-center justify-center gap-4"
+              className="w-full mt-4 h-20 bg-white/20 backdrop-blur-xl text-white rounded-[26px] border border-white/30 shadow-xl transition-all duration-300 hover:shadow-2xl hover:bg-white/25 active:scale-[0.98] flex items-center justify-center gap-4"
             >
               <span className="text-xl">✅</span>
               <div className="text-left leading-tight">
                 <span className="block text-lg font-black uppercase">
-                  Client signé
-                </span>
-                <span className="block text-[10px] font-bold uppercase opacity-80 tracking-widest">
-                  Déclencher contrat & emails
+                  Sécurisation du dossier EDF
                 </span>
               </div>
             </button>

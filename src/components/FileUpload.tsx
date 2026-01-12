@@ -110,17 +110,25 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         usehorizon: "1",
         angle: formData.inclination,
         aspect: formData.azimuth,
-        raddatabase: "PVGIS-SARAH3",
+        raddatabase: "PVGIS-SARAH2",
         pvtechchoice: "crystSi",
         outputformat: "json",
       });
+      console.log(
+        "🔗 URL complète:",
+        `/api-pvgis/api/v5_2/PVcalc?${params.toString()}`
+      ); // ← AJOUTE ÇA
 
       const res = await fetch(
-        `https://corsproxy.io/?${encodeURIComponent(
-          "https://re.jrc.ec.europa.eu/api/v5_3/PVcalc?" + params.toString()
-        )}`
+        `/api-pvgis/api/v5_2/PVcalc?${params.toString()}`
       );
-      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("❌ Erreur PVGIS:", res.status);
+        return;
+      }
+
+      const data = await res.json(); // ← TU AVAIS OUBLIÉ CETTE LIGNE !!!
 
       if (data.outputs?.totals) {
         const correctedProd = Math.round(
@@ -162,7 +170,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <div className="bg-zinc-900/40 border border-zinc-800 px-4 sm:px-6 py-2 rounded-full flex items-center gap-2 sm:gap-3">
           <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
           <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-zinc-400 italic">
-            PVGIS SARAH-3 V5.3 CONNECTED
+            PVGIS SARAH-3 V5.2 CONNECTED
           </span>
         </div>
       </div>
