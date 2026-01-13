@@ -112,19 +112,26 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       const [lon, lat] = geoData.features[0].geometry.coordinates;
 
-      // 2. Appel de ton API (pas PVGIS direct)
-      const params = new URLSearchParams({
+      // 2. Construction complète de l'URL PVGIS
+      const pvgisParams = new URLSearchParams({
         lat: lat.toString(),
         lon: lon.toString(),
         peakpower: formData.puissanceInstallee,
+        loss: "14",
+        mountingplace: "free",
+        usehorizon: "1",
         angle: formData.inclination,
         aspect: formData.azimuth,
+        raddatabase: "PVGIS-SARAH2",
+        pvtechchoice: "crystSi",
+        outputformat: "json",
       });
 
-      // ✅ CORRIGÉ : Parenthèse au lieu de backtick
-      const res = await fetch(
-        `${window.location.origin}/api/pvgis?${params.toString()}`
-      );
+      // ✅ Appel via proxy Vite (remplace /api-pvgis par la vraie URL)
+      const pvgisUrl = `/api-pvgis/api/v5_2/PVcalc?${pvgisParams.toString()}`;
+
+      console.log("🔗 URL complète:", pvgisUrl);
+      const res = await fetch(pvgisUrl);
 
       if (!res.ok) {
         console.error("❌ Erreur API:", res.status);
@@ -135,7 +142,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       }
 
       const data = await res.json();
-      console.log("✅ Données PVGIS:", data);
+      console.log("✅ Réponse PVGIS complète:", JSON.stringify(data, null, 2));
+      console.log("Structure outputs:", data.outputs);
+      console.log("Structure totals:", data.outputs?.totals);
 
       if (data.outputs?.totals?.fixed?.E_y) {
         const correctedProd = Math.round(
@@ -157,7 +166,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       }
     } catch (e: any) {
       console.error("❌ Erreur complète:", e);
-      // ✅ CORRIGÉ : Parenthèse au lieu de backtick
       alert(`Erreur: ${e.message}`);
     } finally {
       setIsPvgisLoading(false);
