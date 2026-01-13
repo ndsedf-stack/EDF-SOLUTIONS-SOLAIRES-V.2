@@ -125,10 +125,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         outputformat: "json",
       });
 
-      const res = await fetch(
-        `/https://re.jrc.ec.europa.eu/api/v5_2/PVcalc
-?${params.toString()}`
-      );
+      const res = await fetch(`/api/pvgis?${params.toString()}`);
 
       if (!res.ok) {
         console.error("❌ Erreur PVGIS:", res.status);
