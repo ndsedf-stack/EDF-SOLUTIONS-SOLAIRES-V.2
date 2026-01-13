@@ -126,7 +126,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       });
 
       const res = await fetch(
-        `/api-pvgis/api/v5_2/PVcalc?${params.toString()}`
+        `/https://re.jrc.ec.europa.eu/api/v5_2/PVcalc
+?${params.toString()}`
       );
 
       if (!res.ok) {
