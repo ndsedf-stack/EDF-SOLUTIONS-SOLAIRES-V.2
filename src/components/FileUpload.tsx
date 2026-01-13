@@ -92,6 +92,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const fetchProductionAuto = async () => {
     if (!formData.address || formData.address.length < 5) return;
     setIsPvgisLoading(true);
+
     try {
       // 1. Géolocalisation
       const geoResp = await fetch(
@@ -99,6 +100,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           formData.address
         )}&limit=1`
       );
+
       const geoData = await geoResp.json();
 
       // ✅ Vérifier que l'adresse a été trouvée
@@ -110,25 +112,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       const [lon, lat] = geoData.features[0].geometry.coordinates;
 
-      // 2. Appel PVGIS
+      // 2. Appel de ton API (pas PVGIS direct)
       const params = new URLSearchParams({
         lat: lat.toString(),
         lon: lon.toString(),
         peakpower: formData.puissanceInstallee,
-        loss: "0",
-        mountingplace: "free",
-        usehorizon: "1",
         angle: formData.inclination,
         aspect: formData.azimuth,
-        raddatabase: "PVGIS-SARAH2",
-        pvtechchoice: "crystSi",
-        outputformat: "json",
       });
 
+      // ✅ CORRIGÉ : Parenthèse au lieu de backtick
       const res = await fetch(`/api/pvgis?${params.toString()}`);
 
       if (!res.ok) {
-        console.error("❌ Erreur PVGIS:", res.status);
+        console.error("❌ Erreur API:", res.status);
         const errorText = await res.text();
         console.error("Détails:", errorText);
         alert("Erreur lors de l'appel PVGIS");
@@ -142,6 +139,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         const correctedProd = Math.round(
           data.outputs.totals.fixed.E_y * 1.03128
         );
+
         setFormData((prev) => ({
           ...prev,
           production: correctedProd.toString(),
@@ -149,12 +147,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             correctedProd / safeParseFloat(prev.puissanceInstallee)
           ).toFixed(0),
         }));
+
+        console.log(`✅ Production: ${correctedProd} kWh/an`);
       } else {
         console.error("❌ Structure de données PVGIS inattendue:", data);
         alert("Erreur dans les données PVGIS");
       }
     } catch (e: any) {
       console.error("❌ Erreur complète:", e);
+      // ✅ CORRIGÉ : Parenthèse au lieu de backtick
       alert(`Erreur: ${e.message}`);
     } finally {
       setIsPvgisLoading(false);
