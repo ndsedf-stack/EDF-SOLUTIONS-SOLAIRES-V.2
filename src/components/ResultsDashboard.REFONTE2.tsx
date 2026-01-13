@@ -3195,22 +3195,6 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
           >
             {isCoachDisabled ? "ASSISTANCE ON" : "ASSISTANCE OFF"}
           </button>
-          {/* À côté du bouton ASSISTANCE */}
-          <button
-            onClick={() => {
-              const clientUrl = `${
-                window.location.href.split("?")[0]
-              }?display=client`;
-              window.open(clientUrl, "_blank");
-            }}
-            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold uppercase tracking-wider
-   text-purple-400 hover:text-white
-   bg-transparent border border-purple-500/30
-   hover:border-purple-500/50
-   transition-all"
-          >
-            📺 ÉCRAN CLIENT
-          </button>
         </div>
       </nav>
 
@@ -4049,7 +4033,6 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
           </div>
         )}
 
-        <SpeechView onProfileDetected={setProfile} />
         {/* ═══════════════════════════════════════════════════════ */}
         {/* 🟢 TUNNEL DÉCISIONNEL — 10 MODULES                      */}
         {/* ═══════════════════════════════════════════════════════ */}
