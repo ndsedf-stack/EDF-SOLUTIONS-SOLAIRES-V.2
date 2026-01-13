@@ -103,7 +103,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       const geoData = await geoResp.json();
 
-      // ✅ Vérifier que l'adresse a été trouvée
       if (!geoData.features || geoData.features.length === 0) {
         console.error("❌ Adresse non trouvée");
         alert("Adresse introuvable");
@@ -112,7 +111,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       const [lon, lat] = geoData.features[0].geometry.coordinates;
 
-      // 2. Construction complète de l'URL PVGIS
+      // 2. Appel PVGIS
       const pvgisParams = new URLSearchParams({
         lat: lat.toString(),
         lon: lon.toString(),
@@ -127,10 +126,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         outputformat: "json",
       });
 
-      // ✅ Appel via proxy Vite (remplace /api-pvgis par la vraie URL)
       const pvgisUrl = `/api-pvgis/api/v5_2/PVcalc?${pvgisParams.toString()}`;
 
-      console.log("🔗 URL complète:", pvgisUrl);
       const res = await fetch(pvgisUrl);
 
       if (!res.ok) {
@@ -142,9 +139,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       }
 
       const data = await res.json();
-      console.log("✅ Réponse PVGIS complète:", JSON.stringify(data, null, 2));
-      console.log("Structure outputs:", data.outputs);
-      console.log("Structure totals:", data.outputs?.totals);
 
       if (data.outputs?.totals?.fixed?.E_y) {
         const correctedProd = Math.round(
@@ -161,7 +155,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
         console.log(`✅ Production: ${correctedProd} kWh/an`);
       } else {
-        console.error("❌ Structure de données PVGIS inattendue:", data);
+        console.error("❌ Structure inattendue:", data);
         alert("Erreur dans les données PVGIS");
       }
     } catch (e: any) {
@@ -193,7 +187,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <div className="bg-zinc-900/40 border border-zinc-800 px-4 sm:px-6 py-2 rounded-full flex items-center gap-2 sm:gap-3">
           <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] animate-pulse" />
           <span className="text-[8px] sm:text-[10px] font-bold uppercase tracking-widest text-zinc-400 italic">
-            PVGIS SARAH-3 V5.2 CONNECTED
+            PVGIS SARAH-2 V5.2 CONNECTED
           </span>
         </div>
       </div>

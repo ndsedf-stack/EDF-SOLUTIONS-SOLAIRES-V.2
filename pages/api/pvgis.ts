@@ -24,7 +24,7 @@ export default async function handler(req: any, res: any) {
     usehorizon: "1",
     angle: angle?.toString() || "25",
     aspect: aspect?.toString() || "0",
-    raddatabase: "PVGIS-SARAH3", // ✅ Bonne base de données
+    raddatabase: "PVGIS-SARAH2", // ✅ Bonne base de données
     pvtechchoice: "crystSi",
     outputformat: "json",
   });
