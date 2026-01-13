@@ -122,7 +122,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       });
 
       // ✅ CORRIGÉ : Parenthèse au lieu de backtick
-      const res = await fetch(`/api/pvgis?${params.toString()}`);
+      const res = await fetch(
+        `${window.location.origin}/api/pvgis?${params.toString()}`
+      );
 
       if (!res.ok) {
         console.error("❌ Erreur API:", res.status);
