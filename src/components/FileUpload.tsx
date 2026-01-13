@@ -93,14 +93,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (!formData.address || formData.address.length < 5) return;
     setIsPvgisLoading(true);
     try {
+      // 1. Géolocalisation
       const geoResp = await fetch(
         `https://api-adresse.data.gouv.fr/search/?q=${encodeURIComponent(
           formData.address
         )}&limit=1`
       );
       const geoData = await geoResp.json();
+
+      // ✅ Vérifier que l'adresse a été trouvée
+      if (!geoData.features || geoData.features.length === 0) {
+        console.error("❌ Adresse non trouvée");
+        alert("Adresse introuvable");
+        return;
+      }
+
       const [lon, lat] = geoData.features[0].geometry.coordinates;
 
+      // 2. Appel PVGIS
       const params = new URLSearchParams({
         lat: lat.toString(),
         lon: lon.toString(),
@@ -114,10 +124,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         pvtechchoice: "crystSi",
         outputformat: "json",
       });
-      console.log(
-        "🔗 URL complète:",
-        `/api-pvgis/api/v5_2/PVcalc?${params.toString()}`
-      ); // ← AJOUTE ÇA
 
       const res = await fetch(
         `/api-pvgis/api/v5_2/PVcalc?${params.toString()}`
@@ -125,12 +131,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       if (!res.ok) {
         console.error("❌ Erreur PVGIS:", res.status);
+        const errorText = await res.text();
+        console.error("Détails:", errorText);
+        alert("Erreur lors de l'appel PVGIS");
         return;
       }
 
-      const data = await res.json(); // ← TU AVAIS OUBLIÉ CETTE LIGNE !!!
+      const data = await res.json();
+      console.log("✅ Données PVGIS:", data);
 
-      if (data.outputs?.totals) {
+      if (data.outputs?.totals?.fixed?.E_y) {
         const correctedProd = Math.round(
           data.outputs.totals.fixed.E_y * 1.03128
         );
@@ -141,9 +151,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             correctedProd / safeParseFloat(prev.puissanceInstallee)
           ).toFixed(0),
         }));
+      } else {
+        console.error("❌ Structure de données PVGIS inattendue:", data);
+        alert("Erreur dans les données PVGIS");
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("❌ Erreur complète:", e);
+      alert(`Erreur: ${e.message}`);
     } finally {
       setIsPvgisLoading(false);
     }

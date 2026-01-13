@@ -27,3 +27,11 @@ dist-ssr
 .env
 .env.local
 .env*.local
+# Supabase temp files
+supabase/.temp/
+
+# SQL Backups
+*.sql
+
+# Vercel
+.vercel

@@ -1106,7 +1106,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   // 🧠 COACH — état global : module ouvert
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [showCompletion, setShowCompletion] = useState(false);
-  const [isCoachDisabled, setIsCoachDisabled] = useState(false);
+  const [isCoachDisabled, setIsCoachDisabled] = useState(true);
   const [coachView, setCoachView] = useState<"hud" | "panel">("hud");
   // 🧭 UI coach
 
@@ -1200,6 +1200,23 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   useEffect(() => {
     const t = setTimeout(() => setShowDiffBadge(true), 1200);
     return () => clearTimeout(t);
+  }, []);
+
+  // 🔐 DÉTECTION HDMI AUTOMATIQUE
+  useEffect(() => {
+    const detectHDMI = () => {
+      const x = window.screenX || window.screenLeft;
+      const hasExternalDisplay = x > window.screen.availWidth / 2;
+
+      if (hasExternalDisplay) {
+        console.log("📺 HDMI détecté");
+      }
+    };
+
+    detectHDMI();
+    const interval = setInterval(detectHDMI, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   // 🟥 STOP – Erreur mortelle #1 : Senior + projections anxiogènes
@@ -2431,8 +2448,12 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
   // ============================================
   // 🔐 Jail visuelle — coach visible uniquement sur écran conseiller
   const CoachJail = ({ children }: { children: React.ReactNode }) => {
-    if (!isAdvisorScreen) return null;
-    if (isCoachDisabled) return null;
+    const x = window.screenX || window.screenLeft;
+    const isOnHDMI = x > window.screen.availWidth / 2;
+
+    // Masquer si assistance OFF OU sur écran HDMI
+    if (isCoachDisabled || isOnHDMI) return null;
+
     return <>{children}</>;
   };
 
