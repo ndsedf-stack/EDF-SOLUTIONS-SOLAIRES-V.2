@@ -111,24 +111,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
       const [lon, lat] = geoData.features[0].geometry.coordinates;
 
-      // 2. Appel PVGIS
-      const pvgisParams = new URLSearchParams({
-        lat: lat.toString(),
-        lon: lon.toString(),
-        peakpower: formData.puissanceInstallee,
-        loss: "14",
-        mountingplace: "free",
-        usehorizon: "1",
-        angle: formData.inclination,
-        aspect: formData.azimuth,
-        raddatabase: "PVGIS-SARAH2",
-        pvtechchoice: "crystSi",
-        outputformat: "json",
-      });
+      // 2. Appel de l'API PVGIS
+      const apiUrl = `/api/pvgis?lat=${lat}&lon=${lon}&peakpower=${formData.puissanceInstallee}&angle=${formData.inclination}&aspect=${formData.azimuth}`;
 
-      const pvgisUrl = `/api-pvgis/api/v5_2/PVcalc?${pvgisParams.toString()}`;
-
-      const res = await fetch(pvgisUrl);
+      console.log("🔗 URL API:", apiUrl);
+      const res = await fetch(apiUrl);
 
       if (!res.ok) {
         console.error("❌ Erreur API:", res.status);
