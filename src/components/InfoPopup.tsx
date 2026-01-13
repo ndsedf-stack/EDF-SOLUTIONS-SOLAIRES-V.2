@@ -7,6 +7,7 @@ interface InfoPopupProps {
   children: React.ReactNode;
   trigger?: React.ReactNode;
   iconSize?: number;
+  className?: string; // ✅ AJOUT
 }
 
 export const InfoPopup: React.FC<InfoPopupProps> = ({
@@ -14,6 +15,7 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({
   children,
   trigger,
   iconSize = 16,
+  className, // ✅ AJOUT
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
@@ -59,7 +61,7 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({
         onClick={() => setIsOpen(false)}
       />
 
-      {/* Popup content - CENTRÉ AU MILIEU DE L'ÉCRAN */}
+      {/* Popup content */}
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] sm:w-[420px] md:w-[500px] max-w-[540px] z-[9999] animate-in fade-in zoom-in-95 duration-200">
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-blue-500/30 rounded-xl shadow-2xl overflow-hidden">
           {/* Header */}
@@ -87,16 +89,18 @@ export const InfoPopup: React.FC<InfoPopupProps> = ({
 
   return (
     <>
-      {/* Trigger - Inline */}
+      {/* Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="inline-flex items-center justify-center text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+        className={`inline-flex items-center justify-center text-blue-400 hover:text-blue-300 transition-colors cursor-pointer ${
+          className || ""
+        }`}
         aria-label="Plus d'informations"
       >
         {trigger || <Info size={iconSize} />}
       </button>
 
-      {/* Popup Portal - MONTE DIRECTEMENT DANS <body> */}
+      {/* Portal */}
       {popupContent && ReactDOM.createPortal(popupContent, document.body)}
     </>
   );
