@@ -2958,7 +2958,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
           commercial_email: cleanedCommercialEmail,
           commercial_name: null,
           is_active: true,
-          status: "draft",
+          status: "draft", // ← Créé en draft d'abord
         })
         .select()
         .single();
@@ -2979,16 +2979,63 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       console.log("✅ ÉTUDE CRÉÉE AVEC SUCCÈS:", realStudyId);
 
-      // ✅ on stocke l’id pour le bouton SIGNÉ
+      // ✅ on stocke l'id pour le bouton SIGNÉ
       setCurrentStudyId(realStudyId);
 
       // ═══════════════════════════════════════════════════════════
-      // 🔗 UPDATE guest_view_url
+      // 🔗 UPDATE guest_view_url + PASSAGE EN 'sent'
       // ═══════════════════════════════════════════════════════════
-      await supabase
+
+      const { data: updateResult, error: updateError } = await supabase
         .from("studies")
-        .update({ guest_view_url: guestUrl })
-        .eq("id", realStudyId);
+        .update({
+          guest_view_url: guestUrl,
+          status: "sent", // ← DÉCLENCHE LE TRIGGER POUR CRÉER LES 4 EMAILS POST-REFUS
+        })
+        .eq("id", realStudyId)
+        .select(); // ← AJOUTÉ pour voir le résultat
+
+      console.log("🔵 UPDATE RESULT:", updateResult);
+      console.log("🔵 UPDATE ERROR:", updateError);
+
+      if (updateError) {
+        console.error(
+          "❌ ERREUR COMPLÈTE:",
+          JSON.stringify(updateError, null, 2)
+        );
+        alert(`⚠️ L'étude a été créée mais le passage en 'sent' a échoué.
+
+Erreur: ${updateError.message}
+
+Changez le status manuellement en 'sent' dans Supabase.`);
+      } else {
+        console.log(
+          "✅ Étude passée en 'sent' - Emails post-refus programmés (J+0, J+1, J+4, J+7)"
+        );
+
+        // Attendre 1 seconde pour que le trigger s'exécute
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Vérification que les emails ont bien été créés
+        const { data: emailCheck, error: emailError } = await supabase
+          .from("email_queue")
+          .select("email_type, status, scheduled_for")
+          .eq("study_id", realStudyId)
+          .order("scheduled_for");
+
+        console.log("📧 EMAILS CRÉÉS:", emailCheck);
+
+        if (emailCheck && emailCheck.length > 0) {
+          console.log(`✅ ${emailCheck.length} emails programmés avec succès`);
+        } else {
+          console.warn(
+            "⚠️ Aucun email créé - Le trigger n'a peut-être pas fonctionné"
+          );
+          alert(
+            "⚠️ L'étude est en 'sent' mais aucun email n'a été programmé automatiquement."
+          );
+        }
+      }
 
       // ═══════════════════════════════════════════════════════════
       // 🟢 UI
@@ -3001,7 +3048,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         `✅ Étude générée avec succès !
 ID: ${realStudyId}
 Client ID: ${clientId}
-Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
+Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
+
+📧 4 emails post-refus programmés automatiquement`
       );
     } catch (error: any) {
       console.error("❌ Erreur catch:", error);
@@ -8848,6 +8897,7 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
             </div>
           </div>
         </ModuleSection>
+
         <ModuleTransition
           label="Point de bascule"
           title="À ce stade, il n’y a plus rien à démontrer."
