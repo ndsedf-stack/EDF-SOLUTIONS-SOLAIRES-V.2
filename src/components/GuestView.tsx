@@ -34,6 +34,8 @@ import {
   Target,
   TrendingDown,
   CheckCircle,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import {
   AreaChart,
@@ -174,6 +176,11 @@ export default function GuestView() {
 
         setStudy(data);
         setData(data.study_data);
+        console.log("🔥 DATA LOADED:", data.study_data);
+        console.log("🔥 PROD:", data.study_data?.prod);
+        console.log("🔥 CONSO:", data.study_data?.conso);
+        console.log("🔥 AUTOCONSO %:", data.study_data?.a);
+        console.log("🔥 TOUTES LES PROPRIÉTÉS:", Object.keys(data.study_data));
         setLoading(false);
       } catch (e: any) {
         console.error("Erreur chargement étude:", e);
@@ -302,6 +309,7 @@ export default function GuestView() {
     roiPercent: data.roiPercent ?? null,
     detailsCash: data.detailsCash || [],
   };
+
   const rows =
     tableScenario === "financement" ? safeData.details : safeData.detailsCash;
 
@@ -462,7 +470,9 @@ export default function GuestView() {
               <span className="text-[10px] font-black uppercase text-emerald-400 block mb-2">
                 Gain Net Projeté
               </span>
-              <span className="text-xs text-slate-500">Sur 20 ans</span>
+              <span className="text-xs text-slate-500">
+                Sur {data?.projectionYears || 20} ans
+              </span>
             </div>
             <div className="p-3 bg-emerald-500/10 rounded-2xl">
               <TrendingUp className="text-emerald-400" size={24} />
@@ -478,20 +488,20 @@ export default function GuestView() {
         <ModuleSection
           id="securite-juridique"
           title="Sécurité EDF — Groupe d'État"
-          icon={<Shield className="text-blue-600" />}
+          icon={<Shield className="text-blue-400" />}
           defaultOpen={true}
         >
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-blue-950/40 to-indigo-950/40 border-2 border-blue-500/30 rounded-xl p-6">
               <div className="flex items-start gap-4">
                 <div className="bg-blue-600 p-3 rounded-lg">
                   <Building2 className="w-8 h-8 text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-white mb-2">
                     Vous êtes accompagné par EDF SOLUTIONS SOLAIRES
                   </h3>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p className="text-slate-300 leading-relaxed">
                     Filiale à 100% du groupe EDF, entreprise publique française.
                     Capital social de 36 millions d'euros, garanties
                     institutionnelles, pérennité assurée par l'État français.
@@ -501,66 +511,283 @@ export default function GuestView() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white border-2 border-emerald-200 rounded-lg p-5 hover:border-emerald-400 transition-colors">
+              <div className="bg-black/40 border-2 border-emerald-500/30 rounded-lg p-5 hover:border-emerald-400 transition-colors">
                 <div className="flex items-start gap-3 mb-3">
-                  <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0 mt-1" />
-                  <h4 className="font-bold text-gray-900">
+                  <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-white">
                     Garantie décennale obligatoire
                   </h4>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-slate-300 leading-relaxed">
                   Assurance sur 10 ans couvrant tout vice ou défaut affectant la
                   solidité de l'installation ou la rendant impropre à sa
                   destination.
                 </p>
               </div>
 
-              <div className="bg-white border-2 border-blue-200 rounded-lg p-5 hover:border-blue-400 transition-colors">
+              <div className="bg-black/40 border-2 border-blue-500/30 rounded-lg p-5 hover:border-blue-400 transition-colors">
                 <div className="flex items-start gap-3 mb-3">
-                  <Lock className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                  <h4 className="font-bold text-gray-900">
+                  <Lock className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-white">
                     Garantie de rendement panneau
                   </h4>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-slate-300 leading-relaxed">
                   Minimum 87% de rendement garanti après 30 ans d'exploitation.
                   Remplacement gratuit en cas de non-conformité.
                 </p>
               </div>
 
-              <div className="bg-white border-2 border-purple-200 rounded-lg p-5 hover:border-purple-400 transition-colors">
+              <div className="bg-black/40 border-2 border-purple-500/30 rounded-lg p-5 hover:border-purple-400 transition-colors">
                 <div className="flex items-start gap-3 mb-3">
-                  <Zap className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
-                  <h4 className="font-bold text-gray-900">
+                  <Zap className="w-6 h-6 text-purple-400 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-white">
                     Garantie panneaux, onduleur à vie, piéces, main d'oeuvre et
                     déplacement
                   </h4>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-slate-300 leading-relaxed">
                   Remplacement ou réparation gratuite à vie
                 </p>
               </div>
 
-              <div className="bg-white border-2 border-orange-200 rounded-lg p-5 hover:border-orange-400 transition-colors">
+              <div className="bg-black/40 border-2 border-orange-500/30 rounded-lg p-5 hover:border-orange-400 transition-colors">
                 <div className="flex items-start gap-3 mb-3">
-                  <FileCheck className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-                  <h4 className="font-bold text-gray-900">
+                  <FileCheck className="w-6 h-6 text-orange-400 flex-shrink-0 mt-1" />
+                  <h4 className="font-bold text-white">
                     Garantie de rachat État
                   </h4>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-slate-300 leading-relaxed">
                   Obligation d'achat par EDF OA pendant 20 ans, tarif fixe
                   garanti par arrêté ministériel.
                 </p>
               </div>
             </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm text-gray-600 leading-relaxed">
-                <span className="font-semibold text-gray-900">Important :</span>{" "}
+            <div className="bg-slate-900/40 border border-slate-700 rounded-lg p-4">
+              <p className="text-sm text-slate-300 leading-relaxed">
+                <span className="font-semibold text-white">Important :</span>{" "}
                 Ces garanties sont des obligations légales ou contractuelles
                 fermes, pas des engagements commerciaux. Elles sont opposables
                 juridiquement.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+
+        {/* Module 2: Origine de l'électricité */}
+        <ModuleSection
+          id="repartition"
+          title="Origine de l'électricité de votre maison"
+          icon={<Zap className="text-blue-400" />}
+          defaultOpen={false}
+        >
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-6 sm:p-8 space-y-10">
+            {/* INTRO */}
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
+                Fonctionnement énergétique après installation
+              </h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">
+                Ce module montre concrètement comment se répartit l'électricité
+                consommée par votre maison une fois l'installation en service.
+              </p>
+            </div>
+
+            {/* TAUX DE COUVERTURE */}
+            <div className="bg-[#050505] border border-white/10 rounded-3xl p-6 sm:p-8 text-center">
+              <p className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+                Taux de couverture énergétique
+              </p>
+
+              <div className="text-6xl sm:text-7xl font-black text-white tracking-tighter">
+                {Math.round(((data?.prod || 0) / (data?.conso || 1)) * 100)} %
+              </div>
+
+              <p className="text-slate-300 mt-2 text-sm">
+                de votre consommation électrique est produite directement par
+                votre maison.
+              </p>
+
+              <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden mt-5">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-700"
+                  style={{
+                    width: `${Math.round(
+                      ((data?.prod || 0) / (data?.conso || 1)) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* STRUCTURE DES FLUX */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* CONSOMMATION */}
+              <div className="bg-black/60 border border-white/10 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                  Consommation actuelle
+                </p>
+                <p className="text-3xl font-black text-white">
+                  {(data?.conso || 0).toLocaleString("fr-FR")} kWh/an
+                </p>
+                {/* BARRE CONSOMMATION ACTUELLE */}
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-500"
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    Référence 100% — votre dépendance actuelle au réseau
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Ce que vous achetez au réseau chaque année aujourd'hui.
+                </p>
+
+                <div className="mt-3 pt-3 border-t border-white/5 text-slate-300 text-sm">
+                  {(
+                    (data?.conso || 0) * (data?.elecPrice || 0.25)
+                  ).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })}{" "}
+                  / an
+                </div>
+              </div>
+
+              {/* AUTOCONSOMMATION */}
+              <div className="bg-black/60 border border-emerald-500/20 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                  Production Solaire autoconsommée
+                </p>
+                <p className="text-3xl font-black text-emerald-400">
+                  {(
+                    (data?.prod || 0) *
+                    ((data?.selfCons || 0) / 100)
+                  ).toLocaleString("fr-FR", { maximumFractionDigits: 0 })}{" "}
+                  kWh/an
+                </p>
+                {/* BARRE AUTOCONSOMMATION */}
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all duration-700"
+                      style={{
+                        width: `${Math.round(
+                          ((data?.prod || 0) / (data?.conso || 1)) * 100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    {Math.round(((data?.prod || 0) / (data?.conso || 1)) * 100)}
+                    % de votre consommation couverte
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Ce que vous produisez et consommez directement.
+                </p>
+                <div className="mt-3 pt-3 border-t border-white/5 text-emerald-400 text-sm font-bold">
+                  ≈{" "}
+                  {(
+                    (data?.prod || 0) *
+                    ((data?.selfCons || 0) / 100) *
+                    (data?.elecPrice || 0.25)
+                  ).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })}{" "}
+                  / an économisés
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Électricité que vous ne payez plus
+                </p>
+              </div>
+
+              {/* SURPLUS */}
+              <div className="bg-black/60 border border-blue-500/20 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                  Surplus injecté réseau
+                </p>
+
+                <p className="text-3xl font-black text-blue-400">
+                  {(
+                    (data?.prod || 0) *
+                    (1 - (data?.selfCons || 0) / 100)
+                  ).toLocaleString("fr-FR", { maximumFractionDigits: 0 })}{" "}
+                  kWh/an
+                </p>
+                {/* BARRE SURPLUS */}
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-700"
+                      style={{
+                        width: `${100 - (data?.selfCons || 0)}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    Part de la production automatiquement valorisée par EDF
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Non consommé, vendu automatiquement. <br />
+                  Contrat d'Obligation d'Achat 20 ans — cadre légal. <br />
+                  Tarif réglementé : 0.04€/kWh
+                </p>
+
+                <div className="mt-3 pt-3 border-t border-white/5 text-blue-400 text-sm font-bold">
+                  ≈{" "}
+                  {(
+                    (data?.prod || 0) *
+                    (1 - (data?.selfCons || 0) / 100) *
+                    0.04
+                  ).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })}{" "}
+                  / an
+                </div>
+              </div>
+            </div>
+
+            {/* BLOC EDF */}
+            <div className="bg-blue-950/20 border-l-4 border-blue-500 rounded-xl p-5">
+              <p className="text-slate-200 text-sm leading-relaxed">
+                <strong className="text-white">Fonctionnement réseau :</strong>
+                <br />
+                L'électricité produite est consommée automatiquement dans votre
+                maison. Le surplus est injecté et racheté par EDF dans le cadre
+                du contrat d'Obligation d'Achat (État, 20 ans). Lorsque la
+                production est insuffisante, le réseau prend le relais
+                instantanément.
+                <br />
+                <br />
+                <span className="text-blue-300 font-semibold">
+                  Aucun réglage. Aucun pilotage. Continuité de service garantie.
+                </span>
+              </p>
+            </div>
+
+            {/* CLOSING */}
+            <div className="text-center pt-2">
+              <p className="text-slate-400 italic text-sm">
+                Vos habitudes ne changent pas.
+              </p>
+              <p className="text-white font-bold italic text-lg">
+                Seule l'origine de votre électricité change.
               </p>
             </div>
           </div>
@@ -569,62 +796,68 @@ export default function GuestView() {
         <ModuleSection
           id="synthese"
           title="Vue d'ensemble — Votre projet en 10 secondes"
-          icon={<FileText className="text-indigo-600" />}
+          icon={<FileText className="text-indigo-400" />}
           defaultOpen={true}
         >
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5 text-indigo-600" />
+            <div className="bg-gradient-to-br from-indigo-950/40 to-purple-950/40 border-2 border-indigo-500/30 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5 text-indigo-400" />
                 Cohérence globale du projet
               </h3>
 
               <div className="grid md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white rounded-lg p-4 border border-indigo-100">
-                  <div className="text-sm text-gray-600 mb-1">
+                <div className="bg-black/40 rounded-lg p-4 border border-indigo-500/20">
+                  <div className="text-sm text-slate-400 mb-1">
                     Production annuelle
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-white">
                     {formatNumber(safeData.prod)} kWh
                   </div>
-                  <div className="text-xs text-emerald-600 mt-1">
+                  <div className="text-xs text-emerald-400 mt-1">
                     ✓ Certifiée
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg p-4 border border-indigo-100">
-                  <div className="text-sm text-gray-600 mb-1">
+                <div className="bg-black/40 rounded-lg p-4 border border-indigo-500/20">
+                  <div className="text-sm text-slate-400 mb-1">
                     Couverture besoins
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {safeData.selfCons}%
+                  <div className="text-2xl font-bold text-white">
+                    {Math.round(
+                      ((safeData.prod || 0) / (safeData.conso || 1)) * 100
+                    )}
+                    %
                   </div>
-                  <div className="text-xs text-blue-600 mt-1">
+                  <div className="text-xs text-blue-400 mt-1">
                     de votre consommation
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg p-4 border border-indigo-100">
-                  <div className="text-sm text-gray-600 mb-1">
+                <div className="bg-black/40 rounded-lg p-4 border border-indigo-500/20">
+                  <div className="text-sm text-slate-400 mb-1">
                     Retour investissement
                   </div>
-                  <div className="text-2xl font-bold text-gray-900">
+                  <div className="text-2xl font-bold text-white">
                     {certifiedBreakEvenYear} ans
                   </div>
-                  <div className="text-xs text-purple-600 mt-1">
+                  <div className="text-xs text-purple-400 mt-1">
                     puis gain net
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border-l-4 border-emerald-500">
-                <p className="text-gray-700 leading-relaxed">
-                  <span className="font-semibold text-gray-900">Verdict :</span>{" "}
-                  Installation dimensionnée pour couvrir {safeData.selfCons}% de
-                  vos besoins annuels. Budget mensuel inférieur à votre facture
-                  actuelle dès la première année, puis économies nettes après{" "}
-                  {certifiedBreakEvenYear} ans. Projet économiquement cohérent
-                  et techniquement sécurisé.
+              <div className="bg-black/40 rounded-lg p-4 border-l-4 border-emerald-500">
+                <p className="text-slate-300 leading-relaxed">
+                  <span className="font-semibold text-white">Verdict :</span>{" "}
+                  Installation dimensionnée pour couvrir{" "}
+                  {Math.round(
+                    ((safeData.prod || 0) / (safeData.conso || 1)) * 100
+                  )}
+                  % de vos besoins annuels. Budget mensuel inférieur à votre
+                  facture actuelle dès la première année, puis économies nettes
+                  après {certifiedBreakEvenYear} ans. Projet économiquement
+                  cohérent et techniquement sécurisé.
                 </p>
               </div>
             </div>
@@ -741,16 +974,16 @@ export default function GuestView() {
         <ModuleSection
           id="securisation"
           title="Administratif pris en charge — Vous n'avez rien à gérer"
-          icon={<FileCheck className="text-blue-500" />}
+          icon={<FileCheck className="text-blue-400" />}
           defaultOpen={true}
         >
           <div className="space-y-6">
-            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-600" />
+            <div className="bg-blue-950/40 border-2 border-blue-500/30 rounded-xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-blue-400" />
                 Zéro démarche administrative de votre côté
               </h3>
-              <p className="text-gray-700 leading-relaxed mb-4">
+              <p className="text-slate-300 leading-relaxed mb-4">
                 EDF SOLUTIONS SOLAIRES prend en charge l'intégralité des
                 démarches administratives, de la déclaration préalable de
                 travaux jusqu'au raccordement Enedis.
@@ -783,21 +1016,21 @@ export default function GuestView() {
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+                  className="flex items-center justify-between bg-black/40 border border-slate-700 rounded-lg p-4 hover:border-blue-500/50 transition-colors"
                 >
-                  <span className="text-gray-700 font-medium">
+                  <span className="text-slate-300 font-medium">
                     {item.label}
                   </span>
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 text-sm font-semibold rounded-full">
+                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm font-semibold rounded-full border border-blue-500/30">
                     {item.status}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                <span className="font-semibold text-emerald-900">
+            <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-lg p-4">
+              <p className="text-sm text-slate-300 leading-relaxed">
+                <span className="font-semibold text-emerald-400">
                   Important :
                 </span>{" "}
                 Vous recevrez uniquement les notifications de suivi par email.
@@ -812,29 +1045,30 @@ export default function GuestView() {
         <ModuleSection
           id="financial-context"
           title="Comment lire les chiffres qui suivent"
-          icon={<Info className="text-blue-500" />}
+          icon={<Info className="text-blue-400" />}
           defaultOpen={true}
         >
           <div className="space-y-4">
-            <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-5">
-              <p className="text-gray-800 leading-relaxed mb-3">
+            <div className="bg-blue-950/40 border-l-4 border-blue-500 rounded-r-lg p-5">
+              <p className="text-slate-300 leading-relaxed mb-3">
                 Les chiffres ci-dessous comparent votre situation{" "}
-                <strong>AVEC</strong> et <strong>SANS</strong> solaire.
+                <strong className="text-white">AVEC</strong> et{" "}
+                <strong className="text-white">SANS</strong> solaire.
               </p>
-              <p className="text-gray-800 leading-relaxed font-medium">
+              <p className="text-slate-300 leading-relaxed font-medium">
                 Ce n'est pas un coût supplémentaire : c'est un arbitrage entre
                 deux façons de payer votre électricité.
               </p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <div className="bg-black/40 border border-slate-700 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <TrendingDown className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  <strong>Principe :</strong> Votre mensualité solaire remplace
-                  progressivement votre facture EDF traditionnelle. Après
-                  remboursement, vous ne payez plus que les quelques kWh
-                  résiduels que vous achetez au réseau.
+                <TrendingDown className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-slate-300 leading-relaxed">
+                  <strong className="text-white">Principe :</strong> Votre
+                  mensualité solaire remplace progressivement votre facture EDF
+                  traditionnelle. Après remboursement, vous ne payez plus que
+                  les quelques kWh résiduels que vous achetez au réseau.
                 </p>
               </div>
             </div>
@@ -884,12 +1118,12 @@ export default function GuestView() {
                   rien en plus : on remplace une dépense existante par quelque
                   chose qui vous reste.
                 </p>
-                <div className="relative h-28 bg-gradient-to-r from-[#e14d4d] via-[#d92d2d] to-[#b32424] rounded-2xl shadow-2xl overflow-hidden flex items-center px-10 border border-white/10">
+                <div className="relative h-28 bg-gradient-to-r from-[#e14d4d] via-[#d92d2d] to-[#b32424] rounded-2xl shadow-2xl overflow-hidden flex items-center px-8 border border-white/10">
                   <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></div>
-                  <span className="relative text-white font-black text-3xl uppercase tracking-wider">
+                  <span className="relative text-white font-black text-2xl uppercase tracking-wider">
                     FACTURE ACTUELLE
                   </span>
-                  <span className="ml-auto relative text-white/30 font-black text-5xl uppercase tracking-tighter">
+                  <span className="ml-auto relative text-white/30 font-black text-xl uppercase tracking-tight">
                     100% DÉPENSES — SANS RETOUR
                   </span>
                 </div>
@@ -916,7 +1150,7 @@ export default function GuestView() {
                 <div className="relative h-28 bg-[#1a1f2e] rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
                   {/* Bloc Financement (Gris plus clair / bleuté) */}
                   <div
-                    className="relative bg-gradient-to-b from-[#3a445e] to-[#232a3d] flex flex-col justify-center px-8 transition-all duration-700"
+                    className="relative bg-gradient-to-b from-[#3a445e] to-[#232a3d] flex flex-col justify-center px-6 transition-all duration-700"
                     style={{
                       width: `${
                         ((monthlyCredit || 0) / (totalMensuel || 1)) * 100
@@ -924,10 +1158,10 @@ export default function GuestView() {
                     }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
-                    <span className="relative text-[11px] font-bold text-slate-300 uppercase tracking-widest mb-1">
+                    <span className="relative text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">
                       Financement EDF
                     </span>
-                    <span className="relative text-white font-black text-4xl">
+                    <span className="relative text-white font-black text-2xl">
                       {formatMoney(monthlyCredit || 0)}
                     </span>
                   </div>
@@ -936,12 +1170,12 @@ export default function GuestView() {
                   <div className="w-1.5 bg-black/60 shadow-[1px_0_0_rgba(255,255,255,0.1)]"></div>
 
                   {/* Bloc Reste à Charge (Gris plus sombre) */}
-                  <div className="relative bg-gradient-to-b from-[#1e2536] to-[#141a26] flex-1 flex flex-col justify-center px-8 transition-all duration-700">
+                  <div className="relative bg-gradient-to-b from-[#1e2536] to-[#141a26] flex-1 flex flex-col justify-center px-6 transition-all duration-700">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
-                    <span className="relative text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                    <span className="relative text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                       Reste à charge
                     </span>
-                    <span className="relative text-slate-300 font-black text-4xl">
+                    <span className="relative text-slate-300 font-black text-2xl">
                       {formatMoney(monthlyResidue || 0)}
                     </span>
                   </div>
@@ -972,6 +1206,304 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
+        <ModuleSection
+          id="calendrier"
+          title="Calendrier de Mise en Service"
+          icon={<Calendar className="text-blue-400" />}
+          defaultOpen={false}
+        >
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-6 sm:p-8">
+            {/* HEADER */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-blue-500/10 rounded-xl">
+                <Calendar className="text-blue-400" size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  Délai de mise en route — Installation sous 6-8 semaines
+                </h2>
+                <p className="text-xs text-slate-500 mt-1 italic">
+                  À partir de cette date, l'installation est opérationnelle.
+                </p>
+              </div>
+            </div>
+
+            {/* 4 CARTES */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {/* Card 1 - Coût énergétique actuel */}
+              <div className="bg-slate-900/40 border border-white/10 rounded-xl p-5">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Coût énergétique actuel
+                </div>
+                <div className="text-2xl font-bold text-white mb-1">
+                  {formatMoney(safeData.totalSpendNoSolar || 0)}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Sur {safeData.projectionYears} ans
+                </div>
+              </div>
+
+              {/* Card 2 - Économie BRUTE disponible année 1 */}
+              <div className="bg-slate-900/40 border border-white/10 rounded-xl p-5">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Production année 1
+                </div>
+                <div className="text-2xl font-bold text-emerald-400 mb-1">
+                  {formatMoney(
+                    (safeData.prod || 0) * (safeData.elecPrice || 0.25)
+                  )}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Valeur de l'électricité produite
+                </div>
+              </div>
+
+              {/* Card 3 - Économie BRUTE période */}
+              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-xl p-5">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Production {safeData.projectionYears} ans
+                </div>
+                <div className="text-2xl font-bold text-emerald-400 mb-1">
+                  {formatMoney(
+                    (safeData.prod || 0) *
+                      (safeData.elecPrice || 0.25) *
+                      safeData.projectionYears
+                  )}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Énergie produite totale
+                </div>
+              </div>
+
+              {/* Card 4 - Gain NET période */}
+              <div className="bg-slate-900/40 border border-blue-500/20 rounded-xl p-5">
+                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Gain net {safeData.projectionYears} ans
+                </div>
+                <div className="text-2xl font-bold text-blue-400 mb-1">
+                  {formatMoney(safeData.e || 0)}
+                </div>
+                <div className="text-slate-500 text-[10px]">
+                  Après remboursement crédit
+                </div>
+              </div>
+            </div>
+
+            {/* MESSAGE FACTUEL */}
+            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded-xl mb-6">
+              <p className="text-slate-300 text-[11px] leading-relaxed italic">
+                Une fois le dossier validé, le projet entre dans le processus de
+                mise en service. Les délais observés sont en moyenne de six à
+                huit semaines.
+              </p>
+              <p className="text-slate-300 text-[11px] leading-relaxed italic mt-2">
+                Durant cette période, l'ensemble des démarches techniques,
+                administratives et de planification est pris en charge par EDF
+                et ses partenaires.
+              </p>
+            </div>
+
+            {/* VISUALISATION TEMPORELLE */}
+            <div className="p-5 bg-black/30 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-4 uppercase tracking-wider">
+                <Clock className="w-4 h-4" />
+                Impact du calendrier sur le début des économies :
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-lg">
+                    {formatMoney(
+                      (safeData.prod || 0) * (safeData.elecPrice || 0.25)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[10px] mt-1">
+                    Production année 1
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-lg">
+                    {formatMoney(
+                      (safeData.prod || 0) * (safeData.elecPrice || 0.25) * 3
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[10px] mt-1">
+                    Cumul 3 ans
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-lg">
+                    {formatMoney(
+                      (safeData.prod || 0) * (safeData.elecPrice || 0.25) * 5
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[10px] mt-1">
+                    Cumul 5 ans
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* PHRASE FINALE */}
+            <p className="text-[10px] text-slate-500 italic mt-6 text-center">
+              C'est juste du calendrier. La décision vous appartient.
+            </p>
+          </div>
+        </ModuleSection>
+        <ModuleSection
+          id="effet-calendrier"
+          title="Lecture du Temps"
+          icon={<Calendar className="text-slate-400" />}
+          defaultOpen={false}
+        >
+          <div className="bg-[#0b0d10] border border-white/10 rounded-2xl p-6 md:p-8">
+            {/* TITRE */}
+            <h3 className="text-xl font-black text-white mb-2">
+              Impact d'une mise en service différée de 6 mois
+            </h3>
+            <p className="text-sm text-slate-400 mb-8">
+              Comparaison objective de deux calendriers de démarrage.
+            </p>
+
+            {/* 2 SCÉNARIOS */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              {/* SCÉNARIO A — DÉMARRAGE MAINTENANT */}
+              <div className="bg-black/40 border border-emerald-500/20 p-6 rounded-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs text-emerald-400 uppercase font-bold tracking-wider">
+                    Scénario A — Validation immédiate
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Mise en service
+                    </div>
+                    <div className="text-lg font-black text-white">
+                      6-8 semaines
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      délai administratif + installation
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Production active sur les 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-emerald-400">
+                      ~4-5 mois
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      d'économies générées
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Production valorisée sur 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-white">
+                      {formatMoney(
+                        ((safeData.prod || 0) * (safeData.elecPrice || 0.25)) /
+                          2
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SCÉNARIO B — DÉMARRAGE DANS 6 MOIS */}
+              <div className="bg-black/40 border border-slate-500/20 p-6 rounded-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">
+                    Scénario B — Validation différée de 6 mois
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Mise en service
+                    </div>
+                    <div className="text-lg font-black text-white">
+                      6 mois + 6-8 semaines
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      attente + délai administratif + installation
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Production active sur les 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-slate-400">
+                      0 mois
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      installation pas encore lancée
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Production valorisée sur 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-white">0 €</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* DIFFÉRENTIEL */}
+            <div className="bg-black/60 border border-white/10 p-6 rounded-xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div className="md:col-span-2">
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                    Différentiel économique entre les deux scénarios
+                  </div>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Le scénario A permet d'activer la production pendant ~4-5
+                    mois sur cette période, générant de la valeur. Le scénario B
+                    maintient la situation actuelle pendant 6 mois
+                    supplémentaires.
+                  </p>
+                </div>
+                <div className="text-center md:text-right">
+                  <div className="text-4xl font-black text-white">
+                    {formatMoney(
+                      ((safeData.prod || 0) * (safeData.elecPrice || 0.25)) / 2
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    d'écart sur 6 mois
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* NOTE FINALE */}
+            <div className="mt-6 bg-black/40 border-l-2 border-slate-600 p-5 rounded-r-xl">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                <strong className="text-white">Lecture :</strong> les deux
+                scénarios sont viables. La seule variable est le calendrier de
+                mise en service.
+                <br />
+                <br />
+                Dans le scénario A, l'installation est active après 6-8
+                semaines, puis produit pendant ~4-5 mois sur les 6 mois
+                observés.
+                <br />
+                <br />
+                Dans le scénario B, ces 6 mois maintiennent la situation
+                actuelle, avant de démarrer le processus.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
         {/* Module 7: Impact budget */}
         <ModuleSection
           id="impact"
@@ -979,89 +1511,226 @@ export default function GuestView() {
           icon={<Wallet className="text-blue-400" />}
           defaultOpen={false}
         >
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-red-950/30 border border-red-500/20 rounded-xl p-4">
-              <div className="text-red-400 text-[10px] uppercase font-bold mb-1">
-                Facture actuelle
+          <div className="space-y-6">
+            {/* PHRASE D'INTRODUCTION */}
+            <div className="text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
+              Voici comment votre budget mensuel se réorganise la première
+              année.
+              <br />
+              <span className="text-slate-400">
+                On ne parle pas d'un coût, mais d'une phase de transition avant
+                un modèle durablement plus léger.
+              </span>
+            </div>
+
+            {/* 3 CARDS - RESPONSIVE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {/* CARD 1 - FACTURE ACTUELLE */}
+              <div className="bg-gradient-to-br from-red-950/30 to-black/40 border border-red-500/20 rounded-xl p-4 sm:p-5">
+                <div className="text-red-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
+                  <span>Facture actuelle</span>
+                </div>
+                <div className="text-white text-2xl sm:text-3xl font-black break-words">
+                  {(
+                    ((data?.conso || 0) * (data?.elecPrice || 0.25)) /
+                    12
+                  ).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1">
+                  /mois
+                </div>
               </div>
-              <div className="text-white text-3xl font-black">
-                {formatMoney(monthlyBill)}
+
+              {/* CARD 2 - AVEC INSTALLATION */}
+              <div className="bg-gradient-to-br from-blue-950/30 to-black/40 border border-blue-500/20 rounded-xl p-4 sm:p-5">
+                <div className="text-blue-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
+                  <span>Vous payez</span>
+                </div>
+                <div className="text-white text-2xl sm:text-3xl font-black break-words">
+                  {(
+                    (data?.m || 0) +
+                    (((data?.conso || 0) -
+                      (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                      (data?.elecPrice || 0.25)) /
+                      12
+                  ).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
+                  /mois (crédit + reste facture)
+                </div>
+              </div>
+
+              {/* CARD 3 - DIFFÉRENCE */}
+              <div className="bg-gradient-to-br from-slate-950/30 to-black/40 border border-slate-600/20 rounded-xl p-4 sm:p-5 sm:col-span-2 lg:col-span-1">
+                <div className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2 mb-2">
+                  <span className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
+                  <span>Différence — 1ère année</span>
+                </div>
+                <div
+                  className={`text-2xl sm:text-3xl font-black break-words ${
+                    (data?.m || 0) +
+                      (((data?.conso || 0) -
+                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                        (data?.elecPrice || 0.25)) /
+                        12 -
+                      ((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12 >
+                    0
+                      ? "text-orange-400"
+                      : "text-emerald-400"
+                  }`}
+                >
+                  {(data?.m || 0) +
+                    (((data?.conso || 0) -
+                      (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                      (data?.elecPrice || 0.25)) /
+                      12 -
+                    ((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12 >
+                  0
+                    ? "+"
+                    : ""}
+                  {(
+                    (data?.m || 0) +
+                    (((data?.conso || 0) -
+                      (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                      (data?.elecPrice || 0.25)) /
+                      12 -
+                    ((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12
+                  ).toLocaleString("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                    maximumFractionDigits: 0,
+                  })}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
+                  Puis → économies dès fin crédit
+                </div>
               </div>
             </div>
-            <div className="bg-blue-950/30 border border-blue-500/20 rounded-xl p-4">
-              <div className="text-blue-400 text-[10px] uppercase font-bold mb-1">
-                Vous payez
+
+            {/* SLIDER VISUEL */}
+            <div className="bg-black/40 border border-white/10 rounded-xl p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-[9px] sm:text-[10px] text-slate-500 uppercase mb-3">
+                <span>Alignement avec votre budget actuel</span>
+                <span className="text-white font-bold text-sm sm:text-base">
+                  {(
+                    (((data?.m || 0) +
+                      (((data?.conso || 0) -
+                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                        (data?.elecPrice || 0.25)) /
+                        12) /
+                      (((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12)) *
+                    100
+                  ).toFixed(0)}
+                  %
+                </span>
               </div>
-              <div className="text-white text-3xl font-black">
-                {formatMoney(totalMensuel)}
+              <div className="h-3 sm:h-4 bg-slate-800/40 rounded-full overflow-hidden border border-white/10">
+                <div
+                  className={`h-full transition-all duration-700 ${
+                    ((data?.m || 0) +
+                      (((data?.conso || 0) -
+                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                        (data?.elecPrice || 0.25)) /
+                        12) /
+                      (((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12) >
+                    1
+                      ? "bg-gradient-to-r from-orange-500 to-orange-600"
+                      : "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (((data?.m || 0) +
+                        (((data?.conso || 0) -
+                          (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                          (data?.elecPrice || 0.25)) /
+                          12) /
+                        (((data?.conso || 0) * (data?.elecPrice || 0.25)) /
+                          12)) *
+                        100,
+                      100
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-[9px] sm:text-[10px] text-slate-600 mt-2">
+                <span>0%</span>
+                <span className="text-slate-500">Budget actuel</span>
+                <span>150%</span>
               </div>
             </div>
-            <div className="bg-slate-950/30 border border-slate-600/20 rounded-xl p-4">
-              <div className="text-slate-400 text-[10px] uppercase font-bold mb-1">
-                Différence
+
+            {/* ÉVOLUTION APRÈS CRÉDIT */}
+            <div className="bg-gradient-to-br from-emerald-950/20 to-black/40 border border-emerald-500/20 rounded-xl p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingDown className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm sm:text-base font-bold text-emerald-400 uppercase">
+                  Après remboursement du crédit
+                </h3>
               </div>
-              <div className="text-white text-3xl font-black">
-                {diffMensuel > 0 ? "+" : ""}
-                {formatMoney(diffMensuel)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    Facture mensuelle
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                    {(
+                      (((data?.conso || 0) -
+                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
+                        (data?.elecPrice || 0.25)) /
+                      12
+                    ).toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Seulement le résiduel EDF
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    Économie mensuelle
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-white">
+                    {(
+                      ((data?.prod || 0) *
+                        ((data?.selfCons || 0) / 100) *
+                        (data?.elecPrice || 0.25)) /
+                      12
+                    ).toLocaleString("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Par rapport à votre facture actuelle
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 text-[10px] text-slate-400 italic leading-relaxed">
+                À ce stade, le financement disparaît.
+                <br />
+                Ce qu'il reste, c'est un système qui travaille pour votre
+                budget.
               </div>
             </div>
-          </div>
-        </ModuleSection>
-        {/* Module 8: Projection */}
-        <ModuleSection
-          id="projection"
-          title="Projection financière dans le temps"
-          icon={<TrendingUp className="text-blue-400" />}
-          defaultOpen={false}
-        >
-          <div className="bg-black/40 rounded-2xl p-6 border border-white/10">
-            <div className="h-[400px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={gouffreChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
-                  <XAxis dataKey="year" stroke="#9ca3af" />
-                  <YAxis stroke="#9ca3af" />
-                  <RechartsTooltip
-                    contentStyle={{
-                      backgroundColor: "#1e293b",
-                      border: "1px solid #475569",
-                      borderRadius: "8px",
-                      padding: "12px",
-                    }}
-                    labelStyle={{
-                      color: "#e2e8f0",
-                      fontWeight: "bold",
-                      marginBottom: "8px",
-                    }}
-                    itemStyle={{
-                      color: "#e2e8f0",
-                    }}
-                    formatter={(value: number, name: string) => {
-                      const label =
-                        name === "cumulativeSpendNoSolar"
-                          ? "Sans solaire"
-                          : "Avec solaire";
-                      return [formatMoney(value), label];
-                    }}
-                    labelFormatter={(label) => `Année ${label}`}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="cumulativeSpendNoSolar"
-                    name="cumulativeSpendNoSolar"
-                    stroke="#ef4444"
-                    fill="rgba(239, 68, 68, 0.2)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="cumulativeSpendSolar"
-                    name="cumulativeSpendSolar"
-                    stroke="#3b82f6"
-                    fill="rgba(59, 130, 246, 0.2)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+
+            {/* FOOTER */}
+            <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
+              Ces montants sont ceux de la 1ère année.
+            </p>
           </div>
         </ModuleSection>
         {/* Module 9: Tableau détaillé */}
@@ -1270,6 +1939,7 @@ export default function GuestView() {
             {showDetails ? "Vue globale" : "Vue complète"}
           </button>
         </ModuleSection>
+
         {/* 🟠 BLOC 4 — AJUSTEMENT */}
         {/* Module 10: Financement vs Cash */}
         <ModuleSection
@@ -1549,57 +2219,6 @@ export default function GuestView() {
           </button>
         )}
 
-        {/* COMPTEUR ARGENT GASPILLÉ */}
-        <div className="bg-gradient-to-br from-orange-950/60 to-red-950/40 border border-orange-500/30 rounded-[32px] p-6 mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Flame size={20} className="text-orange-400" />
-            <span className="text-orange-300 text-xs font-black uppercase tracking-wider">
-              Argent perdu depuis l'ouverture
-            </span>
-          </div>
-
-          <div className="text-center">
-            <div className="text-5xl font-black text-red-500 tabular-nums mb-2">
-              {formatMoneyPrecise(wastedCash)}
-            </div>
-            <div className="text-xs text-slate-400 italic">
-              Ce compteur ne s'arrêtera jamais tant que vous n'agissez pas
-            </div>
-          </div>
-        </div>
-        {/* MENTIONS LÉGALES */}
-        <div className="bg-zinc-900/50 border border-white/5 rounded-[32px] p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertCircle size={16} className="text-slate-500" />
-            <h3 className="text-xs font-black uppercase text-slate-400">
-              Mentions Légales
-            </h3>
-          </div>
-          <div className="text-[9px] text-slate-600 space-y-2 leading-relaxed">
-            <p>
-              <strong className="text-slate-400">
-                Document confidentiel :
-              </strong>{" "}
-              Cette étude est la propriété d'EDF Solutions Solaires.
-              Reproduction interdite.
-            </p>
-            <p>
-              <strong className="text-slate-400">Validité :</strong> Tarifs
-              valables 7 jours. Aides soumises à conditions.
-            </p>
-            <p>
-              <strong className="text-slate-400">Estimations :</strong> Basées
-              sur consommation actuelle et ensoleillement moyen régional.
-            </p>
-            <p>
-              <strong className="text-slate-400">RGPD :</strong> Droit
-              d'accès/rectification.
-            </p>
-            <p className="text-slate-500 font-bold mt-3">
-              EDF Solutions Solaires
-            </p>
-          </div>
-        </div>
         {/* FOOTER */}
         <div className="text-center pb-8">
           <span className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.4em]">

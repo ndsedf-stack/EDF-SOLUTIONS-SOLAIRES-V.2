@@ -4083,7 +4083,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
                   </span>
 
                   <span className="flex items-center gap-1 rounded-lg border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-xs font-bold uppercase text-purple-300">
-                    Zéro risque faillite
+                    Continuité garantie par l'État
                     <InfoPopup
                       title={INFO_MODULE1.zeroFaillite[activeProfile].title}
                     >
@@ -4148,7 +4148,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
                 <ul className="space-y-3 text-sm text-slate-300">
                   <li>✔ Versement direct par l'État</li>
                   <li>✔ Prime autoconsommation garantie</li>
-                  <li>✔ TVA réduite à 5,5%</li>
+                  <li>✔ Payable 12 mois après l'installation</li>
                 </ul>
               </div>
             </div>
@@ -4351,7 +4351,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
             <details className="relative z-10 mb-8 bg-black/60 border border-white/10 rounded-xl overflow-hidden">
               <summary className="px-6 py-4 cursor-pointer hover:bg-white/5 transition-colors flex items-center justify-between">
                 <span className="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
-                  → Voir le détail des démarches administratives
+                  → Voir ce qu'EDF gère pour vous (optionnel)
                   {/* INFOBULLE 3.2 */}
                   <InfoPopup
                     title={INFO_MODULE3.complexite[activeProfile].title}
@@ -4713,789 +4713,6 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
             </p>
           </div>
         </ModuleSection>
-
-        {/* ============================================
-         MODULE 2 : RÉPARTITION ÉNERGIE — VERSION OPTIMISÉE FINAL
-         ============================================ */}
-        <ModuleSection
-          id="repartition"
-          title="Répartition Énergie"
-          icon={<Zap className="text-yellow-500" />}
-          defaultOpen={false}
-          onOpen={(id) => {
-            setActiveModule(id);
-          }}
-        >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] p-10 flex flex-col gap-10">
-            {/* TITLE */}
-            <div className="flex items-center gap-3">
-              <Zap className="text-yellow-500" />
-              <h2 className="text-xl font-bold uppercase tracking-wide">
-                Répartition Énergie
-              </h2>
-
-              {/* 🧠 INFOBULLE CADRAGE */}
-              <InfoPopup title={INFO_REPARTITION.cadrage[activeProfile].title}>
-                {INFO_REPARTITION.cadrage[activeProfile].body}
-              </InfoPopup>
-            </div>
-
-            {/* GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              {/* ==== GRAPHICAL AREA – ENHANCED ==== */}
-              <div className="relative flex flex-col items-center justify-center">
-                <div className="relative h-[420px] w-[420px] flex items-center justify-center">
-                  {/* OUTER – AUTOCONSOMMATION */}
-                  <svg
-                    width="360"
-                    height="360"
-                    viewBox="0 0 360 360"
-                    className="absolute"
-                  >
-                    <circle
-                      cx="180"
-                      cy="180"
-                      r="150"
-                      fill="none"
-                      stroke="#1a1405"
-                      strokeWidth="22"
-                    />
-                    <circle
-                      cx="180"
-                      cy="180"
-                      r="150"
-                      fill="none"
-                      stroke="#f59e0b"
-                      strokeWidth="22"
-                      strokeDasharray={`${
-                        (selfConsumptionRate / 100) * 2 * Math.PI * 150
-                      } ${2 * Math.PI * 150}`}
-                      transform="rotate(-90 180 180)"
-                      style={{
-                        filter: "drop-shadow(0 0 14px #f59e0b)",
-                        transition: "stroke-dasharray 0.5s ease",
-                      }}
-                    />
-                  </svg>
-
-                  {/* INNER – VENTE */}
-                  <svg
-                    width="270"
-                    height="270"
-                    viewBox="0 0 270 270"
-                    className="absolute"
-                  >
-                    <circle
-                      cx="135"
-                      cy="135"
-                      r="110"
-                      fill="none"
-                      stroke="#140c1f"
-                      strokeWidth="20"
-                    />
-                    <circle
-                      cx="135"
-                      cy="135"
-                      r="110"
-                      fill="none"
-                      stroke="#3b82f6"
-                      strokeWidth="20"
-                      strokeDasharray={`${
-                        ((100 - selfConsumptionRate) / 100) * 2 * Math.PI * 110
-                      } ${2 * Math.PI * 110}`}
-                      transform="rotate(-90 135 135)"
-                      style={{
-                        filter: "drop-shadow(0 0 14px #3b82f6)",
-                        transition: "stroke-dasharray 0.5s ease",
-                      }}
-                    />
-                  </svg>
-
-                  {/* CENTER TEXT */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-[12px] text-slate-500 uppercase tracking-widest">
-                      Production
-                    </span>
-                    <span className="text-6xl font-black text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]">
-                      {yearlyProduction}
-                    </span>
-                    <span className="text-sm text-slate-300">kWh/an</span>
-                  </div>
-                </div>
-
-                {/* BADGE + MICRO VERROU */}
-                <div className="mt-4 text-xs text-slate-300 bg-black/50 rounded-lg px-4 py-2 border border-white/10 text-center">
-                  Cadre EDF – État • Contrat OA 20 ans
-                  <div className="text-[10px] text-emerald-300 mt-1">
-                    Aucun kWh perdu • Aucune gestion pour vous
-                  </div>
-                </div>
-              </div>
-
-              {/* ==== TEXT SIDE ==== */}
-              <div className="flex flex-col gap-7">
-                {/* Autoconsommation */}
-                <div className="bg-black/60 border border-amber-500/25 p-7 rounded-2xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-                    <span className="font-bold text-white text-lg">
-                      Autoconsommation ({selfConsumptionRate}%)
-                    </span>
-                  </div>
-                  <div className="text-5xl font-black text-amber-500 mb-2">
-                    {formatNum(yearlyProduction * (selfConsumptionRate / 100))}{" "}
-                    kWh
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Couverture automatique des besoins de fond.
-                  </p>
-                </div>
-
-                {/* Vente */}
-                <div className="bg-black/60 border border-blue-500/25 p-7 rounded-2xl">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                    <span className="font-bold text-white text-lg">
-                      Vente surplus ({(100 - selfConsumptionRate).toFixed(0)}%)
-                    </span>
-                  </div>
-                  <div className="text-5xl font-black text-blue-500 mb-2">
-                    {formatNum(
-                      yearlyProduction * ((100 - selfConsumptionRate) / 100)
-                    )}{" "}
-                    kWh
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Contrat d'Obligation d'Achat 20 ans — cadre légal.
-                  </p>
-                </div>
-
-                {/* Résumé */}
-                <div className="bg-black/60 border border-emerald-500/25 p-6 rounded-2xl">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-emerald-300 font-bold uppercase">
-                      EN CLAIR
-                    </p>
-
-                    {/* 🧠 INFOBULLE ANCRAGE */}
-                    <InfoPopup
-                      title={INFO_REPARTITION.ancrage[activeProfile].title}
-                    >
-                      {INFO_REPARTITION.ancrage[activeProfile].body}
-                    </InfoPopup>
-                  </div>
-
-                  <p className="text-xs text-slate-300 leading-tight mt-1">
-                    • Vous consommez → économie automatisée.
-                    <br />
-                    • Vous ne consommez pas → Vente par Contrat OA (État).
-                    <br />
-                    <span className="text-emerald-300 font-bold">
-                      ➝ Aucun kWh perdu. Aucun suivi nécessaire de votre part.
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModuleSection>
-
-        {/* ============================================
-        MODULE :Locataire VS Propriétaire Énergétique
-        ============================================ */}
-        <ModuleSection
-          id="locataire-proprietaire"
-          title="Locataire VS Propriétaire Énergétique"
-          icon={<Crown className="text-blue-600" />}
-          defaultOpen={false}
-          onOpen={(id) => {
-            setActiveModule(id);
-          }}
-        >
-          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* LOCATAIRE */}
-            <div className="bg-black/40 backdrop-blur-xl border border-orange-700/30 rounded-[24px] p-8 relative overflow-hidden transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_30px_rgba(255,152,0,0.15)]">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-[#1a0d05] border border-orange-800/30 flex items-center justify-center text-orange-400">
-                  <Ban size={28} />
-                </div>
-                <h3 className="text-xl font-black text-white uppercase">
-                  Modèle Locatif
-                </h3>
-              </div>
-
-              <p className="text-orange-200 text-sm font-medium mb-6">
-                Vous payez chaque mois pour consommer. C'est un modèle d'usage.
-              </p>
-
-              <ul className="space-y-4 text-sm text-slate-200">
-                <li className="flex items-start gap-3">
-                  <AlertTriangle className="text-orange-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  Le tarif suit les évolutions du marché et des décisions
-                  publiques — vous ne maîtrisez pas l'avenir de votre facture.
-                </li>
-                <li className="flex items-start gap-3">
-                  <AlertTriangle className="text-orange-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  Après {projectionYears} ans, vous aurez payé… mais rien ne
-                  vous appartiendra.
-                </li>
-                <li className="flex items-start gap-3">
-                  <AlertTriangle className="text-orange-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  La relation reste mensuelle : vous êtes dépendant d'éléments
-                  extérieurs pour votre coût énergétique.
-                </li>
-              </ul>
-
-              <div className="mt-8 h-1.5 bg-orange-900/20 rounded-full overflow-hidden">
-                <div className="h-full bg-orange-500 w-3/4"></div>
-              </div>
-
-              <div className="mt-2 text-[10px] text-orange-400/60 italic">
-                Vous payez, mais rien ne se construit.
-              </div>
-            </div>
-
-            {/* PROPRIÉTAIRE */}
-            <div className="bg-black/40 backdrop-blur-xl border border-blue-600/30 rounded-[24px] p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10 transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-              <div className="absolute top-4 right-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded uppercase shadow-lg">
-                Possibilité d'évolution
-              </div>
-
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-                  <Crown size={28} />
-                </div>
-                <h3 className="text-xl font-black text-white uppercase">
-                  Modèle Producteur (Propriétaire)
-                </h3>
-              </div>
-
-              <p className="text-blue-100 text-sm font-medium mb-6">
-                Vous devenez propriétaire de votre production. Chaque kWh
-                produit vous appartient.
-              </p>
-
-              <ul className="space-y-4 text-sm text-white">
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  Coût stabilisé par autoproduction, visibilité sur le long
-                  terme.
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  Vous créez un patrimoine valorisable (transmission, valeur
-                  énergétique du bien).
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  Moins dépendant des évolutions extérieures — vous sécurisez
-                  une partie de votre énergie.
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
-                  Le financement se fait au fil des économies générées par votre
-                  production.
-                </li>
-              </ul>
-
-              <div className="mt-8 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                <div className="h-full bg-blue-500 w-2/3"></div>
-              </div>
-
-              <div className="mt-2 text-[10px] text-emerald-400 italic font-medium">
-                Vos économies deviennent un actif.
-              </div>
-            </div>
-          </div>
-
-          {/* ✅ BADGE VISUEL NEUTRE (REMPLACE L'ANCIENNE PHRASE) */}
-          <div className="mt-8 flex items-center justify-center">
-            <div className="flex items-center gap-3 bg-slate-900/40 border border-white/5 rounded-xl px-6 py-3">
-              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-              <span className="text-xs text-slate-400 uppercase tracking-wider">
-                Ces deux modèles coexistent — aucun n'est meilleur que l'autre
-              </span>
-            </div>
-          </div>
-
-          {/* 🧠 Coach local — toujours visible pour le conseiller */}
-
-          <div
-            id="coach-block-mod8"
-            className="hidden mt-4 bg-black/60 border border-white/10 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed"
-          >
-            <p>
-              🧠 EDF (neutre) → « Ici on ne parle pas d'un achat, mais d'un
-              modèle de gestion énergétique. »
-            </p>
-            <p>
-              🎯 Question → « Dans votre cas, vous penchez plutôt vers quel
-              modèle ? »
-            </p>
-            <p className="italic text-slate-400">
-              ⏳ Puis → SILENCE 3 secondes.
-            </p>
-          </div>
-        </ModuleSection>
-        <ModuleTransition
-          label="Cadre posé"
-          title="Tout ce qu’on a fait jusque-là sert à une seule chose."
-          subtitle="Être sûr qu’on ne se trompe pas."
-        />
-
-        {/* ============================================
-   MODULE STRUCTURE DU BUDGET MENSUEL
-   ============================================ */}
-        <ModuleSection
-          id="budget"
-          title="Structure du Budget (Mensuel)"
-          icon={<Scale className="text-slate-400" />}
-          defaultOpen={false}
-          onOpen={(id) => {
-            setActiveModule(id);
-          }}
-        >
-          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 md:p-8 transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
-            {/* PHRASE D'INTRODUCTION - RESPONSIVE */}
-            <div className="text-[10px] sm:text-[11px] text-slate-500 italic mb-4 leading-relaxed">
-              On regarde simplement comment votre budget actuel se réorganise —
-              sans nouvelle charge.
-              <br />
-              <span className="text-slate-400">
-                On ne parle pas de payer plus. On parle de rediriger ce qui
-                existe déjà.
-              </span>
-            </div>
-
-            {/* HEADER - RESPONSIVE */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 md:mb-8">
-              <div className="flex items-center gap-3">
-                <Scale className="text-slate-400 w-5 h-5 sm:w-6 sm:h-6" />
-                <h2 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
-                  STRUCTURE DU BUDGET (MENSUEL)
-                </h2>
-              </div>
-              <div className="bg-black/60 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-bold text-slate-400 border border-white/10">
-                Année 1 — Comparatif
-              </div>
-            </div>
-
-            <div className="space-y-8 sm:space-y-10 md:space-y-12">
-              {/* =======================  SITUATION ACTUELLE  ======================= */}
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-xs sm:text-sm font-bold uppercase text-slate-400 mb-4 sm:mb-6">
-                  <span>SITUATION ACTUELLE</span>
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                    {formatMoney(calculationResult.oldMonthlyBillYear1)} /mois
-                  </span>
-                </div>
-
-                {/* Phrase ANTI-PRIX - RESPONSIVE */}
-                <div className="text-[10px] sm:text-[11px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
-                  Concrètement, on ne rajoute rien dans votre budget. On ne paie
-                  rien en plus : on remplace une dépense existante par quelque
-                  chose qui vous reste.
-                </div>
-                <div className="text-[10px] sm:text-[11px] text-slate-500 italic mb-3 leading-relaxed">
-                  Aujourd’hui, chaque mois, cet argent part et disparaît.
-                </div>
-
-                {/* Barre rouge 100% dépenses - RESPONSIVE */}
-                <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
-                  <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-xl sm:rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
-
-                    <div className="absolute inset-0 flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 md:px-8 gap-2 sm:gap-0">
-                      <span className="text-white font-black text-sm sm:text-lg md:text-2xl uppercase tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                        FACTURE ACTUELLE
-                      </span>
-                      <span className="text-white/30 font-black text-xs sm:text-2xl md:text-5xl uppercase tracking-tighter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] text-right">
-                        100% dépenses
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* =======================  INSTALLATION EDF – mise en place  ======================= */}
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4 sm:mb-6">
-                  <span className="text-xs sm:text-sm font-bold uppercase text-slate-400">
-                    INSTALLATION EDF — mise en place
-                  </span>
-
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] uppercase">
-                    {formatMoney(
-                      calculationResult.year1.creditPayment / 12 +
-                        calculationResult.year1.edfResidue / 12
-                    )}{" "}
-                    /mois
-                  </span>
-                </div>
-
-                {/* Phrase neutralisée - RESPONSIVE */}
-                <div className="text-[10px] sm:text-[11px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
-                  Montant fixe — identique à ce que vous validez déjà
-                  aujourd'hui.
-                  <br />
-                  <span className="text-slate-300">
-                    Rien ne s’ajoute. Rien ne s’alourdit.
-                  </span>
-                  <br />
-                  <span className="text-slate-400">
-                    La seule chose qui change, c’est à quoi sert votre argent.
-                  </span>
-                </div>
-
-                {/* Double barre - RESPONSIVE */}
-                <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
-                  {/* FINANCEMENT EDF */}
-                  <div
-                    className="relative bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
-                    style={{
-                      width: `${
-                        (calculationResult.year1.creditPayment /
-                          12 /
-                          (calculationResult.year1.totalWithSolar / 12)) *
-                        100
-                      }%`,
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
-
-                    <div className="absolute inset-0 flex flex-col justify-center px-3 sm:px-4 md:px-6">
-                      <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-0.5 sm:mb-1">
-                        FINANCEMENT EDF
-                      </span>
-                      <span className="text-white font-black text-sm sm:text-lg md:text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] break-words">
-                        {formatMoney(
-                          calculationResult.year1.creditPayment / 12
-                        )}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Séparateur */}
-                  <div className="w-0.5 sm:w-1 bg-black/40"></div>
-
-                  {/* RESTE À CHARGE */}
-                  <div
-                    className="relative bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
-                    style={{
-                      width: `${
-                        (calculationResult.year1.edfResidue /
-                          12 /
-                          (calculationResult.year1.totalWithSolar / 12)) *
-                        100
-                      }%`,
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
-                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
-                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
-
-                    <div className="absolute inset-0 flex flex-col justify-center px-3 sm:px-4 md:px-6">
-                      <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-0.5 sm:mb-1">
-                        RESTE À CHARGE
-                      </span>
-                      <span className="text-slate-300 font-black text-sm sm:text-lg md:text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] break-words">
-                        {formatMoney(calculationResult.year1.edfResidue / 12)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModuleSection>
-
-        {/* ======================================================
-   MODULE 12.5 — IMPACT SUR VOTRE BUDGET MENSUEL (VERSION FINALE)
-   ====================================================== */}
-        <ModuleSection
-          id="impact"
-          title="Impact sur votre budget mensuel"
-          icon={<Wallet className="text-blue-400" />}
-          defaultOpen={false}
-          onOpen={(id) => {
-            setActiveModule(id);
-          }}
-        >
-          <div className="space-y-6">
-            {/* PHRASE D'INTRODUCTION */}
-            <div className="text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
-              Voici comment votre budget mensuel se réorganise la première
-              année.
-              <br />
-              <span className="text-slate-400">
-                On ne parle pas d’un coût, mais d’une phase de transition avant
-                un modèle durablement plus léger.
-              </span>
-            </div>
-
-            {/* 3 CARDS - RESPONSIVE */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {/* CARD 1 - FACTURE ACTUELLE */}
-              <div className="bg-gradient-to-br from-red-950/30 to-black/40 border border-red-500/20 rounded-xl p-4 sm:p-5 relative group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-red-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
-                    <span>Facture actuelle</span>
-                  </div>
-                  {/* INFOBULLE */}
-                  <div className="relative flex-shrink-0">
-                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-red-400" />
-                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-red-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-red-500/30 transform rotate-45"></div>
-                      <div className="relative z-10">
-                        <div className="text-[11px] font-bold text-red-400 mb-2 uppercase">
-                          💸 Facture actuelle
-                        </div>
-                        <p className="text-[10px] text-slate-300 leading-relaxed">
-                          C'est ce que vous payez{" "}
-                          <strong className="text-white">
-                            actuellement chaque mois
-                          </strong>{" "}
-                          à votre fournisseur d'électricité, sans installation
-                          solaire.
-                        </p>
-                        <div className="mt-2 pt-2 border-t border-white/10">
-                          <p className="text-[9px] text-slate-500 italic">
-                            Base de calcul :{" "}
-                            {formatMoney(
-                              calculationResult.lossIfWait1Year || 0
-                            )}{" "}
-                            par an
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-white text-2xl sm:text-3xl font-black break-words">
-                  {formatMoney(monthlyBill)}
-                </div>
-                <div className="text-slate-500 text-[10px] sm:text-xs mt-1">
-                  /mois
-                </div>
-              </div>
-
-              {/* CARD 2 - AVEC INSTALLATION */}
-              <div className="bg-gradient-to-br from-blue-950/30 to-black/40 border border-blue-500/20 rounded-xl p-4 sm:p-5 relative group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-blue-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
-                    <span>Vous payez</span>
-                  </div>
-                  {/* INFOBULLE */}
-                  <div className="relative flex-shrink-0">
-                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400" />
-                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-blue-500/30 transform rotate-45"></div>
-                      <div className="relative z-10">
-                        <div className="text-[11px] font-bold text-blue-400 mb-2 uppercase">
-                          🔵 Avec installation
-                        </div>
-                        <div className="space-y-2 text-[10px] text-slate-300">
-                          <div className="flex justify-between pb-1 border-b border-white/10">
-                            <span>Mensualité crédit</span>
-                            <span className="font-bold text-white">
-                              {formatMoney(
-                                creditMonthlyPayment + insuranceMonthlyPayment
-                              )}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pb-1 border-b border-white/10">
-                            <span>Facture résiduelle</span>
-                            <span className="font-bold text-white">
-                              {formatMoney(residuMensuelM0)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between pt-1 bg-blue-950/30 rounded p-1.5">
-                            <span className="font-bold">Total</span>
-                            <span className="font-black text-blue-400">
-                              {formatMoney(totalMensuel)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="mt-2 pt-2 border-t border-white/10">
-                          <p className="text-[9px] text-slate-500 italic">
-                            Durée crédit :{" "}
-                            {Math.ceil(creditDurationMonths / 12)} ans
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-white text-2xl sm:text-3xl font-black break-words">
-                  {formatMoney(totalMensuel)}
-                </div>
-                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
-                  /mois (crédit + reste facture)
-                </div>
-              </div>
-
-              {/* CARD 3 - DIFFÉRENCE */}
-              <div className="bg-gradient-to-br from-slate-950/30 to-black/40 border border-slate-600/20 rounded-xl p-4 sm:p-5 relative group sm:col-span-2 lg:col-span-1">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
-                    <span>Différence — 1ère année</span>
-                  </div>
-                  <div className="text-[9px] text-slate-500 italic mb-1">
-                    Phase transitoire uniquement
-                  </div>
-
-                  {/* INFOBULLE */}
-                  <div className="relative flex-shrink-0">
-                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-slate-300" />
-                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-slate-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-slate-500/30 transform rotate-45"></div>
-                      <div className="relative z-10">
-                        <div className="text-[11px] font-bold text-slate-300 mb-2 uppercase">
-                          📊 Effort mensuel
-                        </div>
-                        <p className="text-[10px] text-slate-300 leading-relaxed mb-2">
-                          {diffMensuel > 0 ? (
-                            <>
-                              Vous payez{" "}
-                              <strong className="text-orange-400">
-                                {formatMoney(Math.abs(diffMensuel))} de plus
-                              </strong>{" "}
-                              par mois la première année pendant que vous
-                              financez l'installation.
-                            </>
-                          ) : (
-                            <>
-                              Vous payez{" "}
-                              <strong className="text-emerald-400">
-                                {formatMoney(Math.abs(diffMensuel))} de moins
-                              </strong>{" "}
-                              par mois dès la première année !
-                            </>
-                          )}
-                        </p>
-                        <div className="bg-emerald-950/30 rounded-lg p-2">
-                          <p className="text-[9px] text-emerald-300 font-bold mb-1">
-                            ✨ Après remboursement :
-                          </p>
-                          <p className="text-[9px] text-slate-400">
-                            Vous ne payez plus que la facture résiduelle (~
-                            {formatMoney(residuMensuelM0)}/mois), soit une
-                            économie de{" "}
-                            <strong className="text-emerald-400">
-                              {formatMoney(monthlyBill - residuMensuelM0)}/mois
-                            </strong>{" "}
-                            !
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  className={`text-2xl sm:text-3xl font-black break-words ${
-                    diffMensuel > 0 ? "text-orange-400" : "text-emerald-400"
-                  }`}
-                >
-                  {diffMensuel > 0 ? "+" : ""}
-                  {formatMoney(diffMensuel)}
-                </div>
-                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
-                  Puis → économies dès fin crédit
-                </div>
-              </div>
-            </div>
-            <div className="text-[10px] sm:text-[11px] text-slate-400 italic leading-relaxed">
-              La première phase correspond à une période de construction.
-              <br />
-              <span className="text-slate-500">
-                Ensuite, le système est en place : votre budget se libère.
-              </span>
-            </div>
-
-            {/* SLIDER VISUEL - RESPONSIVE */}
-            <div className="bg-black/40 border border-white/10 rounded-xl p-4 sm:p-5">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-[9px] sm:text-[10px] text-slate-500 uppercase mb-3">
-                <span>Alignement avec votre budget actuel</span>
-                <span className="text-white font-bold text-sm sm:text-base">
-                  {((totalMensuel / monthlyBill) * 100).toFixed(0)}%
-                </span>
-              </div>
-              <div className="h-3 sm:h-4 bg-slate-800/40 rounded-full overflow-hidden border border-white/10">
-                <div
-                  className={`h-full transition-all duration-700 ${
-                    totalMensuel / monthlyBill > 1
-                      ? "bg-gradient-to-r from-orange-500 to-orange-600"
-                      : "bg-gradient-to-r from-emerald-500 to-emerald-600"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      (totalMensuel / monthlyBill) * 100,
-                      100
-                    )}%`,
-                  }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-[9px] sm:text-[10px] text-slate-600 mt-2">
-                <span>0%</span>
-                <span className="text-slate-500">Budget actuel</span>
-                <span>150%</span>
-              </div>
-            </div>
-
-            {/* ÉVOLUTION APRÈS CRÉDIT - NOUVEAU BLOC */}
-            <div className="bg-gradient-to-br from-emerald-950/20 to-black/40 border border-emerald-500/20 rounded-xl p-4 sm:p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingDown className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-sm sm:text-base font-bold text-emerald-400 uppercase">
-                  Après remboursement du crédit
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] text-slate-500 mb-1">
-                    Facture mensuelle
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-400">
-                    {formatMoney(residuMensuelM0)}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Seulement le résiduel EDF
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-500 mb-1">
-                    Économie mensuelle
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-white">
-                    {formatMoney(monthlyBill - residuMensuelM0)}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Par rapport à votre facture actuelle
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 text-[10px] text-slate-400 italic leading-relaxed">
-                À ce stade, le financement disparaît.
-                <br />
-                Ce qu’il reste, c’est un système qui travaille pour votre
-                budget.
-              </div>
-            </div>
-
-            {/* LIEN VERS TABLEAU DÉTAILLÉ - RESPONSIVE */}
-            <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
-              Ces montants sont ceux de la 1ère année.
-            </p>
-          </div>
-        </ModuleSection>
-
         {/* ============================================
     MODULE – PREUVE SOCIALE LOCALE (EDF – FINAL)
     ============================================ */}
@@ -5625,342 +4842,335 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
         </ModuleSection>
 
         {/* ============================================
-    MODULE 14 : CALENDRIER DE MISE EN SERVICE
-    Version finale optimale (ta version validée)
-    ============================================ */}
+        MODULE :Locataire VS Propriétaire Énergétique
+        ============================================ */}
         <ModuleSection
-          id="calendrier"
-          title="Calendrier de Mise en Service"
-          icon={<Calendar className="text-blue-400" />}
+          id="locataire-proprietaire"
+          title="Locataire VS Propriétaire Énergétique"
+          icon={<Crown className="text-blue-600" />}
           defaultOpen={false}
           onOpen={(id) => {
             setActiveModule(id);
           }}
         >
-          <div className="bg-black/40 border border-white/10 rounded-[32px] p-4 sm:p-6 md:p-8">
-            {/* HEADER NEUTRE - RESPONSIVE */}
-            <div className="flex items-center gap-3 mb-4 md:mb-6">
-              <div className="p-2 sm:p-3 bg-blue-500/10 rounded-xl">
-                <Calendar className="text-blue-400" size={24} />
-              </div>
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-white">
-                  Impact du Calendrier de Décision
-                </h2>
-                <p className="text-slate-400 text-[10px] sm:text-[11px] mt-1 italic">
-                  Délai standard de mise en service : 8 à 12 semaines
-                </p>
-                <p className="text-[10px] sm:text-xs text-slate-600 mt-1 sm:mt-2 italic">
-                  À partir de cette date, l'installation est opérationnelle.
-                </p>
-              </div>
-            </div>
-
-            {/* CARTES – OPTION 3 : 4 CARDS - RESPONSIVE */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 md:mb-6">
-              {/* Card 1 - Coût énergétique actuel */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Coût énergétique actuel
+          <div className="relative grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* LOCATAIRE */}
+            <div className="bg-black/40 backdrop-blur-xl border border-orange-700/30 rounded-[24px] p-8 relative overflow-hidden transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_30px_rgba(255,152,0,0.15)]">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-[#1a0d05] border border-orange-800/30 flex items-center justify-center text-orange-400">
+                  <Ban size={28} />
                 </div>
-                <div className="text-xl sm:text-2xl font-bold text-white mb-1 break-words">
-                  {formatMoney(calculationResult.lossIfWait1Year || 0)}
-                </div>
-                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
-                  Facture annuelle fournisseur
-                </div>
+                <h3 className="text-xl font-black text-white uppercase">
+                  Modèle Locatif
+                </h3>
               </div>
 
-              {/* Card 2 - Économie disponible année 1 */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6">
-                <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Économie disponible année 1
-                </div>
-                <div className="text-xl sm:text-2xl font-bold text-emerald-400 mb-1 break-words">
-                  {formatMoney(
-                    calculationResult.details?.[0]?.solarSavingsValue || 0
-                  )}
-                </div>
-                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
-                  Bénéfice première année
-                </div>
-              </div>
-
-              {/* Card 3 - Économie BRUTE période AVEC INFOBULLE */}
-              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 relative group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium uppercase tracking-wider flex-1">
-                    Économie brute {projectionYears} ans
-                  </div>
-                  {/* ICÔNE INFO */}
-                  <div className="relative flex-shrink-0">
-                    <Info
-                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-emerald-400"
-                      data-tooltip="economie-brute"
-                    />
-                    {/* INFOBULLE - POSITIONNÉE EN BAS À DROITE */}
-                    <div className="absolute top-full right-0 mt-2 w-[280px] sm:w-[320px] bg-slate-900 border-2 border-emerald-500/30 rounded-xl p-3 sm:p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      {/* Flèche vers le haut */}
-                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-emerald-500/30 transform rotate-45"></div>
-
-                      {/* Contenu */}
-                      <div className="relative z-10">
-                        <div className="text-[11px] sm:text-xs font-bold text-emerald-400 mb-2 sm:mb-3 uppercase tracking-wide">
-                          💡 Économie brute
-                        </div>
-
-                        <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-[11px] text-slate-300">
-                          <p className="leading-relaxed">
-                            C'est la{" "}
-                            <strong className="text-white">
-                              valeur totale de l'électricité produite
-                            </strong>{" "}
-                            par vos panneaux sur {projectionYears} ans.
-                          </p>
-
-                          <div className="bg-emerald-950/30 rounded-lg p-2 sm:p-3">
-                            <div className="flex justify-between items-center mb-1">
-                              <span className="text-slate-400">
-                                Production annuelle
-                              </span>
-                              <span className="font-bold text-emerald-400">
-                                {calculationResult.details?.[0]
-                                  ?.solarSavingsValue
-                                  ? formatMoney(
-                                      calculationResult.details[0]
-                                        .solarSavingsValue
-                                    )
-                                  : "0 €"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-400">
-                                × {projectionYears} ans
-                              </span>
-                              <span className="font-bold text-emerald-400">
-                                ≈{" "}
-                                {formatMoney(
-                                  calculationResult.details
-                                    .slice(0, projectionYears)
-                                    .reduce(
-                                      (sum, d) => sum + d.solarSavingsValue,
-                                      0
-                                    )
-                                )}
-                              </span>
-                            </div>
-                          </div>
-
-                          <p className="text-[9px] sm:text-[10px] text-slate-500 italic leading-relaxed">
-                            Ce montant ne tient pas compte des coûts (crédit,
-                            facture résiduelle). C'est l'énergie{" "}
-                            <strong className="text-slate-300">
-                              que vous ne payez plus
-                            </strong>{" "}
-                            à votre fournisseur.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-xl sm:text-2xl font-bold text-emerald-400 mb-1 break-words">
-                  {formatMoney(
-                    calculationResult.details
-                      .slice(0, projectionYears)
-                      .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                  )}
-                </div>
-                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
-                  Énergie produite totale
-                </div>
-              </div>
-
-              {/* Card 4 - Gain NET période AVEC INFOBULLE */}
-              <div className="bg-slate-900/40 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 relative group">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium uppercase tracking-wider flex-1">
-                    Gain net {projectionYears} ans
-                  </div>
-                  {/* ICÔNE INFO */}
-                  <div className="relative flex-shrink-0">
-                    <Info
-                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400"
-                      data-tooltip="gain-net"
-                    />
-                    {/* INFOBULLE - POSITIONNÉE EN BAS À GAUCHE (pour éviter de sortir) */}
-                    <div className="absolute top-full left-auto right-0 mt-2 w-[280px] sm:w-[320px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-3 sm:p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                      {/* Flèche vers le haut */}
-                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-blue-500/30 transform rotate-45"></div>
-
-                      {/* Contenu */}
-                      <div className="relative z-10">
-                        <div className="text-[11px] sm:text-xs font-bold text-blue-400 mb-2 sm:mb-3 uppercase tracking-wide">
-                          📊 Détail du calcul
-                        </div>
-
-                        <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-[11px] text-slate-300">
-                          {/* Économie brute */}
-                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                            <span className="text-slate-400">
-                              Économie brute totale
-                            </span>
-                            <span className="font-bold text-emerald-400 text-right">
-                              {formatMoney(
-                                calculationResult.details
-                                  .slice(0, projectionYears)
-                                  .reduce(
-                                    (sum, d) => sum + d.solarSavingsValue,
-                                    0
-                                  )
-                              )}
-                            </span>
-                          </div>
-
-                          {/* Coût du crédit */}
-                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                            <span className="text-slate-400">
-                              Coût du crédit
-                            </span>
-                            <span className="font-bold text-red-400 text-right">
-                              -
-                              {formatMoney(
-                                calculationResult.details
-                                  .slice(0, projectionYears)
-                                  .reduce((sum, d) => sum + d.creditPayment, 0)
-                              )}
-                            </span>
-                          </div>
-
-                          {/* Facture résiduelle */}
-                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
-                            <span className="text-slate-400">
-                              Facture résiduelle EDF
-                            </span>
-                            <span className="font-bold text-orange-400 text-right">
-                              -
-                              {formatMoney(
-                                calculationResult.details
-                                  .slice(0, projectionYears)
-                                  .reduce((sum, d) => sum + d.edfResidue, 0)
-                              )}
-                            </span>
-                          </div>
-
-                          {/* Résultat net */}
-                          <div className="flex justify-between items-start pt-2 bg-blue-950/30 rounded-lg p-2">
-                            <span className="font-bold text-white">
-                              Gain net
-                            </span>
-                            <span className="font-black text-blue-400 text-sm sm:text-base">
-                              {formatMoney(
-                                calculationResult.totalSavingsProjected || 0
-                              )}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Note explicative */}
-                        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/10">
-                          <p className="text-[9px] sm:text-[10px] text-slate-500 italic leading-relaxed">
-                            Le gain net représente ce qu'il vous reste{" "}
-                            <strong className="text-slate-300">
-                              après avoir payé le crédit et la facture
-                              résiduelle
-                            </strong>
-                            , par rapport à ne rien faire.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-xl sm:text-2xl font-bold text-blue-400 mb-1 break-words">
-                  {formatMoney(calculationResult.totalSavingsProjected || 0)}
-                </div>
-                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
-                  Après remboursement crédit
-                </div>
-              </div>
-            </div>
-
-            {/* MESSAGE FACTUEL - RESPONSIVE */}
-            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-3 sm:p-4 rounded-xl mb-4 md:mb-6">
-              <p className="text-slate-300 text-[10px] sm:text-[11px] leading-relaxed italic">
-                Le délai de mise en service standard est de 8 à 12 semaines.
-                <br />
-                <span className="text-slate-200">
-                  Tout est prêt techniquement. La seule variable, c’est la date
-                  de départ.
-                </span>
+              <p className="text-orange-200 text-sm font-medium mb-6">
+                Vous payez chaque mois pour consommer. C'est un modèle d'usage.
               </p>
 
-              <p className="text-slate-300 text-[10px] sm:text-[11px] leading-relaxed italic mt-2">
-                Chaque trimestre décalé déplace simplement le moment où vous
-                commencez à économiser.
-              </p>
+              <ul className="space-y-4 text-sm text-slate-200">
+                <li className="flex items-start gap-3">
+                  <AlertTriangle className="text-orange-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  Le tarif suit les évolutions du marché et des décisions
+                  publiques — vous ne maîtrisez pas l'avenir de votre facture.
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle className="text-orange-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  Après {projectionYears} ans, vous aurez payé… mais rien ne
+                  vous appartiendra.
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertTriangle className="text-orange-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  La relation reste mensuelle : vous êtes dépendant d'éléments
+                  extérieurs pour votre coût énergétique.
+                </li>
+              </ul>
 
-              <p className="text-slate-400 text-[10px] sm:text-[11px] italic mt-2">
-                La question n’est pas « faut-il le faire », mais « quand
-                commence l’économie ».
-              </p>
-            </div>
-
-            {/* VISUALISATION TEMPORELLE - RESPONSIVE */}
-            <div className="p-3 sm:p-5 bg-black/30 rounded-xl border border-white/5">
-              <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-slate-400 mb-3 sm:mb-4 uppercase tracking-wider">
-                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                Impact du calendrier sur le début des économies :
+              <div className="mt-8 h-1.5 bg-orange-900/20 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-500 w-3/4"></div>
               </div>
-              <div className="grid grid-cols-3 gap-2 sm:gap-4">
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
-                    {formatMoney(
-                      calculationResult.details
-                        .slice(0, 1)
-                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
-                    Économie année 1
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
-                    {formatMoney(
-                      calculationResult.details
-                        .slice(0, 3)
-                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
-                    Cumul 3 ans
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
-                    {formatMoney(
-                      calculationResult.details
-                        .slice(0, 5)
-                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
-                    Cumul 5 ans
-                  </div>
-                </div>
+
+              <div className="mt-2 text-[14px] text-orange-400/60 italic">
+                Vous payez pour l'usage, sans capitaliser.
               </div>
             </div>
 
-            {/* PHRASE FINALE – RESPONSIVE */}
-            <p className="text-[9px] sm:text-[10px] text-slate-500 italic mt-4 sm:mt-6 text-center">
-              C'est juste du calendrier. La décision vous appartient.
+            {/* PROPRIÉTAIRE */}
+            <div className="bg-black/40 backdrop-blur-xl border border-blue-600/30 rounded-[24px] p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10 transition-all duration-300 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(37,99,235,0.3)]">
+              <div className="absolute top-4 right-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded uppercase shadow-lg">
+                Possibilité d'évolution
+              </div>
+
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                  <Crown size={28} />
+                </div>
+                <h3 className="text-xl font-black text-white uppercase">
+                  Modèle Producteur (Propriétaire)
+                </h3>
+              </div>
+
+              <p className="text-blue-100 text-sm font-medium mb-6">
+                Vous devenez propriétaire de votre production. Chaque kWh
+                produit vous appartient.
+              </p>
+
+              <ul className="space-y-4 text-sm text-white">
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  Coût stabilisé par autoproduction, visibilité sur le long
+                  terme.
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  Vous créez un patrimoine valorisable (transmission, valeur
+                  énergétique du bien).
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  Moins dépendant des évolutions extérieures — vous sécurisez
+                  une partie de votre énergie.
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle2 className="text-emerald-400 w-4 h-4 mt-0.5 flex-shrink-0" />
+                  Le financement se fait au fil des économies générées par votre
+                  production.
+                </li>
+              </ul>
+
+              <div className="mt-8 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div className="h-full bg-blue-500 w-2/3"></div>
+              </div>
+
+              <div className="mt-2 text-[14px] text-emerald-400 italic font-medium">
+                Vos économies deviennent un actif.
+              </div>
+            </div>
+          </div>
+
+          {/* ✅ BADGE VISUEL NEUTRE (REMPLACE L'ANCIENNE PHRASE) */}
+          <div className="mt-8 flex items-center justify-center">
+            <div className="flex items-center gap-3 bg-slate-900/40 border border-white/5 rounded-xl px-6 py-3">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-xs text-slate-400 uppercase tracking-wider">
+                Ces deux modèles sont légitimes. La question est : lequel
+                correspond à votre situation ?
+              </span>
+            </div>
+          </div>
+
+          {/* 🧠 Coach local — toujours visible pour le conseiller */}
+
+          <div
+            id="coach-block-mod8"
+            className="hidden mt-4 bg-black/60 border border-white/10 rounded-lg p-3 text-[11px] text-slate-300 leading-relaxed"
+          >
+            <p>
+              🧠 EDF (neutre) → « Ici on ne parle pas d'un achat, mais d'un
+              modèle de gestion énergétique. »
+            </p>
+            <p>
+              🎯 Question → « Dans votre cas, vous penchez plutôt vers quel
+              modèle ? »
+            </p>
+            <p className="italic text-slate-400">
+              ⏳ Puis → SILENCE 3 secondes.
             </p>
           </div>
         </ModuleSection>
+        {/* ============================================
+   MODULE : ORIGINE DE L’ÉLECTRICITÉ
+   Version EDF — compatible moteur — closing
+   ============================================ */}
 
+        <ModuleSection
+          id="repartition"
+          title="Origine de l’électricité de votre maison"
+          icon={<Zap className="text-blue-400" />}
+          defaultOpen={false}
+        >
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-6 sm:p-8 space-y-10">
+            {/* INTRO */}
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
+                Fonctionnement énergétique après installation
+              </h2>
+              <p className="text-slate-400 text-sm leading-relaxed max-w-3xl">
+                Ce module montre concrètement comment se répartit l’électricité
+                consommée par votre maison une fois l’installation en service.
+              </p>
+            </div>
+
+            {/* TAUX DE COUVERTURE */}
+            <div className="bg-[#050505] border border-white/10 rounded-3xl p-6 sm:p-8 text-center">
+              <p className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+                Taux de couverture énergétique
+              </p>
+
+              <div className="text-6xl sm:text-7xl font-black text-white tracking-tighter">
+                {calculationResult.savingsRatePercent.toFixed(0)} %
+              </div>
+
+              <p className="text-slate-300 mt-2 text-sm">
+                de votre consommation électrique est produite directement par
+                votre maison.
+              </p>
+
+              <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden mt-5">
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-700"
+                  style={{ width: `${calculationResult.savingsRatePercent}%` }}
+                />
+              </div>
+            </div>
+
+            {/* STRUCTURE DES FLUX */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* CONSOMMATION */}
+              <div className="bg-black/60 border border-white/10 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                  Consommation actuelle
+                </p>
+                <p className="text-3xl font-black text-white">
+                  {formatNum(calculationResult.baseConsumptionKwh)} kWh/an
+                </p>
+                {/* BARRE CONSOMMATION ACTUELLE */}
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-500"
+                      style={{ width: "100%" }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    Référence 100% — votre dépendance actuelle au réseau
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Ce que vous achetez au réseau chaque année aujourd'hui.
+                </p>
+
+                <div className="mt-3 pt-3 border-t border-white/5 text-slate-300 text-sm">
+                  {formatMoney(calculationResult.lossIfWait1Year)} / an
+                </div>
+              </div>
+
+              {/* AUTOCONSOMMATION */}
+              <div className="bg-black/60 border border-emerald-500/20 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                  Production Solaire
+                </p>
+                <p className="text-3xl font-black text-emerald-400">
+                  {formatNum(
+                    calculationResult.savingsLostIfWait1Year / electricityPrice
+                  )}{" "}
+                  kWh/an
+                </p>
+                {/* BARRE AUTOCONSOMMATION */}
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-emerald-500 transition-all duration-700"
+                      style={{
+                        width: `${calculationResult.savingsRatePercent}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    {calculationResult.savingsRatePercent.toFixed(0)}% de votre
+                    consommation couverte
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Ce que vous produisez et consommez directement.
+                </p>
+                <div className="mt-3 pt-3 border-t border-white/5 text-emerald-400 text-sm font-bold">
+                  ≈ {formatMoney(calculationResult.savingsLostIfWait1Year)} / an
+                  économisés
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Électricité que vous ne payez plus
+                </p>
+              </div>
+
+              {/* SURPLUS */}
+              <div className="bg-black/60 border border-blue-500/20 rounded-2xl p-5">
+                <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+                  Surplus injecté réseau
+                </p>
+
+                <p className="text-3xl font-black text-blue-400">
+                  {formatNum(
+                    calculationResult.surplusRevenuePerYear / buybackRate
+                  )}{" "}
+                  kWh/an
+                </p>
+                {/* BARRE SURPLUS */}
+                <div className="mt-4">
+                  <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-700"
+                      style={{
+                        width: `${100 - calculationResult.savingsRatePercent}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-1 italic">
+                    Part de la production automatiquement valorisée par EDF
+                  </p>
+                </div>
+
+                <p className="text-slate-500 text-xs mt-1">
+                  Non consommé, vendu automatiquement. <br></br>Contrat
+                  d'Obligation d'Achat 20 ans — cadre légal. <br></br>Tarif
+                  réglementé : 0.04€/kWh
+                </p>
+
+                <div className="mt-3 pt-3 border-t border-white/5 text-blue-400 text-sm font-bold">
+                  ≈ {formatMoney(calculationResult.surplusRevenuePerYear)} / an
+                </div>
+              </div>
+            </div>
+
+            {/* BLOC EDF */}
+            <div className="bg-blue-950/20 border-l-4 border-blue-500 rounded-xl p-5">
+              <p className="text-slate-200 text-sm leading-relaxed">
+                <strong className="text-white">Fonctionnement réseau :</strong>
+                <br />
+                L’électricité produite est consommée automatiquement dans votre
+                maison. Le surplus est injecté et racheté par EDF dans le cadre
+                du contrat d’Obligation d’Achat (État, 20 ans). Lorsque la
+                production est insuffisante, le réseau prend le relais
+                instantanément.
+                <br />
+                <br />
+                <span className="text-blue-300 font-semibold">
+                  Aucun réglage. Aucun pilotage. Continuité de service garantie.
+                </span>
+              </p>
+            </div>
+
+            {/* CLOSING */}
+            <div className="text-center pt-2">
+              <p className="text-slate-400 italic text-sm">
+                Vos habitudes ne changent pas.
+              </p>
+              <p className="text-white font-bold italic text-lg">
+                Seule l’origine de votre électricité change.
+              </p>
+            </div>
+          </div>
+        </ModuleSection>
+
+        <ModuleTransition
+          label="Cadre posé"
+          title="Tout ce qu’on a fait jusque-là sert à une seule chose."
+          subtitle="Être sûr qu’on ne se trompe pas."
+        />
         {/* ============================================
         MODULE : Synthèse d'Arbitrage Énergétique
         VERSION CORRIGÉE - RÉORGANISATION MODULES BAS
@@ -5991,7 +5201,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
 
                 {/* ✅ TITRE + GROS CHIFFRE PRINCIPAL */}
                 <h3 className="text-2xl font-black uppercase italic text-white tracking-tighter">
-                  Écart Économique Cumulé
+                  Résultat économique entre les deux trajectoires
                 </h3>
                 <div
                   className="text-5xl font-black text-white mb-8 italic tracking-tighter"
@@ -6100,11 +5310,11 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
                   <div className="bg-blue-950/10 border-l-4 border-blue-500 p-4 rounded-r-xl">
                     <p className="text-[14px] text-blue-200/90 leading-relaxed italic uppercase font-medium">
                       <span className="text-blue-400 font-black">
-                        ✓ RÉORGANISATION BUDGÉTAIRE PROGRESSIVE
+                        ✓ TRANSITION MAÎTRISÉE
                       </span>{" "}
-                      VOTRE BUDGET MENSUEL RESTE ÉQUILIBRÉ. APRÈS REMBOURSEMENT
-                      DU FINANCEMENT, les économies deviennent structurelles.
-                      PERMANENTES ET MASSIVES.
+                      VOTRE BUDGET MENSUEL RESTE STABLE ET ÉQUILIBRÉ. <br />
+                      APRÈS REMBOURSEMENT DU FINANCEMENT, les économies
+                      deviennent structurelles, PERMANENTES ET MASSIVES.
                     </p>
                   </div>
                 </div>
@@ -6608,6 +5818,950 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}`
                 </div>
               </div>
             )}
+          </div>
+        </ModuleSection>
+
+        {/* ============================================
+   MODULE STRUCTURE DU BUDGET MENSUEL
+   ============================================ */}
+        <ModuleSection
+          id="budget"
+          title="Structure du Budget (Mensuel)"
+          icon={<Scale className="text-slate-400" />}
+          defaultOpen={false}
+          onOpen={(id) => {
+            setActiveModule(id);
+          }}
+        >
+          <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[24px] sm:rounded-[32px] p-4 sm:p-6 md:p-8 transition-all duration-300 hover:border-blue-500/30 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+            {/* PHRASE D'INTRODUCTION - RESPONSIVE */}
+            <div className="text-[10px] sm:text-[11px] text-slate-500 italic mb-4 leading-relaxed">
+              On regarde simplement comment votre budget actuel se réorganise —
+              sans nouvelle charge.
+              <br />
+              <span className="text-slate-400">
+                On ne parle pas de payer plus. On parle de rediriger ce qui
+                existe déjà.
+              </span>
+            </div>
+
+            {/* HEADER - RESPONSIVE */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-6 md:mb-8">
+              <div className="flex items-center gap-3">
+                <Scale className="text-slate-400 w-5 h-5 sm:w-6 sm:h-6" />
+                <h2 className="text-base sm:text-lg md:text-xl font-black text-white uppercase tracking-tight">
+                  STRUCTURE DU BUDGET (MENSUEL)
+                </h2>
+              </div>
+              <div className="bg-black/60 backdrop-blur-md px-3 sm:px-4 py-1 sm:py-1.5 rounded text-[10px] sm:text-xs font-bold text-slate-400 border border-white/10">
+                Année 1 — Comparatif
+              </div>
+            </div>
+
+            <div className="space-y-8 sm:space-y-10 md:space-y-12">
+              {/* =======================  SITUATION ACTUELLE  ======================= */}
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-xs sm:text-sm font-bold uppercase text-slate-400 mb-4 sm:mb-6">
+                  <span>SITUATION ACTUELLE</span>
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
+                    {formatMoney(calculationResult.oldMonthlyBillYear1)} /mois
+                  </span>
+                </div>
+
+                <div className="text-[10px] sm:text-[11px] text-slate-500 italic mb-3 leading-relaxed">
+                  Aujourd’hui, cette somme est entièrement consommée sans
+                  création de valeur durable.
+                </div>
+
+                {/* Barre rouge 100% dépenses - RESPONSIVE */}
+                <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-red-900/40 overflow-hidden shadow-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-b from-red-500 via-red-600 to-red-700 rounded-xl sm:rounded-2xl shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)]">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/20 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                    <div className="absolute inset-0 flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 md:px-8 gap-2 sm:gap-0">
+                      <span className="text-white font-black text-sm sm:text-lg md:text-2xl uppercase tracking-wider drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
+                        FACTURE ACTUELLE
+                      </span>
+                      <span className="text-white/30 font-black text-xs sm:text-2xl md:text-5xl uppercase tracking-tighter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] text-right">
+                        100% dépenses
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* =======================  INSTALLATION EDF – mise en place  ======================= */}
+              <div>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 mb-4 sm:mb-6">
+                  <span className="text-xs sm:text-sm font-bold uppercase text-slate-400">
+                    STRUCTURE du budget APRÈS MISE EN SERVICE
+                  </span>
+
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)] uppercase">
+                    {formatMoney(
+                      calculationResult.year1.creditPayment / 12 +
+                        calculationResult.year1.edfResidue / 12
+                    )}{" "}
+                    /mois
+                  </span>
+                </div>
+                {/* Phrase ANTI-PRIX - RESPONSIVE */}
+                <div className="text-[10px] sm:text-[11px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
+                  Concrètement, on ne rajoute rien dans votre budget. On ne paie
+                  rien en plus : on remplace une dépense existante par un flux
+                  qui a une utilité durable.
+                </div>
+
+                {/* Phrase neutralisée - RESPONSIVE */}
+                <div className="text-[10px] sm:text-[11px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
+                  <span className="text-slate-300">
+                    Rien ne s’ajoute. Rien ne s’alourdit.
+                  </span>
+                  <br />
+                </div>
+
+                {/* Double barre - RESPONSIVE */}
+                <div className="relative h-20 sm:h-24 md:h-28 bg-gradient-to-b from-black/80 to-black/40 rounded-xl sm:rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
+                  {/* FINANCEMENT EDF */}
+                  <div
+                    className="relative bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
+                    style={{
+                      width: `${
+                        (calculationResult.year1.creditPayment /
+                          12 /
+                          (calculationResult.year1.totalWithSolar / 12)) *
+                        100
+                      }%`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
+                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                    <div className="absolute inset-0 flex flex-col justify-center px-3 sm:px-4 md:px-6">
+                      <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-0.5 sm:mb-1">
+                        FINANCEMENT EDF
+                      </span>
+                      <span className="text-white font-black text-sm sm:text-lg md:text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] break-words">
+                        {formatMoney(
+                          calculationResult.year1.creditPayment / 12
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Séparateur */}
+                  <div className="w-0.5 sm:w-1 bg-black/40"></div>
+
+                  {/* RESTE À CHARGE */}
+                  <div
+                    className="relative bg-gradient-to-b from-slate-600 via-slate-700 to-slate-800 shadow-[inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_4px_8px_rgba(255,255,255,0.1)] transition-all duration-500"
+                    style={{
+                      width: `${
+                        (calculationResult.year1.edfResidue /
+                          12 /
+                          (calculationResult.year1.totalWithSolar / 12)) *
+                        100
+                      }%`,
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
+                    <div className="absolute top-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-b from-white/10 to-transparent"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-6 sm:h-8 bg-gradient-to-t from-black/40 to-transparent"></div>
+
+                    <div className="absolute inset-0 flex flex-col justify-center px-3 sm:px-4 md:px-6">
+                      <span className="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider mb-0.5 sm:mb-1">
+                        RESTE À CHARGE
+                      </span>
+                      <span className="text-slate-300 font-black text-sm sm:text-lg md:text-2xl drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)] break-words">
+                        {formatMoney(calculationResult.year1.edfResidue / 12)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                {/* Phrase neutralisée - RESPONSIVE */}
+                <br></br>
+                <div className="text-[14px] sm:text-[14px] text-slate-400 italic mb-3 sm:mb-4 leading-relaxed">
+                  Le montant global reste équivalent. Ce qui change, c’est la
+                  destination et l’utilité de cette somme.”
+                </div>
+              </div>
+            </div>
+          </div>
+        </ModuleSection>
+
+        {/* ======================================================
+   MODULE 12.5 — IMPACT SUR VOTRE BUDGET MENSUEL (VERSION FINALE)
+   ====================================================== */}
+        <ModuleSection
+          id="impact"
+          title="Impact sur votre budget mensuel"
+          icon={<Wallet className="text-blue-400" />}
+          defaultOpen={false}
+          onOpen={(id) => {
+            setActiveModule(id);
+          }}
+        >
+          <div className="space-y-6">
+            {/* PHRASE D'INTRODUCTION */}
+            <div className="text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
+              Voici comment votre budget mensuel se réorganise la première
+              année.
+              <br />
+              <span className="text-slate-400">
+                On ne parle pas d’un coût, mais d’une phase de transition avant
+                un modèle durablement plus léger.
+              </span>
+            </div>
+
+            {/* 3 CARDS - RESPONSIVE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {/* CARD 1 - FACTURE ACTUELLE */}
+              <div className="bg-gradient-to-br from-red-950/30 to-black/40 border border-red-500/20 rounded-xl p-4 sm:p-5 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-red-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
+                    <span>Facture actuelle</span>
+                  </div>
+                  {/* INFOBULLE */}
+                  <div className="relative flex-shrink-0">
+                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-red-400" />
+                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-red-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-red-500/30 transform rotate-45"></div>
+                      <div className="relative z-10">
+                        <div className="text-[11px] font-bold text-red-400 mb-2 uppercase">
+                          💸 Facture actuelle
+                        </div>
+                        <p className="text-[10px] text-slate-300 leading-relaxed">
+                          C'est ce que vous payez{" "}
+                          <strong className="text-white">
+                            actuellement chaque mois
+                          </strong>{" "}
+                          à votre fournisseur d'électricité, sans installation
+                          solaire.
+                        </p>
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-[9px] text-slate-500 italic">
+                            Base de calcul :{" "}
+                            {formatMoney(
+                              calculationResult.lossIfWait1Year || 0
+                            )}{" "}
+                            par an
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-white text-2xl sm:text-3xl font-black break-words">
+                  {formatMoney(monthlyBill)}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1">
+                  /mois
+                </div>
+              </div>
+
+              {/* CARD 2 - AVEC INSTALLATION */}
+              <div className="bg-gradient-to-br from-blue-950/30 to-black/40 border border-blue-500/20 rounded-xl p-4 sm:p-5 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-blue-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
+                    <span>Vous payez</span>
+                  </div>
+                  {/* INFOBULLE */}
+                  <div className="relative flex-shrink-0">
+                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400" />
+                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-blue-500/30 transform rotate-45"></div>
+                      <div className="relative z-10">
+                        <div className="text-[11px] font-bold text-blue-400 mb-2 uppercase">
+                          🔵 Avec installation
+                        </div>
+                        <div className="space-y-2 text-[10px] text-slate-300">
+                          <div className="flex justify-between pb-1 border-b border-white/10">
+                            <span>Mensualité crédit</span>
+                            <span className="font-bold text-white">
+                              {formatMoney(
+                                creditMonthlyPayment + insuranceMonthlyPayment
+                              )}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pb-1 border-b border-white/10">
+                            <span>Facture résiduelle</span>
+                            <span className="font-bold text-white">
+                              {formatMoney(residuMensuelM0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 bg-blue-950/30 rounded p-1.5">
+                            <span className="font-bold">Total</span>
+                            <span className="font-black text-blue-400">
+                              {formatMoney(totalMensuel)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-white/10">
+                          <p className="text-[9px] text-slate-500 italic">
+                            Durée crédit :{" "}
+                            {Math.ceil(creditDurationMonths / 12)} ans
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-white text-2xl sm:text-3xl font-black break-words">
+                  {formatMoney(totalMensuel)}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
+                  /mois (crédit + reste facture)
+                </div>
+              </div>
+
+              {/* CARD 3 - DIFFÉRENCE */}
+              <div className="bg-gradient-to-br from-slate-950/30 to-black/40 border border-slate-600/20 rounded-xl p-4 sm:p-5 relative group sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
+                    <span>Différence — 1ère année</span>
+                  </div>
+                  <div className="text-[9px] text-slate-500 italic mb-1">
+                    Phase transitoire uniquement
+                  </div>
+
+                  {/* INFOBULLE */}
+                  <div className="relative flex-shrink-0">
+                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 cursor-help transition-colors hover:text-slate-300" />
+                    <div className="absolute top-full right-0 mt-2 w-[260px] sm:w-[280px] bg-slate-900 border-2 border-slate-500/30 rounded-xl p-3 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-slate-500/30 transform rotate-45"></div>
+                      <div className="relative z-10">
+                        <div className="text-[11px] font-bold text-slate-300 mb-2 uppercase">
+                          📊 Effort mensuel
+                        </div>
+                        <p className="text-[10px] text-slate-300 leading-relaxed mb-2">
+                          {diffMensuel > 0 ? (
+                            <>
+                              Vous payez{" "}
+                              <strong className="text-orange-400">
+                                {formatMoney(Math.abs(diffMensuel))} de plus
+                              </strong>{" "}
+                              par mois la première année pendant que vous
+                              financez l'installation.
+                            </>
+                          ) : (
+                            <>
+                              Vous payez{" "}
+                              <strong className="text-emerald-400">
+                                {formatMoney(Math.abs(diffMensuel))} de moins
+                              </strong>{" "}
+                              par mois dès la première année !
+                            </>
+                          )}
+                        </p>
+                        <div className="bg-emerald-950/30 rounded-lg p-2">
+                          <p className="text-[9px] text-emerald-300 font-bold mb-1">
+                            ✨ Après remboursement :
+                          </p>
+                          <p className="text-[9px] text-slate-400">
+                            Vous ne payez plus que la facture résiduelle (~
+                            {formatMoney(residuMensuelM0)}/mois), soit une
+                            économie de{" "}
+                            <strong className="text-emerald-400">
+                              {formatMoney(monthlyBill - residuMensuelM0)}/mois
+                            </strong>{" "}
+                            !
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  className={`text-2xl sm:text-3xl font-black break-words ${
+                    diffMensuel > 0 ? "text-orange-400" : "text-emerald-400"
+                  }`}
+                >
+                  {diffMensuel > 0 ? "+" : ""}
+                  {formatMoney(diffMensuel)}
+                </div>
+                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
+                  Puis → économies dès fin crédit
+                </div>
+              </div>
+            </div>
+            <div className="text-[10px] sm:text-[11px] text-slate-400 italic leading-relaxed">
+              La première phase correspond à une période de construction.
+              <br />
+              <span className="text-slate-500">
+                Ensuite, le système est en place : votre budget se libère.
+              </span>
+            </div>
+
+            {/* SLIDER VISUEL - RESPONSIVE */}
+            <div className="bg-black/40 border border-white/10 rounded-xl p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-[9px] sm:text-[10px] text-slate-500 uppercase mb-3">
+                <span>Alignement avec votre budget actuel</span>
+                <span className="text-white font-bold text-sm sm:text-base">
+                  {((totalMensuel / monthlyBill) * 100).toFixed(0)}%
+                </span>
+              </div>
+              <div className="h-3 sm:h-4 bg-slate-800/40 rounded-full overflow-hidden border border-white/10">
+                <div
+                  className={`h-full transition-all duration-700 ${
+                    totalMensuel / monthlyBill > 1
+                      ? "bg-gradient-to-r from-orange-500 to-orange-600"
+                      : "bg-gradient-to-r from-emerald-500 to-emerald-600"
+                  }`}
+                  style={{
+                    width: `${Math.min(
+                      (totalMensuel / monthlyBill) * 100,
+                      100
+                    )}%`,
+                  }}
+                ></div>
+              </div>
+              <div className="flex justify-between text-[9px] sm:text-[10px] text-slate-600 mt-2">
+                <span>0%</span>
+                <span className="text-slate-500">Budget actuel</span>
+                <span>150%</span>
+              </div>
+            </div>
+
+            {/* ÉVOLUTION APRÈS CRÉDIT - NOUVEAU BLOC */}
+            <div className="bg-gradient-to-br from-emerald-950/20 to-black/40 border border-emerald-500/20 rounded-xl p-4 sm:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <TrendingDown className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-sm sm:text-base font-bold text-emerald-400 uppercase">
+                  Après remboursement du crédit
+                </h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    Facture mensuelle
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-400">
+                    {formatMoney(residuMensuelM0)}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Seulement le résiduel EDF
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-slate-500 mb-1">
+                    Économie mensuelle
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-black text-white">
+                    {formatMoney(monthlyBill - residuMensuelM0)}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    Par rapport à votre facture actuelle
+                  </div>
+                </div>
+              </div>
+              <div className="mt-3 text-[10px] text-slate-400 italic leading-relaxed">
+                À ce stade, le financement disparaît.
+                <br />
+                Ce qu’il reste, c’est un système qui travaille pour votre
+                budget.
+              </div>
+            </div>
+
+            {/* LIEN VERS TABLEAU DÉTAILLÉ - RESPONSIVE */}
+            <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
+              Ces montants sont ceux de la 1ère année.
+            </p>
+          </div>
+        </ModuleSection>
+
+        {/* ============================================
+    MODULE 14 : CALENDRIER DE MISE EN SERVICE
+    Version finale optimale (ta version validée)
+    ============================================ */}
+        <ModuleSection
+          id="calendrier"
+          title="Calendrier de Mise en Service"
+          icon={<Calendar className="text-blue-400" />}
+          defaultOpen={false}
+          onOpen={(id) => {
+            setActiveModule(id);
+          }}
+        >
+          <div className="bg-black/40 border border-white/10 rounded-[32px] p-4 sm:p-6 md:p-8">
+            {/* HEADER NEUTRE - RESPONSIVE */}
+            <div className="flex items-center gap-3 mb-4 md:mb-6">
+              <div className="p-2 sm:p-3 bg-blue-500/10 rounded-xl">
+                <Calendar className="text-blue-400" size={24} />
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  Délai de mise en route — Installation sous 6-8 semaines
+                </h2>
+
+                <p className="text-[14px] sm:text-xs text-slate-600 mt-1 sm:mt-2 italic">
+                  À partir de cette date, l'installation est opérationnelle.
+                </p>
+              </div>
+            </div>
+
+            {/* CARTES – OPTION 3 : 4 CARDS - RESPONSIVE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 md:mb-6">
+              {/* Card 1 - Coût énergétique actuel */}
+              <div className="bg-slate-900/40 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Coût énergétique actuel
+                </div>
+                <div className="text-xl sm:text-2xl font-bold text-white mb-1 break-words">
+                  {formatMoney(calculationResult.lossIfWait1Year || 0)}
+                </div>
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
+                  Facture annuelle fournisseur
+                </div>
+              </div>
+
+              {/* Card 2 - Économie disponible année 1 */}
+              <div className="bg-slate-900/40 border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6">
+                <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium mb-2 uppercase tracking-wider">
+                  Économie disponible année 1
+                </div>
+                <div className="text-xl sm:text-2xl font-bold text-emerald-400 mb-1 break-words">
+                  {formatMoney(
+                    calculationResult.details?.[0]?.solarSavingsValue || 0
+                  )}
+                </div>
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
+                  Bénéfice première année
+                </div>
+              </div>
+
+              {/* Card 3 - Économie BRUTE période AVEC INFOBULLE */}
+              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium uppercase tracking-wider flex-1">
+                    Économie brute {projectionYears} ans
+                  </div>
+                  {/* ICÔNE INFO */}
+                  <div className="relative flex-shrink-0">
+                    <Info
+                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-emerald-400"
+                      data-tooltip="economie-brute"
+                    />
+                    {/* INFOBULLE - POSITIONNÉE EN BAS À DROITE */}
+                    <div className="absolute top-full right-0 mt-2 w-[280px] sm:w-[320px] bg-slate-900 border-2 border-emerald-500/30 rounded-xl p-3 sm:p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      {/* Flèche vers le haut */}
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-emerald-500/30 transform rotate-45"></div>
+
+                      {/* Contenu */}
+                      <div className="relative z-10">
+                        <div className="text-[11px] sm:text-xs font-bold text-emerald-400 mb-2 sm:mb-3 uppercase tracking-wide">
+                          💡 Économie brute
+                        </div>
+
+                        <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-[11px] text-slate-300">
+                          <p className="leading-relaxed">
+                            C'est la{" "}
+                            <strong className="text-white">
+                              valeur totale de l'électricité produite
+                            </strong>{" "}
+                            par vos panneaux sur {projectionYears} ans.
+                          </p>
+
+                          <div className="bg-emerald-950/30 rounded-lg p-2 sm:p-3">
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-slate-400">
+                                Production annuelle
+                              </span>
+                              <span className="font-bold text-emerald-400">
+                                {calculationResult.details?.[0]
+                                  ?.solarSavingsValue
+                                  ? formatMoney(
+                                      calculationResult.details[0]
+                                        .solarSavingsValue
+                                    )
+                                  : "0 €"}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-slate-400">
+                                × {projectionYears} ans
+                              </span>
+                              <span className="font-bold text-emerald-400">
+                                ≈{" "}
+                                {formatMoney(
+                                  calculationResult.details
+                                    .slice(0, projectionYears)
+                                    .reduce(
+                                      (sum, d) => sum + d.solarSavingsValue,
+                                      0
+                                    )
+                                )}
+                              </span>
+                            </div>
+                          </div>
+
+                          <p className="text-[9px] sm:text-[10px] text-slate-500 italic leading-relaxed">
+                            Ce montant ne tient pas compte des coûts (crédit,
+                            facture résiduelle). C'est l'énergie{" "}
+                            <strong className="text-slate-300">
+                              que vous ne payez plus
+                            </strong>{" "}
+                            à votre fournisseur.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xl sm:text-2xl font-bold text-emerald-400 mb-1 break-words">
+                  {formatMoney(
+                    calculationResult.details
+                      .slice(0, projectionYears)
+                      .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                  )}
+                </div>
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
+                  Énergie produite totale
+                </div>
+              </div>
+
+              {/* Card 4 - Gain NET période AVEC INFOBULLE */}
+              <div className="bg-slate-900/40 border border-blue-500/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 relative group">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-slate-400 text-[9px] sm:text-[10px] font-medium uppercase tracking-wider flex-1">
+                    Gain net {projectionYears} ans
+                  </div>
+                  {/* ICÔNE INFO */}
+                  <div className="relative flex-shrink-0">
+                    <Info
+                      className="w-4 h-4 text-slate-500 cursor-help transition-colors hover:text-blue-400"
+                      data-tooltip="gain-net"
+                    />
+                    {/* INFOBULLE - POSITIONNÉE EN BAS À GAUCHE (pour éviter de sortir) */}
+                    <div className="absolute top-full left-auto right-0 mt-2 w-[280px] sm:w-[320px] bg-slate-900 border-2 border-blue-500/30 rounded-xl p-3 sm:p-4 shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      {/* Flèche vers le haut */}
+                      <div className="absolute -top-2 right-4 w-4 h-4 bg-slate-900 border-l-2 border-t-2 border-blue-500/30 transform rotate-45"></div>
+
+                      {/* Contenu */}
+                      <div className="relative z-10">
+                        <div className="text-[11px] sm:text-xs font-bold text-blue-400 mb-2 sm:mb-3 uppercase tracking-wide">
+                          📊 Détail du calcul
+                        </div>
+
+                        <div className="space-y-2 sm:space-y-3 text-[10px] sm:text-[11px] text-slate-300">
+                          {/* Économie brute */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Économie brute totale
+                            </span>
+                            <span className="font-bold text-emerald-400 text-right">
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce(
+                                    (sum, d) => sum + d.solarSavingsValue,
+                                    0
+                                  )
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Coût du crédit */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Coût du crédit
+                            </span>
+                            <span className="font-bold text-red-400 text-right">
+                              -
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce((sum, d) => sum + d.creditPayment, 0)
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Facture résiduelle */}
+                          <div className="flex justify-between items-start pb-2 border-b border-white/10">
+                            <span className="text-slate-400">
+                              Facture résiduelle EDF
+                            </span>
+                            <span className="font-bold text-orange-400 text-right">
+                              -
+                              {formatMoney(
+                                calculationResult.details
+                                  .slice(0, projectionYears)
+                                  .reduce((sum, d) => sum + d.edfResidue, 0)
+                              )}
+                            </span>
+                          </div>
+
+                          {/* Résultat net */}
+                          <div className="flex justify-between items-start pt-2 bg-blue-950/30 rounded-lg p-2">
+                            <span className="font-bold text-white">
+                              Gain net
+                            </span>
+                            <span className="font-black text-blue-400 text-sm sm:text-base">
+                              {formatMoney(
+                                calculationResult.totalSavingsProjected || 0
+                              )}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Note explicative */}
+                        <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/10">
+                          <p className="text-[9px] sm:text-[10px] text-slate-500 italic leading-relaxed">
+                            Le gain net représente ce qu'il vous reste{" "}
+                            <strong className="text-slate-300">
+                              après avoir payé le crédit et la facture
+                              résiduelle
+                            </strong>
+                            , par rapport à ne rien faire.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-xl sm:text-2xl font-bold text-blue-400 mb-1 break-words">
+                  {formatMoney(calculationResult.totalSavingsProjected || 0)}
+                </div>
+                <div className="text-slate-500 text-[9px] sm:text-[10px] leading-tight">
+                  Après remboursement crédit
+                </div>
+              </div>
+            </div>
+
+            {/* MESSAGE FACTUEL — VERSION INSTITUTIONNELLE */}
+            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-3 sm:p-4 rounded-xl mb-4 md:mb-6">
+              <p className="text-slate-300 text-[10px] sm:text-[11px] leading-relaxed italic">
+                Une fois le dossier validé, le projet entre dans le processus de
+                mise en service. Les délais observés sont en moyenne de six à
+                huit semaines.
+              </p>
+
+              <p className="text-slate-300 text-[10px] sm:text-[11px] leading-relaxed italic mt-2">
+                Durant cette période, l’ensemble des démarches techniques,
+                administratives et de planification est pris en charge par EDF
+                et ses partenaires.
+              </p>
+
+              <p className="text-slate-400 text-[10px] sm:text-[11px] italic mt-2">
+                Le calendrier n’a pas d’impact sur le dimensionnement ni sur la
+                logique du projet. Il fixe uniquement la date de mise en
+                service.
+              </p>
+            </div>
+
+            {/* VISUALISATION TEMPORELLE - RESPONSIVE */}
+            <div className="p-3 sm:p-5 bg-black/30 rounded-xl border border-white/5">
+              <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-slate-400 mb-3 sm:mb-4 uppercase tracking-wider">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                Impact du calendrier sur le début des économies :
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 1)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
+                    Économie année 1
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 3)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
+                    Cumul 3 ans
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-slate-300 font-bold text-base sm:text-lg break-words">
+                    {formatMoney(
+                      calculationResult.details
+                        .slice(0, 5)
+                        .reduce((sum, d) => sum + d.solarSavingsValue, 0)
+                    )}
+                  </div>
+                  <div className="text-slate-500 text-[9px] sm:text-[10px] mt-1">
+                    Cumul 5 ans
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* PHRASE FINALE – RESPONSIVE */}
+            <p className="text-[9px] sm:text-[10px] text-slate-500 italic mt-4 sm:mt-6 text-center">
+              C'est juste du calendrier. La décision vous appartient.
+            </p>
+          </div>
+        </ModuleSection>
+        {/* ============================================
+   MODULE COUT DE L INACTION - LECTURE DU TEMPS
+   ============================================ */}
+
+        <ModuleSection
+          id="effet-calendrier"
+          title="Lecture du Temps"
+          icon={<Calendar className="text-slate-400" />}
+          defaultOpen={false}
+        >
+          <div className="bg-[#0b0d10] border border-white/10 rounded-2xl p-6 md:p-8">
+            {/* TITRE NEUTRE */}
+            <h3 className="text-xl font-black text-white mb-2">
+              Impact d'une mise en service différée de 6 mois
+            </h3>
+            <p className="text-sm text-slate-400 mb-8">
+              Comparaison objective de deux calendriers de démarrage.
+            </p>
+
+            {/* 2 COLONNES : AUJOURD'HUI vs DANS 6 MOIS */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              {/* SCÉNARIO A — DÉMARRAGE MAINTENANT */}
+              <div className="bg-black/40 border border-emerald-500/20 p-6 rounded-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-4 h-4 text-emerald-400" />
+                  <span className="text-xs text-emerald-400 uppercase font-bold tracking-wider">
+                    Scénario A — Validation immédiate
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Mise en service
+                    </div>
+                    <div className="text-lg font-black text-white">
+                      6-8 semaines
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      délai administratif + installation
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Production active sur les 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-emerald-400">
+                      ~4-5 mois
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      d'économies générées
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Économies réalisées sur 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-white">
+                      {formatMoney(
+                        calculationResult.savingsLostIfWait1Year / 2
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SCÉNARIO B — DÉMARRAGE DANS 6 MOIS */}
+              <div className="bg-black/40 border border-slate-500/20 p-6 rounded-xl">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">
+                    Scénario B — Validation différée de 6 mois
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Mise en service
+                    </div>
+                    <div className="text-lg font-black text-white">
+                      6 mois + 6-8 semaines
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      attente + délai administratif + installation
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Production active sur les 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-slate-400">
+                      0 mois
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-1">
+                      installation pas encore lancée
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/5">
+                    <div className="text-[10px] text-slate-400 uppercase mb-1">
+                      Économies réalisées sur 6 mois
+                    </div>
+                    <div className="text-3xl font-black text-white">0 €</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* DIFFÉRENTIEL — TON INSTITUTIONNEL */}
+            <div className="bg-black/60 border border-white/10 p-6 rounded-xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                <div className="md:col-span-2">
+                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
+                    Différentiel économique entre les deux scénarios
+                  </div>
+                  <p className="text-sm text-slate-300 leading-relaxed">
+                    Le scénario A permet d'activer la production pendant ~4-5
+                    mois sur cette période, générant des économies. Le scénario
+                    B maintient la situation actuelle pendant 6 mois
+                    supplémentaires.
+                  </p>
+                </div>
+                <div className="text-center md:text-right">
+                  <div className="text-4xl font-black text-white">
+                    {formatMoney(calculationResult.savingsLostIfWait1Year / 2)}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    d'écart sur 6 mois
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* NOTE FINALE — TON EDF */}
+            <div className="mt-6 bg-black/40 border-l-2 border-slate-600 p-5 rounded-r-xl">
+              <p className="text-xs text-slate-300 leading-relaxed">
+                <strong className="text-white">Lecture :</strong> les deux
+                scénarios sont viables. La seule variable est le calendrier de
+                mise en service.
+                <br />
+                <br />
+                Dans le scénario A, l'installation est active après 6-8
+                semaines, puis produit pendant ~4-5 mois sur les 6 mois
+                observés.
+                <br />
+                <br />
+                Dans le scénario B, ces 6 mois maintiennent la situation
+                actuelle, avant de démarrer le processus.
+              </p>
+            </div>
           </div>
         </ModuleSection>
 
@@ -8646,7 +8800,7 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
                     On ne parle pas d’économie ponctuelle, mais d’une
                     trajectoire qui se met en place, car Le logement n’est plus
                     seulement consommateur : il devient porteur de valeur,
-                    d’attractivité et de résilience.
+                    d'attractivité et de protection dans le temps.
                   </strong>
                 </p>
               </div>
