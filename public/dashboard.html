@@ -1378,6 +1378,7 @@
       let isZenMode = false;
       let anomaliesDetected = [];
       let settings = { view_threshold: 5, day_threshold: 3 };
+      let leadsToFollowup = 0;
 
       let activeFilters = {
         search: "",
@@ -1532,70 +1533,223 @@
       }
 
       async function loadData() {
-        console.log("🔥 === DÉBUT loadData() ===");
-        await loadSettings();
-        console.log("✅ Settings chargés");
-
         try {
+          console.log("🔥 === DÉBUT loadData() ===");
+
+          // ===============================
+          // ⚙️ SETTINGS
+          // ===============================
+          const { data: settingsData } = await supabaseClient
+            .from("settings")
+            .select("*")
+            .single();
+          settings = settingsData || {};
+          console.log("✅ Settings chargés");
+
+          // ===============================
+          // 📡 STUDIES
+          // ===============================
           console.log("📡 Appel Supabase studies...");
-
-          const { data: studies, error: studiesError } = await supabaseClient
+          const { data: studies } = await supabaseClient
             .from("studies")
-            .select(
-              "id, status, created_at, deposit_paid, deposit_paid_at, clients(id, first_name, last_name, email, email_optout)"
-            )
-            .neq("status", "cancelled")
-            .order("created_at", { ascending: false })
-            .limit(1000);
+            .select("*, clients(*)");
 
-          console.log("✅ Studies chargés:", studies?.length || 0);
+          console.log("✅ Studies chargés:", studies.length);
 
-          if (studiesError) {
-            console.error("❌ ERREUR STUDIES:", studiesError);
-            alert("ERREUR STUDIES: " + studiesError.message);
-            return;
-          }
+          // ===============================
+          // 📊 SIGNÉS (SANS RENDER ICI)
+          // ===============================
+          console.log("📊 Chargement dossiers signés...");
+          const { data: signedStudies } = await supabaseClient
+            .from("studies")
+            .select("*, clients(*)")
+            .eq("status", "signed");
+
+          console.log("✅ Signés chargés:", signedStudies.length);
+
+          // ===============================
+          // 📈 STATS
+          // ===============================
 
           console.log("📡 Appel Supabase stats...");
 
-          const { data: stats, error: statsError } = await supabaseClient
+          let stats = [];
+
+          // Essayer d'abord studies_activity_summary_v2 (celle qui marche pour les signés)
+          const res = await supabaseClient
             .from("studies_activity_summary_v2")
-            .select("*")
-            .limit(1000);
+            .select("*");
 
-          console.log("✅ Stats chargés:", stats?.length || 0);
+          if (res.error) {
+            console.warn(
+              "⚠️ studies_activity_summary_v2 absent, essai email_stats..."
+            );
 
-          if (statsError) {
-            console.error("❌ ERREUR STATS:", statsError);
+            const res2 = await supabaseClient.from("email_stats").select("*");
+
+            if (res2.error) {
+              console.error("❌ Aucune table de stats disponible");
+              stats = [];
+            } else {
+              stats = res2.data || [];
+            }
+          } else {
+            stats = res.data || [];
+            console.log(
+              "✅ Stats chargées depuis studies_activity_summary_v2:",
+              stats.length
+            );
           }
 
-          console.log("📡 Appel Supabase queue...");
+          window.safeStats = stats || []; // ← CRÉER D'ABORD !
 
-          const { count: queueCount, error: queueError } = await supabaseClient
-            .from("email_queue")
-            .select("*", { count: "exact", head: true })
-            .eq("status", "pending");
+          console.log("✅ Stats chargées:", window.safeStats.length);
+          console.log(
+            "📊 Sample stat:",
+            window.safeStats.length > 0 ? window.safeStats[0] : null
+          );
 
-          console.log("✅ Queue count:", queueCount);
-
+          // ===============================
+          // 🧾 LOGS
+          // ===============================
           console.log("📡 Appel Supabase logs...");
-
-          const { data: logs, error: logsError } = await supabaseClient
+          const { data: logs } = await supabaseClient
             .from("decision_logs")
             .select("*")
             .order("created_at", { ascending: false })
             .limit(20);
 
-          console.log("✅ Logs chargés:", logs?.length || 0);
-
           logsData = logs || [];
+          console.log("✅ Logs chargés:", logsData.length);
 
+          // ===============================
+          // 📬 EMAIL QUEUE (AXE A / B)
+          // ===============================
+          console.log("📡 Appel Supabase queue...");
+          const { data: queueEmails, error: queueEmailsError } =
+            await supabaseClient
+              .from("email_queue")
+              .select("study_id, email_type, status, sent_at, scheduled_for");
+
+          if (queueEmailsError) {
+            console.error(
+              "❌ Erreur chargement email_queue:",
+              queueEmailsError
+            );
+          } else {
+            console.log("📬 EMAIL QUEUE chargée:", queueEmails.length);
+          }
+
+          window.queueEmails = queueEmails || [];
+
+          // ===============================
+          // 📕 AXE A — ANTI ANNULATION
+          // ===============================
+          window.antiAnnulationByStudy = {};
+
+          queueEmails.forEach((e) => {
+            if (!e.study_id) return;
+            if (!e.email_type?.startsWith("anti_")) return;
+
+            if (!window.antiAnnulationByStudy[e.study_id]) {
+              window.antiAnnulationByStudy[e.study_id] = {
+                sent: [],
+                next: null,
+              };
+            }
+
+            if (e.status === "sent") {
+              window.antiAnnulationByStudy[e.study_id].sent.push(e);
+            }
+
+            if (e.status === "pending") {
+              const current = window.antiAnnulationByStudy[e.study_id].next;
+              if (
+                !current ||
+                new Date(e.scheduled_for) < new Date(current.scheduled_for)
+              ) {
+                window.antiAnnulationByStudy[e.study_id].next = e;
+              }
+            }
+          });
+
+          console.log(
+            "📕 ANTI-ANNULATION INDEX:",
+            window.antiAnnulationByStudy
+          );
+
+          // ===============================
+          // 📘 AXE B — POST REFUS
+          // ===============================
+          window.postRefusByStudy = {};
+
+          (queueEmails || [])
+            .filter((q) => q.email_type.startsWith("post_refus"))
+            .forEach((q) => {
+              if (!window.postRefusByStudy[q.study_id]) {
+                window.postRefusByStudy[q.study_id] = { sent: [], next: null };
+              }
+
+              if (q.status === "sent") {
+                window.postRefusByStudy[q.study_id].sent.push(q);
+              }
+
+              if (q.status === "pending") {
+                const currentNext = window.postRefusByStudy[q.study_id].next;
+                if (
+                  !currentNext ||
+                  new Date(q.scheduled_for) <
+                    new Date(currentNext.scheduled_for)
+                ) {
+                  window.postRefusByStudy[q.study_id].next = q;
+                }
+              }
+            });
+
+          Object.values(window.postRefusByStudy).forEach((flow) => {
+            flow.sent.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+          });
+
+          console.log("📘 POST-REFUS INDEX:", window.postRefusByStudy);
+
+          // ===============================
+          // 🔄 MAPPING
+          // ===============================
           console.log("🔄 Mapping des données...");
 
           fullData = (studies || []).map((s) => {
-            const st = (stats || []).find((item) => item.id === s.id) || {};
-            const diffDays =
-              (new Date() - new Date(s.created_at)) / (1000 * 60 * 60 * 24);
+            const st =
+              (window.safeStats || []).find((item) => item.id === s.id) || {};
+
+            const diffDays = (new Date() - new Date(s.created_at)) / 86400000;
+
+            // 🔍 Détection intelligente des champs selon la table source
+            let views = 0;
+            let clicks = 0;
+
+            if (st.email_opens !== undefined) {
+              views = st.email_opens || 0;
+            } else if (st.views !== undefined) {
+              views = st.views || 0;
+            } else if (st.total_opens !== undefined) {
+              views = st.total_opens || 0;
+            }
+
+            if (st.interactions !== undefined) {
+              clicks = st.interactions || 0;
+            } else if (st.clicks !== undefined) {
+              clicks = st.clicks || 0;
+            } else if (st.total_clicks !== undefined) {
+              clicks = st.total_clicks || 0;
+            }
+            console.log(
+              `📊 Study ${s.id.substring(
+                0,
+                8
+              )}: views=${views}, clicks=${clicks}, found_stat=`,
+              !!st.id
+            ); // ← AJOUTE CETTE LIGNE
+
             return {
               id: s.id,
               client_id: s.clients?.id || null,
@@ -1607,10 +1761,12 @@
               email: s.clients?.email || "Pas d'email",
               status: s.status,
               created_at: s.created_at,
-              views: st.email_opens || 0,
-              clicks: st.interactions || 0,
+              views: views,
+              clicks: clicks,
               diffDays: Math.floor(diffDays),
               hasLog: logsData.some((l) => l.study_id === s.id),
+              rib_sent: s.rib_sent || false,
+              rib_sent_at: s.rib_sent_at || null,
               deposit_paid: s.deposit_paid || false,
               deposit_paid_at: s.deposit_paid_at || null,
               email_optout: s.clients?.email_optout || false,
@@ -1618,22 +1774,55 @@
           });
 
           console.log("✅ fullData créé:", fullData.length, "éléments");
+          console.log("📊 Sample fullData:", fullData[0]);
+          // 🔥 AJOUTE CES LIGNES ICI :
+          console.log("🔍 Répartition des statuts dans fullData:");
+          console.log(
+            "  - draft:",
+            fullData.filter((s) => s.status === "draft").length
+          );
+          console.log(
+            "  - sent:",
+            fullData.filter((s) => s.status === "sent").length
+          );
+          console.log(
+            "  - signed:",
+            fullData.filter((s) => s.status === "signed").length
+          );
+          console.log(
+            "  - cancelled:",
+            fullData.filter((s) => s.status === "cancelled").length
+          );
 
-          console.log("🎯 Mise à jour KPIs...");
-          updateKPIs(queueCount || 0);
-          console.log("✅ KPIs mis à jour");
+          // ===============================
+          // 🎯 KPI + ANOMALIES
+          // ===============================
+          // JUSTE AVANT updateKPIs(...)
+          console.log("🔥 VALEUR PASSÉE À updateKPIs:", leadsToFollowup);
+          updateKPIs(leadsToFollowup);
 
-          console.log("🔍 Détection anomalies...");
+          // 🔥 AJOUTE CES LIGNES ICI :
+          console.log("🎯 Après updateKPIs:");
+          console.log(
+            "  - stat-signed innerText:",
+            document.getElementById("stat-signed")?.innerText
+          );
+          console.log(
+            "  - Valeur attendue:",
+            fullData.filter((s) => s.status === "signed").length
+          );
           detectAnomalies();
-          console.log("✅ Anomalies détectées");
 
+          // ===============================
+          // 🎨 RENDERS (DANS LE BON ORDRE)
+          // ===============================
           console.log("🎨 Rendu...");
-          render();
-          console.log("✅ Rendu terminé");
 
-          console.log("📝 Rendu logs...");
+          loadSignedStudies();
+          render();
           renderLogs();
-          console.log("✅ Logs rendus");
+          updateKPIs(queueEmails?.length || 0);
+          console.log("🎯 updateKPIs RE-APPELÉ après render()");
 
           console.log("✅ === FIN loadData() ===");
         } catch (err) {
@@ -1700,24 +1889,24 @@
         container.innerHTML = logsData
           .map(
             (l) => `
-                          <div class="p-6 flex justify-between items-center hover:bg-white/[0.02] transition-all duration-300">
-                            <div class="flex flex-col">
-                              <span class="text-[9px] text-orange-400 font-black uppercase tracking-[0.2em] mb-1">${
-                                l.action_performed
-                              }</span>
-                              <span class="text-base font-bold text-slate-200">${
-                                l.client_name
-                              }</span>
-                            </div>
-                            <div class="max-w-[50%] text-right">
-                              <div class="text-[11px] text-slate-400 italic mb-1">"${
-                                l.justification
-                              }"</div>
-                              <div class="text-[9px] text-slate-600 uppercase font-bold tracking-wider">${new Date(
-                                l.created_at
-                              ).toLocaleString()}</div>
-                            </div>
-                          </div>`
+                                      <div class="p-6 flex justify-between items-center hover:bg-white/[0.02] transition-all duration-300">
+                                        <div class="flex flex-col">
+                                          <span class="text-[9px] text-orange-400 font-black uppercase tracking-[0.2em] mb-1">${
+                                            l.action_performed
+                                          }</span>
+                                          <span class="text-base font-bold text-slate-200">${
+                                            l.client_name
+                                          }</span>
+                                        </div>
+                                        <div class="max-w-[50%] text-right">
+                                          <div class="text-[11px] text-slate-400 italic mb-1">"${
+                                            l.justification
+                                          }"</div>
+                                          <div class="text-[9px] text-slate-600 uppercase font-bold tracking-wider">${new Date(
+                                            l.created_at
+                                          ).toLocaleString()}</div>
+                                        </div>
+                                      </div>`
           )
           .join("");
       }
@@ -1789,16 +1978,16 @@
           document.getElementById("anomaly-list").innerHTML = anomalies
             .map(
               (a) => `
-      <div class="anomaly-card p-6 rounded-2xl border-l-4 border-l-red-500 hover:border-l-red-400 transition-all duration-300">
-        <div class="text-[10px] font-black text-red-400 mb-2 tracking-[0.2em]">${a.type}</div>
-        <div class="text-xl font-bold mb-2">${a.name}</div>
-        <div class="text-[11px] text-slate-500 italic mb-3">${a.desc}</div>
-        <button onclick="toggleRule('${a.id}')" class="text-[10px] text-blue-400 hover:text-blue-300 hover:underline uppercase tracking-tighter font-bold transition-colors">Pourquoi ce dossier est signalé ?</button>
-        <div id="rule-${a.id}" class="hidden rule-box">
-          <div>${a.rule}</div>
-          <div class="mt-2">${a.obs}</div>
-        </div>
-      </div>`
+                  <div class="anomaly-card p-6 rounded-2xl border-l-4 border-l-red-500 hover:border-l-red-400 transition-all duration-300">
+                    <div class="text-[10px] font-black text-red-400 mb-2 tracking-[0.2em]">${a.type}</div>
+                    <div class="text-xl font-bold mb-2">${a.name}</div>
+                    <div class="text-[11px] text-slate-500 italic mb-3">${a.desc}</div>
+                    <button onclick="toggleRule('${a.id}')" class="text-[10px] text-blue-400 hover:text-blue-300 hover:underline uppercase tracking-tighter font-bold transition-colors">Pourquoi ce dossier est signalé ?</button>
+                    <div id="rule-${a.id}" class="hidden rule-box">
+                      <div>${a.rule}</div>
+                      <div class="mt-2">${a.obs}</div>
+                    </div>
+                  </div>`
             )
             .join("");
         } else {
@@ -2096,248 +2285,327 @@
                 "')";
 
             return `
-                 <tr class="transition-all duration-300 group ${rowClass}">
+                             <tr class="transition-all duration-300 group ${rowClass}">
 
-                    <td class="p-7" onclick="window.open('${FRONTEND_URL}/guest/${
+                                <td class="p-7" onclick="window.open('${FRONTEND_URL}/guest/${
               s.id
             }', '_blank')" style="cursor: pointer;">
-  <div class="flex flex-col gap-2 max-w-full">
+              <div class="flex flex-col gap-2 max-w-full">
 
-    <div class="flex flex-wrap items-center gap-3 max-w-full">
-      <div class="text-xl font-bold ${nameStyle} group-hover:text-blue-400 transition-colors break-words max-w-full">
-        ${s.name}
-      </div>
-      ${statusBadge}
-
-<span class="shrink-0 whitespace-nowrap px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${tempClass}">
-  ${tempLabel}
-</span>
-
-${businessBadge}
-
-    </div>
-
-    ${
-      s.hasLog
-        ? '<span class="tooltip"><span class="text-orange-400 text-sm cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>'
-        : ""
-    }
-
-    <div class="text-xs text-slate-500 font-medium mt-1">${s.email}</div>
-
-    <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-[0.2em]">
-      ${getTimeSince(s.created_at)}
-    </div>
-
-  </div>
-</td>
-
-
-                    <td class="p-7 text-center">
-                      <div class="flex justify-center gap-14 font-black">
-                        <div class="relative group/stat">
-                          <div class="absolute -inset-3 bg-gradient-to-r ${
-                            s.views >= 3
-                              ? "from-orange-500/15 to-orange-500/5"
-                              : "from-slate-500/10 to-transparent"
-                          } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
-                          <div class="relative">
-                            <div class="text-3xl ${
-                              s.views >= 3
-                                ? "text-orange-400"
-                                : "text-slate-400"
-                            } tracking-tight">${s.views}</div>
-                            <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">VUES</div>
-                          </div>
-                        </div>
-
-                        <div class="w-px bg-gradient-to-b from-transparent via-slate-700/50 to-transparent"></div>
-
-                        <div class="relative group/stat">
-                          <div class="absolute -inset-3 bg-gradient-to-r ${
-                            s.clicks > 0
-                              ? "from-purple-500/15 to-purple-500/5"
-                              : "from-slate-500/10 to-transparent"
-                          } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
-                          <div class="relative">
-                            <div class="text-3xl ${
-                              s.clicks > 0
-                                ? "text-purple-400"
-                                : "text-slate-400"
-                            } tracking-tight">${s.clicks}</div>
-                            <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">CLICS</div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td class="p-7 text-center">
-                      <div class="inline-block px-5 py-2 rounded-xl border font-black uppercase text-[10px] tracking-[0.2em] ${statusClass}">
-                        <select onchange="event.stopPropagation(); ${onChangeStatus}">
-                          <option value="sent" ${
-                            s.status === "sent" ? "selected" : ""
-                          }>SENT</option>
-                          <option value="draft" ${
-                            s.status === "draft" ? "selected" : ""
-                          }>DRAFT</option>
-                          <option value="signed" ${
-                            s.status === "signed" ? "selected" : ""
-                          }>SIGNED</option>
-                          <option value="cancelled" ${
-                            s.status === "cancelled" ? "selected" : ""
-                          }>CANCELLED</option>
-                        </select>
-                      </div>
-                    </td>
-
-                    <td class="p-5">
-                      <div class="flex items-center justify-between gap-4">
-
-                        <div class="flex items-center gap-6">
-
-                          <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/40 border border-slate-700/30 min-w-[140px]">
-                            <span class="text-base">📄</span>
-                            <div>
-                              <div class="text-[8px] text-slate-600 uppercase font-bold tracking-wide">RIB</div>
-                              <div class="${
-                                s.rib_sent_at
-                                  ? "text-emerald-400 font-bold"
-                                  : "text-slate-600"
-                              } text-xs">
-                                ${
-                                  s.rib_sent_at
-                                    ? new Date(
-                                        s.rib_sent_at
-                                      ).toLocaleDateString("fr-FR", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                      })
-                                    : "—"
-                                }
-                              </div>
-                            </div>
-                          </div>
-
-                          <div class="flex items-center gap-2 px-3 py-2 rounded-lg ${
-                            s.deposit_paid
-                              ? "bg-emerald-500/10 border border-emerald-500/30"
-                              : "bg-slate-800/40 border border-slate-700/30"
-                          } min-w-[140px]">
-                            <span class="text-base">${
-                              s.deposit_paid ? "✓" : "💶"
-                            }</span>
-                            <div>
-                              <div class="text-[8px] ${
-                                s.deposit_paid
-                                  ? "text-emerald-400"
-                                  : "text-slate-600"
-                              } uppercase font-bold tracking-wide">ACOMPTE</div>
-                              ${
-                                s.deposit_paid
-                                  ? `<div class="text-emerald-400 font-bold text-xs">
-                                      ${new Date(
-                                        s.deposit_paid_at
-                                      ).toLocaleDateString("fr-FR", {
-                                        day: "2-digit",
-                                        month: "2-digit",
-                                      })}
-                                    </div>`
-                                  : `<div class="text-slate-600 text-xs font-medium">En attente</div>`
-                              }
-                            </div>
-                            ${
-                              !s.deposit_paid
-                                ? `<button
-                       onclick="event.stopPropagation(); markDepositPaid('${s.id}')"
-                       class="ml-auto px-2 py-1 rounded bg-emerald-500 text-black font-bold text-[9px] hover:scale-105 transition-all">
-                       ✓
-                     </button>`
-                                : ""
-                            }
-                          </div>
-
-                        </div>
-
-                        <div class="flex items-center gap-2">
-
-                  <div class="tooltip">
-                    <button
-                      ${
-                        isInactive
-                          ? 'disabled style="opacity: 0.3; cursor: not-allowed;"'
-                          : ""
-                      }
-                      onclick="${
-                        isInactive
-                          ? ""
-                          : `event.stopPropagation(); ${onClickSigned}`
-                      }"
-                      class="action-button px-6 py-2 ${
-                        hasAlert && !isInactive
-                          ? "bg-orange-500 text-black border border-orange-400 animate-pulse"
-                          : "bg-emerald-500 text-black border border-emerald-400"
-                      } rounded-lg font-bold text-xs uppercase tracking-wide shadow-md hover:scale-105 transition-all"
-                    >
-                      ${hasAlert && !isInactive ? "⚠️ FORCER" : "✓ SIGNÉ"}
-                    </button>
-                    <span class="tooltiptext">
-                      ${
-                        isInactive
-                          ? "❌ Lead inactif"
-                          : hasAlert
-                          ? "⚠️ Anomalie détectée"
-                          : "Marquer comme signé"
-                      }
-                    </span>
+                <div class="flex flex-wrap items-center gap-3 max-w-full">
+                  <div class="text-xl font-bold ${nameStyle} group-hover:text-blue-400 transition-colors break-words max-w-full">
+                    ${s.name}
                   </div>
+                  ${statusBadge}
 
-                  <div class="tooltip">
-                    <button
-                      onclick="event.stopPropagation(); updateStatus('${
-                        s.id
-                      }', 'draft')"
-                      class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-blue-400 border border-blue-500/40 rounded-lg hover:bg-blue-500 hover:text-white transition-all text-base"
-                    >
-                      📝
-                    </button>
-                    <span class="tooltiptext">Remettre en brouillon</span>
-                  </div>
+            <span class="shrink-0 whitespace-nowrap px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${tempClass}">
+              ${tempLabel}
+            </span>
 
-                  <div class="tooltip">
-                    <button
-                      onclick="event.stopPropagation(); cancelStudySafe('${
-                        s.id
-                      }', '${safeName}')"
-                      class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500 hover:text-white transition-all text-lg font-bold"
-                    >
-                      ✕
-                    </button>
-                    <span class="tooltiptext">Annuler le dossier</span>
-                  </div>
+            ${businessBadge}
 
-                  ${
-                    isInactive
-                      ? `
-                  <div class="tooltip">
-                    <button
-                      onclick="event.stopPropagation(); deleteLeadPermanently('${
-                        s.client_id
-                      }', '${s.email.replace(/'/g, "\\'")}', '${safeName}')"
-                      class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-600 border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all text-lg font-black"
-                    >
-                      🗑️
-                    </button>
-                    <span class="tooltiptext">Supprimer définitivement</span>
-                  </div>
-                  `
-                      : ""
+                </div>
+
+                ${
+                  s.hasLog
+                    ? '<span class="tooltip"><span class="text-orange-400 text-sm cursor-help">📝</span><span class="tooltiptext">Ce dossier a été forcé manuellement (voir logs bas de page)</span></span>'
+                    : ""
+                }
+
+                <div class="text-xs text-slate-500 font-medium mt-1">${
+                  s.email
+                }</div>
+                ${
+                  window.postRefusByStudy && window.postRefusByStudy[s.id]
+                    ? (() => {
+                        const flow = window.postRefusByStudy[s.id];
+                        const lastSent = flow.sent[flow.sent.length - 1];
+                        const next = flow.next;
+
+                        return `
+              <div class="mt-2 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/30">
+                <div class="text-[10px] text-red-400 font-black uppercase tracking-wider">
+                  📧 POST-REFUS — ${flow.sent.length}/4
+                </div>
+                <div class="text-[9px] text-slate-300 mt-0.5">
+                  Dernier : ${
+                    lastSent
+                      ? lastSent.email_type +
+                        " (" +
+                        new Date(lastSent.sent_at).toLocaleDateString("fr-FR") +
+                        ")"
+                      : "aucun"
                   }
+                </div>
+                <div class="text-[9px] text-slate-400">
+                  Prochain : ${
+                    next
+                      ? next.email_type +
+                        " → " +
+                        new Date(next.scheduled_for).toLocaleDateString("fr-FR")
+                      : "terminé"
+                  }
+                </div>
+              </div>
+              `;
+                      })()
+                    : window.emailFlowByClient &&
+                      window.emailFlowByClient[s.client_id]
+                    ? `<div class="mt-2 px-2 py-1 rounded bg-blue-500/10 border border-blue-500/30">
+                <div class="text-[10px] text-blue-400 font-black uppercase tracking-wider">
+                  📬 EMAIL — STEP ${window.emailFlowByClient[s.client_id].step}
+                </div>
+                <div class="text-[9px] text-slate-400">
+                  Dernier : ${
+                    window.emailFlowByClient[s.client_id].last
+                      ? new Date(
+                          window.emailFlowByClient[s.client_id].last
+                        ).toLocaleDateString("fr-FR")
+                      : "jamais"
+                  }
+                  • Prochain : ${
+                    window.emailFlowByClient[s.client_id].next
+                      ? new Date(
+                          window.emailFlowByClient[s.client_id].next
+                        ).toLocaleDateString("fr-FR")
+                      : "aucun"
+                  }
+                </div>
+              </div>`
+                    : `<div class="mt-2 text-[9px] text-slate-600 italic">📭 Aucun email automatique</div>`
+                }
 
-                        </div>
-                      </div>
-                    </td>
 
-                  </tr>`;
+                <div class="text-[9px] text-slate-600 font-bold mt-2 uppercase tracking-[0.2em]">
+                  ${getTimeSince(s.created_at)}
+                </div>
+
+
+
+              </div>
+            </td>
+
+
+                                <td class="p-7 text-center">
+                                  <div class="flex justify-center gap-14 font-black">
+                                    <div class="relative group/stat">
+                                      <div class="absolute -inset-3 bg-gradient-to-r ${
+                                        s.views >= 3
+                                          ? "from-orange-500/15 to-orange-500/5"
+                                          : "from-slate-500/10 to-transparent"
+                                      } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+                                      <div class="relative">
+                                        <div class="text-3xl ${
+                                          s.views >= 3
+                                            ? "text-orange-400"
+                                            : "text-slate-400"
+                                        } tracking-tight">${s.views}</div>
+                                        <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">VUES</div>
+                                      </div>
+                                    </div>
+
+                                    <div class="w-px bg-gradient-to-b from-transparent via-slate-700/50 to-transparent"></div>
+
+                                    <div class="relative group/stat">
+                                      <div class="absolute -inset-3 bg-gradient-to-r ${
+                                        s.clicks > 0
+                                          ? "from-purple-500/15 to-purple-500/5"
+                                          : "from-slate-500/10 to-transparent"
+                                      } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+                                      <div class="relative">
+                                        <div class="text-3xl ${
+                                          s.clicks > 0
+                                            ? "text-purple-400"
+                                            : "text-slate-400"
+                                        } tracking-tight">${s.clicks}</div>
+                                        <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">CLICS</div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+
+                                <td class="p-7 text-center">
+                                  <div class="inline-block px-5 py-2 rounded-xl border font-black uppercase text-[10px] tracking-[0.2em] ${statusClass}">
+                                    <select onchange="event.stopPropagation(); ${onChangeStatus}">
+                                      <option value="sent" ${
+                                        s.status === "sent" ? "selected" : ""
+                                      }>SENT</option>
+                                      <option value="draft" ${
+                                        s.status === "draft" ? "selected" : ""
+                                      }>DRAFT</option>
+                                      <option value="signed" ${
+                                        s.status === "signed" ? "selected" : ""
+                                      }>SIGNED</option>
+                                      <option value="cancelled" ${
+                                        s.status === "cancelled"
+                                          ? "selected"
+                                          : ""
+                                      }>CANCELLED</option>
+                                    </select>
+                                  </div>
+                                </td>
+
+                                <td class="p-5">
+                                  <div class="flex items-center justify-between gap-4">
+
+                                    <div class="flex items-center gap-6">
+
+                                      <div class="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800/40 border border-slate-700/30 min-w-[140px]">
+                                        <span class="text-base">📄</span>
+                                        <div>
+                                          <div class="text-[8px] text-slate-600 uppercase font-bold tracking-wide">RIB</div>
+                                          <div class="${
+                                            s.rib_sent_at
+                                              ? "text-emerald-400 font-bold"
+                                              : "text-slate-600"
+                                          } text-xs">
+                                            ${
+                                              s.rib_sent_at
+                                                ? new Date(
+                                                    s.rib_sent_at
+                                                  ).toLocaleDateString(
+                                                    "fr-FR",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "2-digit",
+                                                    }
+                                                  )
+                                                : "—"
+                                            }
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div class="flex items-center gap-2 px-3 py-2 rounded-lg ${
+                                        s.deposit_paid
+                                          ? "bg-emerald-500/10 border border-emerald-500/30"
+                                          : "bg-slate-800/40 border border-slate-700/30"
+                                      } min-w-[140px]">
+                                        <span class="text-base">${
+                                          s.deposit_paid ? "✓" : "💶"
+                                        }</span>
+                                        <div>
+                                          <div class="text-[8px] ${
+                                            s.deposit_paid
+                                              ? "text-emerald-400"
+                                              : "text-slate-600"
+                                          } uppercase font-bold tracking-wide">ACOMPTE</div>
+                                          ${
+                                            s.deposit_paid
+                                              ? `<div class="text-emerald-400 font-bold text-xs">
+                                                  ${new Date(
+                                                    s.deposit_paid_at
+                                                  ).toLocaleDateString(
+                                                    "fr-FR",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "2-digit",
+                                                    }
+                                                  )}
+                                                </div>`
+                                              : `<div class="text-slate-600 text-xs font-medium">En attente</div>`
+                                          }
+                                        </div>
+                                        ${
+                                          !s.deposit_paid
+                                            ? `<button
+                                   onclick="event.stopPropagation(); markDepositPaid('${s.id}')"
+                                   class="ml-auto px-2 py-1 rounded bg-emerald-500 text-black font-bold text-[9px] hover:scale-105 transition-all">
+                                   ✓
+                                 </button>`
+                                            : ""
+                                        }
+                                      </div>
+
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+
+                              <div class="tooltip">
+                                <button
+                                  ${
+                                    isInactive
+                                      ? 'disabled style="opacity: 0.3; cursor: not-allowed;"'
+                                      : ""
+                                  }
+                                  onclick="${
+                                    isInactive
+                                      ? ""
+                                      : `event.stopPropagation(); ${onClickSigned}`
+                                  }"
+                                  class="action-button px-6 py-2 ${
+                                    hasAlert && !isInactive
+                                      ? "bg-orange-500 text-black border border-orange-400 animate-pulse"
+                                      : "bg-emerald-500 text-black border border-emerald-400"
+                                  } rounded-lg font-bold text-xs uppercase tracking-wide shadow-md hover:scale-105 transition-all"
+                                >
+                                  ${
+                                    hasAlert && !isInactive
+                                      ? "⚠️ FORCER"
+                                      : "✓ SIGNÉ"
+                                  }
+                                </button>
+                                <span class="tooltiptext">
+                                  ${
+                                    isInactive
+                                      ? "❌ Lead inactif"
+                                      : hasAlert
+                                      ? "⚠️ Anomalie détectée"
+                                      : "Marquer comme signé"
+                                  }
+                                </span>
+                              </div>
+
+                              <div class="tooltip">
+                                <button
+                                  onclick="event.stopPropagation(); updateStatus('${
+                                    s.id
+                                  }', 'draft')"
+                                  class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-blue-400 border border-blue-500/40 rounded-lg hover:bg-blue-500 hover:text-white transition-all text-base"
+                                >
+                                  📝
+                                </button>
+                                <span class="tooltiptext">Remettre en brouillon</span>
+                              </div>
+
+                              <div class="tooltip">
+                                <button
+                                  onclick="event.stopPropagation(); cancelStudySafe('${
+                                    s.id
+                                  }', '${safeName}')"
+                                  class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500 hover:text-white transition-all text-lg font-bold"
+                                >
+                                  ✕
+                                </button>
+                                <span class="tooltiptext">Annuler le dossier</span>
+                              </div>
+
+                              ${
+                                isInactive
+                                  ? `
+                              <div class="tooltip">
+                                <button
+                                  onclick="event.stopPropagation(); deleteLeadPermanently('${
+                                    s.client_id
+                                  }', '${s.email.replace(
+                                      /'/g,
+                                      "\\'"
+                                    )}', '${safeName}')"
+                                  class="action-button w-10 h-10 flex items-center justify-center bg-slate-900 text-red-600 border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all text-lg font-black"
+                                >
+                                  🗑️
+                                </button>
+                                <span class="tooltiptext">Supprimer définitivement</span>
+                              </div>
+                              `
+                                  : ""
+                              }
+
+                                    </div>
+                                  </div>
+                                </td>
+
+                              </tr>`;
           })
           .join("");
       }
@@ -2372,9 +2640,63 @@ ${businessBadge}
             total_opens: l.total_opens || 0,
             total_clicks: l.total_clicks || 0,
           }));
+          console.log(
+            "📧 EMAIL LEADS:",
+            allLeadsData.map((l) => ({
+              email: l.email,
+              step: l.email_sequence_step,
+              last_sent: l.last_email_sent,
+              next: l.next_email_date,
+            }))
+          ); // ← FERME LE console.log ICI !
+
+          // ===============================
+          // 📊 CALCUL VRAIS LEADS À RELANCER
+          // ===============================
+          leadsToFollowup = (allLeadsData || []).filter((l) => {
+            // Exclure si opt-out
+            if (l.clients?.email_optout) return false;
+
+            // Jamais contacté = à relancer
+            if (!l.last_email_sent_at) return true;
+
+            const now = new Date();
+            const created = new Date(l.created_at);
+            const lastSent = new Date(l.last_email_sent_at);
+
+            const daysSinceCreation = (now - created) / (1000 * 60 * 60 * 24);
+            const daysSinceLastEmail = (now - lastSent) / (1000 * 60 * 60 * 24);
+
+            // Trop vieux (> 120 jours) = ne plus relancer
+            if (daysSinceCreation > 120) return false;
+
+            // < 60 jours : relance tous les 3 jours
+            if (daysSinceCreation <= 60 && daysSinceLastEmail >= 3) return true;
+
+            // 60-120 jours : relance tous les 7 jours
+            if (daysSinceCreation > 60 && daysSinceLastEmail >= 7) return true;
+
+            return false;
+          }).length;
+
+          console.log("📊 Leads à relancer calculés:", leadsToFollowup);
 
           renderEmailLeads();
           updateUnsubscribeStats(); // ← AJOUTE CETTE LIGNE
+          window.emailFlowByClient = {};
+
+          allLeadsData.forEach((l) => {
+            window.emailFlowByClient[l.client_id] = {
+              step: l.email_sequence_step,
+              last: l.last_email_sent,
+              next: l.next_email_date,
+              opens: l.total_opens,
+              clicks: l.total_clicks,
+              opted_out: l.opted_out,
+            };
+          });
+
+          console.log("📬 EMAIL FLOW INDEX:", window.emailFlowByClient);
         } catch (err) {
           console.error(err);
         }
@@ -2416,10 +2738,38 @@ ${businessBadge}
           // ✅ MERGER LES DONNÉES
           const mergedData = (signedStudies || []).map((s) => {
             const st = (stats || []).find((item) => item.id === s.id) || {};
+
+            // 🔍 Détection intelligente des champs
+            let views = 0;
+            let clicks = 0;
+
+            if (st.email_opens !== undefined) {
+              views = st.email_opens || 0;
+            } else if (st.views !== undefined) {
+              views = st.views || 0;
+            } else if (st.total_opens !== undefined) {
+              views = st.total_opens || 0;
+            }
+
+            if (st.interactions !== undefined) {
+              clicks = st.interactions || 0;
+            } else if (st.clicks !== undefined) {
+              clicks = st.clicks || 0;
+            } else if (st.total_clicks !== undefined) {
+              clicks = st.total_clicks || 0;
+            }
+
+            console.log(
+              `📊 AXE A - Study ${s.id.substring(
+                0,
+                8
+              )}: views=${views}, clicks=${clicks}`
+            );
+
             return {
               ...s,
-              views: st.email_opens || 0,
-              clicks: st.interactions || 0,
+              views: views,
+              clicks: clicks,
             };
           });
 
@@ -2480,6 +2830,17 @@ ${businessBadge}
       }
 
       function renderSignedStudies(studies) {
+        if (!studies || !studies.length) {
+          console.warn("⛔ renderSignedStudies annulé : studies vide");
+          return;
+        }
+
+        console.log(
+          "🛡️ renderSignedStudies appelé avec:",
+          studies.length,
+          "dossiers"
+        );
+
         const tbody = document.getElementById("signed-table-body");
         if (!tbody) {
           console.error("❌ Element signed-table-body introuvable");
@@ -2500,14 +2861,22 @@ ${businessBadge}
             let alerts = [];
             let rowClass = "hover:bg-white/[0.02] transition-all";
 
-            if (daysSinceSigned > 15 && !s.deposit_paid) {
+            // Alerte seulement si acompte REQUIS (cash OU deposit_amount défini)
+            const acompteRequis =
+              s.study_data?.mode === "cash" || s.deposit_amount > 0;
+
+            if (daysSinceSigned > 15 && !s.deposit_paid && acompteRequis) {
               alerts.push({
                 icon: "💀",
                 text: "RISQUE CRITIQUE",
                 color: "text-red-500",
               });
               rowClass = "bg-red-500/10 border-l-4 border-red-500";
-            } else if (!s.deposit_paid && daysSinceSigned > 10) {
+            } else if (
+              !s.deposit_paid &&
+              daysSinceSigned > 10 &&
+              acompteRequis
+            ) {
               alerts.push({
                 icon: "🚨",
                 text: "Pas d'acompte > 10j",
@@ -2534,97 +2903,225 @@ ${businessBadge}
                 ).toLocaleDateString("fr-FR")}</span>`
               : "";
             return `
-<tr class="${rowClass}">
-  <td class="p-7">
-    <div class="text-lg font-bold text-slate-100">${s.client_name}</div>
-    <div class="text-xs text-slate-500 mt-1">${
-      s.client_email || "Pas d'email"
-    }</div>
-  </td>
-  
-<td class="p-7 text-center">
-  <div class="text-2xl font-bold text-emerald-400">
-    ${ca.toLocaleString(
-      "fr-FR"
-    )} <span class="text-base font-normal text-emerald-400/70">€</span>
-  </div>
-</td>
-  
-  <td class="p-7 text-center">
-    <div class="flex justify-center gap-8 font-black">
-      <div class="relative group/stat">
-        <div class="absolute -inset-3 bg-gradient-to-r ${
-          s.views >= 3
-            ? "from-orange-500/15 to-orange-500/5"
-            : "from-slate-500/10 to-transparent"
-        } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
-        <div class="relative">
-          <div class="text-2xl ${
-            s.views >= 3 ? "text-orange-400" : "text-slate-400"
-          } tracking-tight">${s.views}</div>
-          <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">VUES</div>
-        </div>
-      </div>
+            <tr class="${rowClass}">
+              <td class="p-7">
+              <div class="text-lg font-bold text-slate-100">${
+                s.client_name
+              }</div>
+              <div class="text-xs text-slate-500 mt-1">${
+                s.client_email || "Pas d'email"
+              }</div>
 
-      <div class="w-px bg-gradient-to-b from-transparent via-slate-700/50 to-transparent"></div>
+              ${
+                window.antiAnnulationByStudy?.[s.id]
+                  ? (() => {
+                      const flow = window.antiAnnulationByStudy[s.id];
+                      const last = flow.sent[flow.sent.length - 1];
+                      const next = flow.next;
 
-      <div class="relative group/stat">
-        <div class="absolute -inset-3 bg-gradient-to-r ${
-          s.clicks > 0
-            ? "from-purple-500/15 to-purple-500/5"
-            : "from-slate-500/10 to-transparent"
-        } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
-        <div class="relative">
-          <div class="text-2xl ${
-            s.clicks > 0 ? "text-purple-400" : "text-slate-400"
-          } tracking-tight">${s.clicks}</div>
-          <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">CLICS</div>
-        </div>
-      </div>
-    </div>
-  </td>
-  
-  <td class="p-7 text-center">
-    ${acompteStatus}
-  </td>
-  
-  <td class="p-7 text-center">
-    <div class="text-sm font-bold text-slate-300">${signedDate.toLocaleDateString(
-      "fr-FR"
-    )}</div>
-    <div class="text-xs text-slate-500 mt-1">Il y a ${daysSinceSigned}j</div>
-  </td>
-  
-  <td class="p-7 text-center">
-    ${
-      alerts
-        .map(
-          (a) =>
-            `<div class="${a.color} text-xs font-bold mb-2 px-2 py-1 bg-black/20 rounded">${a.icon} ${a.text}</div>`
-        )
-        .join("") || '<span class="text-slate-600 text-xs">Aucune</span>'
-    }
-  </td>
-  
-  <td class="p-7 text-right">
-    <div class="flex items-center gap-2 justify-end">
-      <button onclick="window.open('${FRONTEND_URL}/guest/${s.id}', '_blank')" 
-              class="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold text-xs hover:bg-blue-600 transition-all">
-        VOIR DOSSIER
-      </button>
-      ${
-        !s.deposit_paid
-          ? `
-      <button onclick="markDepositPaid('${s.id}')" 
-              class="px-4 py-2 bg-emerald-500 text-white rounded-lg font-bold text-xs hover:bg-emerald-600 transition-all">
-        ✓ ACOMPTE
-      </button>`
-          : ""
-      }
-    </div>
-  </td>
-</tr>
-`;
+                      return `
+                      <div class="mt-2 px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                        <div class="text-[10px] text-emerald-400 font-black uppercase tracking-wider">
+                          🛡️ ANTI-ANNULATION
+                        </div>
+
+                        <div class="text-[9px] text-slate-300 mt-0.5">
+                          Dernier : ${last ? last.email_type : "aucun"}
+                          ${
+                            last?.sent_at
+                              ? " (" +
+                                new Date(last.sent_at).toLocaleDateString(
+                                  "fr-FR"
+                                ) +
+                                ")"
+                              : ""
+                          }
+                        </div>
+
+                        <div class="text-[9px] text-slate-400">
+                          Prochain : ${
+                            next
+                              ? next.email_type +
+                                " → " +
+                                new Date(next.scheduled_for).toLocaleDateString(
+                                  "fr-FR"
+                                )
+                              : "aucun"
+                          }
+                        </div>
+                      </div>
+                    `;
+                    })()
+                  : ""
+              }
+                  ${
+                    window.postRefusByStudy?.[s.id]
+                      ? (() => {
+                          const flow = window.postRefusByStudy[s.id];
+                          const last = flow.sent[flow.sent.length - 1];
+                          const next = flow.next;
+
+                          return `
+                    <div class="mt-2 px-2 py-1 rounded-lg bg-red-500/10 border border-red-500/30">
+                      <div class="text-[10px] text-red-400 font-black uppercase tracking-wider">
+                        ❌ POST-REFUS
+                      </div>
+
+                      <div class="text-[9px] text-slate-300 mt-0.5">
+                        Dernier : ${last ? last.email_type : "aucun"}
+                        ${
+                          last?.sent_at
+                            ? " (" +
+                              new Date(last.sent_at).toLocaleDateString(
+                                "fr-FR"
+                              ) +
+                              ")"
+                            : ""
+                        }
+                      </div>
+
+                      <div class="text-[9px] text-slate-400">
+                        Prochain : ${
+                          next
+                            ? next.email_type +
+                              " → " +
+                              new Date(next.scheduled_for).toLocaleDateString(
+                                "fr-FR"
+                              )
+                            : "aucun"
+                        }
+                      </div>
+                    </div>
+                  `;
+                        })()
+                      : ""
+                  }
+                      ${
+                        window.emailFlowByClient?.[s.client_id]
+                          ? (() => {
+                              const flow =
+                                window.emailFlowByClient[s.client_id];
+
+                              return `
+                    <div class="mt-2 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                      <div class="text-[10px] text-blue-400 font-black uppercase tracking-wider">
+                        📬 AXE C — NURTURING
+                      </div>
+
+                      <div class="text-[9px] text-slate-300 mt-0.5">
+                        Étape : ${flow.step ?? 0}
+                      </div>
+
+                      <div class="text-[9px] text-slate-400">
+                        Dernier : ${
+                          flow.last
+                            ? new Date(flow.last).toLocaleDateString("fr-FR")
+                            : "jamais"
+                        }
+                        • Prochain : ${
+                          flow.next
+                            ? new Date(flow.next).toLocaleDateString("fr-FR")
+                            : "aucun"
+                        }
+                      </div>
+                    </div>
+                  `;
+                            })()
+                          : ""
+                      }
+
+
+
+            </td>
+
+
+
+            <td class="p-7 text-center">
+              <div class="text-2xl font-bold text-emerald-400">
+                ${ca.toLocaleString(
+                  "fr-FR"
+                )} <span class="text-base font-normal text-emerald-400/70">€</span>
+              </div>
+            </td>
+
+              <td class="p-7 text-center">
+                <div class="flex justify-center gap-8 font-black">
+                  <div class="relative group/stat">
+                    <div class="absolute -inset-3 bg-gradient-to-r ${
+                      s.views >= 3
+                        ? "from-orange-500/15 to-orange-500/5"
+                        : "from-slate-500/10 to-transparent"
+                    } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+                    <div class="relative">
+                      <div class="text-2xl ${
+                        s.views >= 3 ? "text-orange-400" : "text-slate-400"
+                      } tracking-tight">${s.views}</div>
+                      <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">VUES</div>
+                    </div>
+                  </div>
+
+                  <div class="w-px bg-gradient-to-b from-transparent via-slate-700/50 to-transparent"></div>
+
+                  <div class="relative group/stat">
+                    <div class="absolute -inset-3 bg-gradient-to-r ${
+                      s.clicks > 0
+                        ? "from-purple-500/15 to-purple-500/5"
+                        : "from-slate-500/10 to-transparent"
+                    } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+                    <div class="relative">
+                      <div class="text-2xl ${
+                        s.clicks > 0 ? "text-purple-400" : "text-slate-400"
+                      } tracking-tight">${s.clicks}</div>
+                      <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">CLICS</div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <td class="p-7 text-center">
+                ${acompteStatus}
+              </td>
+
+              <td class="p-7 text-center">
+                <div class="text-sm font-bold text-slate-300">${signedDate.toLocaleDateString(
+                  "fr-FR"
+                )}</div>
+                <div class="text-xs text-slate-500 mt-1">Il y a ${daysSinceSigned}j</div>
+              </td>
+
+              <td class="p-7 text-center">
+                ${
+                  alerts
+                    .map(
+                      (a) =>
+                        `<div class="${a.color} text-xs font-bold mb-2 px-2 py-1 bg-black/20 rounded">${a.icon} ${a.text}</div>`
+                    )
+                    .join("") ||
+                  '<span class="text-slate-600 text-xs">Aucune</span>'
+                }
+              </td>
+
+              <td class="p-7 text-right">
+                <div class="flex items-center gap-2 justify-end">
+                  <button onclick="window.open('${FRONTEND_URL}/guest/${
+              s.id
+            }', '_blank')"
+                          class="px-4 py-2 bg-blue-500 text-white rounded-lg font-bold text-xs hover:bg-blue-600 transition-all">
+                    VOIR DOSSIER
+                  </button>
+                  ${
+                    !s.deposit_paid
+                      ? `
+                  <button onclick="markDepositPaid('${s.id}')"
+                          class="px-4 py-2 bg-emerald-500 text-white rounded-lg font-bold text-xs hover:bg-emerald-600 transition-all">
+                    ✓ ACOMPTE
+                  </button>`
+                      : ""
+                  }
+                </div>
+              </td>
+            </tr>
+            `;
           })
           .join("");
       }
@@ -2730,9 +3227,40 @@ ${businessBadge}
             const lastSent = l.last_email_sent
               ? new Date(l.last_email_sent).toLocaleDateString("fr-FR")
               : "Jamais";
-            const nextSend = l.next_email_date
-              ? new Date(l.next_email_date).toLocaleDateString("fr-FR")
-              : "Non planifié";
+
+            // 🔥 CALCUL DE LA PROCHAINE RELANCE
+            const getNextFollowup = () => {
+              if (!l.last_email_sent) return "Immédiat";
+
+              const created = new Date(l.created_at);
+              const lastSentDate = new Date(l.last_email_sent);
+              const now = new Date();
+              const daysSinceCreation = Math.floor(
+                (now - created) / (1000 * 60 * 60 * 24)
+              );
+              const daysSinceLastEmail = Math.floor(
+                (now - lastSentDate) / (1000 * 60 * 60 * 24)
+              );
+
+              // > 120 jours : terminé
+              if (daysSinceCreation > 120) return "Terminé";
+
+              // < 60 jours : relance tous les 3 jours
+              if (daysSinceCreation <= 60) {
+                if (daysSinceLastEmail >= 3) return "Dû";
+                const next = new Date(lastSentDate);
+                next.setDate(next.getDate() + 3);
+                return next.toLocaleDateString("fr-FR");
+              }
+
+              // 60-120 jours : relance tous les 7 jours
+              if (daysSinceLastEmail >= 7) return "Dû";
+              const next = new Date(lastSentDate);
+              next.setDate(next.getDate() + 7);
+              return next.toLocaleDateString("fr-FR");
+            };
+
+            const nextSend = getNextFollowup();
             const isOptedOut = l.opted_out;
 
             const rowClass = isOptedOut
@@ -2748,104 +3276,107 @@ ${businessBadge}
               : "";
 
             return `
-            <tr class="${rowClass}">
-              <td colspan="4" class="p-0">
-                <div class="grid grid-cols-[30%_15%_20%_20%_15%] px-6 py-5 items-center transition-all duration-300 hover:bg-white/[0.02]">
-                  <div>
-                    <div class="text-lg font-bold ${nameStyle}">${
+                        <tr class="${rowClass}">
+                          <td colspan="4" class="p-0">
+                            <div class="grid grid-cols-[30%_15%_20%_20%_15%] px-6 py-5 items-center transition-all duration-300 hover:bg-white/[0.02]">
+                              <div>
+                                <div class="text-lg font-bold ${nameStyle}">${
               l.name
             }${statusBadge}</div>
-                    <div class="text-xs text-slate-500 font-medium mt-1">${
-                      l.email
-                    }</div>
-                    <div class="text-[9px] text-slate-600 uppercase font-bold tracking-wider mt-1">ÉTAPE ${
-                      l.email_sequence_step
-                    }</div>
-                  </div>
+                                <div class="text-xs text-slate-500 font-medium mt-1">${
+                                  l.email
+                                }</div>
+                                <div class="text-[9px] text-slate-600 uppercase font-bold tracking-wider mt-1">ÉTAPE ${
+                                  l.email_sequence_step
+                                }</div>
+                              </div>
 
-                  <div class="text-center">
-                    <div class="flex justify-center gap-8 font-black">
-                      <div class="relative group/stat">
-                        <div class="absolute -inset-2 bg-gradient-to-r ${
-                          l.total_opens > 0
-                            ? "from-blue-500/15 to-blue-500/5"
-                            : "from-slate-500/10 to-transparent"
-                        } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
-                        <div class="relative">
-                          <div class="text-2xl ${
-                            l.total_opens > 0
-                              ? "text-blue-400"
-                              : "text-slate-400"
-                          } tracking-tight">${l.total_opens}</div>
-                          <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">👁️</div>
-                        </div>
-                      </div>
+                              <div class="text-center">
+                                <div class="flex justify-center gap-8 font-black">
+                                  <div class="relative group/stat">
+                                    <div class="absolute -inset-2 bg-gradient-to-r ${
+                                      l.total_opens > 0
+                                        ? "from-blue-500/15 to-blue-500/5"
+                                        : "from-slate-500/10 to-transparent"
+                                    } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+                                    <div class="relative">
+                                      <div class="text-2xl ${
+                                        l.total_opens > 0
+                                          ? "text-blue-400"
+                                          : "text-slate-400"
+                                      } tracking-tight">${l.total_opens}</div>
+                                      <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">👁️</div>
+                                    </div>
+                                  </div>
 
-                      <div class="relative group/stat">
-                        <div class="absolute -inset-2 bg-gradient-to-r ${
-                          l.total_clicks > 0
-                            ? "from-green-500/15 to-green-500/5"
-                            : "from-slate-500/10 to-transparent"
-                        } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
-                        <div class="relative">
-                          <div class="text-2xl ${
-                            l.total_clicks > 0
-                              ? "text-green-400"
-                              : "text-slate-400"
-                          } tracking-tight">${l.total_clicks}</div>
-                          <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">🖱️</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                                  <div class="relative group/stat">
+                                    <div class="absolute -inset-2 bg-gradient-to-r ${
+                                      l.total_clicks > 0
+                                        ? "from-green-500/15 to-green-500/5"
+                                        : "from-slate-500/10 to-transparent"
+                                    } rounded-xl opacity-0 group-hover/stat:opacity-100 transition-all duration-300"></div>
+                                    <div class="relative">
+                                      <div class="text-2xl ${
+                                        l.total_clicks > 0
+                                          ? "text-green-400"
+                                          : "text-slate-400"
+                                      } tracking-tight">${l.total_clicks}</div>
+                                      <div class="text-[9px] text-slate-500 uppercase tracking-[0.2em] font-bold mt-1">🖱️</div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
 
-                  <div class="text-center">
-                    <div class="text-sm font-bold text-slate-300">${lastSent}</div>
-                  </div>
+                              <div class="text-center">
+                                <div class="text-sm font-bold text-slate-300">${lastSent}</div>
+                              </div>
 
-                  <div class="text-center">
-                    <div class="text-sm font-bold ${
-                      isToday ? "text-orange-400" : "text-slate-300"
-                    }">${nextSend}</div>
+                              <div class="text-center">
+                                <div class="text-sm font-bold ${
+                                  isToday ? "text-orange-400" : "text-slate-300"
+                                }">${nextSend}</div>
+                                ${
+                                  isToday
+                                    ? '<div class="text-[9px] text-orange-400 uppercase font-black tracking-wider mt-1">🔔 AUJOURD\'HUI</div>'
+                                    : ""
+                                }
+                              </div>
+
+                             <div class="text-center">
                     ${
-                      isToday
-                        ? '<div class="text-[9px] text-orange-400 uppercase font-black tracking-wider mt-1">🔔 AUJOURD\'HUI</div>'
-                        : ""
+                      isOptedOut
+                        ? `
+                          <button
+                            disabled
+                            class="px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg cursor-not-allowed">
+                            DÉSABONNÉ
+                          </button>
+
+                          <button onclick="deleteLeadPermanently('${
+                            l.client_id
+                          }', '${l.email.replace(
+                            /'/g,
+                            "\\'"
+                          )}', '${l.name.replace(/'/g, "\\'")}')"
+                            class="ml-2 px-4 py-2 bg-red-600/20 border border-red-600/60 text-red-400 font-black rounded-lg hover:bg-red-600/30 transition-all uppercase text-[9px] tracking-wider">
+                            🗑️ SUPPRIMER
+                          </button>
+                        `
+                        : `
+                          <button onclick="setOptOut('${l.email.replace(
+                            /'/g,
+                            "\\'"
+                          )}')"
+
+                            class="action-button px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+                            STOP EMAILS
+                          </button>
+                        `
                     }
-                  </div>
-
-                 <div class="text-center">
-        ${
-          isOptedOut
-            ? `
-              <button
-                disabled
-                class="px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg cursor-not-allowed">
-                DÉSABONNÉ
-              </button>
-
-              <button onclick="deleteLeadPermanently('${
-                l.client_id
-              }', '${l.email.replace(/'/g, "\\'")}', '${l.name.replace(
-                /'/g,
-                "\\'"
-              )}')"
-                class="ml-2 px-4 py-2 bg-red-600/20 border border-red-600/60 text-red-400 font-black rounded-lg hover:bg-red-600/30 transition-all uppercase text-[9px] tracking-wider">
-                🗑️ SUPPRIMER
-              </button>
-            `
-            : `
-              <button onclick="setOptOut('${l.email.replace(/'/g, "\\'")}')"
-
-                class="action-button px-4 py-1.5 text-[9px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
-                STOP EMAILS
-              </button>
-            `
-        }
-                  </div>
-                </div>
-              </td>
-            </tr>`;
+                              </div>
+                            </div>
+                          </td>
+                        </tr>`;
           })
           .join("");
       }
