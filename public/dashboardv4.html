@@ -1,0 +1,4455 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AUTOPILOTE SOLAIRE - Nicolas Di Stefano</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Charger Supabase de manière asynchrone et attendre qu'il soit prêt
+      (function () {
+        const script = document.createElement("script");
+        script.src =
+          "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js";
+        script.onload = function () {
+          console.log("✅ Supabase chargé !");
+          window.supabaseReady = true;
+        };
+        script.onerror = function () {
+          console.error("❌ Erreur chargement Supabase !");
+        };
+        document.head.appendChild(script);
+      })();
+    </script>
+    <style>
+     /* ============================= */
+/* 🔥 PARTIE 1 — PREMIUM (NOUVEAU) */
+/* ============================= */
+
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: rgba(15, 23, 42, 0.8);
+  --bg-tertiary: #050510;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-bg-hover: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-hover: rgba(255, 255, 255, 0.15);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
+  --critical: #ef4444;
+  --critical-bg: rgba(239, 68, 68, 0.1);
+  --critical-border: rgba(239, 68, 68, 0.3);
+  --critical-glow: rgba(239, 68, 68, 0.4);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.3);
+  --warning-glow: rgba(245, 158, 11, 0.4);
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.3);
+  --success-glow: rgba(16, 185, 129, 0.4);
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.1);
+  --info-border: rgba(59, 130, 246, 0.3);
+  --info-glow: rgba(59, 130, 246, 0.4);
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-danger: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  --gradient-info: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  --blur-lg: blur(24px);
+  --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --space-lg: 1.5rem;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+.glass-premium {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-lg) saturate(180%);
+  border: 1px solid var(--glass-border);
+  transition: all var(--transition-base);
+}
+
+.card-premium {
+  background: var(--glass-bg);
+  backdrop-filter: var(--blur-lg);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: var(--space-lg);
+  transition: all var(--transition-base);
+}
+
+/* ============================= */
+/* 🧠 TON CSS ACTUEL (INCHANGÉ) */
+/* ============================= */
+
+.cockpit-block {
+  position: relative;
+}
+
+.cockpit-block::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1.5rem;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03),
+              0 0 40px rgba(0,0,0,0.4);
+}
+
+      body {
+        background: linear-gradient(
+          135deg,
+          #0a0a1a 0%,
+          #050510 50%,
+          #0a0a1a 100%
+        );
+        color: white;
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        transition: all 0.4s ease;
+        position: relative;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            circle at 20% 50%,
+            rgba(59, 130, 246, 0.03) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 80%,
+            rgba(16, 185, 129, 0.03) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .content-wrapper {
+        position: relative;
+        z-index: 1;
+      }
+
+      .glass {
+        background: rgba(15, 17, 26, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .anomaly-card {
+        background: linear-gradient(
+          135deg,
+          rgba(239, 68, 68, 0.08) 0%,
+          rgba(239, 68, 68, 0.02) 100%
+        );
+        border: 1px solid rgba(239, 68, 68, 0.25);
+      }
+
+      .stable-indicator {
+        animation: pulse-glow 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse-glow {
+        0%,
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        50% {
+          transform: scale(1.05);
+          box-shadow: 0 0 40px rgba(16, 185, 129, 0.5);
+        }
+      }
+
+      body.mode-zen .anomaly-card {
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.02);
+      }
+      body.mode-zen .text-red-500,
+      body.mode-zen .text-orange-400,
+      body.mode-zen .text-orange-500 {
+        color: #94a3b8 !important;
+      }
+      body.mode-zen .bg-red-500,
+      body.mode-zen .bg-orange-500,
+      body.mode-zen .bg-emerald-500 {
+        background-color: #475569 !important;
+        color: white !important;
+      }
+      body.mode-zen .border-emerald-500,
+      body.mode-zen .border-red-500 {
+        border-color: #334155 !important;
+      }
+
+      select {
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        appearance: none;
+        text-align: center;
+        outline: none;
+      }
+
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+      .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 140px;
+        background-color: rgba(0, 0, 0, 0.95);
+        color: #fff;
+        text-align: center;
+        border-radius: 8px;
+        padding: 8px;
+        position: absolute;
+        z-index: 10;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -70px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 10px;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .tooltip:hover .tooltiptext {
+        visibility: visible;
+        opacity: 1;
+      }
+
+      dialog::backdrop {
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(8px);
+      }
+      dialog[open] {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .rule-box {
+        background: rgba(0, 0, 0, 0.5);
+        border-radius: 8px;
+        padding: 12px;
+        margin-top: 10px;
+        font-family: "Courier New", monospace;
+        font-size: 11px;
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        text-align: left;
+      }
+
+      .stat-card {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          currentColor,
+          transparent
+        );
+        opacity: 0;
+        transition: opacity 0.4s;
+      }
+
+      .stat-card:hover::before {
+        opacity: 0.5;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-4px);
+      }
+
+      tbody tr {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      tbody tr:hover {
+        background: rgba(59, 130, 246, 0.03) !important;
+        transform: translateX(4px);
+      }
+
+      .action-button {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .action-button:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      .nuclear-glow {
+        position: relative;
+      }
+
+      .nuclear-glow::after {
+        content: "";
+        position: absolute;
+        inset: -10px;
+        background: radial-gradient(
+          circle,
+          rgba(16, 185, 129, 0.1) 0%,
+          transparent 70%
+        );
+        z-index: -1;
+        animation: nuclear-pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes nuclear-pulse {
+        0%,
+        100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .search-bar:focus-within {
+        border-color: rgba(59, 130, 246, 0.5);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+      }
+
+      .filter-chip {
+        transition: all 0.2s ease;
+      }
+
+      .filter-chip:hover {
+        transform: translateY(-2px);
+      }
+
+      .filter-chip.active {
+        background: linear-gradient(
+          135deg,
+          rgba(59, 130, 246, 0.25),
+          rgba(59, 130, 246, 0.08)
+        );
+        border-color: rgba(59, 130, 246, 0.6);
+        box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4),
+          0 0 20px rgba(59, 130, 246, 0.25);
+        transform: translateY(-1px) scale(1.03);
+      }
+
+      .temp-cold {
+        background: rgba(100, 116, 139, 0.15);
+        border: 1px solid rgba(100, 116, 139, 0.4);
+        color: #94a3b8;
+      }
+
+      .temp-warm {
+        background: rgba(59, 130, 246, 0.18);
+        border: 1px solid rgba(59, 130, 246, 0.5);
+        color: #93c5fd;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+      }
+
+      .temp-hot {
+        background: linear-gradient(
+          135deg,
+          rgba(168, 85, 247, 0.25),
+          rgba(251, 146, 60, 0.25)
+        );
+        border: 1px solid rgba(251, 146, 60, 0.6);
+        color: #fde68a;
+        box-shadow: 0 0 18px rgba(251, 146, 60, 0.45);
+      }
+
+      .temp-signed {
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.35),
+          rgba(6, 182, 212, 0.2)
+        );
+        border: 1px solid rgba(16, 185, 129, 0.8);
+        color: #a7f3d0;
+        box-shadow: 0 0 22px rgba(16, 185, 129, 0.6);
+      }
+
+      @keyframes warpulse {
+        0%,
+        100% {
+          box-shadow: 0 0 25px rgba(239, 68, 68, 0.25),
+            inset 0 0 0 1px rgba(239, 68, 68, 0.35);
+        }
+        50% {
+          box-shadow: 0 0 60px rgba(239, 68, 68, 0.55),
+            inset 0 0 0 1px rgba(239, 68, 68, 0.6);
+        }
+      }
+
+      .war-room-critical {
+        position: relative;
+        border: 1px solid rgba(239, 68, 68, 0.45) !important;
+        animation: warpulse 4s ease-in-out infinite;
+      }
+      /* ============================= */
+/* 🚀 PARTIE 2 — CARTES PREMIUM */
+/* ============================= */
+
+.metric-card-premium{
+  background:var(--glass-bg);
+  backdrop-filter:var(--blur-lg) saturate(180%);
+  border:1px solid var(--glass-border);
+  border-radius:20px;
+  padding:24px;
+  transition:.4s;
+  position:relative;
+  overflow:hidden;
+}
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.metric-label {
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  opacity: 0.6;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.metric-value {
+  font-size: 56px;
+  font-weight: 900;
+  margin: 6px 0;
+  line-height: 1;
+}
+
+.metric-progress {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.metric-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.metric-card-premium:hover{
+  transform:translateY(-6px);
+  box-shadow:0 20px 60px rgba(0,0,0,.5);
+}
+
+.metric-label{
+  font-size:11px;
+  letter-spacing:.2em;
+  opacity:.6;
+  font-weight:700;
+}
+
+.metric-value{
+  font-size:56px;
+  font-weight:900;
+  margin:6px 0;
+}
+
+.metric-progress{
+  height:6px;
+  background:rgba(255,255,255,.08);
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.metric-progress-bar{
+  height:100%;
+  border-radius:999px;
+}
+
+/* WAR ROOM PREMIUM */
+
+.war-room-card{
+  background:rgba(80,0,0,.25);
+  border:1px solid rgba(239,68,68,.4);
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 0 25px rgba(239,68,68,.3);
+  animation:warpulse 4s ease-in-out infinite;
+  position:relative;
+}
+
+.war-room-glow{
+  position:absolute;
+  top:-20px;
+  right:-20px;
+  width:120px;
+  height:120px;
+  background:radial-gradient(circle, rgba(239,68,68,.5), transparent 70%);
+  border-radius:50%;
+  pointer-events:none;
+}
+/* ============================= */
+/* 🧭 PARTIE 3 — HEADER PREMIUM */
+/* ============================= */
+
+.cockpit-header {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0));
+  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px);
+  border-radius: 20px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.4);
+}
+
+.logo-core {
+  background: linear-gradient(135deg,#3b82f6,#10b981);
+  box-shadow: 0 0 25px rgba(59,130,246,.6);
+}
+
+.status-pill {
+  background: rgba(15,23,42,.7);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:999px;
+  padding:6px 14px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.04);
+}
+
+.cockpit-btn {
+  background: rgba(15,23,42,.6);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:10px 16px;
+  font-weight:800;
+  font-size:10px;
+  letter-spacing:.15em;
+  transition:.25s;
+  text-transform:uppercase;
+}
+
+.cockpit-btn:hover {
+  transform:translateY(-2px);
+  box-shadow:0 10px 25px rgba(0,0,0,.4);
+}
+
+.cockpit-section {
+  background: linear-gradient(180deg, rgba(255,255,255,.04), transparent);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  padding:24px;
+  box-shadow:0 15px 50px rgba(0,0,0,.45);
+}
+:root {
+  --bg-primary: #0a0e1a;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --blur-lg: blur(24px);
+  --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --success: #10b981;
+  --info: #3b82f6;
+}
+
+body {
+  background: linear-gradient(135deg, #0a0a1a 0%, #050510 50%, #0a0a1a 100%);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* ========================================
+   🎨 HEADER PRINCIPAL PREMIUM
+======================================== */
+
+.header-premium {
+  position: relative;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+/* Effet glow de fond */
+.header-premium::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(59, 130, 246, 0.08) 0%,
+    transparent 50%
+  );
+  pointer-events: none;
+  animation: header-glow 8s ease-in-out infinite;
+}
+
+@keyframes header-glow {
+  0%, 100% {
+    opacity: 0.3;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1.1);
+  }
+}
+
+/* Container du header */
+.header-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 1.5rem 2rem;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* ========================================
+   🏢 LOGO & BRANDING
+======================================== */
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #10b981 100%);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 
+    0 8px 24px rgba(59, 130, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%); }
+  100% { transform: translateX(100%) translateY(100%); }
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.brand-title {
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-subtitle {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ========================================
+   🎮 BOUTONS D'ACTION PREMIUM
+======================================== */
+
+.actions-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-premium {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+}
+
+.btn-premium:hover::before {
+  transform: translateX(100%);
+}
+
+.btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-premium:active {
+  transform: translateY(0);
+}
+
+/* Variantes de boutons */
+.btn-zen {
+  background: rgba(100, 116, 139, 0.15);
+  border-color: rgba(100, 116, 139, 0.4);
+  color: #cbd5e1;
+}
+
+.btn-zen:hover {
+  background: rgba(100, 116, 139, 0.25);
+  border-color: rgba(100, 116, 139, 0.6);
+}
+
+.btn-priority {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+}
+
+.btn-priority:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: rgba(245, 158, 11, 0.6);
+}
+
+.btn-priority.active {
+  background: #f59e0b;
+  color: #000;
+  border-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+}
+
+/* ========================================
+   📊 INDICATEUR DE STATUT
+======================================== */
+
+.status-indicator {
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  border-radius: 10px;
+  padding: 0.65rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+  animation: pulse-dot 2s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.status-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  opacity: 0;
+  animation: ripple 2s ease-in-out infinite;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.status-text {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #cbd5e1;
+}
+
+.status-count {
+  color: #3b82f6;
+  font-weight: 900;
+}
+
+/* ========================================
+   🎯 SYSTÈME D'ÉTAT OPÉRATIONNEL
+======================================== */
+
+.system-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: #64748b;
+}
+
+.system-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.system-status.online {
+  color: #10b981;
+}
+
+.system-status.warning {
+  color: #f59e0b;
+}
+
+.system-status.error {
+  color: #ef4444;
+}
+
+/* ========================================
+   🎨 BARRE DE NAVIGATION SECONDAIRE
+======================================== */
+
+.nav-secondary {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.nav-tab {
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.nav-tab:hover {
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab.active {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+/* ========================================
+   🔔 BADGE DE NOTIFICATION
+======================================== */
+
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: white;
+  border-radius: 9px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+/* ============================= */
+/* 📊 PARTIE 4 — TABLE PREMIUM */
+/* ============================= */
+
+.table-premium {
+  background: linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
+.table-premium table {
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+}
+
+.table-premium thead th {
+  background: rgba(15,23,42,.9);
+  backdrop-filter: blur(10px);
+  font-size:10px;
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  color:#94a3b8;
+  padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  position:sticky;
+  top:0;
+  z-index:5;
+}
+
+.table-premium tbody tr {
+  transition:.25s;
+}
+
+.table-premium tbody tr:hover {
+  background: linear-gradient(90deg, rgba(59,130,246,.08), transparent);
+  transform: scale(1.01);
+}
+
+.table-premium tbody td {
+  padding:14px 16px;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:13px;
+}
+
+.row-focus {
+  background: linear-gradient(90deg, rgba(239,68,68,.12), transparent) !important;
+}
+
+.row-signed {
+  background: linear-gradient(90deg, rgba(16,185,129,.12), transparent) !important;
+}
+
+.row-cold {
+  opacity:.55;
+}
+
+.table-badge {
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  border:1px solid rgba(255,255,255,.15);
+  backdrop-filter: blur(6px);
+}
+
+.table-badge.hot {
+  background:rgba(16,185,129,.15);
+  color:#6ee7b7;
+  border-color:rgba(16,185,129,.4);
+}
+
+.table-badge.cold {
+  background:rgba(100,116,139,.15);
+  color:#cbd5f5;
+}
+
+.table-badge.risk {
+  background:rgba(239,68,68,.15);
+  color:#fca5a5;
+  border-color:rgba(239,68,68,.4);
+}
+/* ============================= */
+/* 🚀 PARTIE 5 — COMMAND CENTER */
+/* ============================= */
+
+/* Respiration légère du cockpit */
+@keyframes cockpit-breath {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.002); }
+}
+
+.cockpit-breath {
+  animation: cockpit-breath 6s ease-in-out infinite;
+}
+
+/* Mise en focus auto */
+.command-focus {
+  position: relative;
+  z-index: 5;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.05),
+    0 0 40px rgba(59,130,246,0.25),
+    0 0 120px rgba(59,130,246,0.15);
+  transform: scale(1.01);
+}
+
+/* Assombrissement du reste */
+body.command-mode .content-wrapper {
+  filter: blur(1px) brightness(0.6);
+  transition: all 0.6s ease;
+}
+
+body.command-mode .command-focus {
+  filter: none !important;
+}
+
+/* Urgence critique renforcée */
+.critical-focus {
+  animation: critical-focus-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes critical-focus-pulse {
+  0%,100% {
+    box-shadow:
+      0 0 30px rgba(239,68,68,0.4),
+      0 0 120px rgba(239,68,68,0.2);
+  }
+  50% {
+    box-shadow:
+      0 0 60px rgba(239,68,68,0.7),
+      0 0 180px rgba(239,68,68,0.35);
+  }
+}
+
+/* Mode priorité */
+body.mode-priority .war-room-critical {
+  transform: scale(1.04);
+  z-index: 10;
+}
+
+body.mode-priority .stat-card {
+  opacity: 0.4;
+}
+
+body.mode-priority .war-room-critical,
+body.mode-priority .critical-focus {
+  opacity: 1 !important;
+}
+/* ========================================
+   📊 PARTIE 4 — TABLEAU PREMIUM
+   ======================================== */
+
+.table-premium {
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.table-premium thead tr {
+  background: linear-gradient(
+    135deg,
+    rgba(255,255,255,0.04),
+    rgba(255,255,255,0.01)
+  );
+}
+
+.table-premium thead th {
+  padding: 14px 16px;
+  font-size: 10px;
+  letter-spacing: 0.35em;
+  color: #64748b;
+}
+
+.table-premium tbody tr {
+  background: rgba(15, 17, 26, 0.85);
+  backdrop-filter: blur(16px);
+  transition: all 0.25s ease;
+}
+
+.table-premium tbody tr:hover {
+  transform: translateX(6px) scale(1.005);
+  background: linear-gradient(
+    135deg,
+    rgba(59,130,246,0.08),
+    rgba(16,185,129,0.04)
+  );
+  box-shadow: 
+    0 12px 28px rgba(0,0,0,0.4),
+    inset 0 0 0 1px rgba(59,130,246,0.25);
+}
+
+.table-premium td {
+  padding: 16px;
+  border-top: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.table-premium tbody tr td:first-child {
+  border-radius: 14px 0 0 14px;
+}
+
+.table-premium tbody tr td:last-child {
+  border-radius: 0 14px 14px 0;
+}
+
+/* Chips statut */
+
+.lead-chip {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lead-hot {
+  background: linear-gradient(135deg, rgba(16,185,129,0.25), rgba(6,182,212,0.15));
+  border: 1px solid rgba(16,185,129,0.5);
+  color: #a7f3d0;
+  box-shadow: 0 0 16px rgba(16,185,129,0.4);
+}
+
+.lead-cold {
+  background: rgba(100,116,139,0.2);
+  border: 1px solid rgba(100,116,139,0.4);
+  color: #cbd5f5;
+}
+
+.lead-risk {
+  background: linear-gradient(135deg, rgba(239,68,68,0.35), rgba(220,38,38,0.15));
+  border: 1px solid rgba(239,68,68,0.6);
+  color: #fecaca;
+  box-shadow: 0 0 18px rgba(239,68,68,0.45);
+}
+
+/* Mini barre engagement */
+
+.engage-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+}
+
+.engage-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  box-shadow: 0 0 10px rgba(59,130,246,0.5);
+}
+/* === ENGAGEMENT BAR === */
+.engage-bar {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.engage-bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg,#3b82f6,#a855f7,#f59e0b);
+  box-shadow: 0 0 12px rgba(168,85,247,0.6);
+  transition: width 0.5s ease;
+}
+
+/* === BADGES PRIORITÉ === */
+.lead-priority {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  background: linear-gradient(135deg,#ef4444,#f59e0b);
+  color: black;
+  box-shadow: 0 0 18px rgba(239,68,68,0.6);
+  animation: pulse-prio 2s infinite;
+}
+
+@keyframes pulse-prio {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* === HALO CRITIQUE === */
+.card-critical {
+  animation: criticalPulse 3s ease-in-out infinite;
+}
+
+@keyframes criticalPulse {
+  0%,100% { box-shadow: 0 0 0 rgba(239,68,68,0); }
+  50% { box-shadow: 0 0 40px rgba(239,68,68,0.35); }
+}
+:root {
+  --bg-primary: #0a0e1a;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --blur-lg: blur(24px);
+  --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --critical: #ef4444;
+  --success: #10b981;
+  --info: #3b82f6;
+  --warning: #f59e0b;
+}
+
+body {
+  background: linear-gradient(135deg, #0a0a1a 0%, #050510 50%, #0a0a1a 100%);
+  color: white;
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+/* ========================================
+   📋 CARTES DE LISTE (PIPELINE/WAR ROOM)
+======================================== */
+
+.list-card-premium {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.list-card-premium::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.05),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform 0.6s;
+  pointer-events: none;
+}
+
+.list-card-premium:hover::before {
+  transform: translateX(100%);
+}
+
+.list-card-premium:hover {
+  transform: translateX(4px);
+  background: rgba(59, 130, 246, 0.05);
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.list-card-premium.critical {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.03);
+}
+
+.list-card-premium.critical:hover {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.08);
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.2);
+}
+
+.list-card-premium.success {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.03);
+}
+
+.list-card-premium.success:hover {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.08);
+}
+
+/* ========================================
+   👤 SECTION CLIENT DANS CARTE
+======================================== */
+
+.client-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.client-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 1.2rem;
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  position: relative;
+  overflow: hidden;
+  color: white;
+}
+
+.client-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%) translateY(-100%); }
+  100% { transform: translateX(100%) translateY(100%); }
+}
+
+.client-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.client-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.client-email {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.client-meta {
+  font-size: 0.7rem;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================
+   🏷️ BADGES DE TEMPÉRATURE/STATUT
+======================================== */
+
+.temp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.temp-badge.cold {
+  background: rgba(100, 116, 139, 0.15);
+  border-color: rgba(100, 116, 139, 0.4);
+  color: #94a3b8;
+}
+
+.temp-badge.warm {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+}
+
+.temp-badge.hot {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(251, 146, 60, 0.25));
+  border-color: rgba(251, 146, 60, 0.6);
+  color: #fde68a;
+  box-shadow: 0 0 18px rgba(251, 146, 60, 0.35);
+  animation: hot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 18px rgba(251, 146, 60, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(251, 146, 60, 0.55);
+  }
+}
+
+.temp-badge.signed {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(6, 182, 212, 0.2));
+  border-color: rgba(16, 185, 129, 0.8);
+  color: #a7f3d0;
+  box-shadow: 0 0 22px rgba(16, 185, 129, 0.5);
+}
+
+/* Badge simple */
+.badge-simple {
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.badge-simple.critical {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-simple.warning {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-simple.success {
+  background: rgba(16, 185, 129, 0.2);
+  color: #a7f3d0;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+/* ========================================
+   📊 MÉTRIQUES D'ENGAGEMENT
+======================================== */
+
+.engagement-metrics {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.metric-item {
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ========================================
+   🎯 SÉQUENCE EMAIL
+======================================== */
+
+.sequence-indicator {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sequence-indicator.active {
+  border-color: rgba(59, 130, 246, 0.4);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.sequence-indicator.post-refus {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.sequence-indicator.anti-annulation {
+  border-color: rgba(16, 185, 129, 0.4);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.sequence-title {
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.sequence-detail {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.sequence-next {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #f59e0b;
+  margin-top: 0.25rem;
+}
+
+/* ========================================
+   🎮 BOUTONS D'ACTION
+======================================== */
+
+.action-btn {
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: translateX(-100%);
+  transition: transform 0.5s;
+}
+
+.action-btn:hover::before {
+  transform: translateX(100%);
+}
+
+.action-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn:active {
+  transform: scale(0.98);
+}
+
+/* Variantes */
+.action-btn.primary {
+  background: #10b981;
+  border-color: #059669;
+  color: #000;
+}
+
+.action-btn.primary:hover {
+  background: #059669;
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.action-btn.warning {
+  background: #f59e0b;
+  border-color: #d97706;
+  color: #000;
+}
+
+.action-btn.warning:hover {
+  background: #d97706;
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+}
+
+.action-btn.danger {
+  background: transparent;
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+.action-btn.danger:hover {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+}
+
+.action-btn.secondary {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #93c5fd;
+}
+
+.action-btn.secondary:hover {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* Bouton icône */
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+}
+
+/* ========================================
+   🎨 STATUT SELECT PREMIUM
+======================================== */
+
+.status-select {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  appearance: none;
+  text-align: center;
+}
+
+.status-select:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.status-select.sent {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+}
+
+.status-select.signed {
+  border-color: rgba(16, 185, 129, 0.5);
+  background: rgba(16, 185, 129, 0.1);
+  color: #a7f3d0;
+}
+
+/* ========================================
+   📦 CONTAINER DE LISTE
+======================================== */
+
+.list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Ligne séparatrice */
+.list-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  margin: 1rem 0;
+}
+/* =========================
+   🎨 PARTIE 5 — FINITIONS
+========================= */
+
+/* === Skeleton loader === */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 37%,
+    rgba(255,255,255,0.04) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* === Apparition douce === */
+.fade-in {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Tooltip premium === */
+.tooltip-pro {
+  position: relative;
+  cursor: help;
+}
+
+.tooltip-pro::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(0,0,0,0.9);
+  color: #e5e7eb;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 8px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all .2s ease;
+  border: 1px solid rgba(255,255,255,.1);
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+
+.tooltip-pro:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* === Pulse succès === */
+.pulse-success {
+  animation: pulseSuccess 0.6s ease;
+}
+
+@keyframes pulseSuccess {
+  0% { box-shadow: 0 0 0 rgba(16,185,129,0); }
+  50% { box-shadow: 0 0 30px rgba(16,185,129,0.7); }
+  100% { box-shadow: 0 0 0 rgba(16,185,129,0); }
+}
+
+/* === Glow focus === */
+.focus-glow {
+  box-shadow: 0 0 0 2px rgba(59,130,246,.4), 0 0 25px rgba(59,130,246,.4);
+}
+
+
+    </style>
+  </head>
+  <body class="p-2">
+  
+<!-- PARTIE 2/5 : HEADER + COCKPIT + STATS KPI -->
+
+<!-- EN-TÊTE -->
+<div class="header-premium">
+  <div class="header-container">
+
+    <!-- BRAND -->
+    <div class="brand-section">
+      <div class="brand-icon">⚡</div>
+      <div class="brand-text">
+        <div class="brand-title">AUTOPILOTE SOLAIRE</div>
+        <div class="brand-subtitle">
+          <span class="system-status-dot"></span>
+          <span id="system-status">SYSTÈME OPÉRATIONNEL</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="actions-section">
+
+      <button onclick="toggleZen()" id="btn-zen" class="btn-premium btn-zen">
+        🕊️ Mode calme
+      </button>
+
+      <button onclick="togglePriority()" id="btn-priority" class="btn-premium btn-priority">
+        ⚠️ Priorité
+      </button>
+
+      <div class="status-indicator">
+        <div class="status-dot"></div>
+        <span class="status-text">
+          <span class="status-count" id="row-count">0</span> DOSSIERS
+        </span>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+
+<!-- 🧠 COCKPIT WAR ROOM OPTIMISÉ -->
+<section class="glass rounded-2xl p-6 border border-slate-700/40 space-y-6 cockpit-breath">
+
+
+  <!-- BARRE STRATÉGIQUE OPTIMISÉE -->
+  <div class="grid grid-cols-4 gap-4">
+    <div class="glass p-4 rounded-xl border border-red-500/30">
+      <div class="text-xs text-red-400 uppercase font-bold mb-1">
+        🚨 Risques critiques
+      </div>
+      <div id="ec-risk-count" class="text-3xl font-black text-red-400 mb-2">
+        0
+      </div>
+      <!-- ✅ NOUVEAU : CA à risque -->
+      <div class="text-[9px] text-red-300 font-bold">
+        <span id="ec-risk-ca">0 €</span> en danger
+      </div>
+    </div>
+
+    <div class="glass p-4 rounded-xl border border-emerald-500/30">
+      <div class="text-xs text-emerald-400 uppercase font-bold mb-1">
+        🟢 Dossiers sains
+      </div>
+      <div
+        id="ec-hot-count"
+        class="text-3xl font-black text-emerald-400 mb-2"
+      >
+        0
+      </div>
+      <div class="text-[9px] text-emerald-300 font-bold">
+        <span id="ec-hot-ca">0 €</span> sécurisé
+      </div>
+    </div>
+
+    <div class="glass p-4 rounded-xl border border-cyan-500/30">
+      <div class="text-xs text-cyan-300 uppercase font-bold mb-1">🧊 Muets</div>
+      <div id="ec-mute-count" class="text-3xl font-black text-cyan-300 mb-2">
+        0
+      </div>
+      <div class="text-[9px] text-cyan-200 font-bold">
+        <span id="ec-mute-ca">0 €</span> silencieux
+      </div>
+    </div>
+
+    <div class="glass p-4 rounded-xl border border-orange-500/30">
+      <div class="text-xs text-orange-400 uppercase font-bold mb-1">
+        🎯 Action prioritaire
+      </div>
+      <div id="ec-priority" class="text-sm font-bold text-slate-200 mt-2">
+        —
+      </div>
+    </div>
+  </div>
+
+  <!-- WAR ROOM -->
+  <div class="grid grid-cols-3 gap-6">
+    <div class="relative glass rounded-2xl p-4 war-room-critical critical-focus command-focus">
+
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-red-400 font-black text-sm tracking-widest">
+          🚨 WAR ROOM — RISQUE D'ANNULATION
+        </h3>
+        <span
+          class="text-[10px] px-2 py-1 rounded-full bg-red-500/20 text-red-300 font-bold"
+        >
+          CRITIQUE
+        </span>
+      </div>
+
+      <div
+        id="ec-risk-zone"
+        class="space-y-2 max-h-[420px] overflow-y-auto pr-1"
+      ></div>
+    </div>
+
+    <div>
+      <h3 class="text-emerald-400 font-black text-sm mb-2">
+        🟢 DOSSIERS SAINS
+      </h3>
+      <div
+        id="ec-hot-zone"
+        class="space-y-2 max-h-[420px] overflow-y-auto"
+      ></div>
+    </div>
+
+    <div>
+      <h3 class="text-slate-300 font-black text-sm mb-2">
+        🟡 À SURVEILLER
+      </h3>
+      <div
+        id="ec-stable-zone"
+        class="space-y-2 max-h-[420px] overflow-y-auto"
+      ></div>
+    </div>
+  </div>
+</section>
+
+<!-- ALERTES ANOMALIES -->
+<div id="anomaly-zone" class="mb-8 hidden">
+  <div class="flex items-center justify-between mb-4">
+    <h2
+      class="text-red-400 text-[10px] font-black uppercase tracking-[0.35em] flex items-center gap-3"
+    >
+      <span
+        class="w-2 h-2 bg-red-500 rounded-full animate-pulse"
+      ></span>
+      🚨 ÉTUDES À SURVEILLER (RISQUES DÉTECTÉS)
+    </h2>
+    <button
+      onclick="hideAnomalies()"
+      class="px-4 py-2 rounded-lg border border-slate-700 bg-slate-900/50 text-slate-400 font-bold uppercase text-[9px] tracking-wider hover:bg-slate-800 hover:border-slate-600 hover:text-red-400 transition-all"
+    >
+      ✕ MASQUER
+    </button>
+  </div>
+  <div
+    id="anomaly-list"
+    class="grid grid-cols-1 md:grid-cols-3 gap-4"
+  ></div>
+</div>
+
+
+
+<!-- STATS COCKPIT (4 CARTES KPI) -->
+<!-- STATS COCKPIT — PREMIUM -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+
+  <!-- TOTAL -->
+  <div class="metric-card-premium" style="color:#94a3b8;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="metric-label">DOSSIERS TOTAUX</div>
+      <div class="w-2 h-2 bg-slate-400 rounded-full"></div>
+    </div>
+    
+    <div id="anomaly-badge" class="hidden absolute top-4 right-4">
+      <div class="relative">
+        <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.8)]"></div>
+        <div class="absolute inset-0 w-3 h-3 bg-red-500 rounded-full animate-ping opacity-75"></div>
+      </div>
+    </div>
+
+    <div class="metric-value" id="stat-total">0</div>
+    
+    <div id="anomaly-inline" class="hidden mb-3 px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+          <span class="text-[9px] text-red-400 font-black uppercase tracking-wider">
+            <span id="anomaly-count-inline">0</span> À SURVEILLER
+          </span>
+        </div>
+        <button onclick="scrollToAnomalies()" class="text-[8px] text-red-400 hover:text-red-300 font-bold uppercase tracking-wider">
+          VOIR →
+        </button>
+      </div>
+    </div>
+    
+    <div class="metric-progress">
+      <div class="metric-progress-bar" style="width:100%; background:linear-gradient(90deg,#64748b,#475569);"></div>
+    </div>
+  </div>
+
+  <!-- SENT -->
+  <div class="metric-card-premium" style="color:#3b82f6;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="metric-label">EN COURS (SENT)</div>
+      <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+    </div>
+    <div class="metric-value" id="stat-sent">0</div>
+    <div class="metric-progress">
+      <div id="bar-sent" class="metric-progress-bar" style="width:0%; background:linear-gradient(90deg,#3b82f6,#2563eb);"></div>
+    </div>
+  </div>
+
+  <!-- SIGNÉS -->
+  <div class="metric-card-premium" style="color:#10b981;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="metric-label">SIGNÉS (NET)</div>
+      <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+    </div>
+    <div class="metric-value" id="stat-signed">0</div>
+    <div class="metric-progress">
+      <div id="bar-signed" class="metric-progress-bar" style="width:0%; background:linear-gradient(90deg,#10b981,#059669);"></div>
+    </div>
+  </div>
+
+  <!-- RELANCE -->
+  <div class="metric-card-premium" style="color:#f59e0b;">
+    <div class="flex items-center justify-between mb-4">
+      <div class="metric-label">LEADS À RELANCER</div>
+      <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+    </div>
+    <div class="metric-value" id="stat-queue">0</div>
+    <div class="metric-progress">
+      <div id="bar-queue" class="metric-progress-bar" style="width:0%; background:linear-gradient(90deg,#f59e0b,#d97706);"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PARTIE 3/5 : AXE A — GESTION ADMINISTRATIVE OPTIMISÉE -->
+
+<!-- AXE A — TITRE CLARIFIÉ -->
+<div class="mt-12 w-full">
+  <div class="mb-6 flex items-center gap-3">
+    <div
+      class="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]"
+    ></div>
+    <h2
+      class="text-base font-black uppercase tracking-[0.4em] text-emerald-400"
+    >
+      📋 GESTION ADMINISTRATIVE — TOUS LES SIGNÉS
+    </h2>
+  </div>
+
+  <!-- ✅ STATS FINANCIÈRES ACTIONNABLES (4 COLONNES OPTIMISÉES) -->
+  <div class="grid grid-cols-4 gap-6 mb-8 w-full">
+    
+    <!-- 1️⃣ CASH SÉCURISÉ (ex: CA avec acompte) -->
+    <div
+      class="stat-card glass rounded-3xl p-8 relative overflow-hidden border border-emerald-500/20 group"
+    >
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"
+      ></div>
+      <div
+        class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"
+      ></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center justify-between mb-4">
+          <div
+            class="text-base font-black text-slate-400/80 uppercase tracking-[0.25em]"
+          >
+            💰 CASH SÉCURISÉ
+          </div>
+          <div
+            class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.8)]"
+          ></div>
+        </div>
+
+        <div
+          class="text-6xl font-black tracking-tight text-emerald-400 mb-3"
+          id="stat-ca-secured"
+        >
+          0 €
+        </div>
+
+        <!-- ✅ INFO ACTIONNABLE -->
+        <div class="text-xs text-emerald-300 font-bold">
+          <span id="stat-secured-count">0</span> dossiers avec acompte reçu
+        </div>
+
+        <div class="h-1.5 bg-slate-800/50 rounded-full overflow-hidden mt-3">
+          <div
+            id="stat-secured-bar"
+            class="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+            style="width: 0%"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2️⃣ CASH À RISQUE (ex: en attente acompte) -->
+    <div
+      class="stat-card glass rounded-3xl p-8 relative overflow-hidden border border-orange-500/20 group"
+    >
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"
+      ></div>
+      <div
+        class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"
+      ></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center justify-between mb-4">
+          <div
+            class="text-base font-black text-slate-400/80 uppercase tracking-[0.25em]"
+          >
+            ⚠️ CASH À RISQUE
+          </div>
+          <div
+            class="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(249,115,22,0.8)]"
+          ></div>
+        </div>
+
+        <div
+          class="text-6xl font-black tracking-tight text-orange-400 mb-3"
+          id="stat-ca-at-risk"
+        >
+          0 €
+        </div>
+
+        <!-- ✅ INFO ACTIONNABLE -->
+        <div class="text-xs text-orange-300 font-bold">
+          <span id="stat-risk-count">0</span> dossiers en attente d'acompte
+        </div>
+
+        <div class="h-1.5 bg-slate-800/50 rounded-full overflow-hidden mt-3">
+          <div
+            id="stat-risk-bar"
+            class="h-full bg-gradient-to-r from-orange-600 to-orange-400 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"
+            style="width: 0%"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3️⃣ DOSSIERS EN RETARD (ACTIONNABLE) -->
+    <div
+      class="stat-card glass rounded-3xl p-8 relative overflow-hidden border border-red-500/20 group cursor-pointer"
+      onclick="scrollToLateDeposits()"
+    >
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"
+      ></div>
+      <div
+        class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"
+      ></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center justify-between mb-4">
+          <div
+            class="text-base font-black text-slate-400/80 uppercase tracking-[0.25em]"
+          >
+            🚨 EN RETARD > 10J
+          </div>
+          <div
+            class="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.8)]"
+          ></div>
+        </div>
+
+        <div
+          class="text-6xl font-black tracking-tight text-red-400 mb-3"
+          id="stat-late-count"
+        >
+          0
+        </div>
+
+        <!-- ✅ INFO ACTIONNABLE : NOMS DES CLIENTS -->
+        <div class="text-xs text-red-300 font-bold max-h-16 overflow-y-auto">
+          <div id="stat-late-names" class="space-y-1">
+            Aucun retard
+          </div>
+        </div>
+
+        <div class="h-1.5 bg-slate-800/50 rounded-full overflow-hidden mt-3">
+          <div
+            class="h-full bg-gradient-to-r from-red-600 to-red-400 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+            style="width: 100%"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4️⃣ PROCHAINE ÉCHÉANCE (NOUVEAU) -->
+    <div
+      class="stat-card glass rounded-3xl p-8 relative overflow-hidden border border-blue-500/20 group"
+    >
+      <div
+        class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500"
+      ></div>
+      <div
+        class="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"
+      ></div>
+
+      <div class="relative z-10">
+        <div class="flex items-center justify-between mb-4">
+          <div
+            class="text-base font-black text-slate-400/80 uppercase tracking-[0.25em]"
+          >
+            📅 PROCHAINE ÉCHÉANCE
+          </div>
+          <div
+            class="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(59,130,246,0.8)]"
+          ></div>
+        </div>
+
+        <div
+          class="text-4xl font-black tracking-tight text-blue-400 mb-3"
+          id="stat-next-deadline-date"
+        >
+          —
+        </div>
+
+        <!-- ✅ INFO ACTIONNABLE : QUI APPELER -->
+        <div class="text-xs text-blue-300 font-bold">
+          <div id="stat-next-deadline-client">
+            Aucune échéance proche
+          </div>
+        </div>
+
+        <div class="h-1.5 bg-slate-800/50 rounded-full overflow-hidden mt-3">
+          <div
+            class="h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"
+            style="width: 0%"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLEAU DOSSIERS SIGNÉS (INCHANGÉ) -->
+  <div
+    class="glass cockpit-block rounded-3xl overflow-hidden border border-slate-700/20"
+  >
+    <div
+      class="absolute inset-0 bg-gradient-to-br from-emerald-500/3 via-transparent to-blue-500/3 pointer-events-none"
+    ></div>
+    <!-- ✅ LISTE DOSSIERS SIGNÉS -->
+<div id="signed-list" class="flex flex-col gap-4 p-4"></div>
+
+
+  </div>
+</div>
+<!-- PARTIE 4/5 : AXE B + AXE C + BOÎTE NOIRE -->
+
+<!-- ========================================== -->
+<!-- AXE B — PIPELINE ACTIF (SENT) -->
+<!-- ========================================== -->
+
+<div class="mb-6 flex items-center gap-3">
+  <div
+    class="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_16px_rgba(59,130,246,0.9)] animate-pulse"
+  ></div><br>
+  <h2
+    class="text-xl font-black uppercase tracking-[0.4em] text-blue-400"
+  ><br>
+    🔥 AXE B — PIPELINE ACTIF (LEADS EN COURS)
+  </h2>
+</div>
+
+<!-- 🔍 BARRE DE RECHERCHE CLIENTS -->
+<div class="mb-8 space-y-4">
+  <div
+    class="search-bar cockpit-block rounded-2xl p-6"
+    style="
+      background: rgba(15, 17, 26, 0.95);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      transition: all 0.3s ease;
+    "
+  >
+    <div class="flex gap-4 items-center mb-4">
+      <div class="flex-1 relative">
+        <input
+          id="search-input"
+          type="text"
+          placeholder="🔍 Rechercher par nom, email..."
+          class="w-full bg-black/40 border border-slate-700 rounded-xl px-5 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-all"
+          oninput="applyFilters()"
+        />
+      </div>
+
+      <!-- ✅ BOUTON MASQUER SIGNÉS (par défaut actif dans le JS) -->
+      <button
+        onclick="toggleHideSignedInAxeB()"
+        id="btn-hide-signed"
+        class="px-5 py-3 bg-emerald-500/20 border-emerald-500/50 text-emerald-400 border rounded-xl font-bold text-sm hover:bg-slate-700 transition-all uppercase tracking-wider"
+      >
+        <span id="hide-signed-text">👁️ AFFICHER SIGNÉS</span>
+      </button>
+
+      <button
+        onclick="resetFilters()"
+        class="px-5 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-400 font-bold text-sm hover:bg-slate-700 transition-all"
+      >
+        ✕ RESET
+      </button>
+    </div>
+
+    <div class="flex flex-wrap gap-3 justify-center">
+      <button
+        onclick="toggleFilter('views', '3+')"
+        id="filter-views-3"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">👁️</span> VUES 3+
+      </button>
+
+      <button
+        onclick="toggleFilter('views', '5+')"
+        id="filter-views-5"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">👁️</span> VUES 5+
+      </button>
+
+      <button
+        onclick="toggleFilter('clicks', '1+')"
+        id="filter-clicks-1"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">🖱️</span> CLICS 1+
+      </button>
+
+      <button
+        onclick="toggleFilter('clicks', '3+')"
+        id="filter-clicks-3"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-slate-300 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">🖱️</span> CLICS 3+
+      </button>
+
+      <button
+        onclick="toggleFilter('status', 'sent')"
+        id="filter-status-sent"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-blue-400 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">📤</span> SENT
+      </button>
+
+      <button
+        onclick="toggleFilter('status', 'signed')"
+        id="filter-status-signed"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-emerald-400 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">✓</span> SIGNED
+      </button>
+
+      <button
+        onclick="toggleFilter('optout', 'true')"
+        id="filter-optout"
+        class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-red-400 hover:bg-slate-700 flex items-center gap-2"
+      >
+        <span class="text-sm">🚫</span> DÉSABONNÉS
+      </button>
+    </div>
+
+    <div
+      id="filter-summary"
+      class="mt-4 text-xs text-slate-500 font-medium"
+    >
+      <span id="filtered-count">0</span> résultats
+    </div>
+  </div>
+</div>
+
+
+<!-- TABLEAU PIPELINE -->
+<div class="glass cockpit-block rounded-3xl overflow-hidden">
+  <div
+    class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-emerald-500/5 pointer-events-none"
+  ></div>
+ <!-- AXE B — PIPELINE (SANS TABLE) -->
+
+<div class="grid grid-cols-[2.5fr_1.4fr_1fr_1fr_1.4fr] px-6 py-3 bg-black/70 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em] border-b border-slate-700/50">
+  <div>Dossier client</div>
+  <div>Séquence</div>
+  <div class="text-center">Engagement</div>
+  <div class="text-center">Statut</div>
+  <div class="text-right">Actions</div>
+</div>
+
+<div id="pipeline-list" class="flex flex-col gap-3 mt-3"></div>
+
+</div>
+
+
+<!-- ========================================== -->
+<!-- AXE C — AUTOMATISATION EMAIL -->
+<!-- ========================================== -->
+
+<div class="mt-20">
+  <div class="mb-6 flex items-center gap-3">
+    <div
+      class="w-3 h-3 rounded-full bg-purple-500 shadow-[0_0_16px_rgba(168,85,247,0.9)] animate-pulse"
+    ></div>
+    <h2
+      class="text-xl font-black uppercase tracking-[0.4em] text-purple-400"
+    >
+      AXE C — AUTOMATISATION EMAIL
+    </h2>
+  </div>
+
+  <!-- 📊 STATS DÉSABONNEMENTS -->
+  <div class="grid grid-cols-3 gap-6 mb-8">
+    <div class="glass rounded-2xl p-6 border border-red-500/20">
+      <div
+        class="text-[16px] font-black text-red-400/70 uppercase mb-3 tracking-[0.3em]"
+      >
+        DÉSABONNÉS TOTAL
+      </div>
+      <div
+        class="text-5xl font-black text-red-400 tracking-tight"
+        id="stat-optout-total"
+      >
+        0
+      </div>
+    </div>
+    <div class="glass rounded-2xl p-6 border border-orange-500/20">
+      <div
+        class="text-[16px] font-black text-orange-400/70 uppercase mb-3 tracking-[0.3em]"
+      >
+        DÉSABONNÉS AUJOURD'HUI
+      </div>
+      <div
+        class="text-5xl font-black text-orange-400 tracking-tight"
+        id="stat-optout-today"
+      >
+        0
+      </div>
+    </div>
+    <div class="glass rounded-2xl p-6 border border-slate-700/20">
+      <div
+        class="text-[16px] font-black text-slate-400/70 uppercase mb-3 tracking-[0.3em]"
+      >
+        TAUX DÉSABONNEMENT
+      </div>
+      <div
+        class="text-5xl font-black text-slate-300 tracking-tight"
+        id="stat-optout-rate"
+      >
+        0%
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔍 BARRE DE RECHERCHE LEADS -->
+  <div class="mb-6 space-y-4">
+    <div
+      class="search-bar cockpit-block rounded-2xl p-6"
+      style="
+        background: rgba(15, 17, 26, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        transition: all 0.3s ease;
+      "
+    >
+      <div class="flex gap-4 items-center mb-4">
+        <div class="flex-1 relative">
+          <input
+            id="search-leads-input"
+            type="text"
+            placeholder="🔍 Rechercher un lead par nom, email..."
+            class="w-full bg-black/40 border border-slate-700 rounded-xl px-5 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-all"
+            oninput="applyLeadsFilters()"
+          />
+        </div>
+        <button
+          onclick="resetLeadsFilters()"
+          class="px-5 py-3 bg-slate-800 border border-slate-700 rounded-xl text-slate-400 font-bold text-sm hover:bg-slate-700 transition-all"
+        >
+          ✕ RESET
+        </button>
+      </div>
+
+      <div class="flex flex-wrap gap-3 justify-center">
+        <button
+          onclick="toggleLeadFilter('today')"
+          id="filter-lead-today"
+          class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-orange-400 hover:bg-slate-700"
+        >
+          🔔 RELANCE AUJOURD'HUI
+        </button>
+        <button
+          onclick="toggleLeadFilter('opted-out')"
+          id="filter-lead-optout"
+          class="filter-chip px-4 py-2 bg-slate-800/60 border border-slate-700 rounded-lg text-xs font-bold text-red-400 hover:bg-slate-700"
+        >
+          🚫 DÉSABONNÉS
+        </button>
+      </div>
+
+      <div
+        id="lead-filter-summary"
+        class="mt-4 text-xs text-slate-500 font-medium"
+      >
+        <span id="filtered-lead-count">0</span> résultats
+      </div>
+    </div>
+  </div>
+
+  <div
+    id="email-today-indicator"
+    class="mb-6 text-xl font-black uppercase tracking-[0.35em] text-orange-400 flex items-center gap-3"
+  >
+    <span
+      class="w-2 h-2 bg-orange-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(249,115,22,0.8)]"
+    ></span>
+    🔔 <span id="email-today-count">0</span> RELANCE(S) AUTOMATIQUE(S)
+    PRÉVUE(S) AUJOURD'HUI
+  </div>
+
+  <!-- TABLEAU LEADS EMAIL -->
+<div class="table-premium">
+  <div class="glass rounded-3xl overflow-hidden">
+    <table class="w-full text-left table-premium">
+
+
+      <thead
+        class="bg-black/70 text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] border-b border-slate-700/50"
+      >
+        <tr>
+          <th colspan="4" class="p-0">
+            <div
+              class="grid grid-cols-[30%_15%_20%_20%_15%] px-6 py-5 text-[18px] font-black uppercase tracking-[0.3em] text-slate-400"
+            >
+              <div class="text-left">LEAD</div>
+              <div class="text-center">ENGAGEMENT</div>
+              <div class="text-center">DERNIER EMAIL</div>
+              <div class="text-center">PROCHAINE RELANCE</div>
+              <div class="text-center">OPT-OUT</div>
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody
+        id="leads-email-body"
+        class="divide-y divide-slate-800/20"
+      ></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- 🧾 BOÎTE NOIRE — JOURNAL DES FORÇAGES -->
+<!-- ========================================== -->
+
+<div class="mt-20 mb-12">
+  <h2
+    class="text-slate-400 text-[11px] font-black uppercase tracking-[0.35em] mb-8 flex items-center gap-3"
+  >
+    <span
+      class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"
+    ></span>
+    JOURNAL DES FORÇAGES (BOÎTE NOIRE)
+  </h2>
+  <div class="glass rounded-3xl overflow-hidden">
+    <div
+      id="logs-container"
+      class="max-h-[360px] overflow-y-auto divide-y divide-slate-800/20"
+    >
+      <div
+        class="p-8 text-center text-slate-600 text-xs uppercase tracking-widest italic"
+      >
+        Chargement des archives...
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL DE FORÇAGE -->
+<!-- ========================================== -->
+
+<dialog
+  id="override-modal"
+  class="glass border border-slate-700 p-10 rounded-3xl text-white outline-none"
+>
+  <div class="max-w-md">
+    <h3 class="text-2xl font-black text-orange-400 uppercase mb-3">
+      ⚠️ FORÇAGE MANUEL
+    </h3>
+    <p class="text-[11px] text-slate-400 mb-5 uppercase tracking-widest">
+      Une anomalie bloque cette action. Justifiez le déverrouillage :
+    </p>
+    <div class="flex flex-wrap gap-3 mb-5">
+      <button
+        onclick="setTemplate('Contact téléphonique confirmé')"
+        class="text-[9px] px-3 py-2 bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-700 uppercase font-bold tracking-wider transition-all"
+      >
+        📞 TEL OK
+      </button>
+      <button
+        onclick="setTemplate('Accord oral en attente')"
+        class="text-[9px] px-3 py-2 bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-700 uppercase font-bold tracking-wider transition-all"
+      >
+        🤝 ACCORD ORAL
+      </button>
+      <button
+        onclick="setTemplate('Erreur de tracking connue')"
+        class="text-[9px] px-3 py-2 bg-slate-800 rounded-lg border border-slate-600 hover:bg-slate-700 uppercase font-bold tracking-wider transition-all"
+      >
+        ⚙️ BUG TRACK
+      </button>
+    </div>
+    <textarea
+      id="justification-text"
+      class="w-full bg-black/60 border border-slate-700 rounded-xl p-5 text-sm text-white focus:border-orange-500 outline-none mb-6 focus:bg-black/80 transition-all"
+      placeholder="Ex: Client eu au téléphone..."
+      rows="4"
+    ></textarea>
+    <div class="flex gap-4">
+      <button
+        onclick="document.getElementById('override-modal').close()"
+        class="flex-1 px-5 py-4 rounded-xl bg-slate-800 font-bold text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all"
+      >
+        Annuler
+      </button>
+      <button
+        id="confirm-override-btn"
+        class="flex-1 px-5 py-4 rounded-xl bg-orange-500 text-black font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all action-button"
+      >
+        Confirmer & Loguer
+      </button>
+    </div>
+  </div>
+</dialog>
+<script>
+/* =========================
+   🧠 EDU COCKPIT (PLUG & PLAY)
+========================= */
+
+function computeEduMetrics(data) {
+  const now = new Date();
+
+  const signed = data.filter((d) => d.status === "signed");
+  const sent = data.filter((d) => d.status === "sent");
+
+  const riskyDeposits = signed.filter((s) => {
+    if (s.deposit_paid) return false;
+    if (s.study_data?.mode === "financement" && !s.deposit_amount)
+      return false;
+    const days = (now - new Date(s.signed_at || s.created_at)) / 86400000;
+    return days > 10;
+  });
+
+  const veryHotLeads = sent.filter((s) => s.views >= 5);
+  const coldSigned = signed.filter((s) => s.views < 2);
+
+  const caSigned = signed.reduce(
+    (t, s) => t + (s.study_data?.installCost || 0),
+    0
+  );
+  const cashSecured = signed
+    .filter((s) => s.deposit_paid)
+    .reduce((t, s) => t + (s.deposit_amount || 0), 0);
+
+  const riskScore = Math.min(
+    100,
+    riskyDeposits.length * 20 + coldSigned.length * 10
+  );
+  const cashScore = Math.min(100, (cashSecured / (caSigned || 1)) * 100);
+  const salesScore = Math.min(100, veryHotLeads.length * 12);
+
+  let mode = "ACCÉLÉRATION";
+  if (riskScore > 60) mode = "URGENCE";
+  else if (cashScore < 30) mode = "CHASSE CASH";
+  else if (veryHotLeads.length > 6) mode = "CLOSING";
+
+  return {
+    signed,
+    sent,
+    riskyDeposits,
+    veryHotLeads,
+    coldSigned,
+    caSigned,
+    cashSecured,
+    riskScore,
+    cashScore,
+    salesScore,
+    mode,
+  };
+}
+
+function riskLabel(r) {
+  if (r === "muet") return "🧊 SILENCE — client inactif";
+  if (r === "agité") return "🔥 RUMINATION — risque d'annulation";
+  if (r === "interesse") return "🟢 INTÉRÊT ACTIF — opportunité";
+  return "⚪ STABLE — surveillance";
+}
+
+/* =========================================================
+   🧠 EDU COCKPIT — CLOSER MODE (UI) — OPTIMISÉ
+========================================================= */
+
+function renderEduCockpitCloser(fullData, m) {
+  const signed = fullData.filter((s) => s.status === "signed");
+
+  const warRoom = signed.filter((s) => {
+    if (!s.signed_at) return false;
+    const days = (new Date() - new Date(s.signed_at)) / 86400000;
+    return days <= 14;
+  });
+
+  const warRoomLabeled = warRoom.map((s) => {
+    let risk = "stable";
+
+    if (s.views === 0 && s.clicks === 0) risk = "muet";
+    else if (s.views >= 6 && s.clicks === 0) risk = "agité";
+    else if (s.clicks > 0) risk = "interesse";
+
+    return { ...s, risk };
+  });
+
+  const riskZone = [];
+  const hotZone = [];
+  const stableZone = [];
+
+  // ✅ CALCUL DU CA PAR ZONE
+  let riskCA = 0;
+  let hotCA = 0;
+  let muteCA = 0;
+  let muteCount = 0;
+
+  warRoomLabeled.forEach((s) => {
+    const ca = s.study_data?.installCost || 0;
+
+    if (s.risk === "muet" || s.risk === "agité") {
+      riskZone.push(card(s));
+      riskCA += ca;
+      if (s.risk === "muet") {
+        muteCA += ca;
+        muteCount++;
+      }
+    } else if (s.risk === "interesse") {
+      stableZone.push(card(s));
+      hotCA += ca;
+    } else {
+      stableZone.push(card(s));
+    }
+  });
+
+  // ✅ RENDU UI
+  document.getElementById("ec-risk-zone").innerHTML =
+    riskZone.join("") ||
+    `<div class="text-slate-500 text-sm">Aucun risque détecté</div>`;
+
+  document.getElementById("ec-hot-zone").innerHTML =
+    hotZone.join("") ||
+    `<div class="text-slate-500 text-sm">Aucune opportunité chaude</div>`;
+
+  document.getElementById("ec-stable-zone").innerHTML =
+    stableZone.join("") ||
+    `<div class="text-slate-500 text-sm">Aucun dossier stable</div>`;
+
+  document.getElementById("ec-risk-count").innerText = riskZone.length;
+  document.getElementById("ec-hot-count").innerText = hotZone.length;
+  document.getElementById("ec-mute-count").innerText = muteCount;
+
+  // ✅ AFFICHER LE CA À RISQUE
+  document.getElementById("ec-risk-ca").innerText = `${riskCA.toLocaleString("fr-FR")} €`;
+  document.getElementById("ec-hot-ca").innerText = `${hotCA.toLocaleString("fr-FR")} €`;
+  document.getElementById("ec-mute-ca").innerText = `${muteCA.toLocaleString("fr-FR")} €`;
+
+  let priority = "Surveillance normale";
+  if (riskZone.length > 0) priority = "Sécuriser les clients à risque";
+  else if (hotZone.length > 0) priority = "Closer les opportunités actives";
+
+  document.getElementById("ec-priority").innerText = priority;
+}
+
+function card(s) {
+  const badge =
+    s.risk === "muet"
+      ? "bg-cyan-500/20 text-cyan-300"
+      : s.risk === "agité"
+      ? "bg-red-500/20 text-red-300"
+      : s.risk === "interesse"
+      ? "bg-emerald-500/20 text-emerald-300"
+      : "bg-slate-500/20 text-slate-300";
+
+  const label =
+    s.risk === "muet"
+      ? "🧊 Muet"
+      : s.risk === "agité"
+      ? "🔥 Sur-engagement"
+      : s.risk === "interesse"
+      ? "🟢 Dossier actif"
+      : "⚪ Stable";
+
+  return `
+<div class="glass rounded-xl p-4 border border-slate-700/40 flex justify-between items-center">
+  <div>
+    <div class="font-bold text-slate-100">${s.name}</div>
+    <div class="text-xs text-slate-400">
+      ${s.views} vues • ${s.clicks} clics • signé il y a ${s.diffDays}j
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <span class="px-2 py-1 rounded-full text-[10px] font-bold ${badge}">
+      ${label}
+    </span>
+
+    <a href="${FRONTEND_URL}/guest/${s.id}" target="_blank"
+       class="px-3 py-1 text-xs rounded bg-white/10 hover:bg-white/20 transition">
+       📂
+    </a>
+  </div>
+</div>`;
+}
+
+/* =========================
+   CONSTANTES & VARIABLES
+========================= */
+
+const SUPABASE_URL = "https://ugwqfvwclwctzgtxcakp.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE";
+const FRONTEND_URL = "https://nicolas-edf-solutions-solaires.vercel.app";
+let supabaseClient;
+
+window.safeStats = window.safeStats || [];
+
+let fullData = [];
+let allLeadsData = []; // ✅ AJOUT : Variable manquante
+let logsData = [];
+let isPriorityMode = false;
+let hideSignedInAxeB = true;
+let isZenMode = false;
+let anomaliesDetected = [];
+let settings = { view_threshold: 5, day_threshold: 3 };
+let leadsToFollowup = 0;
+
+let activeFilters = {
+  search: "",
+  views: null,
+  clicks: null,
+  status: null,
+  optout: false,
+};
+
+let activeLeadFilters = {
+  search: "",
+  today: false,
+  optedOut: false,
+};
+
+/* =========================
+   FONCTIONS FILTRES
+========================= */
+
+function toggleFilter(type, value) {
+  const btn = document.getElementById(
+    `filter-${type}-${value.replace("+", "")}`
+  );
+
+  if (activeFilters[type] === value) {
+    activeFilters[type] = null;
+    btn.classList.remove("active");
+  } else {
+    if (type === "views") {
+      document
+        .querySelectorAll('[id^="filter-views"]')
+        .forEach((b) => b.classList.remove("active"));
+    } else if (type === "clicks") {
+      document
+        .querySelectorAll('[id^="filter-clicks"]')
+        .forEach((b) => b.classList.remove("active"));
+    } else if (type === "status") {
+      document
+        .querySelectorAll('[id^="filter-status"]')
+        .forEach((b) => b.classList.remove("active"));
+    } else if (type === "optout") {
+      activeFilters.optout = !activeFilters.optout;
+      btn.classList.toggle("active", activeFilters.optout);
+      render();
+      return;
+    }
+
+    activeFilters[type] = value;
+    btn.classList.add("active");
+  }
+
+  render();
+}
+
+function applyFilters() {
+  activeFilters.search = document
+    .getElementById("search-input")
+    .value.toLowerCase();
+  render();
+}
+
+function resetFilters() {
+  activeFilters = {
+    search: "",
+    views: null,
+    clicks: null,
+    status: null,
+    optout: false,
+  };
+  document.getElementById("search-input").value = "";
+  document
+    .querySelectorAll(".filter-chip")
+    .forEach((btn) => btn.classList.remove("active"));
+  render();
+}
+
+function toggleLeadFilter(type) {
+  let btnId = `filter-lead-${type}`;
+  if (type === "opted-out") {
+    btnId = "filter-lead-optout";
+  }
+
+  const btn = document.getElementById(btnId);
+
+  if (!btn) {
+    console.error("❌ Bouton introuvable:", btnId);
+    return;
+  }
+
+  if (type === "today") {
+    activeLeadFilters.today = !activeLeadFilters.today;
+    btn.classList.toggle("active", activeLeadFilters.today);
+  } else if (type === "opted-out") {
+    activeLeadFilters.optedOut = !activeLeadFilters.optedOut;
+    btn.classList.toggle("active", activeLeadFilters.optedOut);
+  }
+
+  renderEmailLeads();
+}
+
+function applyLeadsFilters() {
+  activeLeadFilters.search = document
+    .getElementById("search-leads-input")
+    .value.toLowerCase();
+  renderEmailLeads();
+}
+
+function resetLeadsFilters() {
+  activeLeadFilters = {
+    search: "",
+    today: false,
+    optedOut: false,
+  };
+  document.getElementById("search-leads-input").value = "";
+  document
+    .querySelectorAll("#filter-lead-today, #filter-lead-optout")
+    .forEach((btn) => btn.classList.remove("active"));
+  renderEmailLeads();
+}
+
+/* =========================
+   FONCTIONS UTILITAIRES
+========================= */
+
+function getTimeSince(date) {
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  let interval = seconds / 3600;
+  if (interval > 24) return `ACTIF IL Y A ${Math.floor(interval / 24)}J`;
+  if (interval >= 1) return `ACTIF IL Y A ${Math.floor(interval)}H`;
+  return `ACTIF IL Y A ${Math.floor(seconds / 60)}MIN`;
+}
+
+function toggleZen() {
+  isZenMode = !isZenMode;
+  document.body.classList.toggle("mode-zen", isZenMode);
+  document.getElementById("btn-zen").innerText = isZenMode
+    ? "👁️ Mode Normal"
+    : "🕊️ Mode Calme";
+}
+
+function setTemplate(t) {
+  document.getElementById("justification-text").value = t;
+}
+
+function toggleRule(id) {
+  const el = document.getElementById(`rule-${id}`);
+  el.classList.toggle("hidden");
+}
+
+function scrollToAnomalies() {
+  const anomalyZone = document.getElementById("anomaly-zone");
+  if (anomalyZone) {
+    anomalyZone.classList.remove("hidden");
+    setTimeout(() => {
+      anomalyZone.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }
+}
+
+function hideAnomalies() {
+  const anomalyZone = document.getElementById("anomaly-zone");
+  if (anomalyZone) {
+    anomalyZone.classList.add("hidden");
+  }
+}
+
+function scrollToLateDeposits() {
+  const tbody = document.getElementById("signed-table-body");
+  if (tbody) {
+    tbody.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// ✅ NOUVELLE FONCTION : Toggle masquer/afficher signés dans Axe B
+function toggleHideSignedInAxeB() {
+  hideSignedInAxeB = !hideSignedInAxeB;
+
+  const btn = document.getElementById("btn-hide-signed");
+  const text = document.getElementById("hide-signed-text");
+
+  if (hideSignedInAxeB) {
+    btn.classList.add(
+      "bg-emerald-500/20",
+      "border-emerald-500/50",
+      "text-emerald-400"
+    );
+    btn.classList.remove(
+      "bg-slate-800",
+      "border-slate-700",
+      "text-slate-400"
+    );
+    text.innerText = "👁️ AFFICHER SIGNÉS";
+  } else {
+    btn.classList.remove(
+      "bg-emerald-500/20",
+      "border-emerald-500/50",
+      "text-emerald-400"
+    );
+    btn.classList.add(
+      "bg-slate-800",
+      "border-slate-700",
+      "text-slate-400"
+    );
+    text.innerText = "👁️ MASQUER SIGNÉS";
+  }
+
+  render();
+}
+
+function togglePriority() {
+  isPriorityMode = !isPriorityMode;
+  document
+    .getElementById("btn-priority")
+    .classList.toggle("bg-orange-600", isPriorityMode);
+  render();
+}
+/* =========================
+   📡 CHARGEMENT DONNÉES
+========================= */
+
+async function loadData() {
+  try {
+    console.log("🔥 === DÉBUT loadData() ===");
+
+    const { data: studies } = await supabaseClient
+      .from("studies")
+      .select("*, clients(*)");
+
+    const { data: signedStudies } = await supabaseClient
+      .from("studies")
+      .select("*, clients(*)")
+      .eq("status", "signed");
+
+    let stats = [];
+    const res = await supabaseClient
+      .from("studies_activity_summary_v2")
+      .select("*");
+
+    if (res.error) {
+      const res2 = await supabaseClient.from("email_stats").select("*");
+      stats = res2.data || [];
+    } else {
+      stats = res.data || [];
+    }
+
+    window.safeStats = stats || [];
+
+    const { data: logs } = await supabaseClient
+      .from("decision_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    logsData = logs || [];
+
+    const { data: queueEmails } = await supabaseClient
+      .from("email_queue")
+      .select("study_id, email_type, status, sent_at, scheduled_for");
+
+    window.queueEmails = queueEmails || [];
+
+    window.antiAnnulationByStudy = {};
+    queueEmails.forEach((e) => {
+      if (!e.study_id || !e.email_type?.startsWith("anti_")) return;
+      if (!window.antiAnnulationByStudy[e.study_id]) {
+        window.antiAnnulationByStudy[e.study_id] = { sent: [], next: null };
+      }
+      if (e.status === "sent") {
+        window.antiAnnulationByStudy[e.study_id].sent.push(e);
+      }
+      if (e.status === "pending") {
+        const current = window.antiAnnulationByStudy[e.study_id].next;
+        if (!current || new Date(e.scheduled_for) < new Date(current.scheduled_for)) {
+          window.antiAnnulationByStudy[e.study_id].next = e;
+        }
+      }
+    });
+
+    window.postRefusByStudy = {};
+    (queueEmails || [])
+      .filter((q) => q.email_type?.startsWith("post_refus"))
+      .forEach((q) => {
+        if (!window.postRefusByStudy[q.study_id]) {
+          window.postRefusByStudy[q.study_id] = { sent: [], next: null };
+        }
+        if (q.status === "sent") {
+          window.postRefusByStudy[q.study_id].sent.push(q);
+        }
+        if (q.status === "pending") {
+          const currentNext = window.postRefusByStudy[q.study_id].next;
+          if (!currentNext || new Date(q.scheduled_for) < new Date(currentNext.scheduled_for)) {
+            window.postRefusByStudy[q.study_id].next = q;
+          }
+        }
+      });
+
+    fullData = (studies || []).map((s) => {
+      const st = (window.safeStats || []).find((item) => item.id === s.id) || {};
+      
+      // ✅ AJOUT : Gestion complète des dates d'activité
+      const lastOpen = st.last_open_at || st.last_email_open || null;
+      const lastClick = st.last_click_at || null;
+      
+      const diffDays = (new Date() - new Date(s.created_at)) / 86400000;
+
+      let views = 0;
+      let clicks = 0;
+
+      if (st.email_opens !== undefined) {
+        views = st.email_opens || 0;
+      } else if (st.views !== undefined) {
+        views = st.views || 0;
+      } else if (st.total_opens !== undefined) {
+        views = st.total_opens || 0;
+      }
+
+      if (st.interactions !== undefined) {
+        clicks = st.interactions || 0;
+      } else if (st.clicks !== undefined) {
+        clicks = st.clicks || 0;
+      } else if (st.total_clicks !== undefined) {
+        clicks = st.total_clicks || 0;
+      }
+
+      return {
+        id: s.id,
+        client_id: s.clients?.id || null,
+        name: s.clients ? `${s.clients.first_name || ""} ${s.clients.last_name || ""}`.trim() : "Inconnu",
+        email: s.clients?.email || "Pas d'email",
+        status: s.status,
+        created_at: s.created_at,
+        signed_at: s.signed_at || null,
+        study_data: s.study_data || null,
+        deposit_amount: s.deposit_amount || 0,
+        deposit_paid: s.deposit_paid || false,
+        views: views,
+        clicks: clicks,
+        diffDays: Math.floor(diffDays),
+        hasLog: logsData.some((l) => l.study_id === s.id),
+        rib_sent: s.rib_sent || false,
+        rib_sent_at: s.rib_sent_at || null,
+        deposit_paid_at: s.deposit_paid_at || null,
+        email_optout: s.clients?.email_optout || false,
+        // ✅ AJOUT : Dates d'activité
+        last_open: lastOpen,
+        last_click: lastClick,
+        last_view: st.last_view || null,
+      };
+    });
+
+    const metrics = computeEduMetrics(fullData);
+    renderEduCockpitCloser(fullData, metrics);
+
+    updateKPIs(queueEmails?.length || 0);
+    detectAnomalies();
+
+    loadSignedStudies();
+    render();
+    renderLogs();
+  } catch (err) {
+    console.error("❌❌❌ ERREUR CRITIQUE:", err);
+    alert("ERREUR: " + err.message);
+  }
+}
+
+/* =========================
+   💰 STATS FINANCIÈRES OPTIMISÉES
+========================= */
+
+function updateFinancialStats(studies) {
+  if (!Array.isArray(studies)) return;
+
+  const now = new Date();
+
+  const secured = studies.filter((s) => s.deposit_paid);
+  const cashSecured = secured.reduce(
+    (sum, s) => sum + (s.study_data?.installCost || 0),
+    0
+  );
+
+  const atRisk = studies.filter((s) => {
+    if (s.deposit_paid) return false;
+    const mode = s.study_data?.mode || "";
+    const apport = s.study_data?.cashApport || 0;
+    return mode === "cash" || (mode === "financement" && apport > 0);
+  });
+
+  const cashAtRisk = atRisk.reduce(
+    (sum, s) => sum + (s.study_data?.installCost || 0),
+    0
+  );
+
+  const late = atRisk.filter((s) => {
+    if (!s.signed_at) return false;
+    const signedDate = new Date(s.signed_at);
+    const daysSince = Math.floor((now - signedDate) / 86400000);
+    return daysSince > 10;
+  });
+
+  const lateNames = late.map(s => s.name).join(", ") || "Aucun retard";
+
+  const upcoming = atRisk
+    .filter(s => s.signed_at)
+    .map(s => ({
+      name: s.name,
+      date: new Date(s.signed_at),
+      days: Math.floor((now - new Date(s.signed_at)) / 86400000)
+    }))
+    .sort((a, b) => b.days - a.days)[0];
+
+  const nextDeadlineDate = upcoming 
+    ? new Date(upcoming.date.getTime() + 10 * 86400000).toLocaleDateString("fr-FR")
+    : "—";
+
+  const nextDeadlineClient = upcoming ? upcoming.name : "Aucune échéance proche";
+
+  const bind = (id, fn) => {
+    const el = document.getElementById(id);
+    if (el) fn(el);
+  };
+
+  bind("stat-ca-secured", el => el.innerText = cashSecured.toLocaleString("fr-FR") + " €");
+  bind("stat-secured-count", el => el.innerText = secured.length);
+  bind("stat-secured-bar", el => el.style.width = Math.min(100, (secured.length / (studies.length || 1)) * 100) + "%");
+
+  bind("stat-ca-at-risk", el => el.innerText = cashAtRisk.toLocaleString("fr-FR") + " €");
+  bind("stat-risk-count", el => el.innerText = atRisk.length);
+  bind("stat-risk-bar", el => el.style.width = Math.min(100, (atRisk.length / (studies.length || 1)) * 100) + "%");
+
+  bind("stat-late-count", el => el.innerText = late.length);
+  bind("stat-late-names", el => el.innerText = lateNames);
+
+  bind("stat-next-deadline-date", el => el.innerText = nextDeadlineDate);
+  bind("stat-next-deadline-client", el => el.innerText = nextDeadlineClient);
+
+  const caTotal = studies.reduce(
+    (sum, s) => sum + (s.study_data?.installCost || 0),
+    0
+  );
+
+  const tauxConversion = studies.length > 0
+    ? ((secured.length / studies.length) * 100).toFixed(0)
+    : 0;
+
+  bind("stat-ca-total", el => el.innerText = caTotal.toLocaleString("fr-FR") + " €");
+  bind("stat-ca-acompte", el => el.innerText = cashSecured.toLocaleString("fr-FR") + " €");
+  bind("stat-ca-attente", el => el.innerText = cashAtRisk.toLocaleString("fr-FR") + " €");
+  bind("stat-taux-acompte", el => el.innerText = tauxConversion + "%");
+}
+
+
+/* =========================
+   🎯 AUTRES FONCTIONS CRITIQUES
+========================= */
+
+function updateKPIs(queue) {
+  const totalCount = fullData.length;
+  const sentCount = fullData.filter((s) => s.status === "sent").length;
+  const signedCount = fullData.filter((s) => s.status === "signed").length;
+
+  document.getElementById("stat-total").innerText = totalCount;
+  document.getElementById("stat-sent").innerText = sentCount;
+  document.getElementById("stat-signed").innerText = signedCount;
+  document.getElementById("stat-queue").innerText = queue;
+  document.getElementById("row-count").innerText = totalCount;
+
+  // ✅ AJOUT : Mise à jour des barres de progression
+  const sentPercent = totalCount > 0 ? (sentCount / totalCount) * 100 : 0;
+  const signedPercent = totalCount > 0 ? (signedCount / totalCount) * 100 : 0;
+  const queuePercent = totalCount > 0 ? (queue / totalCount) * 100 : 0;
+
+  const barSent = document.getElementById("bar-sent");
+  const barSigned = document.getElementById("bar-signed");
+  const barQueue = document.getElementById("bar-queue");
+
+  if (barSent) barSent.style.width = sentPercent + "%";
+  if (barSigned) barSigned.style.width = signedPercent + "%";
+  if (barQueue) barQueue.style.width = Math.min(100, queuePercent) + "%";
+}
+
+function detectAnomalies() {
+  const anomalies = [];
+  fullData.forEach((s) => {
+    if (s.status === "sent" && s.views > settings.view_threshold && s.clicks === 0) {
+      anomalies.push({
+        id: s.id,
+        name: s.name,
+        type: "INTÉRÊT STAGNANT",
+        desc: `Vue ${s.views} fois sans clic.`,
+        rule: `Règle : SI statut=SENT ET vues>${settings.view_threshold} ET clics=0`,
+        obs: `Données observées : Vues=${s.views}, Clics=0`,
+      });
+    }
+    if (s.status === "signed" && s.diffDays > settings.day_threshold && s.views < 2) {
+      anomalies.push({
+        id: s.id,
+        name: s.name,
+        type: "SILENCE POST-SIGNATURE",
+        desc: `Aucune lecture depuis ${s.diffDays}j.`,
+        rule: `Règle : SI statut=SIGNED ET jours>${settings.day_threshold} ET vues<2`,
+        obs: `Données observées : Jours=${s.diffDays}, Vues=${s.views}`,
+      });
+    }
+  });
+
+  anomaliesDetected = anomalies.map((a) => a.id);
+
+  // ✅ MISE À JOUR : Badges d'anomalies seulement (pas de calm-zone)
+  const anomalyBadge = document.getElementById("anomaly-badge");
+  const anomalyInline = document.getElementById("anomaly-inline");
+  const anomalyCountInline = document.getElementById("anomaly-count-inline");
+
+  if (anomalies.length > 0) {
+    if (anomalyBadge) anomalyBadge.classList.remove("hidden");
+    if (anomalyInline) anomalyInline.classList.remove("hidden");
+    if (anomalyCountInline) anomalyCountInline.innerText = anomalies.length;
+  } else {
+    if (anomalyBadge) anomalyBadge.classList.add("hidden");
+    if (anomalyInline) anomalyInline.classList.add("hidden");
+  }
+
+  // ✅ ZONE D'ANOMALIES (si elle existe dans ton HTML)
+  const anomalyZone = document.getElementById("anomaly-zone");
+  const anomalyList = document.getElementById("anomaly-list");
+  
+  if (anomalyZone && anomalyList && anomalies.length > 0) {
+    anomalyZone.classList.remove("hidden");
+    anomalyList.innerHTML = anomalies
+      .map((a) => `
+        <div class="anomaly-card p-6 rounded-2xl border-l-4 border-l-red-500 hover:border-l-red-400 transition-all duration-300">
+          <div class="text-[10px] font-black text-red-400 mb-2 tracking-[0.2em]">${a.type}</div>
+          <div class="text-xl font-bold mb-2">${a.name}</div>
+          <div class="text-[11px] text-slate-500 italic mb-3">${a.desc}</div>
+          <button onclick="toggleRule('${a.id}')" class="text-[10px] text-blue-400 hover:text-blue-300 hover:underline uppercase tracking-tighter font-bold transition-colors">Pourquoi ce dossier est signalé ?</button>
+          <div id="rule-${a.id}" class="hidden rule-box">
+            <div>${a.rule}</div>
+            <div class="mt-2">${a.obs}</div>
+          </div>
+        </div>`).join("");
+  } else if (anomalyZone) {
+    anomalyZone.classList.add("hidden");
+  }
+}
+
+async function updateStatus(id, newStatus) {
+  const { error } = await supabaseClient
+    .from("studies")
+    .update({ status: newStatus })
+    .eq("id", id);
+  if (!error) loadData();
+}
+
+async function forceAction(id, name, newStatus) {
+  const modal = document.getElementById("override-modal");
+  const text = document.getElementById("justification-text");
+  modal.showModal();
+  document.getElementById("confirm-override-btn").onclick = async () => {
+    const justification = text.value.trim();
+    if (!justification) return alert("Justification obligatoire.");
+    await supabaseClient.from("decision_logs").insert({
+      study_id: id,
+      client_name: name,
+      action_performed: `FORCED_TO_${newStatus.toUpperCase()}`,
+      justification: justification,
+    });
+    await updateStatus(id, newStatus);
+    text.value = "";
+    modal.close();
+  };
+}
+
+function forceSign(studyId, clientName) {
+  const modal = document.getElementById("override-modal");
+  const text = document.getElementById("justification-text");
+  modal.showModal();
+  document.getElementById("confirm-override-btn").onclick = async () => {
+    const justification = text.value.trim();
+    if (!justification) return alert("Justification obligatoire.");
+    await signStudySafe(studyId, clientName, true, justification);
+    text.value = "";
+    modal.close();
+  };
+}
+
+async function cancelStudySafe(studyId, clientName) {
+  if (!confirm("Confirmer l'annulation complète de ce dossier ?")) return;
+  await supabaseClient.from("studies").update({ status: "cancelled" }).eq("id", studyId);
+  await supabaseClient.from("email_queue").update({ status: "cancelled" }).eq("study_id", studyId).in("status", ["pending", "scheduled"]);
+  await supabaseClient.from("decision_logs").insert({
+    study_id: studyId,
+    client_name: clientName || "Inconnu",
+    action_performed: "CANCELLED",
+    justification: "Annulation depuis dashboard",
+  });
+  alert("Dossier annulé. Emails stoppés.");
+  loadData();
+}
+
+async function signStudySafe(studyId, clientName, forced = false, justification = null) {
+  if (!forced && !confirm("Confirmer : dossier SIGNÉ ?")) return;
+  const { data, error } = await supabaseClient
+    .from("studies")
+    .update({ status: "signed" })
+    .eq("id", studyId)
+    .neq("status", "signed")
+    .select()
+    .single();
+  if (error || !data) {
+    alert("Impossible de signer : déjà signé ou erreur.");
+    return;
+  }
+  await supabaseClient.from("decision_logs").insert({
+    study_id: studyId,
+    client_name: clientName,
+    action_performed: forced ? "FORCED_TO_SIGNED" : "SIGNED",
+    justification: forced ? justification : "Signature depuis dashboard",
+  });
+  alert("Dossier signé. Automatisations déclenchées.");
+  loadData();
+}
+
+async function deleteLeadPermanently(clientId, email, clientName) {
+  if (!confirm(`⚠️ SUPPRESSION DÉFINITIVE\n\nVoulez-vous vraiment supprimer définitivement :\n\n${clientName}\n${email}\n\nCette action est IRRÉVERSIBLE !`)) return;
+  const confirmText = prompt(`Pour confirmer, tapez le nom : ${clientName}`);
+  if (confirmText !== clientName) {
+    alert("Annulé");
+    return;
+  }
+  await supabaseClient.from("studies").delete().eq("client_id", clientId);
+  await supabaseClient.from("email_queue").delete().eq("client_id", clientId);
+  await supabaseClient.from("email_leads").delete().eq("client_id", clientId);
+  await supabaseClient.from("clients").delete().eq("id", clientId);
+  await supabaseClient.from("decision_logs").insert({
+    action_performed: "LEAD_DELETED_PERMANENTLY",
+    client_name: clientName,
+    justification: `Suppression définitive ${email}`,
+  });
+  alert("✅ Lead supprimé définitivement");
+  loadData();
+  loadEmailLeads();
+}
+
+function renderLogs() {
+  const container = document.getElementById("logs-container");
+  if (logsData.length === 0) {
+    container.innerHTML = `<div class="p-12 text-center text-slate-600 text-[11px] uppercase tracking-widest italic">Aucune archive de forçage...</div>`;
+    return;
+  }
+  container.innerHTML = logsData
+    .map((l) => `
+      <div class="p-6 flex justify-between items-center hover:bg-white/[0.02] transition-all duration-300">
+        <div class="flex flex-col">
+          <span class="text-[9px] text-orange-400 font-black uppercase tracking-[0.2em] mb-1">${l.action_performed}</span>
+          <span class="text-base font-bold text-slate-200">${l.client_name}</span>
+        </div>
+        <div class="max-w-[50%] text-right">
+          <div class="text-[11px] text-slate-400 italic mb-1">"${l.justification}"</div>
+          <div class="text-[9px] text-slate-600 uppercase font-bold tracking-wider">${new Date(l.created_at).toLocaleString()}</div>
+        </div>
+      </div>`).join("");
+}
+
+async function loadSignedStudies() {
+  const { data: signedStudies } = await supabaseClient
+    .from("studies")
+    .select("id, client_name, client_email, study_data, signed_at, deposit_paid, deposit_paid_at, deposit_amount, rib_sent, rib_sent_at, client_id")
+    .eq("status", "signed")
+    .order("signed_at", { ascending: false });
+
+  const { data: stats } = await supabaseClient.from("studies_activity_summary_v2").select("*");
+
+  const mergedData = (signedStudies || []).map((s) => {
+    const st = (stats || []).find((item) => item.id === s.id) || {};
+
+    let views =
+      st.email_opens ??
+      st.views ??
+      st.total_opens ??
+      0;
+
+    let clicks =
+      st.interactions ??
+      st.clicks ??
+      st.total_clicks ??
+      0;
+
+    return {
+      ...s,
+      views,
+      clicks,
+      last_open:
+        st.last_open ||
+        st.last_open_at ||
+        st.last_email_open ||
+        null,
+      last_click:
+        st.last_click ||
+        st.last_click_at ||
+        null
+    };
+  });
+
+  renderSignedStudies(mergedData);
+  updateFinancialStats(signedStudies || []);
+}
+function renderSignedStudies(studies) {
+  const container = document.getElementById("signed-list");
+  if (!container) return;
+
+  if (!studies || !studies.length) {
+    container.innerHTML = `
+      <div class="p-12 text-center text-slate-500 text-sm italic">
+        Aucun dossier signé.
+      </div>`;
+    return;
+  }
+
+  const today = new Date();
+
+  container.innerHTML = studies.map((s) => {
+    const signedDate = new Date(s.signed_at);
+    const daysSinceSigned = Math.floor((today - signedDate) / 86400000);
+    const ca = s.study_data?.installCost || 0;
+
+    let alerts = [];
+    let cardClass = "glass border border-slate-700/40 hover:border-slate-600";
+    
+    const mode = s.study_data?.mode || "";
+    const apport = s.study_data?.cashApport || 0;
+    const acompteRequis = mode === "cash" || (mode === "financement" && apport > 0);
+
+    if (daysSinceSigned > 15 && !s.deposit_paid && acompteRequis) {
+      alerts.push("💀 RISQUE CRITIQUE");
+      cardClass = "glass border-2 border-red-500/60 bg-red-500/5";
+    } else if (!s.deposit_paid && daysSinceSigned > 10 && acompteRequis) {
+      alerts.push("🚨 ACOMPTE > 10J");
+      cardClass = "glass border-2 border-orange-500/60 bg-orange-500/5";
+    }
+
+    const acompteStatus = s.deposit_paid
+      ? `<span class="px-4 py-2 bg-emerald-500/20 border border-emerald-500 text-emerald-400 text-sm font-bold rounded-lg">✓ REÇU</span>`
+      : s.rib_sent
+      ? `<span class="px-4 py-2 bg-orange-500/20 border border-orange-500 text-orange-400 text-sm font-bold rounded-lg">⏳ RIB ENVOYÉ</span>`
+      : `<span class="text-slate-600 text-sm italic">En attente</span>`;
+
+    return `
+<div class="${cardClass} rounded-xl p-8 transition-all duration-300">
+  <div class="grid grid-cols-[2fr_1.2fr_1fr_1fr_1fr_1.3fr] gap-6 items-center">
+
+    <!-- CLIENT -->
+    <div class="flex items-center gap-4 min-w-0">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500/30 to-emerald-500/30 flex items-center justify-center border border-blue-500/30 shrink-0">
+        <span class="text-3xl">👤</span>
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="font-bold text-slate-100 text-lg">${s.client_name || s.name || "Inconnu"}</span>
+          ${window.postRefusByStudy?.[s.id] 
+            ? `<span class="px-3 py-1.5 rounded bg-red-500/20 border border-red-500/40 text-[11px] text-red-400 font-black">POST-REFUS</span>`
+            : ""}
+        </div>
+        <div class="text-base text-slate-400 truncate">${s.client_email || s.email || ""}</div>
+      </div>
+    </div>
+
+    <!-- SEQUENCES -->
+    <div class="flex flex-col gap-2">
+      ${window.antiAnnulationByStudy?.[s.id] ? (() => {
+        const flow = window.antiAnnulationByStudy[s.id];
+        const lastSent = flow.sent.length > 0 
+          ? flow.sent[flow.sent.length - 1]
+          : null;
+        const nextEmail = flow.next;
+        
+        return `
+          <div class="px-4 py-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+            <div class="text-emerald-400 font-black text-[13px] mb-2">🛡 ANTI-ANNULATION</div>
+            ${lastSent ? `
+              <div class="text-[11px] text-slate-400">
+                Dernier : ${lastSent.email_type.replace('anti_', '').replace(/_/g, ' ')} 
+                (${new Date(lastSent.sent_at).toLocaleDateString('fr-FR')})
+              </div>
+            ` : '<div class="text-[11px] text-slate-500 italic">Aucun envoi</div>'}
+            ${nextEmail ? `
+              <div class="text-[11px] text-orange-400 font-bold mt-1.5">
+                Prochain : ${nextEmail.email_type.replace('anti_', '').replace(/_/g, ' ')} 
+                → ${new Date(nextEmail.scheduled_for).toLocaleDateString('fr-FR')}
+              </div>
+            ` : '<div class="text-[11px] text-slate-500">Séquence terminée</div>'}
+          </div>
+        `;
+      })() : ""}
+      
+      ${window.emailFlowByClient?.[s.client_id] ? (() => {
+        const flow = window.emailFlowByClient[s.client_id];
+        return `
+          <div class="px-4 py-2.5 rounded-lg bg-blue-500/10 border border-blue-500/30">
+            <div class="text-blue-400 font-black text-[12px]">📬 EMAIL STEP ${flow.step}</div>
+            ${flow.next ? `
+              <div class="text-[11px] text-orange-400 font-bold mt-1.5">
+                → ${new Date(flow.next).toLocaleDateString('fr-FR')}
+              </div>
+            ` : '<div class="text-[11px] text-slate-500">Aucun prochain</div>'}
+          </div>
+        `;
+      })() : ""}
+      
+      ${!window.antiAnnulationByStudy?.[s.id] && !window.emailFlowByClient?.[s.client_id]
+        ? `<span class="text-[12px] text-slate-500 italic">Aucune séquence</span>`
+        : ""}
+    </div>
+
+    <!-- CA -->
+    <div class="text-center">
+      <div class="text-4xl font-black text-emerald-400">${ca.toLocaleString("fr-FR")} €</div>
+    </div>
+
+    <!-- ENGAGEMENT -->
+    <div class="flex flex-col items-center gap-2">
+
+      <div class="flex justify-center gap-6">
+        <div class="text-center">
+          <div class="text-3xl font-black text-slate-300">${s.views || 0}</div>
+          <div class="text-xs text-slate-500 font-bold mt-1.5">VUES</div>
+        </div>
+
+        <div class="text-center">
+          <div class="text-3xl font-black text-slate-300">${s.clicks || 0}</div>
+          <div class="text-xs text-slate-500 font-bold mt-1.5">CLICS</div>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-slate-500 font-bold mt-1">
+        ${
+          s.last_click
+            ? `Dernier clic : ${new Date(s.last_click).toLocaleDateString("fr-FR")}`
+            : s.last_open
+            ? `Dernière ouverture : ${new Date(s.last_open).toLocaleDateString("fr-FR")}`
+            : "Aucune activité email"
+        }
+      </div>
+
+    </div>
+
+    <!-- ACOMPTE -->
+    <div class="text-center">
+      ${acompteStatus}
+    </div>
+
+    <!-- SIGNATURE + ACTIONS -->
+    <div class="flex flex-col gap-3">
+      <div class="text-center">
+        <div class="text-lg font-bold text-slate-300">${signedDate.toLocaleDateString("fr-FR")}</div>
+        <div class="text-base text-slate-400 mt-1.5">il y a ${daysSinceSigned}j</div>
+        ${alerts.length > 0 ? `<div class="text-base font-bold text-orange-400 mt-2">${alerts.join(" ")}</div>` : ""}
+      </div>
+
+      ${!s.deposit_paid && acompteRequis ? `
+        <button onclick="markDepositPaid('${s.id}')"
+          class="px-6 py-3 text-sm font-black rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg shadow-emerald-500/20 transition-all">
+          ✓ VALIDER ACOMPTE
+        </button>
+      ` : ""}
+    </div>
+
+  </div>
+</div>`;
+  }).join("");
+}
+
+async function markDepositPaid(studyId) {
+  if (!confirm("Confirmer la réception de l'acompte ?")) return;
+  
+  const { error } = await supabaseClient
+    .from("studies")
+    .update({ 
+      deposit_paid: true,
+      deposit_paid_at: new Date().toISOString()
+    })
+    .eq("id", studyId);
+    
+  if (error) {
+    alert("❌ Erreur : " + error.message);
+    return;
+  }
+  
+  await supabaseClient.from("decision_logs").insert({
+    study_id: studyId,
+    action_performed: "DEPOSIT_PAID_CONFIRMED",
+    justification: "Acompte validé depuis dashboard"
+  });
+  
+  alert("✅ Acompte validé !");
+  loadSignedStudies();
+  loadData();
+}
+
+async function markRibSent(studyId) {
+  if (!confirm("Confirmer l'envoi du RIB au client ?")) return;
+  
+  const { error } = await supabaseClient
+    .from("studies")
+    .update({ 
+      rib_sent: true,
+      rib_sent_at: new Date().toISOString()
+    })
+    .eq("id", studyId);
+    
+  if (error) {
+    alert("❌ Erreur : " + error.message);
+    return;
+  }
+  
+  await supabaseClient.from("decision_logs").insert({
+    study_id: studyId,
+    action_performed: "RIB_SENT_CONFIRMED",
+    justification: "RIB marqué comme envoyé depuis dashboard"
+  });
+  
+  alert("✅ RIB marqué comme envoyé !");
+  loadSignedStudies();
+  loadData();
+}
+
+async function setOptOut(email) {
+if (!confirm("Confirmer l'exclusion de ce lead ?")) return;
+const { data } = await supabaseClient.from("clients").update({ email_optout: true }).eq("email", email).select();
+if (!data || data.length === 0) {
+alert("❌ ERREUR : Aucun client trouvé avec cet email");
+return;
+}
+await supabaseClient.from("email_queue").update({ status: "cancelled" }).eq("client_id", data[0].id).in("status", ["pending", "scheduled"]);
+await supabaseClient.from("decision_logs").insert({
+client_name: data[0].first_name + " " + data[0].last_name,
+action_performed: "EMAIL_OPTOUT",
+justification: "Désabonnement depuis dashboard",
+});
+alert("✅ Client désabonné avec succès !");
+loadEmailLeads();
+loadData();
+}
+function updateUnsubscribeStats() {
+  const totalOptedOut = allLeadsData.filter((l) => l.opted_out).length;
+  const total = allLeadsData.length;
+  const rate = total > 0 ? ((totalOptedOut / total) * 100).toFixed(1) : 0;
+  
+  document.getElementById("stat-optout-total").innerText = totalOptedOut;
+  document.getElementById("stat-optout-today").innerText = 0;
+  document.getElementById("stat-optout-rate").innerText = rate + "%";
+}
+</script>
+<script>
+/* =========================
+         🎯 RENDER() — TABLEAU PRINCIPAL (AXE B)
+      ========================= */
+      console.assert(typeof getTimeSince === "function", "❌ getTimeSince manquant");
+console.assert(typeof cancelStudySafe === "function", "❌ cancelStudySafe manquant");
+
+
+      function render() {
+  const container = document.getElementById("pipeline-list");
+  if (!container) return;
+
+  let list = isPriorityMode
+    ? fullData.filter(
+        (s) =>
+          anomaliesDetected.includes(s.id) || s.views >= 3 || s.clicks > 0
+      )
+    : fullData;
+
+  if (hideSignedInAxeB) {
+    list = list.filter((s) => s.status !== "signed");
+  }
+
+  list = list.filter((s) => {
+    if (activeFilters.search) {
+      const searchLower = activeFilters.search;
+      const matchName = s.name.toLowerCase().includes(searchLower);
+      const matchEmail = s.email.toLowerCase().includes(searchLower);
+      if (!matchName && !matchEmail) return false;
+    }
+
+    if (activeFilters.views) {
+      const threshold = parseInt(activeFilters.views);
+      if (s.views < threshold) return false;
+    }
+
+    if (activeFilters.clicks) {
+      const threshold = parseInt(activeFilters.clicks);
+      if (s.clicks < threshold) return false;
+    }
+
+    if (activeFilters.status && s.status !== activeFilters.status) {
+      return false;
+    }
+
+    if (activeFilters.optout && !s.email_optout) {
+      return false;
+    }
+
+    return true;
+  });
+
+  document.getElementById("filtered-count").innerText = list.length;
+
+  container.innerHTML = list
+    .map((s) => {
+      const hasAlert = anomaliesDetected.includes(s.id);
+      const engageScore = Math.min(100, s.views * 15 + s.clicks * 30);
+      const safeName = s.name.replace(/'/g, "\\'");
+      const isOptedOut = s.email_optout || false;
+      const isCancelled = s.status === "cancelled";
+      const isInactive = isOptedOut || isCancelled;
+
+      let tempLabel = "FROID";
+      let tempClass = "bg-slate-500/20 text-slate-300 border-slate-500";
+
+      if (s.status === "signed") {
+        tempLabel = "SIGNÉ";
+        tempClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500";
+      } else if (s.clicks > 0) {
+        tempLabel = "CHAUD";
+        tempClass = "bg-orange-500/20 text-orange-300 border-orange-500";
+      } else if (s.views >= 2) {
+        tempLabel = "TIÈDE";
+        tempClass = "bg-blue-500/20 text-blue-300 border-blue-500";
+      }
+
+      let cardClass = "glass border border-slate-700/40 hover:border-slate-600";
+      
+      if (isInactive) {
+        cardClass = "glass border border-slate-800/40 opacity-50";
+      } else if (s.status === "signed") {
+        cardClass = "glass border-2 border-emerald-500/60 bg-emerald-500/5";
+      } else if (hasAlert) {
+        cardClass = "glass border-2 border-red-500/60 bg-red-500/5 card-critical";
+      }
+
+      const onChangeStatus = hasAlert
+        ? `forceAction('${s.id}', '${safeName}', this.value)`
+        : `updateStatus('${s.id}', this.value)`;
+
+      const onClickSigned = hasAlert
+        ? `forceSign('${s.id}', '${safeName}')`
+        : `signStudySafe('${s.id}', '${safeName}')`;
+
+      return `
+<div class="list-card-premium ${hasAlert ? 'critical' : ''} ${s.status === 'signed' ? 'success' : ''}"
+
+     onclick="window.open('${FRONTEND_URL}/guest/${s.id}', '_blank')">
+  
+  <div class="grid grid-cols-[2fr_1.2fr_1fr_1fr_1.3fr] gap-6 items-center">
+
+    <!-- CLIENT -->
+    <div class="flex items-center gap-4 min-w-0">
+      <div class="client-avatar">
+  ${s.name.substring(0,2).toUpperCase()}
+</div>
+
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+  <span class="font-bold text-slate-100 text-lg ${isInactive ? 'line-through text-slate-600' : ''}">${s.name}</span>
+
+  ${hasAlert ? `<span class="lead-priority">PRIORITÉ</span>` : ''}
+
+  <span class="px-3 py-1.5 rounded-full text-[11px] font-black border ${tempClass}">${tempLabel}</span>
+  ${isOptedOut ? '<span class="px-2.5 py-1.5 bg-red-500 text-white text-[11px] font-black rounded">DÉSABONNÉ</span>' : ''}
+  ${isCancelled ? '<span class="px-2.5 py-1.5 bg-slate-600 text-white text-[11px] font-black rounded">ANNULÉ</span>' : ''}
+</div>
+
+        <div class="text-base text-slate-400 truncate">${s.email}</div>
+        <div class="text-[11px] text-slate-600 uppercase tracking-wider font-bold mt-1.5">
+          ${getTimeSince(s.created_at)}
+        </div>
+      </div>
+    </div>
+
+    <!-- SÉQUENCE -->
+    <div class="flex flex-col gap-2">
+      ${window.postRefusByStudy?.[s.id] ? (() => {
+        const flow = window.postRefusByStudy[s.id];
+        return `
+          <div class="px-4 py-2.5 rounded-lg border border-red-500/30 bg-red-500/10">
+            <div class="text-red-400 font-black text-[12px]">✖ POST-REFUS ${flow.sent.length}/4</div>
+            <div class="text-[11px] text-orange-400 font-bold mt-1">
+              → ${flow.next ? new Date(flow.next.scheduled_for).toLocaleDateString('fr-FR') : 'terminé'}
+            </div>
+          </div>
+        `;
+      })() : ''}
+      
+      ${window.emailFlowByClient?.[s.client_id] ? `
+        <div class="px-4 py-2.5 rounded-lg border border-blue-500/30 bg-blue-500/10">
+          <div class="text-blue-400 font-black text-[12px]">📬 STEP ${window.emailFlowByClient[s.client_id].step}</div>
+          <div class="text-[11px] text-orange-400 font-bold mt-1">
+            → ${window.emailFlowByClient[s.client_id].next 
+              ? new Date(window.emailFlowByClient[s.client_id].next).toLocaleDateString('fr-FR')
+              : 'aucun'}
+          </div>
+        </div>
+      ` : ''}
+      
+      ${!window.postRefusByStudy?.[s.id] && !window.emailFlowByClient?.[s.client_id]
+        ? '<span class="text-[12px] text-slate-500 italic">Aucune séquence</span>'
+        : ''}
+    </div>
+
+    <!-- ENGAGEMENT -->
+    <div class="flex flex-col items-center gap-2">
+
+      <div class="flex justify-center gap-8">
+        <div class="text-center">
+          <div class="text-3xl font-black ${s.views >= 3 ? 'text-orange-400' : 'text-slate-400'}">${s.views}</div>
+          <div class="text-xs text-slate-500 font-bold mt-1.5">VUES</div>
+        </div>
+
+        <div class="text-center">
+          <div class="text-3xl font-black ${s.clicks > 0 ? 'text-purple-400' : 'text-slate-400'}">${s.clicks}</div>
+          <div class="text-xs text-slate-500 font-bold mt-1.5">CLICS</div>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-slate-500 font-bold mt-1">
+        ${
+          s.last_click
+            ? `Dernier clic : ${new Date(s.last_click).toLocaleDateString("fr-FR")}`
+            : s.last_open
+            ? `Dernière ouverture : ${new Date(s.last_open).toLocaleDateString("fr-FR")}`
+            : "Aucune activité email"
+        }
+      </div>
+
+    </div>
+</div>
+
+    </div>
+
+    <!-- STATUT -->
+    <div class="flex justify-center" onclick="event.stopPropagation();">
+      <select onchange="${onChangeStatus}"
+        class="px-5 py-2.5 rounded-xl border font-black uppercase text-[11px] tracking-wider ${
+          s.status === "signed"
+            ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
+            : s.status === "sent"
+            ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
+            : "border-slate-600/50 text-slate-400 bg-slate-800/50"
+        }">
+        <option value="sent" ${s.status === "sent" ? "selected" : ""}>SENT</option>
+        <option value="draft" ${s.status === "draft" ? "selected" : ""}>DRAFT</option>
+        <option value="signed" ${s.status === "signed" ? "selected" : ""}>SIGNED</option>
+        <option value="cancelled" ${s.status === "cancelled" ? "selected" : ""}>CANCELLED</option>
+      </select>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="flex items-center justify-end gap-2" onclick="event.stopPropagation();">
+      <button
+        ${isInactive ? 'disabled style="opacity: 0.3; cursor: not-allowed;"' : ''}
+        onclick="${isInactive ? '' : onClickSigned}"
+        class="px-5 py-2.5 ${hasAlert && !isInactive
+          ? 'bg-orange-500 text-black border border-orange-400'
+          : 'bg-emerald-500 text-black border border-emerald-400'
+        } rounded-lg font-bold text-sm uppercase tracking-wide hover:scale-105 transition-all">
+        ${hasAlert && !isInactive ? '⚠️ FORCER' : '✓ SIGNÉ'}
+      </button>
+
+      <button onclick="updateStatus('${s.id}', 'draft')"
+        class="w-11 h-11 flex items-center justify-center bg-slate-900 text-blue-400 border border-blue-500/40 rounded-lg hover:bg-blue-500 hover:text-white transition-all text-xl">
+        📝
+      </button>
+
+      <button onclick="cancelStudySafe('${s.id}', '${safeName}')"
+        class="w-11 h-11 flex items-center justify-center bg-slate-900 text-red-400 border border-red-500/40 rounded-lg hover:bg-red-500 hover:text-white transition-all text-xl">
+        ✕
+      </button>
+
+      ${isInactive ? `
+        <button onclick="deleteLeadPermanently('${s.client_id}', '${s.email.replace(/'/g, "\\'")}', '${safeName}')"
+          class="w-11 h-11 flex items-center justify-center bg-slate-900 text-red-600 border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all text-xl">
+          🗑️
+        </button>
+      ` : ''}
+    </div>
+
+  </div>
+</div>`;
+    })
+    .join("");
+}
+async function loadEmailLeads() {
+  try {
+    // 1️⃣ Charger les leads emails
+    const { data, error } = await supabaseClient
+      .from("email_leads")
+      .select(
+        "id, client_id, created_at, last_email_sent_at, next_email_scheduled_at, email_step, total_opens, total_clicks, last_opened_at, last_clicked_at, clients!inner(id, first_name, last_name, email, email_optout)"
+      )
+      .order("next_email_scheduled_at", { ascending: true });
+
+    if (error) {
+      console.error("❌ Erreur chargement leads:", error);
+      return;
+    }
+
+    // 2️⃣ Charger les studies pour faire le lien client_id -> study_id
+    const clientIds = data.map(l => l.client_id).filter(Boolean);
+    
+    const { data: studies } = await supabaseClient
+      .from("studies")
+      .select("id, client_id")
+      .in("client_id", clientIds);
+
+    console.log("📚 Studies trouvées:", studies?.length || 0);
+
+    // 3️⃣ Créer l'index client_id -> study_id
+    const studyIdByClientId = {};
+    (studies || []).forEach(s => {
+      if (s.client_id) {
+        studyIdByClientId[s.client_id] = s.id;
+      }
+    });
+
+    const studyIds = Object.values(studyIdByClientId).filter(Boolean);
+
+    // 4️⃣ Charger les DERNIERS événements d'ouverture depuis tracking_events
+    let lastOpenByStudyId = {};
+    let lastClickByStudyId = {};
+
+    if (studyIds.length > 0) {
+      // Ouvertures
+      const { data: openEvents } = await supabaseClient
+        .from("tracking_events")
+        .select("study_id, created_at")
+        .in("study_id", studyIds)
+        .eq("event_type", "email_open")
+        .order("created_at", { ascending: false });
+
+      (openEvents || []).forEach(event => {
+        if (!lastOpenByStudyId[event.study_id]) {
+          lastOpenByStudyId[event.study_id] = event.created_at;
+        }
+      });
+
+      // Clics
+      const { data: clickEvents } = await supabaseClient
+        .from("tracking_events")
+        .select("study_id, created_at")
+        .in("study_id", studyIds)
+        .eq("event_type", "email_click")
+        .order("created_at", { ascending: false });
+
+      (clickEvents || []).forEach(event => {
+        if (!lastClickByStudyId[event.study_id]) {
+          lastClickByStudyId[event.study_id] = event.created_at;
+        }
+      });
+
+      console.log("📊 Ouvertures trouvées:", Object.keys(lastOpenByStudyId).length);
+      console.log("📊 Clics trouvés:", Object.keys(lastClickByStudyId).length);
+    }
+
+    // 5️⃣ Mapper avec fusion
+    allLeadsData = (data || []).map((l) => {
+      const studyId = studyIdByClientId[l.client_id];
+      
+      // Priorité : email_leads > tracking_events
+      const lastOpen = l.last_opened_at || (studyId ? lastOpenByStudyId[studyId] : null) || null;
+      const lastClick = l.last_clicked_at || (studyId ? lastClickByStudyId[studyId] : null) || null;
+      
+      return {
+        id: l.id,
+        client_id: l.client_id,
+        created_at: l.created_at,
+        name: l.clients
+          ? `${l.clients.first_name || ""} ${l.clients.last_name || ""}`.trim()
+          : "Inconnu",
+        email: l.clients?.email || "Pas d'email",
+        last_email_sent: l.last_email_sent_at || null,
+        next_email_date: l.next_email_scheduled_at || null,
+        email_sequence_step: l.email_step || 0,
+        opted_out: l.clients?.email_optout || false,
+        total_opens: l.total_opens || 0,
+        total_clicks: l.total_clicks || 0,
+        last_open: lastOpen,
+        last_click: lastClick,
+      };
+    });
+
+    console.log("✅ EMAIL LEADS fusionnés:", allLeadsData.length);
+    const withActivity = allLeadsData.filter(l => l.last_open || l.last_click);
+    console.log("📧 Leads avec dates d'activité:", withActivity.length);
+    if (withActivity.length > 0) {
+      console.log("📧 Exemples:", withActivity.slice(0, 3));
+    }
+
+    updateAxeCStats(allLeadsData, window.queueEmails);
+    renderEmailLeads();
+    updateUnsubscribeStats();
+
+    leadsToFollowup = (allLeadsData || []).filter((l) => {
+      if (l.opted_out) return false;
+      if (!l.last_email_sent) return true;
+
+      const now = new Date();
+      const created = new Date(l.created_at);
+      const lastSent = new Date(l.last_email_sent);
+
+      const daysSinceCreation = (now - created) / (1000 * 60 * 60 * 24);
+      const daysSinceLastEmail = (now - lastSent) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceCreation > 120) return false;
+      if (daysSinceCreation <= 60 && daysSinceLastEmail >= 3) return true;
+      if (daysSinceCreation > 60 && daysSinceLastEmail >= 7) return true;
+
+      return false;
+    }).length;
+
+    console.log("📊 Leads à relancer calculés:", leadsToFollowup);
+
+    window.emailFlowByClient = {};
+    allLeadsData.forEach((l) => {
+      window.emailFlowByClient[l.client_id] = {
+        step: l.email_sequence_step,
+        last: l.last_email_sent,
+        next: l.next_email_date,
+        opens: l.total_opens,
+        clicks: l.total_clicks,
+        opted_out: l.opted_out,
+      };
+    });
+
+    console.log("📬 EMAIL FLOW INDEX:", Object.keys(window.emailFlowByClient).length, "clients");
+
+  } catch (err) {
+    console.error("❌ ERREUR CRITIQUE loadEmailLeads:", err);
+  }
+}
+function updateAxeCStats(leads, queueEmails) {
+  const today = new Date().toISOString().slice(0, 10);
+
+  const optedOut = leads.filter(l => l.opted_out);
+  const optedOutToday = optedOut.filter(l => 
+    l.updated_at && l.updated_at.startsWith(today)
+  );
+
+  const total = leads.length || 1;
+
+  document.getElementById("stat-optout-total").innerText = optedOut.length;
+  document.getElementById("stat-optout-today").innerText = optedOutToday.length;
+  document.getElementById("stat-optout-rate").innerText =
+    Math.round((optedOut.length / total) * 100) + "%";
+
+  const todayEmails = (queueEmails || []).filter(e =>
+    e.status === "pending" &&
+    e.scheduled_for &&
+    e.scheduled_for.startsWith(today)
+  );
+
+  document.getElementById("email-today-count").innerText = todayEmails.length;
+}
+    function renderEmailLeads() {
+  const container = document.getElementById("leads-email-body");
+  if (!container) return;
+
+  const today = new Date().toISOString().split("T")[0];
+
+  let list = [...fullData];
+
+  list = list.filter((l) => {
+    if (activeLeadFilters.search) {
+      const searchLower = activeLeadFilters.search;
+      const matchName = l.name.toLowerCase().includes(searchLower);
+      const matchEmail = l.email.toLowerCase().includes(searchLower);
+      if (!matchName && !matchEmail) return false;
+    }
+
+    if (activeLeadFilters.today) {
+      const nextDate = l.next_email_date?.split("T")[0];
+      if (nextDate !== today || l.opted_out) return false;
+    }
+
+    if (activeLeadFilters.optedOut && !l.opted_out) {
+      return false;
+    }
+
+    return true;
+  });
+
+  document.getElementById("filtered-lead-count").innerText = list.length;
+
+  const todayCount = fullData.filter(
+    (l) => l.next_email_date?.split("T")[0] === today && !l.opted_out
+  ).length;
+  document.getElementById("email-today-count").innerText = todayCount;
+
+  container.innerHTML = list
+    .map((l) => {
+      const nextDate = l.next_email_date?.split("T")[0];
+      const isToday = nextDate === today;
+      const lastSent = l.last_email_sent
+        ? new Date(l.last_email_sent).toLocaleDateString("fr-FR")
+        : "Jamais";
+
+      const getNextFollowup = () => {
+        if (!l.last_email_sent) return "Immédiat";
+
+        const created = new Date(l.created_at);
+        const lastSentDate = new Date(l.last_email_sent);
+        const now = new Date();
+        const daysSinceCreation = Math.floor(
+          (now - created) / (1000 * 60 * 60 * 24)
+        );
+        const daysSinceLastEmail = Math.floor(
+          (now - lastSentDate) / (1000 * 60 * 60 * 24)
+        );
+
+        if (daysSinceCreation > 120) return "Terminé";
+
+        if (daysSinceCreation <= 60) {
+          if (daysSinceLastEmail >= 3) return "Dû";
+          const next = new Date(lastSentDate);
+          next.setDate(next.getDate() + 3);
+          return next.toLocaleDateString("fr-FR");
+        }
+
+        if (daysSinceLastEmail >= 7) return "Dû";
+        const next = new Date(lastSentDate);
+        next.setDate(next.getDate() + 7);
+        return next.toLocaleDateString("fr-FR");
+      };
+
+      const nextSend = getNextFollowup();
+      const isOptedOut = l.opted_out;
+
+      let cardClass = "glass border border-slate-700/40 hover:border-slate-600";
+      if (isOptedOut) {
+        cardClass = "glass border border-slate-800/40 opacity-50";
+      } else if (isToday) {
+        cardClass = "glass border-2 border-orange-500/60 bg-orange-500/5";
+      }
+
+      return `
+<div class="${cardClass} rounded-xl p-6 pr-8 transition-all duration-300">
+  <div class="grid grid-cols-[30%_15%_20%_20%_15%] gap-6 items-center pr-6">
+
+    <!-- LEAD -->
+    <div class="flex items-center gap-4 min-w-0">
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/30 flex items-center justify-center border border-purple-500/30 shrink-0">
+        <span class="text-3xl">📧</span>
+      </div>
+      <div class="min-w-0">
+        <div class="flex items-center gap-2 mb-2 flex-wrap">
+          <span class="font-bold text-slate-100 text-lg ${isOptedOut ? 'line-through text-slate-600' : ''}">${l.name}</span>
+          ${isOptedOut ? '<span class="px-2.5 py-1.5 bg-red-500 text-white text-[11px] font-black rounded">DÉSABONNÉ</span>' : ''}
+        </div>
+        <div class="text-base text-slate-400 truncate">${l.email}</div>
+        <div class="text-[11px] text-slate-600 uppercase tracking-wider font-bold mt-1.5">
+          ÉTAPE ${l.email_sequence_step}
+        </div>
+      </div>
+    </div>
+
+    <!-- ENGAGEMENT -->
+    <div class="flex flex-col items-center gap-2">
+
+      <div class="flex justify-center gap-8">
+        <div class="text-center">
+          <div class="text-3xl font-black ${l.total_opens > 0 ? 'text-blue-400' : 'text-slate-400'}">${l.total_opens}</div>
+          <div class="text-xs text-slate-500 font-bold mt-1.5">👁️ VUES</div>
+        </div>
+
+        <div class="text-center">
+          <div class="text-3xl font-black ${l.total_clicks > 0 ? 'text-green-400' : 'text-slate-400'}">${l.total_clicks}</div>
+          <div class="text-xs text-slate-500 font-bold mt-1.5">🖱️ CLICS</div>
+        </div>
+      </div>
+
+      <div class="text-[11px] text-slate-500 font-bold mt-1">
+        ${
+          l.last_click
+            ? `🖱️ Dernier clic : ${new Date(l.last_click).toLocaleDateString("fr-FR")}`
+            : l.last_open
+            ? `👁️ Dernière ouverture : ${new Date(l.last_open).toLocaleDateString("fr-FR")}`
+            : l.last_email_sent
+            ? `📧 Email envoyé le ${new Date(l.last_email_sent).toLocaleDateString("fr-FR")}`
+            : "Jamais contacté"
+        }
+      </div>
+
+    </div>
+
+    <!-- DERNIER EMAIL -->
+    <div class="text-center">
+      <div class="text-base font-bold text-slate-300">${lastSent}</div>
+    </div>
+
+    <!-- PROCHAINE RELANCE -->
+    <div class="text-center">
+      <div class="text-base font-bold ${isToday ? 'text-orange-400' : 'text-slate-300'}">${nextSend}</div>
+      ${isToday ? '<div class="text-[11px] text-orange-400 uppercase font-black tracking-wider mt-2">🔔 AUJOURD\'HUI</div>' : ''}
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="flex justify-center items-center">
+      ${isOptedOut ? `
+        <div class="flex flex-col gap-2" style="width: 140px;">
+          <button disabled
+            class="w-full px-3 py-2 text-[10px] font-black uppercase tracking-wider bg-red-500/20 border border-red-500/50 text-red-400 rounded-lg cursor-not-allowed">
+            DÉSABONNÉ
+          </button>
+          <button onclick="deleteLeadPermanently('${l.client_id}', '${l.email.replace(/'/g, "\\'")}', '${l.name.replace(/'/g, "\\'")}')"
+            class="w-full px-3 py-2 bg-red-600/20 border border-red-600/60 text-red-400 font-black rounded-lg hover:bg-red-600/30 transition-all uppercase text-[10px] tracking-wider">
+            🗑️ SUPPR
+          </button>
+        </div>
+      ` : `
+        <button onclick="setOptOut('${l.email.replace(/'/g, "\\'")}')"
+          style="width: 140px;"
+          class="px-3 py-2.5 text-[11px] font-black uppercase tracking-wider bg-slate-800 border border-slate-600 rounded-lg hover:bg-red-500 hover:text-white hover:border-red-500 transition-all">
+          STOP EMAILS
+        </button>
+      `}
+    </div>
+
+  </div>
+</div>`;
+    })
+    .join("");
+}
+
+      /* =========================
+         📊 INITIALISATION AU CHARGEMENT
+      ========================= */
+
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("📱 DOM chargé");
+
+        const waitForSupabase = setInterval(() => {
+          if (window.supabaseReady && typeof supabase !== "undefined") {
+            clearInterval(waitForSupabase);
+            console.log("🚀 Initialisation dashboard...");
+
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log("✅ supabaseClient créé:", supabaseClient);
+
+            loadData();
+            loadEmailLeads();
+            loadSignedStudies();
+            
+            setInterval(loadData, 60000);
+            setInterval(loadEmailLeads, 60000);
+            setInterval(loadSignedStudies, 60000);
+          } else {
+            console.log("⏳ Attente Supabase...", typeof supabase);
+
+          }
+        }, 100);
+      });
+
+      const statusEl = document.getElementById("system-status");
+      statusEl.innerHTML = `<span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse stable-indicator"></span> SYSTÈME OPÉRATIONNEL`;
+    </script>
+  </body>
+</html>

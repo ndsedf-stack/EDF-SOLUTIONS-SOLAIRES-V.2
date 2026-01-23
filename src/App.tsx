@@ -13,6 +13,7 @@ const MainApp: React.FC = () => {
   const [simulationData, setSimulationData] = useState<any>(null);
   const [study, setStudy] = useState<any>(null);
   const [greenPositioning, setGreenPositioning] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   console.log("🔥 MainApp monté");
   console.log("hasData:", hasData);
@@ -21,6 +22,7 @@ const MainApp: React.FC = () => {
   console.log("study:", study);
 
   const handleUploadSuccess = async (data: any) => {
+    setIsLoading(true); // 👈 ICI
     console.log("✅ handleUploadSuccess appelé avec:", data);
     let parsedData = typeof data === "string" ? JSON.parse(data) : data;
 
@@ -42,6 +44,7 @@ const MainApp: React.FC = () => {
     }
 
     setHasData(true);
+    setIsLoading(false); // 👈 ICI
   };
 
   const applyProfile = (profile: string) => {
@@ -70,6 +73,10 @@ const MainApp: React.FC = () => {
         />
       ) : !profileDetected ? (
         <SpeechView onProfileDetected={applyProfile} />
+      ) : isLoading ? (
+        <div className="flex items-center justify-center min-h-screen text-white text-xl">
+          ⏳ Chargement du cockpit...
+        </div>
       ) : (
         <ResultsDashboard
           data={{
