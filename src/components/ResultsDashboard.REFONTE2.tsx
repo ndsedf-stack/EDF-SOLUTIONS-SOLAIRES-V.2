@@ -1994,6 +1994,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [inputClientPhone, setInputClientPhone] = useState("");
   const [inputCommercialName, setInputCommercialName] = useState("");
   const [inputCommercialEmail, setInputCommercialEmail] = useState("");
+  const [paymentType, setPaymentType] = useState("financing");
+  // 'financing' | 'cash'
+
+  const [hasDeposit, setHasDeposit] = useState(false);
+
+  const [depositAmount, setDepositAmount] = useState(1500);
+  // ou la vraie valeur dynamique si tu l’as déjà
+
   const handleGenerate = async () => {
     // Validation
     if (!inputClientName.trim()) {
@@ -2032,24 +2040,81 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       setIsLoading(false);
     }
   };
-  const handleSignStudy = async () => {
-    console.log("🔐 SIGN CLICK");
 
-    if (!confirm("⚠️ Confirmer que le client a SIGNÉ le projet ?")) return;
+  // ═══════════════════════════════════════════════════════════
+  // 📤 ENVOYER L'ÉTUDE (CLIENT NON SIGNÉ)
+  // ═══════════════════════════════════════════════════════════
+  const handleSendStudy = async () => {
+    console.log("🔵 handleSendStudy APPELÉ");
+    console.log("🔵 currentStudyId =", currentStudyId);
+    
+    if (!currentStudyId) {
+      alert("❌ Aucune étude générée. Veuillez d'abord générer l'étude.");
+      return;
+    }
+
+    if (!confirm("📤 Envoyer l'étude au client (non signé) ?\n\nCela déclenchera les emails de relance automatiques.")) {
+      return;
+    }
 
     try {
       setIsLoading(true);
 
-      // 🔎 On récupère la DERNIÈRE étude créée
+      const { error } = await supabase
+        .from("studies")
+        .update({
+          status: "sent"
+        })
+        .eq("id", currentStudyId);
+
+      if (error) {
+        console.error("❌ Erreur lors de l'envoi:", error);
+        alert("❌ Erreur lors de l'envoi de l'étude : " + error.message);
+        return;
+      }
+
+      alert("✅ Étude envoyée ! Les emails de relance seront envoyés automatiquement.");
+      console.log("✅ Étude passée en 'sent':", currentStudyId);
+    } catch (err) {
+      console.error("❌ Erreur:", err);
+      alert("❌ Une erreur est survenue.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignStudy = async () => {
+    console.log("🧾 SIGN PAYMENT VALUES", {
+      paymentType,
+      hasDeposit,
+      depositAmount,
+    });
+
+    if (!confirm("⚠️ Confirmer que le client a SIGNÉ le projet ?")) return;
+
+    if (!paymentType || hasDeposit === null || hasDeposit === undefined) {
+      alert("❌ Mode de paiement non défini. Impossible de signer.");
+      return;
+    }
+
+    if (hasDeposit && (!depositAmount || depositAmount <= 0)) {
+      alert("❌ Montant d'acompte invalide.");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // 🔎 Dernière étude
       const { data: study, error: fetchError } = await supabase
         .from("studies")
-        .select("id, status")
+        .select("id, status, study_data")
         .order("created_at", { ascending: false })
         .limit(1)
         .single();
 
       if (fetchError || !study) {
-        alert("❌ Impossible de retrouver l’étude");
+        alert("❌ Impossible de retrouver l'étude");
         return;
       }
 
@@ -2058,26 +2123,82 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         return;
       }
 
-      // ✅ On signe
+      // 🎯 VÉRITÉ MÉTIER - CALCUL DU MODE DE PAIEMENT RÈEL
+      const totalPrice = Number(installCost || 0);
+      const finalCashApport = Number(cashApport || 0);
+
+      const isActuallyCash = finalCashApport >= totalPrice;
+      const payment_mode = isActuallyCash ? "cash" : "financing";
+
+      // ✅ MAPPING CORRECT : payment_mode → financing_mode
+      let financingMode;
+
+      if (isActuallyCash) {
+        financingMode = "cash_payment";
+      } else {
+        // C'est un financement
+        if (hasDeposit && depositAmount > 0) {
+          financingMode = "financing_with_deposit";
+        } else {
+          financingMode = "full_financing";
+        }
+      }
+
+      console.log("💡 MAPPING DÉDUIT:", {
+        totalPrice,
+        finalCashApport,
+        isActuallyCash,
+        financingMode,
+      });
+
+      console.log("SIGN MODES", {
+        payment_mode,
+        financingMode,
+        hasDeposit,
+        depositAmount,
+      });
+
+      // ✅ SIGNATURE + CONTEXTE FINANCIER (ANCIEN + NOUVEAU SYSTÈME)
       const { error: updateError } = await supabase
         .from("studies")
         .update({
           status: "signed",
           signed_at: new Date().toISOString(),
+
+          // ✅ FORÇAGE VÉRITÉ MÉTIER
+          payment_mode: payment_mode,
+          payment_type: payment_mode,
+          financing_mode: financingMode,
+
+          has_deposit: hasDeposit,
+          deposit_amount: hasDeposit ? depositAmount : null,
+
+          // ✅ PERSISTANCE FRONT-END (pour Dashboard)
+          study_data: {
+            ...(study.study_data || {}),
+            mode: payment_mode, // "cash" ou "financing"
+            cashApport: finalCashApport,
+          },
+
+          contract_secured: false,
+          cancellation_deadline: new Date(
+            Date.now() + 14 * 24 * 60 * 60 * 1000
+          ).toISOString(),
         })
         .eq("id", study.id);
 
       if (updateError) throw updateError;
+
       setIsSigned(true);
 
       // 🧾 Log métier
       await supabase.from("decision_logs").insert({
         study_id: study.id,
         action_performed: "SIGNED_FROM_RESULTS_DASHBOARD",
-        justification: "Signature client depuis ResultsDashboard",
+        justification: `Signature client | mode=${payment_mode} | financing=${financingMode} | apport=${finalCashApport}`,
       });
 
-      alert("✅ Client signé. Séquence anti-annulation déclenchée.");
+      alert("✅ Client signé. Dossier figé financièrement.");
     } catch (e) {
       console.error("SIGN ERROR:", e);
       alert("❌ Erreur lors de la signature");
@@ -2123,19 +2244,19 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [showWastedCashWidget, setShowWastedCashWidget] = useState(true);
   const [warrantyMode, setWarrantyMode] = useState<boolean>(true);
   const [economyChartMode, setEconomyChartMode] = useState<
-    "financement" | "cash"
-  >("financement");
+    "financing" | "cash"
+  >("financing");
   const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("mensuel");
-  const [tableScenario, setTableScenario] = useState<"financement" | "cash">(
-    "financement"
+  const [tableScenario, setTableScenario] = useState<"financing" | "cash">(
+    "financing"
   );
-  const [gouffreMode, setGouffreMode] = useState<"financement" | "cash">(
-    "financement"
+  const [gouffreMode, setGouffreMode] = useState<"financing" | "cash">(
+    "financing"
   );
   const [showScripts, setShowScripts] = useState(false);
   const [scriptProfile, setScriptProfile] = useState("standard");
-  const [whereMoneyMode, setWhereMoneyMode] = useState<"financement" | "cash">(
-    "financement"
+  const [whereMoneyMode, setWhereMoneyMode] = useState<"financing" | "cash">(
+    "financing"
   );
   const [sessionStart] = useState(Date.now());
 
@@ -2342,6 +2463,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       .update({
         status: "signed",
         signed_at: new Date().toISOString(),
+        payment_mode: remainingToFinance > 0 ? "financing" : "cash",
+        financing_mode:
+          remainingToFinance > 0
+            ? hasDeposit
+              ? "financing_with_deposit"
+              : "full_financing"
+            : "cash_payment",
+        has_deposit: hasDeposit,
+        deposit_amount: hasDeposit ? depositAmount || 0 : null,
       })
       .eq("id", studyId);
   };
@@ -2621,14 +2751,14 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   const economyChartData = useMemo(() => {
     const sourceDetails =
-      economyChartMode === "financement"
+      economyChartMode === "financing"
         ? calculationResult.slicedDetails // ✅ CORRECT
         : calculationResult.slicedDetailsCash; // ✅ CORRECT
     return sourceDetails.map((detail, index) => ({
       year: detail.year,
       value: -detail.cashflowDiff,
       type:
-        index * 12 < creditDurationMonths && economyChartMode === "financement"
+        index * 12 < creditDurationMonths && economyChartMode === "financing"
           ? "investment"
           : "profit",
     }));
@@ -2762,7 +2892,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   // Gouffre Financier Data - Calcul dynamique
   const gouffreChartData = useMemo(() => {
     const sourceDetails =
-      gouffreMode === "financement"
+      gouffreMode === "financing"
         ? calculationResult.slicedDetails // ✅ CORRECT
         : calculationResult.slicedDetailsCash; // ✅ CORRECT
 
@@ -2781,6 +2911,12 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     forcedClientPhone?: string
   ) => {
     console.log("🟢 DÉBUT handleGenerateStudy");
+    console.log("🧪 ÉTAT DES PRIX =", {
+      installCost,
+      remainingToFinance,
+      cashApport,
+      typeof_installCost: typeof installCost,
+    });
     console.log("🔵 PARAMS REÇUS:", {
       forcedClientName,
       forcedCommercialEmail,
@@ -2899,7 +3035,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         elecPrice: electricityPrice || 0.25,
         installedPower: installedPower || 3.5,
         projectionYears,
-        mode: "financement",
+        mode: "financing",
         warrantyMode: warrantyMode ? "performance" : "essential",
 
         // ✅ Données calculées (résumé)
@@ -2946,19 +3082,80 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       // ═══════════════════════════════════════════════════════════
       // 📊 INSERTION ÉTUDE
       // ═══════════════════════════════════════════════════════════
+
+      // 🔒 SÉCURITÉS AVANT INSERT (évite les erreurs SQL aléatoires)
+      if (!payload || typeof payload !== "object") {
+        alert("❌ Données étude invalides (payload).");
+        return;
+      }
+
+      if (!cleanedClientName) {
+        alert("❌ Nom client manquant.");
+        return;
+      }
+
+      if (!cleanedCommercialEmail) {
+        alert("❌ Email commercial manquant.");
+        return;
+      }
+
+      if (!paymentType) {
+        alert("❌ Mode de paiement non défini.");
+        return;
+      }
+
+      if (hasDeposit === undefined || hasDeposit === null) {
+        alert("❌ Statut d'acompte non défini.");
+        return;
+      }
+
+      if (!Number.isFinite(Number(installCost))) {
+        alert("❌ Prix total invalide.");
+        return;
+      }
+
+      const safeTotalPrice = Number(installCost);
+
+      console.log("🧪 INSERT FINAL =", {
+        study_data: payload,
+        expires_at: expiresAt,
+        client_name: cleanedClientName,
+        commercial_email: cleanedCommercialEmail,
+        payment_type: paymentType,
+        has_deposit: hasDeposit,
+        total_price: safeTotalPrice,
+      });
+
       const result = await supabase
         .from("studies")
         .insert({
+          // 🔴 COLONNES NOT NULL (OBLIGATOIRES)
           study_data: payload,
           expires_at: expiresAt.toISOString(),
-          client_id: clientId,
           client_name: cleanedClientName,
+          commercial_email: cleanedCommercialEmail,
+          payment_type: String(paymentType),
+          has_deposit: Boolean(hasDeposit),
+          total_price: safeTotalPrice,
+
+          // 🟢 AUTRES COLONNES
+          client_id: clientId,
           client_email: cleanedEmail || null,
           client_phone: cleanedPhone || null,
-          commercial_email: cleanedCommercialEmail,
           commercial_name: null,
           is_active: true,
-          status: "draft", // ← Créé en draft d'abord
+          status: "draft",
+
+          cash_apport: Number(cashApport) || 0,
+          payment_mode: paymentType === "cash" ? "cash" : "financing",
+          financing_mode:
+            paymentType === "cash"
+              ? "cash_payment"
+              : hasDeposit
+              ? "financing_with_deposit"
+              : "full_financing",
+
+          deposit_amount: hasDeposit ? Number(depositAmount) : null,
         })
         .select()
         .single();
@@ -2983,14 +3180,15 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       setCurrentStudyId(realStudyId);
 
       // ═══════════════════════════════════════════════════════════
-      // 🔗 UPDATE guest_view_url + PASSAGE EN 'sent'
+      // 🔗 UPDATE guest_view_url (RESTE EN DRAFT)
       // ═══════════════════════════════════════════════════════════
 
       const { data: updateResult, error: updateError } = await supabase
         .from("studies")
         .update({
           guest_view_url: guestUrl,
-          status: "sent", // ← DÉCLENCHE LE TRIGGER POUR CRÉER LES 4 EMAILS POST-REFUS
+          // ❌ PLUS DE status: "sent" automatique
+          // ✅ L'étude reste en "draft" jusqu'à action manuelle
         })
         .eq("id", realStudyId)
         .select(); // ← AJOUTÉ pour voir le résultat
@@ -3178,7 +3376,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
     );
   }
   const rows =
-    tableScenario === "financement"
+    tableScenario === "financing"
       ? calculationResult.details
       : calculationResult.detailsCash;
 
@@ -3188,7 +3386,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
   const finalGain = rows[projectionYears - 1]?.cumulativeSavings || 0;
 
   const initialInvestment =
-    tableScenario === "financement" ? cashApport : installCost;
+    tableScenario === "financing" ? cashApport : installCost;
 
   const roiPercent =
     initialInvestment > 0
@@ -7265,9 +7463,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 {/* SWITCH MODE - RESPONSIVE */}
                 <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10 shadow-inner">
                   <button
-                    onClick={() => setWhereMoneyMode("financement")}
+                    onClick={() => setWhereMoneyMode("financing")}
                     className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
-                      whereMoneyMode === "financement"
+                      whereMoneyMode === "financing"
                         ? "bg-blue-600 text-white"
                         : "text-slate-500 hover:text-white"
                     }`}
@@ -7292,7 +7490,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 {[5, 10, projectionYears].map((year, idx) => {
                   const data = getYearData(year);
                   const selectedData =
-                    whereMoneyMode === "financement" ? data.credit : data.cash;
+                    whereMoneyMode === "financing" ? data.credit : data.cash;
 
                   const youPaid = Math.abs(selectedData.cumulativeSpendSolar);
                   const youWouldHavePaid = Math.abs(
@@ -7370,7 +7568,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                             {/* ✅ CORRIGÉ : Utiliser le bon breakEvenPoint selon le mode */}
                             {(() => {
                               const breakEven =
-                                whereMoneyMode === "financement"
+                                whereMoneyMode === "financing"
                                   ? calculationResult.breakEvenPoint
                                   : calculationResult.breakEvenPointCash;
 
@@ -8145,9 +8343,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 {/* Switch Financement/Cash */}
                 <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
                   <button
-                    onClick={() => setGouffreMode("financement")}
+                    onClick={() => setGouffreMode("financing")}
                     className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
-                      gouffreMode === "financement"
+                      gouffreMode === "financing"
                         ? "bg-blue-600 text-white"
                         : "text-slate-500 hover:text-white"
                     }`}
@@ -8181,7 +8379,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     </div>
                     <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white break-words">
                       {formatMoney(
-                        gouffreMode === "financement"
+                        gouffreMode === "financing"
                           ? calculationResult.totalSpendNoSolar
                           : calculationResult.totalSpendNoSolarCash
                       )}
@@ -8217,7 +8415,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     </div>
                     <span className="text-2xl sm:text-3xl md:text-4xl font-black text-white break-words">
                       {formatMoney(
-                        gouffreMode === "financement"
+                        gouffreMode === "financing"
                           ? calculationResult.totalSpendSolar
                           : calculationResult.totalSpendSolarCash
                       )}
@@ -8233,7 +8431,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       }`}
                       style={{
                         width: `${
-                          gouffreMode === "financement"
+                          gouffreMode === "financing"
                             ? (calculationResult.totalSpendSolar /
                                 calculationResult.totalSpendNoSolar) *
                               100
@@ -8267,7 +8465,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </span>
                       <span className="text-lg sm:text-xl md:text-2xl font-black text-emerald-400 break-words">
                         {formatMoney(
-                          gouffreMode === "financement"
+                          gouffreMode === "financing"
                             ? calculationResult.totalSavingsProjected
                             : calculationResult.totalSavingsProjectedCash
                         )}
@@ -8455,9 +8653,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
               {/* Financement / Cash */}
               <div className="bg-black/60 backdrop-blur-md p-1 rounded-lg flex gap-1 border border-white/10">
                 <button
-                  onClick={() => setTableScenario("financement")}
+                  onClick={() => setTableScenario("financing")}
                   className={`px-3 sm:px-4 py-1.5 rounded-md text-[10px] sm:text-xs font-bold uppercase transition-all ${
-                    tableScenario === "financement"
+                    tableScenario === "financing"
                       ? "bg-blue-600 text-white"
                       : "text-slate-500 hover:text-slate-300"
                   }`}
@@ -8610,7 +8808,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-yellow-400 font-bold uppercase text-[10px] sm:text-xs whitespace-nowrap">
                         APPORT :{" "}
                         {formatMoney(
-                          tableScenario === "financement"
+                          tableScenario === "financing"
                             ? cashApport
                             : installCost
                         )}
@@ -8619,7 +8817,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-red-400 font-bold whitespace-nowrap">
                         -
                         {formatMoney(
-                          tableScenario === "financement"
+                          tableScenario === "financing"
                             ? cashApport
                             : installCost
                         )}
@@ -8627,14 +8825,14 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-right text-red-500 font-bold whitespace-nowrap">
                         -
                         {formatMoney(
-                          tableScenario === "financement"
+                          tableScenario === "financing"
                             ? cashApport
                             : installCost
                         )}
                       </td>
                     </tr>
 
-                    {(tableScenario === "financement"
+                    {(tableScenario === "financing"
                       ? calculationResult.details
                       : calculationResult.detailsCash
                     )
@@ -8642,7 +8840,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       .map((row, i) => {
                         const isCreditActive =
                           i < creditDurationMonths / 12 &&
-                          tableScenario === "financement";
+                          tableScenario === "financing";
                         const creditAmountYearly = isCreditActive
                           ? (creditMonthlyPayment + insuranceMonthlyPayment) *
                             12
@@ -8657,7 +8855,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
 
                         return (
                           <tr
-                            key={row.year}
+                            key={`${row.year}-${i}`}
                             className={`border-b border-white/5 transition-colors ${
                               breakEvenYear === row.year
                                 ? "bg-emerald-500/10 ring-1 ring-emerald-500/30"
@@ -8719,7 +8917,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </td>
                       <td className="py-2 sm:py-3 px-2 sm:px-4 text-right text-lg sm:text-xl font-black text-emerald-400 whitespace-nowrap">
                         {formatMoney(
-                          (tableScenario === "financement"
+                          (tableScenario === "financing"
                             ? calculationResult.details
                             : calculationResult.detailsCash)[
                             projectionYears - 1
@@ -9377,6 +9575,15 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
                       Ouvrir
                     </button>
                   </div>
+
+                  {/* 📤 BOUTON ENVOYER L'ÉTUDE (CLIENT NON SIGNÉ) */}
+                  <button
+                    onClick={handleSendStudy}
+                    disabled={isLoading}
+                    className="w-full mt-4 py-4 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-2xl text-[10px] uppercase transition-all active:scale-95 shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Envoi..." : "📤 Envoyer l'étude (Client non signé)"}
+                  </button>
                 </div>
               )}
             </div>

@@ -370,58 +370,477 @@ details[open] summary::after {
     </button>
   </div>
 </div>
-<!-- 🧠 ÉTAT GLOBAL -->
-<div id="system-state"
-     class="glass rounded-2xl p-5 mb-4 border border-slate-700/40 flex items-center gap-4">
+  <!-- 🚀 DASHBOARD STATS - ULTRA PREMIUM GLASSMORPHISM -->
+<div id="system-state" class="relative overflow-hidden mb-8">
+  
+  <!-- Conteneur principal transparent -->
+  <div class="relative overflow-hidden">
+    
+    <!-- Effets de lumière d'ambiance -->
+    <div class="absolute top-0 left-0 w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[150px] animate-pulse"></div>
+    <div class="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[150px] animate-pulse" style="animation-delay: 1.5s;"></div>
+    <div class="absolute top-1/2 left-1/2 w-[400px] h-[400px] bg-pink-500/15 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 animate-pulse" style="animation-delay: 3s;"></div>
+    
+    <!-- Grid principal -->
+    <div class="relative z-10 p-6">
+      <div class="grid grid-cols-8 gap-4">
+        
+        <!-- TOTAL ÉTUDES -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-blue-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-blue-300/70 uppercase tracking-[0.2em] mb-2">Total Études</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-blue-200 to-blue-400 bg-clip-text text-transparent">26</div>
+          </div>
+        </div>
 
-  <div id="system-dot"
-       class="w-3 h-3 rounded-full bg-slate-400 animate-pulse"></div>
+        <!-- ACTIVES -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-emerald-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-emerald-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-emerald-300/70 uppercase tracking-[0.2em] mb-2">Actives</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-emerald-200 to-emerald-400 bg-clip-text text-transparent">17</div>
+          </div>
+        </div>
 
-  <div>
-    <div id="system-label"
-         class="text-sm font-black tracking-widest uppercase text-slate-300">
-      INITIALISATION
+        <!-- SIGNÉES -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-green-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-green-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-green-300/70 uppercase tracking-[0.2em] mb-2">Signées</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-green-200 to-green-400 bg-clip-text text-transparent">7</div>
+          </div>
+        </div>
+
+        <!-- TOTAL LEADS -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-purple-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-purple-300/70 uppercase tracking-[0.2em] mb-2">Total Leads</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-purple-200 to-purple-400 bg-clip-text text-transparent">177</div>
+          </div>
+        </div>
+
+        <!-- LEADS ACTIFS -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-orange-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-orange-300/70 uppercase tracking-[0.2em] mb-2">Leads Actifs</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-orange-200 to-orange-400 bg-clip-text text-transparent">168</div>
+          </div>
+        </div>
+
+        <!-- FROIDS -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-slate-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-slate-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-slate-300/70 uppercase tracking-[0.2em] mb-2">Froids</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-slate-200 to-slate-400 bg-clip-text text-transparent">143</div>
+          </div>
+        </div>
+
+        <!-- EMAILS ENVOYÉS -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-indigo-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-indigo-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-indigo-300/70 uppercase tracking-[0.2em] mb-2">Emails Envoyés</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-indigo-200 to-indigo-400 bg-clip-text text-transparent">347</div>
+          </div>
+        </div>
+
+        <!-- EN ATTENTE -->
+        <div class="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 hover:border-yellow-400/50 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-yellow-500/50">
+          <div class="absolute inset-0 bg-gradient-to-br from-yellow-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="relative p-5">
+            <div class="text-[9px] font-bold text-yellow-300/70 uppercase tracking-[0.2em] mb-2">En Attente</div>
+            <div class="text-4xl font-black bg-gradient-to-br from-yellow-200 to-yellow-400 bg-clip-text text-transparent">0</div>
+          </div>
+        </div>
+
+      </div>
     </div>
-
-    <div id="system-desc"
-         class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">
-      Analyse en cours…
-    </div>
+    
+    <!-- Reflets lumineux animés -->
+    <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+    
   </div>
 </div>
-<!-- ALERTE CRITIQUE -->
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.05); }
+}
+</style>
+</style>
+
+<!-- ⚡ ALERTE CRITIQUE - WAR ROOM -->
 <div id="critical-alert" class="hidden mb-6">
-  <div class="relative overflow-hidden rounded-2xl p-8 border-2 border-red-500/60 bg-gradient-to-br from-red-500/10 to-red-500/5">
-    <div class="absolute inset-0 bg-gradient-to-r from-red-500/10 via-red-500/5 to-transparent animate-pulse"></div>
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/[0.06] to-white/[0.02] backdrop-blur-xl border border-red-400/20 hover:border-red-400/30 transition-all duration-500">
     
-    <div class="relative z-10 flex items-center justify-between">
-      <div>
-        <div class="flex items-center gap-3 mb-2">
-          <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.8)]"></div>
-          <h2 class="text-lg font-black text-red-400 uppercase tracking-wider">ALERTE CRITIQUE</h2>
+    <div class="absolute top-0 right-0 w-64 h-64 bg-red-500/[0.04] rounded-full blur-[100px]"></div>
+    
+    <div class="relative z-10 p-6">
+      <div class="flex items-center justify-between gap-8">
+        
+        <div class="flex items-center gap-6 flex-1">
+          <div class="relative flex-shrink-0">
+            <div class="w-2 h-2 bg-red-400 rounded-full animate-pulse"></div>
+          </div>
+          
+          <div class="space-y-1">
+            <div class="flex items-baseline gap-3">
+              <span class="text-sm font-semibold text-red-400 uppercase tracking-wider">War Room</span>
+              <span class="text-xs text-slate-400">Contrats annulables actifs</span>
+            </div>
+            
+            <div class="flex items-baseline gap-3">
+              <span class="text-2xl font-bold text-white" id="alert-message">0 contrats en danger</span>
+            </div>
+            
+            <div class="flex items-baseline gap-3">
+              <span class="text-xl font-bold text-red-400" id="alert-amount">0 € non sécurisé</span>
+              <span class="text-xs text-slate-500 uppercase">à protéger maintenant</span>
+            </div>
+          </div>
         </div>
-        <p id="alert-message" class="text-2xl font-black text-slate-100 mb-1">
-          — DOSSIERS EN DANGER
-        </p>
-        <p id="alert-amount" class="text-xl font-bold text-red-300">
-          0 € À SAUVER AUJOURD'HUI
-        </p>
+        
+        <div class="flex items-center gap-4">
+          <div class="flex gap-3">
+            <div class="text-center px-4 py-2 rounded-xl bg-white/[0.04] border border-red-400/20">
+              <div class="text-xl font-bold text-red-400" id="alert-silent-count">0</div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider">🧊 Muets</div>
+            </div>
+            <div class="text-center px-4 py-2 rounded-xl bg-white/[0.04] border border-orange-400/20">
+              <div class="text-xl font-bold text-orange-400" id="alert-agitated-count">0</div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider">🔥 Agités</div>
+            </div>
+            <div class="text-center px-4 py-2 rounded-xl bg-white/[0.04] border border-blue-400/20">
+              <div class="text-xl font-bold text-blue-400" id="alert-interested-count">0</div>
+              <div class="text-[10px] text-slate-500 uppercase tracking-wider">🟢 Intéressés</div>
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button id="alert-primary-action" onclick="handlePrimaryAction()"
+              class="px-6 py-3 bg-white hover:bg-slate-100 rounded-xl font-semibold text-sm text-black transition-all duration-300 hover:scale-105">
+              <span id="primary-action-text">Appeler priorité #1</span>
+            </button>
+            
+            <button onclick="scrollToWarRoom()" 
+              class="px-6 py-3 bg-white/[0.08] hover:bg-white/[0.12] border border-white/20 hover:border-red-400/40 rounded-xl font-semibold text-sm text-white transition-all duration-300">
+              Voir War Room
+            </button>
+          </div>
+        </div>
+        
       </div>
       
-      <div class="flex gap-3">
-        <button onclick="document.getElementById('war-room-section').scrollIntoView({behavior: 'smooth'})" 
-          class="px-6 py-3 bg-red-500 text-black font-black text-sm rounded-lg hover:bg-red-400 transition-all uppercase tracking-wider">
-          VOIR LA LISTE
-        </button>
-        <button id="alert-primary-action" onclick="handlePrimaryAction()"
-          class="px-6 py-3 bg-white text-black font-black text-sm rounded-lg hover:bg-slate-200 transition-all uppercase tracking-wider">
-          ACTION PRIORITAIRE
-        </button>
+      <div class="mt-4 pt-4 border-t border-white/5">
+        <div class="flex items-center gap-4">
+          <span class="text-[10px] text-slate-500 uppercase tracking-wider">Tension système</span>
+          <div class="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+            <div id="tension-bar" class="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full transition-all duration-1000" style="width: 0%"></div>
+          </div>
+          <span class="text-xs text-red-400 font-medium" id="tension-percentage">0%</span>
+        </div>
       </div>
     </div>
+    
   </div>
 </div>
 
+<script>
+  // ========================================
+  // SYSTÈME D'INITIALISATION ULTRA PREMIUM
+  // ========================================
+
+  let systemInitialized = false;
+
+async function initializeSystemPremium() {
+  if (systemInitialized) return;
+  
+  const progressBar = document.getElementById("progress-bar");
+  const progressText = document.getElementById("progress-text");
+  const progressPercent = document.getElementById("progress-percent");
+  const progressGlow = document.getElementById("progress-glow");
+  const container = document.getElementById("system-state");
+  const bottomGlow = document.getElementById("bottom-glow");
+  
+  if (container) {
+    container.classList.add("system-loading");
+  }
+  
+  const steps = [
+    { progress: 15, text: "Connexion Supabase...", stepId: "step-1", duration: 600 },
+    { progress: 35, text: "Chargement dossiers...", stepId: "step-2", duration: 800 },
+    { progress: 60, text: "Analyse métriques...", stepId: "step-3", duration: 700 },
+    { progress: 85, text: "Calcul risques...", stepId: "step-4", duration: 600 },
+    { progress: 100, text: "Système prêt !", stepId: "step-4", duration: 500 }
+  ];
+  
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    await new Promise(resolve => setTimeout(resolve, step.duration));
+    
+    if (!progressBar || !progressGlow || !progressText || !progressPercent || !bottomGlow) {
+      console.warn("⚠️ Éléments d'animation manquants, skip");
+      continue;
+    }
+    
+    progressBar.style.width = `${step.progress}%`;
+    progressGlow.style.left = `${step.progress}%`;
+    progressGlow.style.opacity = "1";
+    progressText.textContent = step.text;
+    progressPercent.textContent = `${step.progress}%`;
+    
+    const stepElement = document.getElementById(step.stepId);
+    if (stepElement) {
+      stepElement.classList.add("active");
+    }
+    
+    bottomGlow.style.background = `linear-gradient(90deg, transparent, rgba(59, 130, 246, ${step.progress / 100}), transparent)`;
+  }
+  
+  await new Promise(resolve => setTimeout(resolve, 800));
+  systemInitialized = true;
+  
+  // ✅ Masquer progression avec vérifications
+  const progressContainer = document.getElementById("progress-container");
+  const quickStats = document.getElementById("system-quick-stats");
+  
+  if (progressContainer) {
+    progressContainer.style.opacity = "0";
+    await new Promise(resolve => setTimeout(resolve, 300));
+    progressContainer.classList.add("hidden");
+  }
+  
+  if (quickStats) {
+    quickStats.classList.remove("hidden");
+  }
+}
+
+function updateSystemState(metrics) {
+  if (!systemInitialized || !metrics) return;
+  
+  const container = document.getElementById("system-state");
+  const label = document.getElementById("system-label");
+  const desc = document.getElementById("system-desc");
+  const badge = document.getElementById("system-badge");
+  const bottomGlow = document.getElementById("bottom-glow");
+  
+  if (!container) return;
+  
+  container.classList.remove("system-loading", "system-operational", "system-warning", "system-critical");
+  
+  let state = "operational";
+  let stateLabel = "SYSTÈME OPÉRATIONNEL";
+  let stateDesc = "Tous les systèmes fonctionnent normalement";
+  let badgeText = "OPTIMAL";
+  let badgeClass = "bg-emerald-500/20 border-2 border-emerald-500/60 text-emerald-400";
+  let glowColor = "rgba(16, 185, 129, 0.6)";
+  let statusEmoji = "✓";
+  
+  // Calcul War Room pour l'état
+  const warRoom = (fullData || []).filter(s => {
+    if (s.status !== "signed") return false;
+    const signedDate = new Date(s.signed_at || s.created_at);
+    const daysSinceSigned = Math.floor((new Date() - signedDate) / 86400000);
+    return daysSinceSigned <= 14;
+  });
+  
+  if (warRoom.length > 5) {
+    state = "critical";
+    stateLabel = "ALERTE CRITIQUE";
+    stateDesc = `${warRoom.length} contrats en War Room`;
+    badgeText = "URGENCE";
+    badgeClass = "bg-red-500/20 border-2 border-red-500/60 text-red-400 animate-pulse";
+    glowColor = "rgba(239, 68, 68, 0.8)";
+    statusEmoji = "⚠";
+  } else if (warRoom.length > 2) {
+    state = "warning";
+    stateLabel = "SURVEILLANCE ACTIVE";
+    stateDesc = `${warRoom.length} contrats nécessitent une attention`;
+    badgeText = "ATTENTION";
+    badgeClass = "bg-orange-500/20 border-2 border-orange-500/60 text-orange-400";
+    glowColor = "rgba(245, 158, 11, 0.6)";
+    statusEmoji = "◐";
+  }
+  
+  container.classList.add(`system-${state}`);
+  
+  setTimeout(() => {
+    if (label) label.textContent = stateLabel;
+    if (desc) desc.textContent = stateDesc;
+    if (badge) {
+      badge.textContent = badgeText;
+      badge.className = `px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-sm transition-all duration-500 ${badgeClass}`;
+      badge.classList.remove("hidden", "scale-0");
+      badge.classList.add("scale-100");
+    }
+    
+    if (bottomGlow) {
+      bottomGlow.style.background = `linear-gradient(90deg, transparent, ${glowColor}, transparent)`;
+    }
+    
+    const totalCA = metrics.caSigned || 0;
+    const quickDossiers = document.getElementById("quick-dossiers");
+    const quickCa = document.getElementById("quick-ca");
+    const quickStatus = document.getElementById("quick-status");
+    
+    if (quickDossiers) quickDossiers.textContent = fullData.length;
+    if (quickCa) quickCa.textContent = `${Math.round(totalCA / 1000)}k€`;
+    if (quickStatus) quickStatus.textContent = statusEmoji;
+  }, 150);
+}
+// ========================================
+// WAR ROOM - SYSTÈME DE PROTECTION CA
+// ========================================
+
+function updateCriticalAlert() {
+  const alertBox = document.getElementById("critical-alert");
+  
+  // Vérification sécurisée des éléments
+  if (!alertBox) {
+    console.warn("⚠️ Élément #critical-alert non trouvé");
+    return;
+  }
+  
+  const message = document.getElementById("alert-message");
+  const amount = document.getElementById("alert-amount");
+  const actionBtn = document.getElementById("alert-primary-action");
+  const primaryActionText = document.getElementById("primary-action-text");
+  
+  const silentCount = document.getElementById("alert-silent-count");
+  const agitatedCount = document.getElementById("alert-agitated-count");
+  const interestedCount = document.getElementById("alert-interested-count");
+  
+  const tensionBar = document.getElementById("tension-bar");
+  const tensionPercentage = document.getElementById("tension-percentage");
+  
+  // Vérification que fullData existe
+  if (typeof fullData === 'undefined' || !Array.isArray(fullData)) {
+    console.warn("⚠️ fullData non disponible");
+    alertBox.classList.add("hidden");
+    return;
+  }
+  
+  // WAR ROOM = Dossiers SIGNÉS + Annulables (< 14 jours)
+  const warRoom = (fullData || []).filter(s => {
+    if (s.status !== "signed") return false;
+    const signedDate = new Date(s.signed_at || s.created_at);
+    const daysSinceSigned = Math.floor((new Date() - signedDate) / 86400000);
+    return daysSinceSigned <= 14; // Période de rétractation légale
+  });
+  // 🔍 DEBUG
+console.log("🔍 WAR ROOM DEBUG:", warRoom.map(s => ({
+  name: s.name,
+  views: s.views,
+  clicks: s.clicks,
+  email_opens: s.email_opens,
+  total_clicks: s.total_clicks
+})));
+  
+  const warRoomCount = warRoom.length;
+  const warRoomCA = warRoom.reduce((sum, s) => 
+    sum + (s.study_data?.installCost || 0), 0
+  );
+  
+  // Si aucun contrat annulable, pas d'alerte
+  if (warRoomCount === 0) {
+    alertBox.classList.add("hidden");
+    return;
+  }
+  
+  alertBox.classList.remove("hidden");
+  
+  // LECTURE COMPORTEMENTALE (cerveau du système)
+  const silent = []; // 🧊 Muets = désengagement
+  const agitated = []; // 🔥 Agités = stress/doute
+  const interested = []; // 🟢 Intéressés = engagement sain
+  
+  warRoom.forEach(s => {
+  const views = s.views || 0;
+  const clicks = s.clicks || 0;
+  
+  if (views === 0 && clicks === 0) {
+    silent.push(s); // 🧊 Muets
+  } else if (views > 3 && clicks === 0) {
+    agitated.push(s); // 🔥 Agités
+  } else if (clicks > 0) {
+    interested.push(s); // 🟢 Intéressés
+  } else {
+    // ⚪ STABLE (views entre 1-3, 0 clic)
+    interested.push(s); // On les compte comme "intéressés" pour ne pas les perdre
+  }
+});
+  
+  // CALCUL DE TENSION (pas "risque")
+  // Plus il y a de muets/agités, plus la tension monte
+  const silentWeight = silent.length * 15; // Chaque muet = 15% tension
+  const agitatedWeight = agitated.length * 8; // Chaque agité = 8% tension
+  const tensionLevel = Math.min(100, silentWeight + agitatedWeight);
+  
+  // MISE À JOUR UI (avec vérifications)
+  if (message) message.textContent = `${warRoomCount} contrat${warRoomCount > 1 ? 's' : ''} en War Room`;
+  if (amount) amount.textContent = `${warRoomCA.toLocaleString("fr-FR")} € non sécurisé`;
+  
+  if (silentCount) silentCount.textContent = silent.length;
+  if (agitatedCount) agitatedCount.textContent = agitated.length;
+  if (interestedCount) interestedCount.textContent = interested.length;
+  
+  if (tensionPercentage) tensionPercentage.textContent = `${Math.round(tensionLevel)}%`;
+  
+  // Animation barre de tension (avec vérification)
+  if (tensionBar) {
+    setTimeout(() => {
+      tensionBar.style.width = `${tensionLevel}%`;
+    }, 100);
+  }
+  
+  // ACTION PRIORITAIRE = Premier MUET (désengagement = danger max)
+  const priority = silent[0] || agitated[0] || warRoom[0];
+  
+  if (priority && primaryActionText && actionBtn) {
+    const firstName = priority.name?.split(' ')[0] || 'Client';
+    primaryActionText.textContent = `Appeler ${firstName.toUpperCase()}`;
+    
+    actionBtn.onclick = () => {
+      // Ouvrir le téléphone si numéro disponible
+      if (priority.phone) {
+        window.open(`tel:${priority.phone}`, '_self');
+      }
+      // Ouvrir le dossier (utilise ta vraie URL)
+      const frontendUrl = typeof FRONTEND_URL !== 'undefined' ? FRONTEND_URL : '';
+      if (frontendUrl) {
+        window.open(`${frontendUrl}/guest/${priority.id}`, '_blank');
+      }
+    };
+  }
+  
+  console.log("✅ War Room mise à jour:", {
+    total: warRoomCount,
+    ca: warRoomCA,
+    muets: silent.length,
+    agités: agitated.length,
+    intéressés: interested.length,
+    tension: `${Math.round(tensionLevel)}%`
+  });
+}
+
+function handlePrimaryAction() {
+  // Fallback si appelé manuellement
+  updateCriticalAlert(computeEduMetrics(fullData));
+}
+
+function scrollToWarRoom() {
+  const warRoomSection = document.getElementById("war-room-section");
+  if (warRoomSection) {
+    warRoomSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+</script>
 
 <!-- 🧠 COCKPIT WAR ROOM OPTIMISÉ -->
 <section
@@ -930,45 +1349,87 @@ details[open] summary::after {
 
 function computeEduMetrics(data) {
   const now = new Date();
-
   const signed = data.filter((d) => d.status === "signed");
   const sent = data.filter((d) => d.status === "sent");
-
-  const riskyDeposits = signed.filter((s) => {
+  
+  // ✅ 1. WAR ROOM = Signés < 14 jours
+  const warRoomStudies = signed.filter(s => {
+    if (!s.signed_at) return false;
+    const days = (now - new Date(s.signed_at)) / 86400000;
+    return days <= 14;
+  });
+  
+  const warRoomIds = warRoomStudies.map(s => s.id);
+  
+  // ✅ 2. RISQUES CRITIQUES = TOUS les signés avec acompte requis + non payé
+  const criticalRisks = signed.filter((s) => {
+    // Si acompte déjà payé, pas de risque
     if (s.deposit_paid) return false;
-    if (s.study_data?.mode === "financement" && !s.deposit_amount)
-      return false;
+    
+    // Vérifier si acompte requis
+    const mode = s.study_data?.mode;
+    const apport = s.study_data?.cashApport || 0;
+    const requiresDeposit = mode === 'cash' || (mode === 'financement' && apport > 0);
+    
+    // Si pas d'acompte requis (financement 100%), pas de risque
+    return requiresDeposit;
+  });
+  
+  // ✅ 3. RISQUES À TRAITER AUJOURD'HUI = Critiques HORS War Room
+  const riskyDeposits = criticalRisks.filter((s) => {
+    // Exclure War Room (ils sont déjà affichés ailleurs)
+    if (warRoomIds.includes(s.id)) return false;
+    
+    // Garder seulement ceux avec retard > 10j
     const days = (now - new Date(s.signed_at || s.created_at)) / 86400000;
     return days > 10;
   });
-
+  
+  // ✅ 4. CALCUL DU CA À RISQUE (TOUS les risques critiques)
+  const cashAtRisk = criticalRisks.reduce(
+    (sum, s) => sum + (s.study_data?.installCost || 0),
+    0
+  );
+  
+  // ✅ 5. CALCUL DU CA WAR ROOM
+  const warRoomCA = warRoomStudies
+    .filter(s => !s.deposit_paid)
+    .reduce((sum, s) => sum + (s.study_data?.installCost || 0), 0);
+  
   const veryHotLeads = sent.filter((s) => s.views >= 5);
   const coldSigned = signed.filter((s) => s.views < 2);
-
+  
   const caSigned = signed.reduce(
     (t, s) => t + (s.study_data?.installCost || 0),
     0
   );
+  
   const cashSecured = signed
     .filter((s) => s.deposit_paid)
-    .reduce((t, s) => t + (s.deposit_amount || 0), 0);
-
+    .reduce((t, s) => t + (s.study_data?.installCost || 0), 0);
+  
   const riskScore = Math.min(
     100,
-    riskyDeposits.length * 20 + coldSigned.length * 10
+    criticalRisks.length * 20 + coldSigned.length * 10
   );
+  
   const cashScore = Math.min(100, (cashSecured / (caSigned || 1)) * 100);
   const salesScore = Math.min(100, veryHotLeads.length * 12);
-
+  
   let mode = "ACCÉLÉRATION";
   if (riskScore > 60) mode = "URGENCE";
   else if (cashScore < 30) mode = "CHASSE CASH";
   else if (veryHotLeads.length > 6) mode = "CLOSING";
-
+  
   return {
     signed,
     sent,
-    riskyDeposits,
+    riskyDeposits,      // ← À traiter aujourd'hui (hors War Room)
+    criticalRisks,      // ← NOUVEAU : TOUS les risques financiers
+    cashAtRisk,         // ← NOUVEAU : CA total à risque
+    warRoomStudies,     // ← NOUVEAU : Dossiers War Room
+    warRoomCA,          // ← NOUVEAU : CA War Room
+    warRoomIds,
     veryHotLeads,
     coldSigned,
     caSigned,
@@ -1390,49 +1851,6 @@ function togglePriority() {
     .classList.toggle("bg-orange-600", isPriorityMode);
   render();
 }
-// ========================================
-// NOUVELLE LOGIQUE : ALERTE CRITIQUE
-// ========================================
-
-function updateCriticalAlert(metrics) {
-  const alertBox = document.getElementById("critical-alert");
-  const message = document.getElementById("alert-message");
-  const amount = document.getElementById("alert-amount");
-  const actionBtn = document.getElementById("alert-primary-action");
-  
-  // Calculer les dossiers critiques
-  const critical = metrics.riskyDeposits.length;
-  const criticalCA = metrics.riskyDeposits.reduce((sum, s) => 
-    sum + (s.study_data?.installCost || 0), 0
-  );
-  
-  if (critical === 0) {
-    alertBox.classList.add("hidden");
-    return;
-  }
-  
-  alertBox.classList.remove("hidden");
-  message.textContent = `${critical} DOSSIER${critical > 1 ? 'S' : ''} EN DANGER`;
-  amount.textContent = `${criticalCA.toLocaleString("fr-FR")} € À SAUVER AUJOURD'HUI`;
-  
-  // Action prioritaire
-  const first = metrics.riskyDeposits[0];
-  if (first) {
-    actionBtn.textContent = `APPELER ${first.name.toUpperCase()}`;
-    actionBtn.onclick = () => {
-      window.open(`tel:${first.phone || ''}`, '_self');
-      window.open(`${FRONTEND_URL}/guest/${first.id}`, '_blank');
-    };
-  }
-}
-
-function handlePrimaryAction() {
-  const metrics = computeEduMetrics(fullData);
-  if (metrics.riskyDeposits.length > 0) {
-    const first = metrics.riskyDeposits[0];
-    window.open(`${FRONTEND_URL}/guest/${first.id}`, '_blank');
-  }
-}
 
 // ========================================
 // REFONTE : WAR ROOM ACTION ZONE
@@ -1457,11 +1875,11 @@ function renderActionZone(metrics) {
   container.innerHTML = toShow.map(s => {
     const ca = s.study_data?.installCost || 0;
     const daysSince = Math.floor((new Date() - new Date(s.signed_at || s.created_at)) / 86400000);
-    
     let reason = "";
     let icon = "";
     
-    if (!s.deposit_paid && daysSince > 10) {
+    // ✅ CORRECTION : Vérifier d'abord si acompte requis
+    if (s.requiresDeposit && !s.deposit_paid && daysSince > 10) {
       reason = `Acompte en retard : ${daysSince} jours`;
       icon = "💀";
     } else if (s.views >= 6 && s.clicks === 0) {
@@ -1486,9 +1904,9 @@ function renderActionZone(metrics) {
             <div class="text-xs text-slate-400 mt-2">
               Risque : <span class="text-red-300 font-bold">${ca.toLocaleString("fr-FR")} €</span>
               • Vues : ${s.views} • Clics : ${s.clicks}
+              ${s.requiresDeposit ? '' : '<span class="text-blue-400">• Financement 100%</span>'}
             </div>
           </div>
-          
           <div class="flex gap-2">
             <button onclick="window.open('tel:', '_self')" 
               class="px-4 py-2 bg-red-500 text-black font-black text-sm rounded-lg hover:bg-red-400 transition-all">
@@ -1502,7 +1920,7 @@ function renderActionZone(metrics) {
         </div>
       </div>
     `;
-  }).join('');
+}).join('');
   
   document.getElementById("all-count").textContent = fullData.filter(s => s.status === "signed").length;
 }
@@ -1513,6 +1931,11 @@ function renderActionZone(metrics) {
 async function loadData() {
   try {
     console.log("🔥 === DÉBUT loadData() ===");
+
+    // ✅ LANCER l'animation visuelle (indépendante)
+    if (!systemInitialized) {
+      initializeSystemPremium();
+    }
 
     const { data: studies } = await supabaseClient
       .from("studies")
@@ -1587,9 +2010,9 @@ async function loadData() {
       });
 
     fullData = (studies || []).map((s) => {
-      const st = (window.safeStats || []).find((item) => item.id === s.id) || {};
+  const st = (window.safeStats || []).find((item) => item.id === s.id) || {};
       const lastOpen = st.last_open_at || st.last_email_open || null;
-const lastClick = st.last_click_at || null;
+      const lastClick = st.last_click_at || null;
 
       const diffDays = (new Date() - new Date(s.created_at)) / 86400000;
 
@@ -1634,25 +2057,26 @@ const lastClick = st.last_click_at || null;
         last_open: st.last_open || null,
         last_click: st.last_click || null,
         last_view: st.last_view || null,
-
-  hasLog: logsData.some((l) => l.study_id === s.id),
-  rib_sent: s.rib_sent || false,
-  rib_sent_at: s.rib_sent_at || null,
-  deposit_paid_at: s.deposit_paid_at || null,
-  email_optout: s.clients?.email_optout || false,
-
       };
     });
+    updateCriticalAlert();
 
+    // ✅ CALCUL DES MÉTRIQUES
     const metrics = computeEduMetrics(fullData);
+    // ✅ DEBUG : Vérifier ce qui est calculé
+console.log('🔍 METRICS DEBUG:', {
+  criticalRisks: metrics.criticalRisks?.length,
+  cashAtRisk: metrics.cashAtRisk,
+  warRoomStudies: metrics.warRoomStudies?.length,
+  warRoomCA: metrics.warRoomCA
+});
+    
+    // ✅ RENDER
     renderEduCockpitCloser(fullData, metrics);
     updateSystemState(metrics);
     updateNextAction(metrics);
-    updateCriticalAlert(metrics);
     renderActionZone(metrics);
     document.getElementById("row-count-header").textContent = fullData.length;
-
-
 
     updateKPIs(queueEmails?.length || 0);
     detectAnomalies();
@@ -1660,51 +2084,53 @@ const lastClick = st.last_click_at || null;
     loadSignedStudies();
     render();
     renderLogs();
+    
+    console.log("✅ === FIN loadData() ===");
+
   } catch (err) {
     console.error("❌❌❌ ERREUR CRITIQUE:", err);
+    
+    // ✅ FORCER LA FIN de l'init même en cas d'erreur
+    if (!systemInitialized) {
+      systemInitialized = true;
+      document.getElementById("progress-container")?.classList.add("hidden");
+      document.getElementById("system-quick-stats")?.classList.remove("hidden");
+    }
+    
     alert("ERREUR: " + err.message);
   }
+  
 }
 
 /* =========================
    💰 STATS FINANCIÈRES OPTIMISÉES
 ========================= */
-
-function updateFinancialStats(studies) {
+function updateFinancialStats(studies, metrics) {
   const now = new Date();
   
+  // ✅ UTILISER LES METRICS DÉJÀ CALCULÉES
   const secured = studies.filter((s) => s.deposit_paid);
   const cashSecured = secured.reduce(
     (sum, s) => sum + (s.study_data?.installCost || 0),
     0
   );
-
-  const atRisk = studies.filter((s) => {
-    if (s.deposit_paid) return false;
-    const mode = s.study_data?.mode || "";
-    const apport = s.study_data?.cashApport || 0;
-    return mode === "cash" || (mode === "financement" && apport > 0);
-  });
-  const cashAtRisk = atRisk.reduce(
-    (sum, s) => sum + (s.study_data?.installCost || 0),
-    0
-  );
-
-  const late = studies.filter((s) => {
-    if (s.deposit_paid) return false;
-    const mode = s.study_data?.mode || "";
-    const apport = s.study_data?.cashApport || 0;
-    const acompteRequis = mode === "cash" || (mode === "financement" && apport > 0);
-    if (!acompteRequis) return false;
-    
+  
+  // ✅ PRENDRE criticalRisks DEPUIS metrics (déjà calculé)
+  const criticalRisks = metrics.criticalRisks;
+  const cashAtRisk = metrics.cashAtRisk;
+  
+  // ✅ RETARDS > 10J
+  const late = criticalRisks.filter((s) => {
+    if (!s.signed_at) return false;
     const signedDate = new Date(s.signed_at);
     const daysSince = Math.floor((now - signedDate) / (1000 * 60 * 60 * 24));
     return daysSince > 10;
   });
-
+  
   const lateNames = late.map(s => s.name).join(", ") || "Aucun retard";
-
-  const upcoming = atRisk
+  
+  // ✅ PROCHAINE ÉCHÉANCE
+  const upcoming = criticalRisks
     .filter(s => s.signed_at)
     .map(s => ({
       name: s.name,
@@ -1712,56 +2138,70 @@ function updateFinancialStats(studies) {
       days: Math.floor((now - new Date(s.signed_at)) / (1000 * 60 * 60 * 24))
     }))
     .sort((a, b) => a.days - b.days)[0];
-
+  
   const nextDeadlineDate = upcoming 
     ? new Date(upcoming.date.getTime() + 10 * 24 * 60 * 60 * 1000).toLocaleDateString("fr-FR")
     : "—";
   const nextDeadlineClient = upcoming ? upcoming.name : "Aucune échéance proche";
-
+  
+  // ✅ AFFICHAGE - DOSSIERS SÉCURISÉS
   const elSecured = document.getElementById("stat-ca-secured");
   const elSecuredCount = document.getElementById("stat-secured-count");
   const elSecuredBar = document.getElementById("stat-secured-bar");
-  const elRisk = document.getElementById("stat-ca-at-risk");
-  const elRiskCount = document.getElementById("stat-risk-count");
-  const elRiskBar = document.getElementById("stat-risk-bar");
-  const elLateCount = document.getElementById("stat-late-count");
-  const elLateNames = document.getElementById("stat-late-names");
-  const elDeadlineDate = document.getElementById("stat-next-deadline-date");
-  const elDeadlineClient = document.getElementById("stat-next-deadline-client");
-
+  
   if (elSecured) elSecured.innerText = cashSecured.toLocaleString("fr-FR") + " €";
   if (elSecuredCount) elSecuredCount.innerText = secured.length;
   if (elSecuredBar) elSecuredBar.style.width = Math.min(100, (secured.length / (studies.length || 1)) * 100) + "%";
+  
+  // ✅ AFFICHAGE - WAR ROOM (RISQUES < 14 JOURS)
+const elRisk = document.getElementById("stat-ca-at-risk");
+const elRiskCount = document.getElementById("stat-risk-count");
+const elRiskBar = document.getElementById("stat-risk-bar");
 
-  if (elRisk) elRisk.innerText = cashAtRisk.toLocaleString("fr-FR") + " €";
-  if (elRiskCount) elRiskCount.innerText = atRisk.length;
-  if (elRiskBar) elRiskBar.style.width = Math.min(100, (atRisk.length / (studies.length || 1)) * 100) + "%";
+const warRoomStudies = metrics.warRoomStudies || [];
+const warRoomCA = metrics.warRoomCA || 0;
 
+if (elRisk) elRisk.innerText = warRoomCA.toLocaleString("fr-FR") + " €";
+if (elRiskCount) elRiskCount.innerText = warRoomStudies.length;
+if (elRiskBar) elRiskBar.style.width = Math.min(100, (warRoomStudies.length / (studies.length || 1)) * 100) + "%";
+  
+  // ✅ AFFICHAGE - RETARDS
+  const elLateCount = document.getElementById("stat-late-count");
+  const elLateNames = document.getElementById("stat-late-names");
+  
   if (elLateCount) elLateCount.innerText = late.length;
   if (elLateNames) elLateNames.innerText = lateNames;
-
+  
+  // ✅ AFFICHAGE - PROCHAINE ÉCHÉANCE
+  const elDeadlineDate = document.getElementById("stat-next-deadline-date");
+  const elDeadlineClient = document.getElementById("stat-next-deadline-client");
+  
   if (elDeadlineDate) elDeadlineDate.innerText = nextDeadlineDate;
   if (elDeadlineClient) elDeadlineClient.innerText = nextDeadlineClient;
-
+  
+  // ✅ AFFICHAGE - CA TOTAL
   const caTotal = studies.reduce(
     (sum, s) => sum + (s.study_data?.installCost || 0),
     0
   );
+  
   const tauxConversion = studies.length > 0
     ? ((secured.length / studies.length) * 100).toFixed(0)
     : 0;
-
+  
   const elTotal = document.getElementById("stat-ca-total");
   const elAcompte = document.getElementById("stat-ca-acompte");
   const elAttente = document.getElementById("stat-ca-attente");
   const elTaux = document.getElementById("stat-taux-acompte");
-
+  
   if (elTotal) elTotal.innerText = caTotal.toLocaleString("fr-FR") + " €";
   if (elAcompte) elAcompte.innerText = cashSecured.toLocaleString("fr-FR") + " €";
   if (elAttente) elAttente.innerText = cashAtRisk.toLocaleString("fr-FR") + " €";
   if (elTaux) elTaux.innerText = tauxConversion + "%";
-  // DANS updateFinancialStats(), AJOUTER À LA FIN :
-document.getElementById("signed-total-count").textContent = studies.length;
+  
+  // ✅ COMPTE TOTAL SIGNÉS
+  const elSignedTotal = document.getElementById("signed-total-count");
+  if (elSignedTotal) elSignedTotal.textContent = studies.length;
 }
 
 /* =========================
@@ -1993,21 +2433,114 @@ async function loadSignedStudies() {
     client_email: s.clients?.email || "Pas d'email",
     phone: s.clients?.phone || null,
     study_data: s.study_data,
+    
+    // ✅ CHAMPS NATIFS DE LA TABLE
+    status: s.status, // "sent", "signed", "cancelled", etc.
     signed_at: s.signed_at,
     deposit_paid: s.deposit_paid,
     deposit_paid_at: s.deposit_paid_at,
     deposit_amount: s.deposit_amount,
     rib_sent: s.rib_sent,
     rib_sent_at: s.rib_sent_at,
+    
     views,
     clicks,
     last_open: st.last_open || st.last_open_at || st.last_email_open || null,
-    last_click: st.last_click || st.last_click_at || null
+    last_click: st.last_click || st.last_click_at || null,
+    
+    // ✅ AJOUT 1 : Mode de paiement
+    payment_mode: s.study_data?.mode || null, // "financement" ou "cash"
+    
+    // ✅ AJOUT 2 : Montant de l'apport
+    cash_apport: s.study_data?.cashApport || 0,
+    
+    // ✅ AJOUT 3 : Acompte requis ?
+    // OUI si mode = "cash" OU si mode = "financement" avec apport > 0
+    requiresDeposit: (() => {
+      const mode = s.study_data?.mode;
+      const apport = s.study_data?.cashApport || 0;
+      
+      if (mode === 'cash') return true;                      // CASH = toujours acompte
+      if (mode === 'financement' && apport > 0) return true; // FINANCEMENT AVEC APPORT
+      return false;                                           // FINANCEMENT 100% = pas d'acompte
+    })(),
+    
+    // ✅ AJOUT 4 : Calcul du retard (jours depuis signature)
+    daysLate: (() => {
+      if (!s.signed_at) return 0;
+      const signedDate = new Date(s.signed_at);
+      const today = new Date();
+      const diffTime = today - signedDate;
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    })(),
+    
+    // ✅ AJOUT 5 : Jours depuis signature (alias pour clarté)
+    daysSinceSigned: (() => {
+      if (!s.signed_at) return null;
+      const signedDate = new Date(s.signed_at);
+      const today = new Date();
+      const diffTime = today - signedDate;
+      return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    })(),
+    
+    // ✅ AJOUT 6 : Acompte en retard ? (LOGIQUE CORRIGÉE)
+    isDepositLate: (() => {
+      // Si pas signé, pas de retard
+      if (!s.signed_at || s.status !== 'signed') return false;
+      
+      // Si acompte déjà payé, pas de retard
+      if (s.deposit_paid) return false;
+      
+      // Calculer si acompte requis
+      const mode = s.study_data?.mode;
+      const apport = s.study_data?.cashApport || 0;
+      const requiresDeposit = mode === 'cash' || (mode === 'financement' && apport > 0);
+      
+      // Si pas d'acompte requis, pas de retard possible
+      if (!requiresDeposit) return false;
+      
+      // Calculer le retard
+      const signedDate = new Date(s.signed_at);
+      const today = new Date();
+      const diffDays = Math.floor((today - signedDate) / (1000 * 60 * 60 * 24));
+      
+      return diffDays > 0; // En retard dès J+1
+    })(),
+    
+    // ✅ AJOUT 7 : État comportemental
+    behavioralState: (() => {
+      if (views === 0 && clicks === 0) return 'MUET';
+      if (views >= 10 && clicks === 0) return 'CAS_LIMITE'; // 🔥 15+ vues
+      if (views >= 3 && clicks === 0) return 'AGITÉ';
+      if (clicks >= 1) return 'INTÉRESSÉ';
+      return 'STABLE';
+    })(),
+    
+    // ✅ AJOUT 8 : Icône comportementale
+    behavioralIcon: (() => {
+      if (views === 0 && clicks === 0) return '🧊';
+      if (views >= 10 && clicks === 0) return '⚠️'; // CAS LIMITE
+      if (views >= 3 && clicks === 0) return '🔥';
+      if (clicks >= 1) return '🟢';
+      return '⚪';
+    })(),
+    
+    // ✅ AJOUT 9 : Label comportemental
+    behavioralLabel: (() => {
+      if (views === 0 && clicks === 0) return 'MUET';
+      if (views >= 10 && clicks === 0) return 'CAS LIMITE';
+      if (views >= 3 && clicks === 0) return 'AGITÉ';
+      if (clicks >= 1) return 'INTÉRESSÉ';
+      return 'STABLE';
+    })()
   };
 });
 
   renderSignedStudies(mergedData);
-  updateFinancialStats(signedStudies || []);
+
+// ✅ Recalculer les metrics pour les signés
+const metricsForSigned = computeEduMetrics(mergedData);
+updateFinancialStats(mergedData, metricsForSigned);
 }
 function renderSignedStudies(studies) {
   const container = document.getElementById("signed-list");

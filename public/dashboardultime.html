@@ -1,0 +1,3725 @@
+// ============================================
+// TYPES & INTERFACES COMPLETS
+// ============================================
+
+export interface Client {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  email_optout: boolean;
+}
+
+export interface StudyData {
+  installCost?: number;
+  mode?: 'cash' | 'financement';
+  cashApport?: number;
+  [key: string]: any;
+}
+
+export interface Study {
+  id: string;
+  client_id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  status: 'draft' | 'sent' | 'signed' | 'cancelled';
+  created_at: string;
+  signed_at: string | null;
+  study_data: StudyData | null;
+  deposit_amount: number;
+  deposit_paid: boolean;
+  deposit_paid_at: string | null;
+  views: number;
+  clicks: number;
+  diffDays: number;
+  hasLog: boolean;
+  rib_sent: boolean;
+  rib_sent_at: string | null;
+  email_optout: boolean;
+  last_open: string | null;
+  last_click: string | null;
+  last_view: string | null;
+}
+
+export interface EmailLead {
+  id: string;
+  client_id: string;
+  name: string;
+  email: string;
+  created_at: string;
+  last_email_sent: string | null;
+  next_email_date: string | null;
+  email_sequence_step: number;
+  opted_out: boolean;
+  total_opens: number;
+  total_clicks: number;
+  last_open: string | null;
+  last_click: string | null;
+}
+
+export interface DecisionLog {
+  id: string;
+  study_id?: string;
+  client_name: string;
+  action_performed: string;
+  justification: string;
+  created_at: string;
+}
+
+export interface EmailQueue {
+  study_id: string;
+  client_id: string;
+  email_type: string;
+  status: 'pending' | 'sent' | 'cancelled';
+  sent_at: string | null;
+  scheduled_for: string | null;
+}
+
+export interface EmailFlow {
+  step: number;
+  last: string | null;
+  next: string | null;
+  opens: number;
+  clicks: number;
+  opted_out: boolean;
+}
+
+export interface AntiAnnulationFlow {
+  sent: EmailQueue[];
+  next: EmailQueue | null;
+}
+
+export interface Metrics {
+  signed: Study[];
+  sent: Study[];
+  riskyDeposits: Study[];
+  veryHotLeads: Study[];
+  coldSigned: Study[];
+  caSigned: number;
+  cashSecured: number;
+  riskScore: number;
+  cashScore: number;
+  salesScore: number;
+  mode: string;
+}
+
+export interface DashboardFilters {
+  search: string;
+  views: string | null;
+  clicks: string | null;
+  status: string | null;
+  optout: boolean;
+}
+
+export interface LeadFilters {
+  search: string;
+  today: boolean;
+  optedOut: boolean;
+}
+
+// ============================================
+// CONSTANTES
+// ============================================
+
+export const FRONTEND_URL = "https://nicolas-edf-solutions-solaires.vercel.app";
+
+export const STATUS_LABELS = {
+  draft: 'DRAFT',
+  sent: 'SENT',
+  signed: 'SIGNED',
+  cancelled: 'CANCELLED'
+} as const;
+
+export const TEMP_LABELS = {
+  cold: { label: 'FROID', class: 'bg-slate-500/20 text-slate-300 border-slate-500' },
+  warm: { label: 'TIÈDE', class: 'bg-blue-500/20 text-blue-300 border-blue-500' },
+  hot: { label: 'CHAUD', class: 'bg-orange-500/20 text-orange-300 border-orange-500' },
+  signed: { label: 'SIGNÉ', class: 'bg-emerald-500/20 text-emerald-300 border-emerald-500' }
+} as const;
+
+export default {
+  Client,
+  Study,
+  EmailLead,
+  DecisionLog,
+  Metrics,
+  DashboardFilters,
+  LeadFilters
+};
+import { Study, Metrics } from './types';
+
+// ============================================
+// CALCUL MÉTRIQUES EDU COCKPIT
+// ============================================
+
+export function computeEduMetrics(data: Study[]): Metrics {
+  const now = new Date();
+
+  const signed = data.filter(d => d.status === "signed");
+  const sent = data.filter(d => d.status === "sent");
+
+  const riskyDeposits = signed.filter(s => {
+    if (s.deposit_paid) return false;
+    if (s.study_data?.mode === "financement" && !s.deposit_amount) return false;
+    const days = (now.getTime() - new Date(s.signed_at || s.created_at).getTime()) / 86400000;
+    return days > 10;
+  });
+
+  const veryHotLeads = sent.filter(s => s.views >= 5);
+  const coldSigned = signed.filter(s => s.views < 2);
+
+  const caSigned = signed.reduce((t, s) => t + (s.study_data?.installCost || 0), 0);
+  const cashSecured = signed
+    .filter(s => s.deposit_paid)
+    .reduce((t, s) => t + (s.deposit_amount || 0), 0);
+
+  const riskScore = Math.min(100, riskyDeposits.length * 20 + coldSigned.length * 10);
+  const cashScore = Math.min(100, (cashSecured / (caSigned || 1)) * 100);
+  const salesScore = Math.min(100, veryHotLeads.length * 12);
+
+  let mode = "ACCÉLÉRATION";
+  if (riskScore > 60) mode = "URGENCE";
+  else if (cashScore < 30) mode = "CHASSE CASH";
+  else if (veryHotLeads.length > 6) mode = "CLOSING";
+
+  return {
+    signed,
+    sent,
+    riskyDeposits,
+    veryHotLeads,
+    coldSigned,
+    caSigned,
+    cashSecured,
+    riskScore,
+    cashScore,
+    salesScore,
+    mode,
+  };
+}
+
+// ============================================
+// FORMATAGE & DATES
+// ============================================
+
+export function getTimeSince(date: string): string {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  const interval = seconds / 3600;
+  
+  if (interval > 24) return `ACTIF IL Y A ${Math.floor(interval / 24)}J`;
+  if (interval >= 1) return `ACTIF IL Y A ${Math.floor(interval)}H`;
+  return `ACTIF IL Y A ${Math.floor(seconds / 60)}MIN`;
+}
+
+export function getTimeAgo(date: string | Date): string {
+  const seconds = Math.floor((new Date().getTime() - new Date(date).getTime()) / 1000);
+  
+  if (seconds < 60) return "À l'instant";
+  if (seconds < 3600) return `Il y a ${Math.floor(seconds / 60)}min`;
+  if (seconds < 86400) return `Il y a ${Math.floor(seconds / 3600)}h`;
+  if (seconds < 604800) return `Il y a ${Math.floor(seconds / 86400)}j`;
+  
+  return new Date(date).toLocaleDateString("fr-FR");
+}
+
+export function getDaysSince(date: string): number {
+  return Math.floor((new Date().getTime() - new Date(date).getTime()) / 86400000);
+}
+
+// ============================================
+// DÉTECTION TEMPÉRATURE LEAD
+// ============================================
+
+export function getLeadTemperature(study: Study): 'cold' | 'warm' | 'hot' | 'signed' {
+  if (study.status === 'signed') return 'signed';
+  if (study.clicks > 0) return 'hot';
+  if (study.views >= 2) return 'warm';
+  return 'cold';
+}
+
+// ============================================
+// DÉTECTION RISQUES WAR ROOM
+// ============================================
+
+export function getRiskLevel(study: Study): 'muet' | 'agité' | 'interesse' | 'stable' {
+  if (!study.signed_at) return 'stable';
+  
+  const days = getDaysSince(study.signed_at);
+  if (days > 14) return 'stable'; // Hors période critique
+
+  if (study.views === 0 && study.clicks === 0) return 'muet';
+  if (study.views >= 6 && study.clicks === 0) return 'agité';
+  if (study.clicks > 0) return 'interesse';
+  
+  return 'stable';
+}
+
+export function getRiskLabel(risk: string): string {
+  const labels: Record<string, string> = {
+    muet: "🧊 SILENCE — client inactif",
+    agité: "🔥 RUMINATION — risque d'annulation",
+    interesse: "🟢 INTÉRÊT ACTIF — opportunité",
+    stable: "⚪ STABLE — surveillance"
+  };
+  return labels[risk] || labels.stable;
+}
+
+// ============================================
+// CALCUL PROCHAINE RELANCE EMAIL
+// ============================================
+
+export function getNextFollowup(lead: {
+  created_at: string;
+  last_email_sent: string | null;
+}): string {
+  if (!lead.last_email_sent) return "Immédiat";
+
+  const created = new Date(lead.created_at);
+  const lastSent = new Date(lead.last_email_sent);
+  const now = new Date();
+  
+  const daysSinceCreation = Math.floor((now.getTime() - created.getTime()) / 86400000);
+  const daysSinceLastEmail = Math.floor((now.getTime() - lastSent.getTime()) / 86400000);
+
+  if (daysSinceCreation > 120) return "Terminé";
+
+  if (daysSinceCreation <= 60) {
+    if (daysSinceLastEmail >= 3) return "Dû";
+    const next = new Date(lastSent);
+    next.setDate(next.getDate() + 3);
+    return next.toLocaleDateString("fr-FR");
+  }
+
+  if (daysSinceLastEmail >= 7) return "Dû";
+  const next = new Date(lastSent);
+  next.setDate(next.getDate() + 7);
+  return next.toLocaleDateString("fr-FR");
+}
+
+// ============================================
+// FORMATAGE NOMBRES
+// ============================================
+
+export function formatCurrency(amount: number): string {
+  return amount.toLocaleString("fr-FR") + " €";
+}
+
+export function formatPercentage(value: number): string {
+  return Math.round(value) + "%";
+}
+
+// ============================================
+// ESCAPE HTML (SÉCURITÉ)
+// ============================================
+
+export function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ============================================
+// DÉTECTION ANOMALIES
+// ============================================
+
+export function detectAnomalies(studies: Study[], settings = { view_threshold: 5, day_threshold: 3 }): string[] {
+  const anomalies: string[] = [];
+  
+  studies.forEach(s => {
+    if (s.status === "sent" && s.views > settings.view_threshold && s.clicks === 0) {
+      anomalies.push(s.id);
+    }
+    if (s.status === "signed" && s.diffDays > settings.day_threshold && s.views < 2) {
+      anomalies.push(s.id);
+    }
+  });
+  
+  return anomalies;
+}
+
+export default {
+  computeEduMetrics,
+  getTimeSince,
+  getTimeAgo,
+  getDaysSince,
+  getLeadTemperature,
+  getRiskLevel,
+  getRiskLabel,
+  getNextFollowup,
+  formatCurrency,
+  formatPercentage,
+  escapeHtml,
+  detectAnomalies
+};
+import { useState, useEffect, useCallback } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { Study, EmailLead, DecisionLog, EmailQueue, Metrics } from './types';
+import { computeEduMetrics, getDaysSince } from './utils';
+
+const SUPABASE_URL = "https://ugwqfvwclwctzgtxcakp.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+export function useDashboard() {
+  const [studies, setStudies] = useState<Study[]>([]);
+  const [emailLeads, setEmailLeads] = useState<EmailLead[]>([]);
+  const [logs, setLogs] = useState<DecisionLog[]>([]);
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [emailFlowByClient, setEmailFlowByClient] = useState<Record<string, any>>({});
+  const [antiAnnulationByStudy, setAntiAnnulationByStudy] = useState<Record<string, any>>({});
+  const [postRefusByStudy, setPostRefusByStudy] = useState<Record<string, any>>({});
+
+  // ============================================
+  // CHARGEMENT DONNÉES PRINCIPALES
+  // ============================================
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 1️⃣ Charger études
+      const { data: studiesData, error: studiesError } = await supabase
+        .from('studies')
+        .select('*, clients(*)');
+
+      if (studiesError) throw studiesError;
+
+      // 2️⃣ Charger stats d'activité
+      let stats: any[] = [];
+      const statsRes = await supabase.from('studies_activity_summary_v2').select('*');
+      
+      if (statsRes.error) {
+        const statsRes2 = await supabase.from('email_stats').select('*');
+        stats = statsRes2.data || [];
+      } else {
+        stats = statsRes.data || [];
+      }
+
+      // 3️⃣ Charger logs
+      const { data: logsData, error: logsError } = await supabase
+        .from('decision_logs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (!logsError) setLogs(logsData || []);
+
+      // 4️⃣ Charger queue emails
+      const { data: queueData, error: queueError } = await supabase
+        .from('email_queue')
+        .select('study_id, client_id, email_type, status, sent_at, scheduled_for');
+
+      const queueEmails = queueData || [];
+
+      // 5️⃣ Indexer anti-annulation par study
+      const antiAnnulation: Record<string, any> = {};
+      queueEmails.forEach(e => {
+        if (!e.study_id || !e.email_type?.startsWith('anti_')) return;
+        if (!antiAnnulation[e.study_id]) {
+          antiAnnulation[e.study_id] = { sent: [], next: null };
+        }
+        if (e.status === 'sent') {
+          antiAnnulation[e.study_id].sent.push(e);
+        }
+        if (e.status === 'pending') {
+          const current = antiAnnulation[e.study_id].next;
+          if (!current || new Date(e.scheduled_for!) < new Date(current.scheduled_for!)) {
+            antiAnnulation[e.study_id].next = e;
+          }
+        }
+      });
+      setAntiAnnulationByStudy(antiAnnulation);
+
+      // 6️⃣ Indexer post-refus par study
+      const postRefus: Record<string, any> = {};
+      queueEmails
+        .filter(q => q.email_type?.startsWith('post_refus'))
+        .forEach(q => {
+          if (!postRefus[q.study_id]) {
+            postRefus[q.study_id] = { sent: [], next: null };
+          }
+          if (q.status === 'sent') {
+            postRefus[q.study_id].sent.push(q);
+          }
+          if (q.status === 'pending') {
+            const currentNext = postRefus[q.study_id].next;
+            if (!currentNext || new Date(q.scheduled_for!) < new Date(currentNext.scheduled_for!)) {
+              postRefus[q.study_id].next = q;
+            }
+          }
+        });
+      setPostRefusByStudy(postRefus);
+
+      // 7️⃣ Mapper études avec stats
+      const mappedStudies: Study[] = (studiesData || []).map(s => {
+        const st = stats.find(item => item.id === s.id) || {};
+        const diffDays = getDaysSince(s.created_at);
+
+        let views = st.email_opens ?? st.views ?? st.total_opens ?? 0;
+        let clicks = st.interactions ?? st.clicks ?? st.total_clicks ?? 0;
+
+        const logsForStudy = (logsData || []).filter(l => l.study_id === s.id);
+
+        return {
+          id: s.id,
+          client_id: s.clients?.id || '',
+          name: s.clients ? `${s.clients.first_name || ''} ${s.clients.last_name || ''}`.trim() : 'Inconnu',
+          email: s.clients?.email || 'Pas d\'email',
+          phone: s.clients?.phone,
+          status: s.status,
+          created_at: s.created_at,
+          signed_at: s.signed_at,
+          study_data: s.study_data,
+          deposit_amount: s.deposit_amount || 0,
+          deposit_paid: s.deposit_paid || false,
+          deposit_paid_at: s.deposit_paid_at,
+          views,
+          clicks,
+          diffDays: Math.floor(diffDays),
+          hasLog: logsForStudy.length > 0,
+          rib_sent: s.rib_sent || false,
+          rib_sent_at: s.rib_sent_at,
+          email_optout: s.clients?.email_optout || false,
+          last_open: st.last_open || st.last_open_at || st.last_email_open || null,
+          last_click: st.last_click || st.last_click_at || null,
+          last_view: st.last_view || null,
+        };
+      });
+
+      setStudies(mappedStudies);
+
+      // 8️⃣ Calculer métriques
+      const computedMetrics = computeEduMetrics(mappedStudies);
+      setMetrics(computedMetrics);
+
+    } catch (err: any) {
+      console.error('❌ Erreur chargement données:', err);
+      setError(err.message || 'Erreur inconnue');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // ============================================
+  // CHARGEMENT EMAIL LEADS
+  // ============================================
+
+  const loadEmailLeads = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('email_leads')
+        .select(`
+          id, client_id, created_at, last_email_sent_at, next_email_scheduled_at,
+          email_step, total_opens, total_clicks, last_opened_at, last_clicked_at,
+          clients!inner(id, first_name, last_name, email, email_optout)
+        `)
+        .order('next_email_scheduled_at', { ascending: true });
+
+      if (error) throw error;
+
+      const clientIds = data.map(l => l.client_id).filter(Boolean);
+      
+      const { data: studiesData } = await supabase
+        .from('studies')
+        .select('id, client_id')
+        .in('client_id', clientIds);
+
+      const studyIdByClientId: Record<string, string> = {};
+      (studiesData || []).forEach(s => {
+        if (s.client_id) studyIdByClientId[s.client_id] = s.id;
+      });
+
+      const studyIds = Object.values(studyIdByClientId).filter(Boolean);
+
+      let lastOpenByStudyId: Record<string, string> = {};
+      let lastClickByStudyId: Record<string, string> = {};
+
+      if (studyIds.length > 0) {
+        const { data: openEvents } = await supabase
+          .from('tracking_events')
+          .select('study_id, created_at')
+          .in('study_id', studyIds)
+          .eq('event_type', 'email_open')
+          .order('created_at', { ascending: false });
+
+        (openEvents || []).forEach(event => {
+          if (!lastOpenByStudyId[event.study_id]) {
+            lastOpenByStudyId[event.study_id] = event.created_at;
+          }
+        });
+
+        const { data: clickEvents } = await supabase
+          .from('tracking_events')
+          .select('study_id, created_at')
+          .in('study_id', studyIds)
+          .eq('event_type', 'email_click')
+          .order('created_at', { ascending: false });
+
+        (clickEvents || []).forEach(event => {
+          if (!lastClickByStudyId[event.study_id]) {
+            lastClickByStudyId[event.study_id] = event.created_at;
+          }
+        });
+      }
+
+      const mappedLeads: EmailLead[] = (data || []).map(l => {
+        const studyId = studyIdByClientId[l.client_id];
+        const lastOpen = l.last_opened_at || (studyId ? lastOpenByStudyId[studyId] : null) || null;
+        const lastClick = l.last_clicked_at || (studyId ? lastClickByStudyId[studyId] : null) || null;
+
+        return {
+          id: l.id,
+          client_id: l.client_id,
+          created_at: l.created_at,
+          name: l.clients ? `${l.clients.first_name || ''} ${l.clients.last_name || ''}`.trim() : 'Inconnu',
+          email: l.clients?.email || 'Pas d\'email',
+          last_email_sent: l.last_email_sent_at,
+          next_email_date: l.next_email_scheduled_at,
+          email_sequence_step: l.email_step || 0,
+          opted_out: l.clients?.email_optout || false,
+          total_opens: l.total_opens || 0,
+          total_clicks: l.total_clicks || 0,
+          last_open: lastOpen,
+          last_click: lastClick,
+        };
+      });
+
+      setEmailLeads(mappedLeads);
+
+      // Indexer email flow par client
+      const flowByClient: Record<string, any> = {};
+      mappedLeads.forEach(l => {
+        flowByClient[l.client_id] = {
+          step: l.email_sequence_step,
+          last: l.last_email_sent,
+          next: l.next_email_date,
+          opens: l.total_opens,
+          clicks: l.total_clicks,
+          opted_out: l.opted_out,
+        };
+      });
+      setEmailFlowByClient(flowByClient);
+
+    } catch (err: any) {
+      console.error('❌ Erreur chargement email leads:', err);
+    }
+  }, []);
+
+  // ============================================
+  // ACTIONS
+  // ============================================
+
+  const updateStudyStatus = useCallback(async (id: string, status: string) => {
+    const { error } = await supabase
+      .from('studies')
+      .update({ status })
+      .eq('id', id);
+    
+    if (!error) loadData();
+  }, [loadData]);
+
+  const signStudy = useCallback(async (
+    id: string,
+    name: string,
+    forced = false,
+    justification: string | null = null
+  ) => {
+    const { data, error } = await supabase
+      .from('studies')
+      .update({ status: 'signed' })
+      .eq('id', id)
+      .neq('status', 'signed')
+      .select()
+      .single();
+
+    if (error || !data) {
+      alert('Impossible de signer : déjà signé ou erreur.');
+      return;
+    }
+
+    await supabase.from('decision_logs').insert({
+      study_id: id,
+      client_name: name,
+      action_performed: forced ? 'FORCED_TO_SIGNED' : 'SIGNED',
+      justification: forced ? justification : 'Signature depuis dashboard',
+    });
+
+    alert('Dossier signé. Automatisations déclenchées.');
+    loadData();
+  }, [loadData]);
+
+  const cancelStudy = useCallback(async (id: string, name: string) => {
+    await supabase.from('studies').update({ status: 'cancelled' }).eq('id', id);
+    
+    await supabase
+      .from('email_queue')
+      .update({ status: 'cancelled' })
+      .eq('study_id', id)
+      .in('status', ['pending', 'scheduled']);
+
+    await supabase.from('decision_logs').insert({
+      study_id: id,
+      client_name: name,
+      action_performed: 'CANCELLED',
+      justification: 'Annulation depuis dashboard',
+    });
+
+    alert('Dossier annulé. Emails stoppés.');
+    loadData();
+  }, [loadData]);
+
+  const markDepositPaid = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('studies')
+      .update({ 
+        deposit_paid: true,
+        deposit_paid_at: new Date().toISOString()
+      })
+      .eq('id', id);
+
+    if (error) {
+      alert('❌ Erreur : ' + error.message);
+      return;
+    }
+
+    await supabase.from('decision_logs').insert({
+      study_id: id,
+      action_performed: 'DEPOSIT_PAID_CONFIRMED',
+      justification: 'Acompte validé depuis dashboard'
+    });
+
+    alert('✅ Acompte validé !');
+    loadData();
+  }, [loadData]);
+
+  const setOptOut = useCallback(async (email: string) => {
+    const { data } = await supabase
+      .from('clients')
+      .update({ email_optout: true })
+      .eq('email', email)
+      .select();
+
+    if (!data || data.length === 0) {
+      alert('❌ ERREUR : Aucun client trouvé avec cet email');
+      return;
+    }
+
+    await supabase
+      .from('email_queue')
+      .update({ status: 'cancelled' })
+      .eq('client_id', data[0].id)
+      .in('status', ['pending', 'scheduled']);
+
+    await supabase.from('decision_logs').insert({
+      client_name: `${data[0].first_name} ${data[0].last_name}`,
+      action_performed: 'EMAIL_OPTOUT',
+      justification: 'Désabonnement depuis dashboard',
+    });
+
+    alert('✅ Client désabonné avec succès !');
+    loadEmailLeads();
+    loadData();
+  }, [loadData, loadEmailLeads]);
+
+  const deleteLeadPermanently = useCallback(async (
+    clientId: string,
+    email: string,
+    name: string
+  ) => {
+    await supabase.from('studies').delete().eq('client_id', clientId);
+    await supabase.from('email_queue').delete().eq('client_id', clientId);
+    await supabase.from('email_leads').delete().eq('client_id', clientId);
+    await supabase.from('clients').delete().eq('id', clientId);
+
+    await supabase.from('decision_logs').insert({
+      action_performed: 'LEAD_DELETED_PERMANENTLY',
+      client_name: name,
+      justification: `Suppression définitive ${email}`,
+    });
+
+    alert('✅ Lead supprimé définitivement');
+    loadData();
+    loadEmailLeads();
+  }, [loadData, loadEmailLeads]);
+
+  const logForceAction = useCallback(async (
+    studyId: string,
+    clientName: string,
+    action: string,
+    justification: string
+  ) => {
+    await supabase.from('decision_logs').insert({
+      study_id: studyId,
+      client_name: clientName,
+      action_performed: action,
+      justification,
+    });
+  }, []);
+
+  const refresh = useCallback(() => {
+    loadData();
+    loadEmailLeads();
+  }, [loadData, loadEmailLeads]);
+
+  // ============================================
+  // CHARGEMENT INITIAL
+  // ============================================
+
+  useEffect(() => {
+    loadData();
+    loadEmailLeads();
+
+    const interval = setInterval(() => {
+      loadData();
+      loadEmailLeads();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [loadData, loadEmailLeads]);
+
+  return {
+    studies,
+    emailLeads,
+    logs,
+    metrics,
+    loading,
+    error,
+    emailFlowByClient,
+    antiAnnulationByStudy,
+    postRefusByStudy,
+    actions: {
+      updateStudyStatus,
+      signStudy,
+      cancelStudy,
+      markDepositPaid,
+      setOptOut,
+      deleteLeadPermanently,
+      logForceAction,
+      refresh,
+    },
+  };
+}
+
+export const WarRoom: React.FC<WarRoomProps> = ({
+  metrics,
+  criticalStudies,
+  onActionRequired,
+  onForceSign,
+  scrollIntoView = false,
+}) => {
+
+  const warRoomRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll si demandé
+  useEffect(() => {
+    if (scrollIntoView && warRoomRef.current) {
+      warRoomRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [scrollIntoView]);
+
+  // Détection du niveau d'urgence
+  const getUrgencyLevel = () => {
+    if (metrics.hotsSignable >= 3 || metrics.atRisk >= 2) {
+      return { label: 'CRITIQUE', color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500' };
+    }
+    if (metrics.hotsSignable >= 1 || metrics.atRisk >= 1) {
+      return { label: 'ATTENTION', color: 'text-orange-400', bg: 'bg-orange-500/20', border: 'border-orange-500' };
+    }
+    if (metrics.totalActive >= 5) {
+      return { label: 'ACTIF', color: 'text-blue-400', bg: 'bg-blue-500/20', border: 'border-blue-500' };
+    }
+    return { label: 'NORMAL', color: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500' };
+  };
+
+  const urgency = getUrgencyLevel();
+
+  return (
+    <div ref={warRoomRef} className={`glass border-2 ${urgency.border} p-6 scroll-mt-4`}>
+      {/* Header War Room */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+            <span className="text-3xl">🎯</span>
+            WAR ROOM
+            <span className={`${urgency.bg} ${urgency.color} px-3 py-1 rounded-lg text-sm font-bold border border-current/30`}>
+              {urgency.label}
+            </span>
+          </h2>
+          <div className="text-sm text-slate-400 mt-1">
+            Zone d'action prioritaire · Éducation Cockpit Closer
+          </div>
+        </div>
+      </div>
+
+      {/* Métriques EDU */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+        {/* Total Actifs */}
+        <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
+          <div className="text-blue-400 text-xs uppercase mb-1">Actifs</div>
+          <div className="text-3xl font-bold text-blue-300">{metrics.totalActive}</div>
+          <div className="text-xs text-blue-500/70 mt-1">En pipeline</div>
+        </div>
+
+        {/* HOTs Signables */}
+        <div className="bg-orange-500/10 rounded-lg p-4 border border-orange-500/30">
+          <div className="text-orange-400 text-xs uppercase mb-1 flex items-center gap-1">
+            🔥 HOTs
+          </div>
+          <div className="text-3xl font-bold text-orange-300">{metrics.hotsSignable}</div>
+          <div className="text-xs text-orange-500/70 mt-1">Signables</div>
+        </div>
+
+        {/* À risque */}
+        <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/30">
+          <div className="text-red-400 text-xs uppercase mb-1 flex items-center gap-1">
+            ⚠️ Risque
+          </div>
+          <div className="text-3xl font-bold text-red-300">{metrics.atRisk}</div>
+          <div className="text-xs text-red-500/70 mt-1">Attention</div>
+        </div>
+
+        {/* Nouveaux */}
+        <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
+          <div className="text-green-400 text-xs uppercase mb-1">Nouveaux</div>
+          <div className="text-3xl font-bold text-green-300">{metrics.newOnes}</div>
+          <div className="text-xs text-green-500/70 mt-1">Récents</div>
+        </div>
+
+        {/* CA Potentiel */}
+        <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/30">
+          <div className="text-purple-400 text-xs uppercase mb-1">CA Potentiel</div>
+          <div className="text-xl font-bold text-purple-300">
+            {formatCurrency(metrics.potentialRevenue)}
+          </div>
+          <div className="text-xs text-purple-500/70 mt-1">En jeu</div>
+        </div>
+
+        {/* Taux conversion */}
+        <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/30">
+          <div className="text-cyan-400 text-xs uppercase mb-1">Conversion</div>
+          <div className="text-3xl font-bold text-cyan-300">{metrics.conversionRate}%</div>
+          <div className="text-xs text-cyan-500/70 mt-1">Efficacité</div>
+        </div>
+      </div>
+
+      {/* Dossiers critiques */}
+      {criticalStudies && criticalStudies.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <span>🚨</span>
+            Dossiers nécessitant une action ({criticalStudies.length})
+          </h3>
+
+          <div className="space-y-2">
+            {criticalStudies.map(study => {
+              const isHot = study.priority === 'HOT';
+              const isAtRisk = study.status === 'sent' && study.daysSinceSent && study.daysSinceSent > 7;
+              
+              return (
+                <div
+                  key={study.id}
+                  className={`
+                    ${isHot ? 'bg-orange-500/10 border-orange-500/50' : 'bg-slate-800/50 border-slate-700/30'}
+                    rounded-lg p-4 border
+                    hover:border-slate-600 transition-colors
+                  `}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    {/* Info dossier */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        {isHot && <span className="text-xl">🔥</span>}
+                        {isAtRisk && <span className="text-xl">⚠️</span>}
+                        <span className="font-bold text-white">{study.clientName}</span>
+                        <span className="text-xs text-slate-400">#{study.id.slice(0, 8)}</span>
+                      </div>
+                      
+                      <div className="text-sm text-slate-300 mb-2">
+                        {study.address}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-xs">
+                        {/* Statut */}
+                        <span className={`
+                          px-2 py-1 rounded
+                          ${study.status === 'sent' ? 'bg-blue-500/20 text-blue-300' : ''}
+                          ${study.status === 'signed' ? 'bg-green-500/20 text-green-300' : ''}
+                          ${study.status === 'draft' ? 'bg-slate-500/20 text-slate-300' : ''}
+                        `}>
+                          {study.status === 'sent' && '📤 Envoyé'}
+                          {study.status === 'signed' && '✅ Signé'}
+                          {study.status === 'draft' && '📝 Brouillon'}
+                        </span>
+
+                        {/* Prix */}
+                        {study.price && (
+                          <span className="text-slate-400">
+                            💰 {formatCurrency(study.price)}
+                          </span>
+                        )}
+
+                        {/* Date envoi */}
+                        {study.sentDate && (
+                          <span className="text-slate-400">
+                            📅 {formatDate(study.sentDate)}
+                          </span>
+                        )}
+
+                        {/* Jours depuis envoi */}
+                        {study.daysSinceSent !== undefined && (
+                          <span className={`
+                            ${study.daysSinceSent > 7 ? 'text-red-400 font-bold' : 'text-slate-400'}
+                          `}>
+                            ⏱️ {study.daysSinceSent}j
+                          </span>
+                        )}
+
+                        {/* Vues */}
+                        {study.views !== undefined && (
+                          <span className="text-slate-400">
+                            👁️ {study.views} vues
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Raison critique */}
+                      {isHot && (
+                        <div className="mt-2 text-xs text-orange-400 bg-orange-500/10 px-2 py-1 rounded inline-block">
+                          🔥 HOT - À signer en priorité
+                        </div>
+                      )}
+                      {isAtRisk && (
+                        <div className="mt-2 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded inline-block">
+                          ⚠️ Risque - Relance nécessaire
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2">
+                      {study.status === 'sent' && (
+                        <button
+                          onClick={() => onForceSign(study.id, study.clientName)}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold text-sm transition-colors whitespace-nowrap"
+                        >
+                          ✅ Forcer signature
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => onActionRequired(study.id)}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-sm transition-colors whitespace-nowrap"
+                      >
+                        👁️ Voir détails
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Message si aucun dossier critique */}
+      {(!criticalStudies || criticalStudies.length === 0) && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-6 text-center">
+          <span className="text-4xl block mb-2">✅</span>
+          <p className="text-green-400 font-bold">Aucune action critique requise</p>
+          <p className="text-sm text-green-500/70 mt-1">Tous les dossiers sont sous contrôle</p>
+        </div>
+      )}
+    </div>
+  );
+};
+// Types pour SystemState
+export interface SystemStateProps {
+  totalStudies: number;
+  activeStudies: number;
+  signedStudies: number;
+  totalLeads: number;
+  activeLeads: number;
+  coldLeads: number;
+  totalEmailsSent: number;
+  pendingEmails: number;
+}
+
+// Types pour CriticalAlert
+export interface CriticalAlertProps {
+  show: boolean;
+  message: string;
+  onDismiss?: () => void;
+}
+
+// Types pour WarRoom
+export interface WarRoomProps {
+  metrics: EduMetrics;
+  criticalStudies?: Study[];
+  onActionRequired: (studyId: string) => void;
+  onForceSign: (studyId: string, name: string) => void;  // ← Changé clientName en name
+  scrollIntoView?: boolean;
+}
+
+export interface EduMetrics {
+  totalActive: number;
+  hotsSignable: number;
+  atRisk: number;
+  newOnes: number;
+  potentialRevenue: number;
+  conversionRate: number;
+}
+export interface WarRoomStudy {
+  id: string;
+  clientName: string;
+  address: string;
+  status: 'draft' | 'sent' | 'signed';
+  priority?: 'HOT' | 'NORMAL';
+  price?: number;
+  sentDate?: string;
+  signedDate?: string;
+  views?: number;
+  daysSinceSent?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Types de base (déjà définis dans types.tsx mais rappelés ici pour référence)
+export interface Study {
+  id: string;
+  clientName: string;  // ← Gardez seulement celle-ci (obligatoire)
+  address: string;
+  status: 'draft' | 'sent' | 'signed';
+  priority?: 'HOT' | 'NORMAL';
+  price?: number;
+  sentDate?: string;
+  signedDate?: string;
+  views?: number;
+  daysSinceSent?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+import React, { useState, useMemo } from 'react';
+import { SignedStudiesProps, Study } from './types';
+import { formatDate, formatCurrency, escapeHtml } from './utils';
+
+export const SignedStudies: React.FC<SignedStudiesProps> = ({
+  studies,
+  onDelete,
+  onViewDetails,
+  onToggleVisibility
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<'date' | 'price' | 'name'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showHidden, setShowHidden] = useState(false);
+
+  // Filtrer les dossiers signés
+  const signedStudies = useMemo(() => {
+    return studies.filter(s => s.status === 'signed');
+  }, [studies]);
+
+  // Appliquer recherche et tri
+  const filteredAndSorted = useMemo(() => {
+    let filtered = signedStudies;
+
+    // Filtre de visibilité
+    if (!showHidden) {
+      filtered = filtered.filter(s => !s.hidden);
+    }
+
+    // Recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.clientName.toLowerCase().includes(term) ||
+        s.address.toLowerCase().includes(term) ||
+        s.id.toLowerCase().includes(term)
+      );
+    }
+
+    // Tri
+    const sorted = [...filtered].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.signedDate || a.createdAt).getTime() - 
+                      new Date(b.signedDate || b.createdAt).getTime();
+          break;
+        case 'price':
+          comparison = (a.price || 0) - (b.price || 0);
+          break;
+        case 'name':
+          comparison = a.clientName.localeCompare(b.clientName);
+          break;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [signedStudies, searchTerm, sortBy, sortOrder, showHidden]);
+
+  // Calcul des statistiques
+  const stats = useMemo(() => {
+    const visible = signedStudies.filter(s => !s.hidden);
+    const totalRevenue = visible.reduce((sum, s) => sum + (s.price || 0), 0);
+    const averagePrice = visible.length > 0 ? totalRevenue / visible.length : 0;
+    const thisMonth = visible.filter(s => {
+      const date = new Date(s.signedDate || s.createdAt);
+      const now = new Date();
+      return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+    }).length;
+
+    return {
+      total: signedStudies.length,
+      visible: visible.length,
+      hidden: signedStudies.length - visible.length,
+      totalRevenue,
+      averagePrice,
+      thisMonth
+    };
+  }, [signedStudies]);
+
+  const toggleSort = (field: 'date' | 'price' | 'name') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleDelete = async (id: string, clientName: string) => {
+    const confirmName = prompt(
+      `⚠️ SUPPRESSION DÉFINITIVE\n\nPour confirmer, tapez exactement le nom du client :\n"${clientName}"`
+    );
+
+    if (confirmName === clientName) {
+      const doubleConfirm = confirm(
+        '🗑️ DERNIÈRE CONFIRMATION\n\nCette action est IRRÉVERSIBLE.\nVoulez-vous vraiment supprimer ce dossier ?'
+      );
+
+      if (doubleConfirm) {
+        await onDelete(id);
+      }
+    } else if (confirmName !== null) {
+      alert('❌ Nom incorrect. Suppression annulée.');
+    }
+  };
+
+  return (
+    <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+          <span className="text-3xl">✅</span>
+          AXE A · DOSSIERS SIGNÉS
+        </h2>
+        <div className="text-sm text-slate-400">
+          Gestion administrative · Commandes validées
+        </div>
+      </div>
+
+      {/* Statistiques */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
+          <div className="text-green-400 text-xs uppercase mb-1">Total</div>
+          <div className="text-3xl font-bold text-green-300">{stats.total}</div>
+        </div>
+
+        <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
+          <div className="text-blue-400 text-xs uppercase mb-1">Visibles</div>
+          <div className="text-3xl font-bold text-blue-300">{stats.visible}</div>
+        </div>
+
+        <div className="bg-slate-500/10 rounded-lg p-4 border border-slate-500/30">
+          <div className="text-slate-400 text-xs uppercase mb-1">Masqués</div>
+          <div className="text-3xl font-bold text-slate-300">{stats.hidden}</div>
+        </div>
+
+        <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/30">
+          <div className="text-purple-400 text-xs uppercase mb-1">CA Total</div>
+          <div className="text-xl font-bold text-purple-300">
+            {formatCurrency(stats.totalRevenue)}
+          </div>
+        </div>
+
+        <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/30">
+          <div className="text-cyan-400 text-xs uppercase mb-1">Panier moyen</div>
+          <div className="text-xl font-bold text-cyan-300">
+            {formatCurrency(stats.averagePrice)}
+          </div>
+        </div>
+
+        <div className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/30">
+          <div className="text-amber-400 text-xs uppercase mb-1">Ce mois</div>
+          <div className="text-3xl font-bold text-amber-300">{stats.thisMonth}</div>
+        </div>
+      </div>
+
+      {/* Filtres et recherche */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Barre de recherche */}
+        <div className="flex-1">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="🔍 Rechercher par client, adresse ou ID..."
+            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+          />
+        </div>
+
+        {/* Boutons de tri */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => toggleSort('date')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              sortBy === 'date'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            📅 Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+
+          <button
+            onClick={() => toggleSort('price')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              sortBy === 'price'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            💰 Prix {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+
+          <button
+            onClick={() => toggleSort('name')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              sortBy === 'name'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            👤 Nom {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+
+          <button
+            onClick={() => setShowHidden(!showHidden)}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              showHidden
+                ? 'bg-slate-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            {showHidden ? '👁️ Tous' : '👁️‍🗨️ Visibles'}
+          </button>
+        </div>
+      </div>
+
+      {/* Tableau des dossiers */}
+      {filteredAndSorted.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-700">
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Client</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Adresse</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Prix</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Date signature</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Statut</th>
+                <th className="text-right text-slate-400 text-xs uppercase py-3 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAndSorted.map((study) => (
+                <tr
+                  key={study.id}
+                  className={`border-b border-slate-800 hover:bg-slate-800/30 transition-colors ${
+                    study.hidden ? 'opacity-50' : ''
+                  }`}
+                >
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-white">{study.clientName}</div>
+                    <div className="text-xs text-slate-500">#{study.id.slice(0, 8)}</div>
+                  </td>
+                  <td className="py-3 px-4 text-slate-300 text-sm">
+                    {study.address}
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="font-bold text-green-400">
+                      {formatCurrency(study.price || 0)}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 text-slate-300 text-sm">
+                    {formatDate(study.signedDate || study.createdAt)}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs">
+                      ✅ {study.hidden ? 'Masqué' : 'Signé'}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onToggleVisibility(study.id)}
+                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm transition-colors"
+                        title={study.hidden ? 'Afficher' : 'Masquer'}
+                      >
+                        {study.hidden ? '👁️' : '👁️‍🗨️'}
+                      </button>
+
+                      <button
+                        onClick={() => onViewDetails(study.id)}
+                        className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm transition-colors"
+                      >
+                        📄 Voir
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(study.id, study.clientName)}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-sm transition-colors"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-8 text-center">
+          <span className="text-4xl block mb-2">📭</span>
+          <p className="text-slate-400 font-bold">Aucun dossier trouvé</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {searchTerm ? 'Essayez une autre recherche' : 'Aucun dossier signé pour le moment'}
+          </p>
+        </div>
+      )}
+
+      {/* Résumé du filtrage */}
+      {searchTerm && (
+        <div className="mt-4 text-sm text-slate-400 text-center">
+          {filteredAndSorted.length} résultat(s) sur {signedStudies.length} dossier(s) signé(s)
+        </div>
+      )}
+    </div>
+  );
+};
+// Types pour SignedStudies
+export interface SignedStudiesProps {
+  studies: Study[];
+  onDelete: (studyId: string) => Promise<void>;
+  onViewDetails: (studyId: string) => void;
+  onToggleVisibility: (studyId: string) => Promise<void>;
+}
+
+// Types pour GlobalStats
+export interface GlobalStatsProps {
+  studies: Study[];
+}
+
+// Extension du type Study avec le champ hidden
+export interface Study {
+  id: string;
+  clientName: string;
+  address: string;
+  status: 'draft' | 'sent' | 'signed';
+  priority?: 'HOT' | 'NORMAL';
+  price?: number;
+  sentDate?: string;
+  signedDate?: string;
+  views?: number;
+  clicks?: number;
+  daysSinceSent?: number;
+  createdAt: string;
+  updatedAt: string;
+  hidden?: boolean; // Pour masquer les dossiers signés
+  phoneNumber?: string;
+  email?: string;
+  notes?: string;
+}
+
+// Types pour les statistiques mensuelles
+export interface MonthlyData {
+  month: string;
+  count: number;
+  revenue: number;
+}
+
+// Types pour les statistiques globales
+export interface GlobalStatistics {
+  signed: number;
+  active: number;
+  draft: number;
+  totalRevenue: number;
+  potentialRevenue: number;
+  draftRevenue: number;
+  averagePrice: number;
+  conversionRate: number;
+  thisMonth: number;
+  thisMonthRevenue: number;
+  monthlyData: MonthlyData[];
+  topContracts: Study[];
+}
+import React, { useState, useMemo } from 'react';
+import { PipelineProps, Study } from './types';
+import { formatDate, formatCurrency, escapeHtml } from './utils';
+
+export const Pipeline: React.FC<PipelineProps> = ({
+  studies,
+  onStatusChange,
+  onPriorityChange,
+  onDelete,
+  onViewDetails,
+  onSendStudy,
+  anomalyIds = [],
+  zenMode = false
+}) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'sent' | 'signed'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | 'HOT' | 'NORMAL'>('all');
+  const [showAnomalies, setShowAnomalies] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'price' | 'name' | 'status'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // Filtrer et trier les études
+  const filteredAndSorted = useMemo(() => {
+    let filtered = studies;
+
+    // Filtre anomalies
+    if (showAnomalies) {
+      filtered = filtered.filter(s => anomalyIds.includes(s.id));
+    }
+
+    // Filtre statut
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(s => s.status === statusFilter);
+    }
+
+    // Filtre priorité
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(s => s.priority === priorityFilter);
+    }
+
+    // Recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.clientName.toLowerCase().includes(term) ||
+        s.address.toLowerCase().includes(term) ||
+        s.id.toLowerCase().includes(term) ||
+        (s.email && s.email.toLowerCase().includes(term)) ||
+        (s.phoneNumber && s.phoneNumber.includes(term))
+      );
+    }
+
+    // Tri
+    const sorted = [...filtered].sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.updatedAt || a.createdAt).getTime() - 
+                      new Date(b.updatedAt || b.createdAt).getTime();
+          break;
+        case 'price':
+          comparison = (a.price || 0) - (b.price || 0);
+          break;
+        case 'name':
+          comparison = a.clientName.localeCompare(b.clientName);
+          break;
+        case 'status':
+          const statusOrder = { draft: 0, sent: 1, signed: 2 };
+          comparison = statusOrder[a.status] - statusOrder[b.status];
+          break;
+      }
+
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return sorted;
+  }, [studies, searchTerm, statusFilter, priorityFilter, showAnomalies, anomalyIds, sortBy, sortOrder]);
+
+  // Statistiques rapides
+  const stats = useMemo(() => {
+    const draft = studies.filter(s => s.status === 'draft').length;
+    const sent = studies.filter(s => s.status === 'sent').length;
+    const signed = studies.filter(s => s.status === 'signed').length;
+    const hot = studies.filter(s => s.priority === 'HOT').length;
+    const anomalies = anomalyIds.length;
+
+    return { draft, sent, signed, hot, anomalies, total: studies.length };
+  }, [studies, anomalyIds]);
+
+  const toggleSort = (field: 'date' | 'price' | 'name' | 'status') => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+  };
+
+  const handleDelete = async (id: string, clientName: string) => {
+    const confirmName = prompt(
+      `⚠️ SUPPRESSION DÉFINITIVE\n\nPour confirmer, tapez exactement le nom du client :\n"${clientName}"`
+    );
+
+    if (confirmName === clientName) {
+      const doubleConfirm = confirm(
+        '🗑️ DERNIÈRE CONFIRMATION\n\nCette action est IRRÉVERSIBLE.\nVoulez-vous vraiment supprimer ce dossier ?'
+      );
+
+      if (doubleConfirm) {
+        await onDelete(id);
+      }
+    } else if (confirmName !== null) {
+      alert('❌ Nom incorrect. Suppression annulée.');
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: 'draft' | 'sent' | 'signed') => {
+    const study = studies.find(s => s.id === id);
+    if (!study) return;
+
+    // Confirmation pour signature
+    if (newStatus === 'signed') {
+      const confirm = window.confirm(
+        `✅ CONFIRMER LA SIGNATURE\n\nDossier : ${study.clientName}\nPrix : ${formatCurrency(study.price || 0)}\n\nConfirmer ?`
+      );
+      if (!confirm) return;
+    }
+
+    await onStatusChange(id, newStatus);
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'draft':
+        return <span className="px-2 py-1 bg-slate-500/20 text-slate-300 rounded text-xs">📝 Brouillon</span>;
+      case 'sent':
+        return <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">📤 Envoyé</span>;
+      case 'signed':
+        return <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs">✅ Signé</span>;
+      default:
+        return null;
+    }
+  };
+
+  const getPriorityBadge = (priority?: string) => {
+    if (priority === 'HOT') {
+      return <span className="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs font-bold">🔥 HOT</span>;
+    }
+    return null;
+  };
+
+  // Détection d'anomalie
+  const isAnomaly = (studyId: string) => anomalyIds.includes(studyId);
+
+  return (
+    <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+          <span className="text-3xl">📊</span>
+          AXE B · PIPELINE ACTIF
+          {zenMode && <span className="text-sm text-slate-400">· Mode Zen</span>}
+        </h2>
+        <div className="text-sm text-slate-400">
+          Gestion des dossiers · Suivi commercial
+        </div>
+      </div>
+
+      {/* Stats rapides */}
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+        <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/30">
+          <div className="text-slate-400 text-xs uppercase mb-1">Total</div>
+          <div className="text-2xl font-bold text-white">{stats.total}</div>
+        </div>
+        <div className="bg-slate-500/10 rounded-lg p-3 border border-slate-500/30">
+          <div className="text-slate-400 text-xs uppercase mb-1">Brouillons</div>
+          <div className="text-2xl font-bold text-slate-300">{stats.draft}</div>
+        </div>
+        <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
+          <div className="text-blue-400 text-xs uppercase mb-1">Envoyés</div>
+          <div className="text-2xl font-bold text-blue-300">{stats.sent}</div>
+        </div>
+        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+          <div className="text-green-400 text-xs uppercase mb-1">Signés</div>
+          <div className="text-2xl font-bold text-green-300">{stats.signed}</div>
+        </div>
+        <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/30">
+          <div className="text-orange-400 text-xs uppercase mb-1">🔥 HOT</div>
+          <div className="text-2xl font-bold text-orange-300">{stats.hot}</div>
+        </div>
+        <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/30">
+          <div className="text-red-400 text-xs uppercase mb-1">⚠️ Anomalies</div>
+          <div className="text-2xl font-bold text-red-300">{stats.anomalies}</div>
+        </div>
+      </div>
+
+      {/* Filtres et recherche */}
+      <div className="space-y-4 mb-6">
+        {/* Barre de recherche */}
+        <div className="flex-1">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="🔍 Rechercher par client, adresse, email, téléphone ou ID..."
+            className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+          />
+        </div>
+
+        {/* Boutons de filtre */}
+        <div className="flex flex-wrap gap-2">
+          {/* Filtres statut */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                statusFilter === 'all'
+                  ? 'bg-slate-600 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              Tous
+            </button>
+            <button
+              onClick={() => setStatusFilter('draft')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                statusFilter === 'draft'
+                  ? 'bg-slate-500 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              📝 Brouillons
+            </button>
+            <button
+              onClick={() => setStatusFilter('sent')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                statusFilter === 'sent'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              📤 Envoyés
+            </button>
+            <button
+              onClick={() => setStatusFilter('signed')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                statusFilter === 'signed'
+                  ? 'bg-green-600 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              ✅ Signés
+            </button>
+          </div>
+
+          {/* Séparateur */}
+          <div className="border-l border-slate-700"></div>
+
+          {/* Filtres priorité */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPriorityFilter('all')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                priorityFilter === 'all'
+                  ? 'bg-slate-600 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              Toutes priorités
+            </button>
+            <button
+              onClick={() => setPriorityFilter('HOT')}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                priorityFilter === 'HOT'
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+              }`}
+            >
+              🔥 HOT uniquement
+            </button>
+          </div>
+
+          {/* Séparateur */}
+          <div className="border-l border-slate-700"></div>
+
+          {/* Anomalies */}
+          <button
+            onClick={() => setShowAnomalies(!showAnomalies)}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              showAnomalies
+                ? 'bg-red-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            ⚠️ Anomalies ({stats.anomalies})
+          </button>
+
+          {/* Séparateur */}
+          <div className="border-l border-slate-700"></div>
+
+          {/* Tri */}
+          <button
+            onClick={() => toggleSort('date')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              sortBy === 'date'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            📅 Date {sortBy === 'date' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+          <button
+            onClick={() => toggleSort('price')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              sortBy === 'price'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            💰 Prix {sortBy === 'price' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+          <button
+            onClick={() => toggleSort('name')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              sortBy === 'name'
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            👤 Nom {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+          </button>
+        </div>
+      </div>
+
+      {/* Tableau */}
+      {filteredAndSorted.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-700">
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Client</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Adresse</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Contact</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Prix</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Statut</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Priorité</th>
+                <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Activité</th>
+                <th className="text-right text-slate-400 text-xs uppercase py-3 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAndSorted.map((study) => {
+                const hasAnomaly = isAnomaly(study.id);
+                return (
+                  <tr
+                    key={study.id}
+                    className={`border-b border-slate-800 hover:bg-slate-800/30 transition-colors ${
+                      hasAnomaly ? 'bg-red-500/5' : ''
+                    }`}
+                  >
+                    {/* Client */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {hasAnomaly && <span className="text-red-400">⚠️</span>}
+                        <div>
+                          <div className="font-bold text-white">{study.clientName}</div>
+                          <div className="text-xs text-slate-500">#{study.id.slice(0, 8)}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Adresse */}
+                    <td className="py-3 px-4 text-slate-300 text-sm">
+                      {study.address}
+                    </td>
+
+                    {/* Contact */}
+                    <td className="py-3 px-4 text-slate-300 text-sm">
+                      {study.email && <div className="text-xs">📧 {study.email}</div>}
+                      {study.phoneNumber && <div className="text-xs">📱 {study.phoneNumber}</div>}
+                      {!study.email && !study.phoneNumber && (
+                        <span className="text-slate-500 text-xs">—</span>
+                      )}
+                    </td>
+
+                    {/* Prix */}
+                    <td className="py-3 px-4">
+                      {study.price ? (
+                        <div className="font-bold text-purple-400">
+                          {formatCurrency(study.price)}
+                        </div>
+                      ) : (
+                        <span className="text-slate-500 text-sm">—</span>
+                      )}
+                    </td>
+
+                    {/* Statut */}
+                    <td className="py-3 px-4">
+                      {getStatusBadge(study.status)}
+                    </td>
+
+                    {/* Priorité */}
+                    <td className="py-3 px-4">
+                      {getPriorityBadge(study.priority)}
+                    </td>
+
+                    {/* Activité */}
+                    <td className="py-3 px-4">
+                      <div className="text-xs space-y-1">
+                        {study.views !== undefined && (
+                          <div className="text-slate-400">👁️ {study.views} vues</div>
+                        )}
+                        {study.clicks !== undefined && (
+                          <div className="text-slate-400">🖱️ {study.clicks} clics</div>
+                        )}
+                        {study.daysSinceSent !== undefined && (
+                          <div className={study.daysSinceSent > 7 ? 'text-red-400 font-bold' : 'text-slate-400'}>
+                            ⏱️ {study.daysSinceSent}j
+                          </div>
+                        )}
+                        {!study.views && !study.clicks && !study.daysSinceSent && (
+                          <span className="text-slate-500">—</span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center justify-end gap-2 flex-wrap">
+                        {/* Changer priorité */}
+                        {study.status !== 'signed' && (
+                          <button
+                            onClick={() => onPriorityChange(study.id, study.priority === 'HOT' ? 'NORMAL' : 'HOT')}
+                            className={`px-2 py-1 rounded text-xs transition-colors ${
+                              study.priority === 'HOT'
+                                ? 'bg-orange-600 hover:bg-orange-500 text-white'
+                                : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                            }`}
+                          >
+                            {study.priority === 'HOT' ? '❄️' : '🔥'}
+                          </button>
+                        )}
+
+                        {/* Envoyer (si brouillon) */}
+                        {study.status === 'draft' && onSendStudy && (
+                          <button
+                            onClick={() => onSendStudy(study.id)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm transition-colors"
+                          >
+                            📤 Envoyer
+                          </button>
+                        )}
+
+                        {/* Signer (si envoyé) */}
+                        {study.status === 'sent' && (
+                          <button
+                            onClick={() => handleStatusChange(study.id, 'signed')}
+                            className="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded text-sm transition-colors"
+                          >
+                            ✅ Signer
+                          </button>
+                        )}
+
+                        {/* Voir détails */}
+                        <button
+                          onClick={() => onViewDetails(study.id)}
+                          className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm transition-colors"
+                        >
+                          👁️
+                        </button>
+
+                        {/* Supprimer */}
+                        <button
+                          onClick={() => handleDelete(study.id, study.clientName)}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-sm transition-colors"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-8 text-center">
+          <span className="text-4xl block mb-2">📭</span>
+          <p className="text-slate-400 font-bold">Aucun dossier trouvé</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' || showAnomalies
+              ? 'Essayez de modifier vos filtres'
+              : 'Créez votre premier dossier'}
+          </p>
+        </div>
+      )}
+
+      {/* Résumé du filtrage */}
+      {(searchTerm || statusFilter !== 'all' || priorityFilter !== 'all' || showAnomalies) && (
+        <div className="mt-4 text-sm text-slate-400 text-center">
+          {filteredAndSorted.length} résultat(s) sur {studies.length} dossier(s)
+        </div>
+      )}
+    </div>
+  );
+};
+import React, { useMemo } from 'react';
+import { StatsGridProps } from './types';
+import { formatCurrency } from './utils';
+
+export const StatsGrid: React.FC<StatsGridProps> = ({ studies, leads }) => {
+  // Calcul de toutes les stats
+  const stats = useMemo(() => {
+    // Stats dossiers par statut
+    const draft = studies.filter(s => s.status === 'draft');
+    const sent = studies.filter(s => s.status === 'sent');
+    const signed = studies.filter(s => s.status === 'signed' && !s.hidden);
+
+    // Stats priorités
+    const hotStudies = studies.filter(s => s.priority === 'HOT');
+    const hotSent = sent.filter(s => s.priority === 'HOT');
+
+    // Stats activité
+    const highActivity = sent.filter(s => (s.views || 0) > 5 || (s.clicks || 0) > 3);
+    const noActivity = sent.filter(s => (s.views || 0) === 0 && (s.daysSinceSent || 0) > 3);
+
+    // Stats CA
+    const draftRevenue = draft.reduce((sum, s) => sum + (s.price || 0), 0);
+    const sentRevenue = sent.reduce((sum, s) => sum + (s.price || 0), 0);
+    const signedRevenue = signed.reduce((sum, s) => sum + (s.price || 0), 0);
+
+    // Stats temps
+    const avgDaysToSign = signed.length > 0
+      ? signed.reduce((sum, s) => {
+          if (s.sentDate && s.signedDate) {
+            const days = Math.floor(
+              (new Date(s.signedDate).getTime() - new Date(s.sentDate).getTime()) / (1000 * 60 * 60 * 24)
+            );
+            return sum + days;
+          }
+          return sum;
+        }, 0) / signed.length
+      : 0;
+
+    // Stats leads
+    const totalLeads = leads?.length || 0;
+    const hotLeads = leads?.filter(l => l.temperature === 'hot').length || 0;
+    const warmLeads = leads?.filter(l => l.temperature === 'warm').length || 0;
+    const coldLeads = leads?.filter(l => l.temperature === 'cold').length || 0;
+
+    // Stats emails leads
+    const leadsWithEmails = leads?.filter(l => l.lastEmailSent).length || 0;
+    const pendingFollowups = leads?.filter(l => {
+      if (!l.lastEmailSent) return false;
+      const daysSince = Math.floor(
+        (Date.now() - new Date(l.lastEmailSent).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysSince > 7 && l.temperature !== 'cold';
+    }).length || 0;
+
+    // Taux de conversion
+    const totalSent = sent.length + signed.length;
+    const conversionRate = totalSent > 0 ? (signed.length / totalSent) * 100 : 0;
+
+    return {
+      draft: {
+        count: draft.length,
+        revenue: draftRevenue,
+        percentage: studies.length > 0 ? (draft.length / studies.length) * 100 : 0
+      },
+      sent: {
+        count: sent.length,
+        revenue: sentRevenue,
+        hot: hotSent.length,
+        highActivity: highActivity.length,
+        noActivity: noActivity.length,
+        percentage: studies.length > 0 ? (sent.length / studies.length) * 100 : 0
+      },
+      signed: {
+        count: signed.length,
+        revenue: signedRevenue,
+        avgDaysToSign: Math.round(avgDaysToSign),
+        percentage: studies.length > 0 ? (signed.length / studies.length) * 100 : 0
+      },
+      hot: {
+        count: hotStudies.length,
+        sent: hotSent.length
+      },
+      leads: {
+        total: totalLeads,
+        hot: hotLeads,
+        warm: warmLeads,
+        cold: coldLeads,
+        withEmails: leadsWithEmails,
+        pendingFollowups
+      },
+      global: {
+        total: studies.length,
+        conversionRate,
+        totalRevenue: draftRevenue + sentRevenue + signedRevenue
+      }
+    };
+  }, [studies, leads]);
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Dossiers par Statut */}
+      <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          📊 Répartition Pipeline
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Brouillons */}
+          <div className="bg-gradient-to-br from-slate-500/20 to-slate-600/10 rounded-lg p-5 border border-slate-500/30">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-slate-400 text-xs uppercase">📝 Brouillons</div>
+              <div className="text-slate-400 text-xs font-bold">
+                {stats.draft.percentage.toFixed(0)}%
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              {stats.draft.count}
+            </div>
+            <div className="text-sm text-slate-300">
+              {formatCurrency(stats.draft.revenue)}
+            </div>
+            <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-slate-500"
+                style={{ width: `${stats.draft.percentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Envoyés */}
+          <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 rounded-lg p-5 border border-blue-500/30">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-blue-400 text-xs uppercase">📤 Envoyés</div>
+              <div className="text-blue-400 text-xs font-bold">
+                {stats.sent.percentage.toFixed(0)}%
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              {stats.sent.count}
+            </div>
+            <div className="text-sm text-blue-300 mb-2">
+              {formatCurrency(stats.sent.revenue)}
+            </div>
+            <div className="flex gap-2 text-xs">
+              <span className="bg-orange-500/20 text-orange-300 px-2 py-1 rounded">
+                🔥 {stats.sent.hot} HOT
+              </span>
+              <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded">
+                📈 {stats.sent.highActivity} actifs
+              </span>
+              {stats.sent.noActivity > 0 && (
+                <span className="bg-red-500/20 text-red-300 px-2 py-1 rounded">
+                  ⚠️ {stats.sent.noActivity} silence
+                </span>
+              )}
+            </div>
+            <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500"
+                style={{ width: `${stats.sent.percentage}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Signés */}
+          <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 rounded-lg p-5 border border-green-500/30">
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-green-400 text-xs uppercase">✅ Signés</div>
+              <div className="text-green-400 text-xs font-bold">
+                {stats.signed.percentage.toFixed(0)}%
+              </div>
+            </div>
+            <div className="text-3xl font-bold text-white mb-2">
+              {stats.signed.count}
+            </div>
+            <div className="text-sm text-green-300 mb-2">
+              {formatCurrency(stats.signed.revenue)}
+            </div>
+            <div className="text-xs text-green-400">
+              ⏱️ Délai moyen : {stats.signed.avgDaysToSign}j
+            </div>
+            <div className="mt-3 h-1 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-green-500"
+                style={{ width: `${stats.signed.percentage}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Leads */}
+      {leads && leads.length > 0 && (
+        <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+          <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+            🎯 État des Leads
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-purple-500/10 rounded-lg p-4 border border-purple-500/30">
+              <div className="text-purple-400 text-xs uppercase mb-1">Total</div>
+              <div className="text-3xl font-bold text-purple-300">{stats.leads.total}</div>
+            </div>
+            <div className="bg-red-500/10 rounded-lg p-4 border border-red-500/30">
+              <div className="text-red-400 text-xs uppercase mb-1">🔥 Chauds</div>
+              <div className="text-3xl font-bold text-red-300">{stats.leads.hot}</div>
+            </div>
+            <div className="bg-orange-500/10 rounded-lg p-4 border border-orange-500/30">
+              <div className="text-orange-400 text-xs uppercase mb-1">🌡️ Tièdes</div>
+              <div className="text-3xl font-bold text-orange-300">{stats.leads.warm}</div>
+            </div>
+            <div className="bg-cyan-500/10 rounded-lg p-4 border border-cyan-500/30">
+              <div className="text-cyan-400 text-xs uppercase mb-1">❄️ Froids</div>
+              <div className="text-3xl font-bold text-cyan-300">{stats.leads.cold}</div>
+            </div>
+            <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
+              <div className="text-blue-400 text-xs uppercase mb-1">📧 Contactés</div>
+              <div className="text-3xl font-bold text-blue-300">{stats.leads.withEmails}</div>
+            </div>
+            <div className="bg-amber-500/10 rounded-lg p-4 border border-amber-500/30">
+              <div className="text-amber-400 text-xs uppercase mb-1">⏰ À relancer</div>
+              <div className="text-3xl font-bold text-amber-300">{stats.leads.pendingFollowups}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Globales */}
+      <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          🎯 Performance Globale
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700/30">
+            <div className="text-slate-400 text-xs uppercase mb-2">Total Dossiers</div>
+            <div className="text-3xl font-bold text-white">{stats.global.total}</div>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700/30">
+            <div className="text-slate-400 text-xs uppercase mb-2">Taux Conversion</div>
+            <div className="text-3xl font-bold text-white">{stats.global.conversionRate.toFixed(1)}%</div>
+          </div>
+          <div className="bg-slate-800/50 rounded-lg p-5 border border-slate-700/30">
+            <div className="text-slate-400 text-xs uppercase mb-2">Pipeline Total</div>
+            <div className="text-2xl font-bold text-white">{formatCurrency(stats.global.totalRevenue)}</div>
+          </div>
+          <div className="bg-orange-500/10 rounded-lg p-5 border border-orange-500/30">
+            <div className="text-orange-400 text-xs uppercase mb-2">🔥 Dossiers HOT</div>
+            <div className="text-3xl font-bold text-orange-300">{stats.hot.count}</div>
+            <div className="text-xs text-orange-400 mt-1">{stats.hot.sent} envoyés</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+// Types pour Pipeline
+export interface PipelineProps {
+  studies: Study[];
+  onStatusChange: (studyId: string, newStatus: 'draft' | 'sent' | 'signed') => Promise<void>;
+  onPriorityChange: (studyId: string, newPriority: 'HOT' | 'NORMAL') => Promise<void>;
+  onDelete: (studyId: string) => Promise<void>;
+  onViewDetails: (studyId: string) => void;
+  onSendStudy?: (studyId: string) => Promise<void>;
+  anomalyIds?: string[];
+  zenMode?: boolean;
+}
+
+// Types pour StatsGrid
+export interface StatsGridProps {
+  studies: Study[];
+  leads?: EmailLead[];
+}
+
+// Type EmailLead (pour référence)
+export interface EmailLead {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  temperature: 'hot' | 'warm' | 'cold';
+  lastEmailSent?: string;
+  emailsSent: number;
+  clicksCount: number;
+  opensCount: number;
+  lastActivity?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Extension du type Study avec tous les champs nécessaires
+export interface Study {
+  id: string;
+  clientName: string;
+  address: string;
+  status: 'draft' | 'sent' | 'signed';
+  priority?: 'HOT' | 'NORMAL';
+  price?: number;
+  sentDate?: string;
+  signedDate?: string;
+  views?: number;
+  clicks?: number;
+  daysSinceSent?: number;
+  createdAt: string;
+  updatedAt: string;
+  hidden?: boolean;
+  phoneNumber?: string;
+  email?: string;
+  notes?: string;
+  // Champs supplémentaires pour le tracking
+  lastViewDate?: string;
+  lastClickDate?: string;
+  studyUrl?: string;
+}
+
+// Types pour les statistiques détaillées
+export interface PipelineStats {
+  draft: {
+    count: number;
+    revenue: number;
+    percentage: number;
+  };
+  sent: {
+    count: number;
+    revenue: number;
+    hot: number;
+    highActivity: number;
+    noActivity: number;
+    percentage: number;
+  };
+  signed: {
+    count: number;
+    revenue: number;
+    avgDaysToSign: number;
+    percentage: number;
+  };
+  hot: {
+    count: number;
+    sent: number;
+  };
+  leads: {
+    total: number;
+    hot: number;
+    warm: number;
+    cold: number;
+    withEmails: number;
+    pendingFollowups: number;
+  };
+  global: {
+    total: number;
+    conversionRate: number;
+    totalRevenue: number;
+  };
+}
+import React, { useState, useMemo } from 'react';
+import { EmailAutomationProps, EmailLead } from './types';
+import { formatDate, getLeadTemperature } from './utils';
+
+export const EmailAutomation: React.FC<EmailAutomationProps> = ({
+  leads,
+  emailFlows,
+  onSendEmail,
+  onUpdateLeadTemperature,
+  onDeleteLead,
+  onCreateCampaign
+}) => {
+  const [activeTab, setActiveTab] = useState<'leads' | 'campaigns' | 'flows'>('leads');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [temperatureFilter, setTemperatureFilter] = useState<'all' | 'hot' | 'warm' | 'cold'>('all');
+  const [showPendingOnly, setShowPendingOnly] = useState(false);
+
+  // Filtrer les leads
+  const filteredLeads = useMemo(() => {
+    let filtered = leads;
+
+    // Filtre température
+    if (temperatureFilter !== 'all') {
+      filtered = filtered.filter(l => l.temperature === temperatureFilter);
+    }
+
+    // Filtre recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(l =>
+        l.email.toLowerCase().includes(term) ||
+        (l.firstName && l.firstName.toLowerCase().includes(term)) ||
+        (l.lastName && l.lastName.toLowerCase().includes(term))
+      );
+    }
+
+    // Filtre relances en attente
+    if (showPendingOnly) {
+      filtered = filtered.filter(l => {
+        if (!l.lastEmailSent) return true;
+        const daysSince = Math.floor(
+          (Date.now() - new Date(l.lastEmailSent).getTime()) / (1000 * 60 * 60 * 24)
+        );
+        return daysSince > 7 && l.temperature !== 'cold';
+      });
+    }
+
+    return filtered;
+  }, [leads, temperatureFilter, searchTerm, showPendingOnly]);
+
+  // Stats leads
+  const stats = useMemo(() => {
+    const hot = leads.filter(l => l.temperature === 'hot').length;
+    const warm = leads.filter(l => l.temperature === 'warm').length;
+    const cold = leads.filter(l => l.temperature === 'cold').length;
+    const contacted = leads.filter(l => l.emailsSent > 0).length;
+    const pending = leads.filter(l => {
+      if (!l.lastEmailSent) return true;
+      const daysSince = Math.floor(
+        (Date.now() - new Date(l.lastEmailSent).getTime()) / (1000 * 60 * 60 * 24)
+      );
+      return daysSince > 7 && l.temperature !== 'cold';
+    }).length;
+
+    const totalOpens = leads.reduce((sum, l) => sum + (l.opensCount || 0), 0);
+    const totalClicks = leads.reduce((sum, l) => sum + (l.clicksCount || 0), 0);
+    const totalSent = leads.reduce((sum, l) => sum + l.emailsSent, 0);
+
+    const openRate = totalSent > 0 ? (totalOpens / totalSent) * 100 : 0;
+    const clickRate = totalSent > 0 ? (totalClicks / totalSent) * 100 : 0;
+
+    return {
+      total: leads.length,
+      hot,
+      warm,
+      cold,
+      contacted,
+      pending,
+      totalSent,
+      openRate,
+      clickRate
+    };
+  }, [leads]);
+
+  // Stats flows
+  const flowStats = useMemo(() => {
+    if (!emailFlows) return null;
+    
+    const active = emailFlows.filter(f => f.active).length;
+    const paused = emailFlows.filter(f => !f.active).length;
+    const totalLeadsInFlows = emailFlows.reduce((sum, f) => sum + (f.leadsCount || 0), 0);
+
+    return {
+      total: emailFlows.length,
+      active,
+      paused,
+      totalLeadsInFlows
+    };
+  }, [emailFlows]);
+
+  const getTemperatureBadge = (temp: string) => {
+    switch (temp) {
+      case 'hot':
+        return <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs font-bold">🔥 Chaud</span>;
+      case 'warm':
+        return <span className="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs">🌡️ Tiède</span>;
+      case 'cold':
+        return <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 rounded text-xs">❄️ Froid</span>;
+      default:
+        return null;
+    }
+  };
+
+  const handleSendEmail = async (leadId: string, email: string) => {
+    const confirm = window.confirm(
+      `📧 ENVOYER UN EMAIL\n\nDestinaire : ${email}\n\nConfirmer l'envoi ?`
+    );
+    if (confirm) {
+      await onSendEmail(leadId);
+    }
+  };
+
+  return (
+    <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+          <span className="text-3xl">📧</span>
+          AXE C · EMAIL AUTOMATION
+        </h2>
+        <div className="text-sm text-slate-400">
+          Gestion des leads · Campagnes · Flows automatisés
+        </div>
+      </div>
+
+      {/* Stats globales */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 mb-6">
+        <div className="bg-purple-500/10 rounded-lg p-3 border border-purple-500/30">
+          <div className="text-purple-400 text-xs uppercase mb-1">Total</div>
+          <div className="text-2xl font-bold text-purple-300">{stats.total}</div>
+        </div>
+        <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/30">
+          <div className="text-red-400 text-xs uppercase mb-1">🔥 Chauds</div>
+          <div className="text-2xl font-bold text-red-300">{stats.hot}</div>
+        </div>
+        <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/30">
+          <div className="text-orange-400 text-xs uppercase mb-1">🌡️ Tièdes</div>
+          <div className="text-2xl font-bold text-orange-300">{stats.warm}</div>
+        </div>
+        <div className="bg-cyan-500/10 rounded-lg p-3 border border-cyan-500/30">
+          <div className="text-cyan-400 text-xs uppercase mb-1">❄️ Froids</div>
+          <div className="text-2xl font-bold text-cyan-300">{stats.cold}</div>
+        </div>
+        <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
+          <div className="text-blue-400 text-xs uppercase mb-1">Contactés</div>
+          <div className="text-2xl font-bold text-blue-300">{stats.contacted}</div>
+        </div>
+        <div className="bg-amber-500/10 rounded-lg p-3 border border-amber-500/30">
+          <div className="text-amber-400 text-xs uppercase mb-1">⏰ Relances</div>
+          <div className="text-2xl font-bold text-amber-300">{stats.pending}</div>
+        </div>
+        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+          <div className="text-green-400 text-xs uppercase mb-1">Taux ouv.</div>
+          <div className="text-2xl font-bold text-green-300">{stats.openRate.toFixed(0)}%</div>
+        </div>
+        <div className="bg-indigo-500/10 rounded-lg p-3 border border-indigo-500/30">
+          <div className="text-indigo-400 text-xs uppercase mb-1">Taux clic</div>
+          <div className="text-2xl font-bold text-indigo-300">{stats.clickRate.toFixed(0)}%</div>
+        </div>
+      </div>
+
+      {/* Onglets */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab('leads')}
+          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+            activeTab === 'leads'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+          }`}
+        >
+          👥 Leads ({stats.total})
+        </button>
+        <button
+          onClick={() => setActiveTab('campaigns')}
+          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+            activeTab === 'campaigns'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+          }`}
+        >
+          📨 Campagnes
+        </button>
+        <button
+          onClick={() => setActiveTab('flows')}
+          className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+            activeTab === 'flows'
+              ? 'bg-blue-600 text-white'
+              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+          }`}
+        >
+          🔄 Flows ({flowStats?.total || 0})
+        </button>
+      </div>
+
+      {/* Contenu Leads */}
+      {activeTab === 'leads' && (
+        <div className="space-y-4">
+          {/* Filtres leads */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="🔍 Rechercher par email ou nom..."
+              className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => setTemperatureFilter('all')}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  temperatureFilter === 'all'
+                    ? 'bg-slate-600 text-white'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                Tous
+              </button>
+              <button
+                onClick={() => setTemperatureFilter('hot')}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  temperatureFilter === 'hot'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                🔥 Chauds
+              </button>
+              <button
+                onClick={() => setTemperatureFilter('warm')}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  temperatureFilter === 'warm'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                🌡️ Tièdes
+              </button>
+              <button
+                onClick={() => setTemperatureFilter('cold')}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  temperatureFilter === 'cold'
+                    ? 'bg-cyan-600 text-white'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                ❄️ Froids
+              </button>
+              <button
+                onClick={() => setShowPendingOnly(!showPendingOnly)}
+                className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+                  showPendingOnly
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+                }`}
+              >
+                ⏰ Relances ({stats.pending})
+              </button>
+            </div>
+          </div>
+
+          {/* Tableau leads */}
+          {filteredLeads.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-700">
+                    <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Lead</th>
+                    <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Email</th>
+                    <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Température</th>
+                    <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Stats</th>
+                    <th className="text-left text-slate-400 text-xs uppercase py-3 px-4">Dernière activité</th>
+                    <th className="text-right text-slate-400 text-xs uppercase py-3 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLeads.map((lead) => {
+                    const needsFollowup = lead.lastEmailSent && 
+                      Math.floor((Date.now() - new Date(lead.lastEmailSent).getTime()) / (1000 * 60 * 60 * 24)) > 7 &&
+                      lead.temperature !== 'cold';
+
+                    return (
+                      <tr
+                        key={lead.id}
+                        className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors"
+                      >
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-white">
+                            {lead.firstName} {lead.lastName}
+                          </div>
+                          <div className="text-xs text-slate-500">#{lead.id.slice(0, 8)}</div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-300 text-sm">
+                          {lead.email}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            {getTemperatureBadge(lead.temperature)}
+                            {needsFollowup && (
+                              <span className="text-amber-400 text-xs">⏰</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-xs space-y-1">
+                          <div className="text-slate-400">📤 {lead.emailsSent} envoyés</div>
+                          <div className="text-green-400">👁️ {lead.opensCount || 0} ouvertures</div>
+                          <div className="text-blue-400">🖱️ {lead.clicksCount || 0} clics</div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-300 text-sm">
+                          {lead.lastActivity ? formatDate(lead.lastActivity) : 'Jamais'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Changer température */}
+                            <select
+                              value={lead.temperature}
+                              onChange={(e) => onUpdateLeadTemperature(lead.id, e.target.value as 'hot' | 'warm' | 'cold')}
+                              className="bg-slate-700 text-white text-xs rounded px-2 py-1 border border-slate-600 focus:border-blue-500 focus:outline-none"
+                            >
+                              <option value="hot">🔥 Chaud</option>
+                              <option value="warm">🌡️ Tiède</option>
+                              <option value="cold">❄️ Froid</option>
+                            </select>
+
+                            {/* Envoyer email */}
+                            <button
+                              onClick={() => handleSendEmail(lead.id, lead.email)}
+                              className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-sm transition-colors"
+                            >
+                              📧
+                            </button>
+
+                            {/* Supprimer */}
+                            <button
+                              onClick={() => onDeleteLead(lead.id)}
+                              className="px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-sm transition-colors"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-8 text-center">
+              <span className="text-4xl block mb-2">📭</span>
+              <p className="text-slate-400 font-bold">Aucun lead trouvé</p>
+              <p className="text-sm text-slate-500 mt-1">
+                {searchTerm || temperatureFilter !== 'all' || showPendingOnly
+                  ? 'Essayez de modifier vos filtres'
+                  : 'Importez vos premiers leads'}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Contenu Campagnes */}
+      {activeTab === 'campaigns' && (
+        <div className="space-y-4">
+          <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-8 text-center">
+            <span className="text-4xl block mb-2">📨</span>
+            <p className="text-slate-400 font-bold mb-4">Créer une nouvelle campagne</p>
+            {onCreateCampaign && (
+              <button
+                onClick={onCreateCampaign}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold transition-colors"
+              >
+                ➕ Nouvelle campagne
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Contenu Flows */}
+      {activeTab === 'flows' && emailFlows && (
+        <div className="space-y-4">
+          {/* Stats flows */}
+          {flowStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/30">
+                <div className="text-slate-400 text-xs uppercase mb-1">Total flows</div>
+                <div className="text-2xl font-bold text-white">{flowStats.total}</div>
+              </div>
+              <div className="bg-green-500/10 rounded-lg p-4 border border-green-500/30">
+                <div className="text-green-400 text-xs uppercase mb-1">Actifs</div>
+                <div className="text-2xl font-bold text-green-300">{flowStats.active}</div>
+              </div>
+              <div className="bg-slate-500/10 rounded-lg p-4 border border-slate-500/30">
+                <div className="text-slate-400 text-xs uppercase mb-1">En pause</div>
+                <div className="text-2xl font-bold text-slate-300">{flowStats.paused}</div>
+              </div>
+              <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-500/30">
+                <div className="text-blue-400 text-xs uppercase mb-1">Leads inscrits</div>
+                <div className="text-2xl font-bold text-blue-300">{flowStats.totalLeadsInFlows}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Liste flows */}
+          {emailFlows.length > 0 ? (
+            <div className="space-y-3">
+              {emailFlows.map((flow) => (
+                <div
+                  key={flow.id}
+                  className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-4 hover:border-slate-600 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="font-bold text-white">{flow.name}</h4>
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          flow.active
+                            ? 'bg-green-500/20 text-green-300'
+                            : 'bg-slate-500/20 text-slate-300'
+                        }`}>
+                          {flow.active ? '✅ Actif' : '⏸️ Pause'}
+                        </span>
+                      </div>
+                      {flow.description && (
+                        <p className="text-sm text-slate-400 mb-2">{flow.description}</p>
+                      )}
+                      <div className="flex gap-4 text-xs text-slate-500">
+                        <span>📧 {flow.emailsCount || 0} emails</span>
+                        <span>👥 {flow.leadsCount || 0} leads</span>
+                        <span>📅 {formatDate(flow.createdAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-8 text-center">
+              <span className="text-4xl block mb-2">🔄</span>
+              <p className="text-slate-400 font-bold">Aucun flow configuré</p>
+              <p className="text-sm text-slate-500 mt-1">Créez votre premier flow automatisé</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Résumé filtrage */}
+      {activeTab === 'leads' && (searchTerm || temperatureFilter !== 'all' || showPendingOnly) && (
+        <div className="mt-4 text-sm text-slate-400 text-center">
+          {filteredLeads.length} résultat(s) sur {leads.length} lead(s)
+        </div>
+      )}
+    </div>
+  );
+};
+import React, { useState, useMemo } from 'react';
+import { DecisionLogsProps, DecisionLog } from './types';
+import { formatDate } from './utils';
+
+export const DecisionLogs: React.FC<DecisionLogsProps> = ({ logs }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [actionFilter, setActionFilter] = useState<'all' | 'force_sign' | 'delete' | 'override'>('all');
+  const [showRecent, setShowRecent] = useState(true);
+
+  // Filtrer les logs
+  const filteredLogs = useMemo(() => {
+    let filtered = logs;
+
+    // Filtre par type d'action
+    if (actionFilter !== 'all') {
+      filtered = filtered.filter(log => log.action === actionFilter);
+    }
+
+    // Recherche
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(log =>
+        log.studyId.toLowerCase().includes(term) ||
+        (log.studyName && log.studyName.toLowerCase().includes(term)) ||
+        (log.reason && log.reason.toLowerCase().includes(term)) ||
+        log.action.toLowerCase().includes(term)
+      );
+    }
+
+    // Filtre récent (dernières 24h)
+    if (showRecent) {
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      filtered = filtered.filter(log => new Date(log.timestamp).getTime() > oneDayAgo);
+    }
+
+    // Tri par date décroissante
+    return filtered.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [logs, actionFilter, searchTerm, showRecent]);
+
+  // Stats des logs
+  const stats = useMemo(() => {
+    const forceSign = logs.filter(l => l.action === 'force_sign').length;
+    const deletes = logs.filter(l => l.action === 'delete').length;
+    const overrides = logs.filter(l => l.action === 'override').length;
+    const today = logs.filter(l => {
+      const logDate = new Date(l.timestamp);
+      const today = new Date();
+      return logDate.toDateString() === today.toDateString();
+    }).length;
+
+    return {
+      total: logs.length,
+      forceSign,
+      deletes,
+      overrides,
+      today
+    };
+  }, [logs]);
+
+  const getActionBadge = (action: string) => {
+    switch (action) {
+      case 'force_sign':
+        return <span className="px-2 py-1 bg-green-500/20 text-green-300 rounded text-xs font-bold">✅ Signature forcée</span>;
+      case 'delete':
+        return <span className="px-2 py-1 bg-red-500/20 text-red-300 rounded text-xs font-bold">🗑️ Suppression</span>;
+      case 'override':
+        return <span className="px-2 py-1 bg-orange-500/20 text-orange-300 rounded text-xs font-bold">⚠️ Override</span>;
+      case 'status_change':
+        return <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">🔄 Changement statut</span>;
+      case 'priority_change':
+        return <span className="px-2 py-1 bg-purple-500/20 text-purple-300 rounded text-xs">🔥 Changement priorité</span>;
+      default:
+        return <span className="px-2 py-1 bg-slate-500/20 text-slate-300 rounded text-xs">📝 {action}</span>;
+    }
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'force_sign':
+        return '✅';
+      case 'delete':
+        return '🗑️';
+      case 'override':
+        return '⚠️';
+      case 'status_change':
+        return '🔄';
+      case 'priority_change':
+        return '🔥';
+      default:
+        return '📝';
+    }
+  };
+
+  return (
+    <div className="glass border border-slate-700/40 hover:border-slate-600 p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+          <span className="text-3xl">📋</span>
+          LOGS DE DÉCISIONS
+        </h2>
+        <div className="text-sm text-slate-400">
+          Traçabilité complète · Audit des actions critiques
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+        <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/30">
+          <div className="text-slate-400 text-xs uppercase mb-1">Total</div>
+          <div className="text-2xl font-bold text-white">{stats.total}</div>
+        </div>
+        <div className="bg-green-500/10 rounded-lg p-3 border border-green-500/30">
+          <div className="text-green-400 text-xs uppercase mb-1">✅ Signatures</div>
+          <div className="text-2xl font-bold text-green-300">{stats.forceSign}</div>
+        </div>
+        <div className="bg-red-500/10 rounded-lg p-3 border border-red-500/30">
+          <div className="text-red-400 text-xs uppercase mb-1">🗑️ Suppressions</div>
+          <div className="text-2xl font-bold text-red-300">{stats.deletes}</div>
+        </div>
+        <div className="bg-orange-500/10 rounded-lg p-3 border border-orange-500/30">
+          <div className="text-orange-400 text-xs uppercase mb-1">⚠️ Overrides</div>
+          <div className="text-2xl font-bold text-orange-300">{stats.overrides}</div>
+        </div>
+        <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
+          <div className="text-blue-400 text-xs uppercase mb-1">Aujourd'hui</div>
+          <div className="text-2xl font-bold text-blue-300">{stats.today}</div>
+        </div>
+      </div>
+
+      {/* Filtres */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Recherche */}
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="🔍 Rechercher par dossier, action ou raison..."
+          className="flex-1 bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-2 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none"
+        />
+
+        {/* Filtres d'action */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActionFilter('all')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              actionFilter === 'all'
+                ? 'bg-slate-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            Toutes
+          </button>
+          <button
+            onClick={() => setActionFilter('force_sign')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              actionFilter === 'force_sign'
+                ? 'bg-green-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            ✅ Signatures
+          </button>
+          <button
+            onClick={() => setActionFilter('delete')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              actionFilter === 'delete'
+                ? 'bg-red-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            🗑️ Suppressions
+          </button>
+          <button
+            onClick={() => setActionFilter('override')}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              actionFilter === 'override'
+                ? 'bg-orange-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            ⚠️ Overrides
+          </button>
+          <button
+            onClick={() => setShowRecent(!showRecent)}
+            className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
+              showRecent
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            🕐 {showRecent ? '24h' : 'Tout'}
+          </button>
+        </div>
+      </div>
+
+      {/* Timeline des logs */}
+      {filteredLogs.length > 0 ? (
+        <div className="space-y-3">
+          {filteredLogs.map((log) => (
+            <div
+              key={log.id}
+              className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-4 hover:border-slate-600 transition-colors"
+            >
+              <div className="flex items-start gap-4">
+                {/* Icône */}
+                <div className="flex-shrink-0 w-10 h-10 bg-slate-700/50 rounded-full flex items-center justify-center text-xl">
+                  {getActionIcon(log.action)}
+                </div>
+
+                {/* Contenu */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {getActionBadge(log.action)}
+                        <span className="text-xs text-slate-500">
+                          {formatDate(log.timestamp)}
+                        </span>
+                      </div>
+                      {log.studyName && (
+                        <div className="font-bold text-white mb-1">
+                          {log.studyName}
+                        </div>
+                      )}
+                      <div className="text-xs text-slate-500">
+                        Dossier #{log.studyId.slice(0, 8)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Détails de l'action */}
+                  {log.details && (
+                    <div className="text-sm text-slate-300 mb-2">
+                      {log.details}
+                    </div>
+                  )}
+
+                  {/* Raison / Justification */}
+                  {log.reason && (
+                    <div className="bg-slate-900/50 border border-slate-700/50 rounded p-3 text-sm">
+                      <div className="text-slate-400 text-xs uppercase mb-1">Justification :</div>
+                      <div className="text-slate-300">{log.reason}</div>
+                    </div>
+                  )}
+
+                  {/* Métadonnées */}
+                  {log.metadata && (
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      {log.metadata.previousStatus && (
+                        <span className="text-slate-500">
+                          De : {log.metadata.previousStatus}
+                        </span>
+                      )}
+                      {log.metadata.newStatus && (
+                        <span className="text-slate-500">
+                          → {log.metadata.newStatus}
+                        </span>
+                      )}
+                      {log.metadata.price && (
+                        <span className="text-green-400">
+                          💰 {log.metadata.price}€
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-slate-800/50 border border-slate-700/30 rounded-lg p-8 text-center">
+          <span className="text-4xl block mb-2">📭</span>
+          <p className="text-slate-400 font-bold">Aucun log trouvé</p>
+          <p className="text-sm text-slate-500 mt-1">
+            {searchTerm || actionFilter !== 'all'
+              ? 'Essayez de modifier vos filtres'
+              : showRecent
+              ? 'Aucune action dans les dernières 24h'
+              : 'Aucune action enregistrée'}
+          </p>
+        </div>
+      )}
+
+      {/* Résumé filtrage */}
+      {(searchTerm || actionFilter !== 'all') && (
+        <div className="mt-4 text-sm text-slate-400 text-center">
+          {filteredLogs.length} résultat(s) sur {logs.length} log(s)
+        </div>
+      )}
+
+      {/* Info sécurité */}
+      <div className="mt-6 bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">🔒</span>
+          <div>
+            <div className="text-blue-400 font-bold text-sm mb-1">Sécurité & Traçabilité</div>
+            <div className="text-xs text-blue-300/70">
+              Tous les logs sont horodatés et immuables. Toutes les actions critiques nécessitent une justification.
+              Les logs sont conservés indéfiniment pour l'audit.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+import React, { useState } from 'react';
+import { OverrideModalProps } from './types';
+
+export const OverrideModal: React.FC<OverrideModalProps> = ({
+  isOpen,
+  title,
+  message,
+  studyName,
+  actionType,
+  onConfirm,
+  onCancel
+}) => {
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    if (!reason.trim()) {
+      alert('⚠️ Veuillez fournir une justification');
+      return;
+    }
+
+    if (reason.trim().length < 10) {
+      alert('⚠️ La justification doit contenir au moins 10 caractères');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await onConfirm(reason.trim());
+      setReason('');
+    } catch (error) {
+      console.error('Error confirming override:', error);
+      alert('❌ Erreur lors de la confirmation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setReason('');
+    onCancel();
+  };
+
+  const getActionColor = () => {
+    switch (actionType) {
+      case 'force_sign':
+        return 'green';
+      case 'delete':
+        return 'red';
+      case 'override':
+        return 'orange';
+      default:
+        return 'blue';
+    }
+  };
+
+  const color = getActionColor();
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-slate-900 border-2 border-slate-700 rounded-xl max-w-2xl w-full shadow-2xl animate-slideUp">
+        {/* Header */}
+        <div className={`bg-${color}-500/20 border-b-2 border-${color}-500/50 p-6`}>
+          <div className="flex items-start justify-between">
+            <div>
+              <h3 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+                {actionType === 'force_sign' && '✅'}
+                {actionType === 'delete' && '🗑️'}
+                {actionType === 'override' && '⚠️'}
+                {title}
+              </h3>
+              {studyName && (
+                <div className="text-sm text-slate-300">
+                  Dossier : <span className="font-bold">{studyName}</span>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={handleCancel}
+              disabled={loading}
+              className="text-slate-400 hover:text-white transition-colors disabled:opacity-50"
+            >
+              <span className="text-2xl">✕</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 space-y-6">
+          {/* Message */}
+          {message && (
+            <div className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4">
+              <p className="text-slate-300 leading-relaxed">{message}</p>
+            </div>
+          )}
+
+          {/* Avertissement */}
+          <div className={`bg-${color}-500/10 border border-${color}-500/30 rounded-lg p-4`}>
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div>
+                <div className={`text-${color}-400 font-bold text-sm mb-1`}>
+                  Action critique - Justification requise
+                </div>
+                <div className={`text-${color}-300/70 text-xs`}>
+                  Cette action sera enregistrée dans les logs de décisions avec votre justification.
+                  Assurez-vous que cette action est nécessaire et justifiée.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Champ de justification */}
+          <div>
+            <label className="block text-sm font-bold text-white mb-2">
+              Justification obligatoire :
+            </label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Expliquez pourquoi cette action est nécessaire (minimum 10 caractères)..."
+              rows={4}
+              disabled={loading}
+              className="w-full bg-slate-800/50 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none resize-none disabled:opacity-50"
+            />
+            <div className="mt-1 text-xs text-slate-500 flex items-center justify-between">
+              <span>Caractères : {reason.length}/200</span>
+              {reason.length < 10 && reason.length > 0 && (
+                <span className="text-red-400">Minimum 10 caractères requis</span>
+              )}
+            </div>
+          </div>
+
+          {/* Exemples de justifications */}
+          <div className="bg-slate-800/30 border border-slate-700/30 rounded-lg p-4">
+            <div className="text-xs text-slate-400 mb-2">💡 Exemples de justifications valides :</div>
+            <ul className="text-xs text-slate-500 space-y-1 list-disc list-inside">
+              <li>Client a confirmé par téléphone, signature papier reçue</li>
+              <li>Dossier en doublon, client déjà traité sous un autre ID</li>
+              <li>Demande expresse du client de procéder immédiatement</li>
+              <li>Erreur de saisie détectée, correction nécessaire</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-slate-800/50 border-t border-slate-700 p-6 flex items-center justify-end gap-3">
+          <button
+            onClick={handleCancel}
+            disabled={loading}
+            className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold transition-colors disabled:opacity-50"
+          >
+            ❌ Annuler
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={loading || reason.trim().length < 10}
+            className={`px-6 py-3 bg-${color}-600 hover:bg-${color}-500 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2`}
+          >
+            {loading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Traitement...
+              </>
+            ) : (
+              <>
+                {actionType === 'force_sign' && '✅ Confirmer signature'}
+                {actionType === 'delete' && '🗑️ Confirmer suppression'}
+                {actionType === 'override' && '⚠️ Confirmer override'}
+                {!actionType && '✓ Confirmer'}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Styles pour les animations (à ajouter dans le CSS global ou tailwind.config)
+const styles = `
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slideUp {
+  animation: slideUp 0.3s ease-out;
+}
+`;
+import React from 'react';
+import { HeaderProps } from './types';
+
+export const Header: React.FC<HeaderProps> = ({
+  zenMode,
+  priorityMode,
+  onToggleZenMode,
+  onTogglePriorityMode,
+  onRefresh,
+  lastRefresh,
+  systemStatus = 'normal'
+}) => {
+  const getStatusColor = () => {
+    switch (systemStatus) {
+      case 'critical':
+        return 'bg-red-500';
+      case 'warning':
+        return 'bg-orange-500';
+      case 'active':
+        return 'bg-green-500';
+      default:
+        return 'bg-blue-500';
+    }
+  };
+
+  const getStatusLabel = () => {
+    switch (systemStatus) {
+      case 'critical':
+        return 'CRITIQUE';
+      case 'warning':
+        return 'ATTENTION';
+      case 'active':
+        return 'ACTIF';
+      default:
+        return 'NORMAL';
+    }
+  };
+
+  return (
+    <header className="glass border-b border-slate-700/40 sticky top-0 z-40 backdrop-blur-xl">
+      <div className="container mx-auto px-6 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo et titre */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/50">
+                <span className="text-2xl">⚡</span>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-white">
+                  AUTOPILOTE SOLAIRE
+                </h1>
+                <div className="text-xs text-slate-400">
+                  Nicolas Di Stefano · Dashboard Commercial
+                </div>
+              </div>
+            </div>
+
+            {/* Statut système */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700/30">
+              <div className={`w-2 h-2 rounded-full ${getStatusColor()} animate-pulse`}></div>
+              <span className="text-sm font-bold text-slate-300">{getStatusLabel()}</span>
+            </div>
+          </div>
+
+          {/* Contrôles */}
+          <div className="flex items-center gap-3">
+            {/* Dernier refresh */}
+            {lastRefresh && (
+              <div className="hidden md:block text-xs text-slate-500">
+                Actualisé : {new Date(lastRefresh).toLocaleTimeString('fr-FR')}
+              </div>
+            )}
+
+            {/* Bouton refresh */}
+            <button
+              onClick={onRefresh}
+              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold text-sm transition-colors flex items-center gap-2"
+              title="Actualiser les données"
+            >
+              <span className="text-lg">🔄</span>
+              <span className="hidden md:inline">Actualiser</span>
+            </button>
+
+            {/* Mode priorité */}
+            <button
+              onClick={onTogglePriorityMode}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+                priorityMode
+                  ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/50'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 border border-slate-700/30'
+              }`}
+              title={priorityMode ? 'Désactiver mode priorité' : 'Activer mode priorité'}
+            >
+              <span className="text-lg">🔥</span>
+              <span className="hidden md:inline">
+                {priorityMode ? 'Mode Priorité' : 'Priorité'}
+              </span>
+            </button>
+
+            {/* Mode zen */}
+            <button
+              onClick={onToggleZenMode}
+              className={`px-4 py-2 rounded-lg font-bold text-sm transition-all flex items-center gap-2 ${
+                zenMode
+                  ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/50'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700 border border-slate-700/30'
+              }`}
+              title={zenMode ? 'Désactiver mode zen' : 'Activer mode zen'}
+            >
+              <span className="text-lg">🧘</span>
+              <span className="hidden md:inline">
+                {zenMode ? 'Mode Zen' : 'Zen'}
+              </span>
+            </button>
+
+            {/* Menu utilisateur */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-lg border border-slate-700/30">
+              <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center font-bold text-white text-sm">
+                ND
+              </div>
+              <div className="hidden lg:block">
+                <div className="text-sm font-bold text-white">Nicolas</div>
+                <div className="text-xs text-slate-400">Admin</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Barre d'info modes actifs */}
+        {(zenMode || priorityMode) && (
+          <div className="mt-3 flex items-center gap-2">
+            {zenMode && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded-lg text-xs">
+                <span>🧘</span>
+                <span className="text-purple-300">Mode Zen activé : Interface simplifiée</span>
+              </div>
+            )}
+            {priorityMode && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-orange-500/20 border border-orange-500/30 rounded-lg text-xs">
+                <span>🔥</span>
+                <span className="text-orange-300">Mode Priorité activé : Focus sur HOTs et urgences</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </header>
+  );
+};
+// Types pour EmailAutomation
+export interface EmailAutomationProps {
+  leads: EmailLead[];
+  emailFlows?: EmailFlow[];
+  onSendEmail: (leadId: string) => Promise<void>;
+  onUpdateLeadTemperature: (leadId: string, temperature: 'hot' | 'warm' | 'cold') => Promise<void>;
+  onDeleteLead: (leadId: string) => Promise<void>;
+  onCreateCampaign?: () => void;
+}
+
+export interface EmailLead {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  temperature: 'hot' | 'warm' | 'cold';
+  lastEmailSent?: string;
+  emailsSent: number;
+  clicksCount: number;
+  opensCount: number;
+  lastActivity?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailFlow {
+  id: string;
+  name: string;
+  description?: string;
+  active: boolean;
+  emailsCount?: number;
+  leadsCount?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Types pour DecisionLogs
+export interface DecisionLogsProps {
+  logs: DecisionLog[];
+}
+
+export interface DecisionLog {
+  id: string;
+  studyId: string;
+  studyName?: string;
+  action: 'force_sign' | 'delete' | 'override' | 'status_change' | 'priority_change' | string;
+  reason?: string;
+  details?: string;
+  timestamp: string;
+  metadata?: {
+    previousStatus?: string;
+    newStatus?: string;
+    price?: number;
+    [key: string]: any;
+  };
+}
+
+// Types pour OverrideModal
+export interface OverrideModalProps {
+  isOpen: boolean;
+  title: string;
+  message?: string;
+  studyName?: string;
+  actionType?: 'force_sign' | 'delete' | 'override';
+  onConfirm: (reason: string) => Promise<void>;
+  onCancel: () => void;
+}
+
+// Types pour Header
+export interface HeaderProps {
+  zenMode: boolean;
+  priorityMode: boolean;
+  onToggleZenMode: () => void;
+  onTogglePriorityMode: () => void;
+  onRefresh: () => Promise<void>;
+  lastRefresh?: Date;
+  systemStatus?: 'normal' | 'active' | 'warning' | 'critical';
+}
+
+// Types complémentaires pour l'email automation
+export interface EmailCampaign {
+  id: string;
+  name: string;
+  subject: string;
+  emailFlowId?: string;
+  scheduledDate?: string;
+  sentDate?: string;
+  status: 'draft' | 'scheduled' | 'sent' | 'cancelled';
+  recipientsCount: number;
+  opensCount: number;
+  clicksCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body: string;
+  variables: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Types pour les statistiques d'emails
+export interface EmailStats {
+  total: number;
+  hot: number;
+  warm: number;
+  cold: number;
+  contacted: number;
+  pending: number;
+  totalSent: number;
+  openRate: number;
+  clickRate: number;
+}
+
+export interface FlowStats {
+  total: number;
+  active: number;
+  paused: number;
+  totalLeadsInFlows: number;
+}
+
+
+// ============================================
+// AUTOPILOTE SOLAIRE - COMPOSANTS REACT
+// Migration complète HTML → React
+// Nicolas Di Stefano
+// ============================================
+
+// PARTIE 1 - Fondations
+export { default as types } from './types';
+export { default as utils } from './utils';
+export { default as useDashboard } from './useDashboard';
+
+// PARTIE 2 - War Room & État système
+export { SystemState } from './SystemState';
+export { CriticalAlert } from './CriticalAlert';
+export { WarRoom } from './WarRoom';
+
+// PARTIE 3 - Axe A : Gestion administrative
+export { SignedStudies } from './SignedStudies';
+export { GlobalStats } from './GlobalStats';
+
+// PARTIE 4 - Axe B : Pipeline actif
+export { Pipeline } from './Pipeline';
+export { StatsGrid } from './StatsGrid';
+
+// PARTIE 5 - Axe C : Email automation + Logs
+export { EmailAutomation } from './EmailAutomation';
+export { DecisionLogs } from './DecisionLogs';
+export { OverrideModal } from './OverrideModal';
+export { Header } from './Header';
+
+// Types exports
+export type {
+  // Types de base
+  Study,
+  Client,
+  EmailLead,
+  EmailFlow,
+  DecisionLog,
+  
+  // Props des composants
+  SystemStateProps,
+  CriticalAlertProps,
+  WarRoomProps,
+  SignedStudiesProps,
+  GlobalStatsProps,
+  PipelineProps,
+  StatsGridProps,
+  EmailAutomationProps,
+  DecisionLogsProps,
+  OverrideModalProps,
+  HeaderProps,
+  
+  // Métriques et stats
+  EduMetrics,
+  GlobalStatistics,
+  PipelineStats,
+  EmailStats,
+  FlowStats,
+  MonthlyData
+} from './types';
+
+// ============================================
+// USAGE EXAMPLE
+// ============================================
+/*
+import React from 'react';
+import {
+  Header,
+  SystemState,
+  CriticalAlert,
+  WarRoom,
+  Pipeline,
+  SignedStudies,
+  EmailAutomation,
+  DecisionLogs,
+  GlobalStats,
+  StatsGrid,
+  OverrideModal,
+  useDashboard
+} from './components';
+
+function Dashboard() {
+  const {
+    studies,
+    leads,
+    logs,
+    emailFlows,
+    loading,
+    error,
+    actions
+  } = useDashboard();
+
+  const [zenMode, setZenMode] = useState(false);
+  const [priorityMode, setPriorityMode] = useState(false);
+  const [showOverride, setShowOverride] = useState(false);
+
+  if (loading) return <div>Chargement...</div>;
+  if (error) return <div>Erreur: {error}</div>;
+
+  return (
+    <div className="min-h-screen bg-slate-950">
+      <Header
+        zenMode={zenMode}
+        priorityMode={priorityMode}
+        onToggleZenMode={() => setZenMode(!zenMode)}
+        onTogglePriorityMode={() => setPriorityMode(!priorityMode)}
+        onRefresh={actions.refresh}
+      />
+
+      <main className="container mx-auto px-6 py-8 space-y-8">
+        <SystemState {...systemStateData} />
+        <WarRoom {...warRoomData} />
+        <Pipeline studies={studies} {...pipelineActions} />
+        <SignedStudies studies={studies} {...signedActions} />
+        <EmailAutomation leads={leads} {...emailActions} />
+        <DecisionLogs logs={logs} />
+        <GlobalStats studies={studies} />
+        <StatsGrid studies={studies} leads={leads} />
+      </main>
+
+      <OverrideModal
+        isOpen={showOverride}
+        {...overrideProps}
+      />
+    </div>
+  );
+}
+*/
+

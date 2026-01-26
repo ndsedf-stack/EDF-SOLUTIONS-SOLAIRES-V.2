@@ -144,7 +144,7 @@ intelligence business
    ✔ un moteur comportemental ✔ un système de détection de risques ✔ une segmentation dynamique ✔ une war room financière ✔ une mémoire décisionnelle ✔ un cockpit temps réel
 
 10. TRAJECTOIRE NATURELLE DU SYSTÈME
-    Phase 1 — Stabilisation : fiabiliser règles, nettoyer data, consolider cockpit.
+    Phase 1 — Stabilisation : fiabiliser règles, nettoyer data, consolider cockpit. [COMPLÉTÉ : Architecture purifiée Brain/UI]
 
 Phase 2 — Intelligence : score de tension global, score client, historique.
 
@@ -295,3 +295,359 @@ Le cockpit est un organe vital.
 
 🧠 CONCLUSION
 Ce projet est un système d’exploitation commercial. Il observe, qualifie, hiérarchise et protège.
+
+🧠 AUTOPILOTE SOLAIRE
+System Brain — Charte officielle & README fondateur
+Business Control System
+🎯 POSITIONNEMENT FONDAMENTAL
+AUTOPILOTE SOLAIRE n’est pas :
+un CRM
+un dashboard
+un outil de stats
+un outil marketing
+AUTOPILOTE SOLAIRE est :
+👉 un système nerveux opérationnel
+👉 un outil de protection de décisions commerciales
+👉 un poste de pilotage comportemental
+👉 un amplificateur de conscience humaine
+
+Son rôle n’est pas de gérer des dossiers.
+Son rôle est de réduire l’entropie commerciale.
+
+🧠 CE QUE PILOTE LE SYSTÈME
+AUTOPILOTE ne pilote pas :
+du chiffre
+des leads
+des colonnes CRM
+Il pilote :
+des décisions déjà prises
+des états psychologiques clients
+des zones de fragilité contractuelle
+des dynamiques de dérive ou de solidification
+🧩 RÉALITÉ BUSINESS DE RÉFÉRENCE
+Le business fonctionne en 3 axes biologiques :
+🅐 AXE A — CLIENTS SIGNÉS (zone vitale)
+RDV one-shot
+décision prise chez le client
+création du dossier Supabase
+déclenchement automatique d’une séquence anti-annulation (≈5–6 emails sur 14 jours)
+emails visibles dans le dashboard (étapes, ouvertures, clics)
+aucun envoi d’étude
+tout est juridiquement annulable pendant 14 jours
+👉 Ce sont des décisions fragiles, pas des ventes.
+Le vrai risque n’est pas financier.
+Le vrai risque est cognitif et comportemental.
+
+🅑 AXE B — NON SIGNÉS (zone d’opportunité courte)
+étude laissée via GuestView
+étude valide ~7 jours
+séquence automatique post-refus (≈4 emails)
+pédagogie, clarification, dernière chance
+observation des clics et ouvertures
+👉 Ce ne sont pas des prospects.
+Ce sont des décisions non prises encore thermiquement actives.
+🅒 AXE C — LEADS (zone de culture)
+nurturing automatique
+2 emails / semaine
+opt-out
+aucun enjeu immédiat
+lecture comportementale uniquement
+👉 Ce sont des réservoirs d’intérêt, pas des dossiers.
+🧠 CHARTE OFFICIELLE — RÈGLES DU SYSTEM BRAIN
+I. Le centre du monde est le signé annulable
+Un client signé n’est pas un client.
+C’est une hypothèse psychologique fragile.
+La WAR ROOM est le cœur biologique du système.
+
+II. Le système est orienté perte, pas performance
+AUTOPILOTE cherche d’abord à :
+👉 empêcher les décisions de se dégrader.
+
+Pas à optimiser.
+Pas à faire des stats.
+Pas à embellir.
+
+III. Le comportement est la réalité
+Le cerveau ne lit pas des statuts.
+Il lit :
+silence
+agitation
+inertie
+intérêt
+dérive
+Le comportement est la matière première.
+IV. Le temps est une force hostile
+Chaque jour sans signal post-signature est un facteur de risque.
+Le cerveau traite le temps comme une pression négative.
+
+V. L’argent n’est pas le centre. La solidité l’est.
+Les acomptes ne sont pas du cash.
+Ce sont des signaux d’engagement cognitif.
+
+Ils modulent la vigilance, jamais la conscience.
+
+VI. Le cerveau pense en zones, pas en pipelines
+Il existe trois zones biologiques :
+fragile (signés)
+opportunité (non signés)
+culture (leads)
+Chaque zone a ses propres lois.
+VII. Le cerveau est un système immunitaire
+Il détecte :
+ce que l’habitude rend invisible
+ce que le temps normalise
+ce que l’humain ne voit plus
+Son rôle est de forcer la conscience.
+VIII. Toute analyse doit produire une conscience exploitable
+Chaque cycle doit fournir au minimum :
+un état système
+une zone chaude
+un dossier prioritaire
+une lecture humaine
+Sinon le calcul est invalide.
+IX. Le cerveau n’agit pas. Il éclaire.
+AUTOPILOTE :
+observe sans fatigue
+hiérarchise sans biais
+mémorise sans perte
+Mais ne :
+négocie pas
+rassure pas
+décide pas à la place
+Il augmente l’humain.
+X. Le vrai produit est la mémoire
+Chaque décision prioritaire est loggée.
+Chaque exception devient donnée.
+
+Chaque friction devient matière.
+
+👉 Le capital d’AUTOPILOTE est sa mémoire comportementale.
+
+🧠 ARCHITECTURE MENTALE
+Le système est construit en 4 couches :
+🧬 Données → organes
+🧠 Interprétation → cerveau
+🔬 Vigilance → système immunitaire
+🛰️ Pilotage → cortex
+
+🧠 SYSTEM BRAIN — RÔLE TECHNIQUE
+(Architecture consolidée v3.1)
+`systemBrain.ts` est l'unique source de vérité.
+Il contient toute la logique : finances, risques, comportement.
+`Dashboard.tsx` n'est plus qu'une interface d'affichage ultra-légère.
+
+buildSystemBrain() est le noyau.
+Il :
+
+segmente le réel
+lit le comportement
+calcule des pressions
+détecte des dérives
+produit des priorités
+alimente prédiction, mémoire, closing assistant
+👉 L’UI n’est qu’une projection.
+📊 DASHBOARD — POSTE DE PILOTAGE
+Le cockpit répond en temps réel à :
+A. Où est une décision qui se fragilise
+B. Où un client décroche sans le dire
+C. Où un non-signé se réchauffe
+D. Dans quel état est le système
+
+Il affiche :
+
+War Room priorisée
+tension globale
+alertes
+séquences emails
+comportements
+décisions mémorisées
+🚀 TRAJECTOIRE NATURELLE
+Phase 1 — Stabilisation
+Règles fiables, data propre, cockpit clair
+Phase 2 — Intelligence
+Scores, tension, mémoire exploitable
+
+Phase 3 — Prédiction
+Annulation, inertie, timing optimal
+
+Phase 4 — Autopilote
+Priorités générées, assistance active
+
+🧠 GARDE-FOUS PRODUIT
+AUTOPILOTE ne doit jamais devenir :
+❌ un CRM bis
+❌ un outil de vanity metrics
+❌ une usine à features
+❌ une plateforme d’automation froide
+
+Toute évolution doit renforcer au moins un axe :
+
+lecture comportementale
+détection de dérive
+protection des décisions
+priorisation vitale
+🏁 CONCLUSION
+AUTOPILOTE SOLAIRE est un système d’exploitation commercial.
+Il n’organise pas.
+Il observe.
+Il détecte.
+Il hiérarchise.
+Il protège.
+
+Son objectif n’est pas de vendre plus.
+Son objectif est d’empêcher ce qui est déjà vendu de mourir.
+
+Si tu veux, prochaine étape très puissante :
+👉 on transforme ça en Charte Produit figée (PDF / Notion / manifeste)
+👉 ou en socle pour toute future IA métier
+👉 ou en document d’onboarding équipe & investisseurs
+
+Et à partir de là, tu peux faire grandir le système sans jamais le dénaturer.
+Charte Produit figée (PDF / Notion / manifeste)
+Parfait.
+Je te livre ici une CHARTE PRODUIT FIGÉE prête à être :
+collée dans Notion
+posée comme README racine
+transformée en PDF
+utilisée comme manifeste produit / doc fondateur
+C’est une version stabilisée, propre, non technique, qui fige l’ADN d’Autopilote Solaire.
+🛰️ AUTOPILOTE SOLAIRE
+CHARTE PRODUIT OFFICIELLE
+Business Control System
+🎯 POSITIONNEMENT
+AUTOPILOTE SOLAIRE n’est pas :
+un CRM
+un dashboard
+un outil marketing
+un logiciel de reporting
+AUTOPILOTE SOLAIRE est :
+👉 un système nerveux opérationnel
+👉 un outil de protection des décisions commerciales
+👉 un poste de pilotage comportemental
+👉 un amplificateur de conscience humaine
+
+Son rôle n’est pas d’organiser des dossiers.
+Son rôle est de réduire l’entropie commerciale.
+
+🧠 CE QUE PILOTE AUTOPILOTE
+AUTOPILOTE ne pilote pas :
+des leads
+des pipelines
+des chiffres
+Il pilote :
+des décisions déjà prises
+des états psychologiques clients
+des zones de fragilité contractuelle
+des dynamiques de dérive ou de solidification
+🧩 RÉALITÉ BUSINESS DE RÉFÉRENCE
+Le système est construit autour de trois zones biologiques :
+🅐 ZONE FRAGILE — CLIENTS SIGNÉS
+Décision prise en rendez-vous one-shot
+Création automatique du dossier
+Déclenchement d’une séquence anti-annulation sur 14 jours
+Suivi précis des ouvertures et clics
+Aucune étude envoyée
+Annulation juridiquement possible
+👉 Ce ne sont pas des ventes.
+👉 Ce sont des décisions humaines fragiles.
+C’est le cœur vital du système.
+
+🅑 ZONE OPPORTUNITÉ — NON SIGNÉS
+Étude laissée via GuestView
+Validité courte
+Séquence post-refus automatisée
+Lecture comportementale active
+👉 Ce ne sont pas des prospects.
+👉 Ce sont des décisions non prises encore thermiquement actives.
+🅒 ZONE CULTURE — LEADS
+Nurturing régulier (2×/semaine)
+Opt-out
+Aucune urgence
+Observation uniquement
+👉 Ce sont des réservoirs d’attention.
+🧠 LES LOIS DU SYSTEM BRAIN
+(Doctrine officielle)
+I. Le centre du monde est le signé annulable
+Un client signé est une hypothèse fragile, pas une victoire.
+II. Le système est orienté perte, pas performance
+AUTOPILOTE existe pour empêcher ce qui peut casser, pas pour embellir ce qui marche.
+III. Le comportement est la réalité
+Le silence, l’agitation et l’intérêt priment toujours sur le statut.
+IV. Le temps est une force hostile
+Chaque jour sans signal est une pression négative.
+V. La solidité prime sur l’argent
+Les acomptes sont des signaux cognitifs, jamais des sécurités mentales.
+VI. Le cerveau pense en zones, pas en pipelines
+Fragile. Opportunité. Culture.
+Chaque zone a ses lois.
+VII. Le cerveau est un système immunitaire
+Il détecte ce que l’habitude rend invisible.
+VIII. Toute intelligence doit produire une conscience exploitable
+Un état. Une alerte. Une priorité. Une lecture humaine.
+IX. Le cerveau n’agit pas. Il éclaire.
+AUTOPILOTE observe, hiérarchise et mémorise.
+L’humain agit.
+X. Le vrai produit est la mémoire
+Chaque décision crée un capital d’intelligence.
+🧠 ARCHITECTURE MENTALE
+Le système est construit en quatre couches :
+🧬 Données → capteurs
+🧠 Interprétation → cerveau
+🔬 Vigilance → système immunitaire
+🛰️ Pilotage → cockpit
+
+📊 LE COCKPIT
+Le cockpit est un instrument de guerre douce.
+Il répond en temps réel à :
+
+Où une décision se fragilise
+Où un client décroche sans le dire
+Où une opportunité renaît
+Dans quel état est le système
+Il ne montre pas des chiffres.
+Il montre des zones de conscience.
+🚀 TRAJECTOIRE NATURELLE
+Phase 1 — Stabilisation
+Règles claires, données propres, cockpit fiable
+Phase 2 — Intelligence
+Scores, tension globale, mémoire exploitable
+
+Phase 3 — Prédiction
+Annulation, dérive, timing optimal
+
+Phase 4 — Autopilote
+Priorités générées, assistance active
+
+🧠 GARDE-FOUS PRODUIT
+AUTOPILOTE ne doit jamais devenir :
+❌ un CRM bis
+❌ un outil de vanity metrics
+❌ une usine à features
+❌ une plateforme d’automation froide
+
+Toute évolution doit renforcer au moins un pilier :
+
+lecture comportementale
+détection de dérive
+protection des décisions
+priorisation vitale
+🏁 CONCLUSION
+AUTOPILOTE SOLAIRE est un système d’exploitation commercial.
+Il n’organise pas.
+Il observe.
+Il détecte.
+Il hiérarchise.
+Il protège.
+
+Son objectif n’est pas de vendre plus.
+Son objectif est d’empêcher ce qui est déjà décidé de mourir.
+
+🧠 NOTE FINALE
+Cette charte est la constitution du produit.
+Elle prime sur :
+les features
+l’UX
+la roadmap
+les demandes clients
+Si une évolution ne respecte pas cette charte,
+elle n’appartient pas à AUTOPILOTE

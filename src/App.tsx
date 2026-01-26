@@ -6,6 +6,7 @@ import { SpeechView } from "./components/SpeechView";
 import { supabase } from "./lib/supabase";
 import GuestView from "./components/GuestView";
 import { calculateGreenPositioningFromAddress } from "./greenValueEngine.ts";
+import Dashboard from "..//src/components/Dashboard";
 
 const MainApp: React.FC = () => {
   const [hasData, setHasData] = useState(false);
@@ -136,6 +137,7 @@ const App = () => (
       <Route path="/" element={<MainApp />} />
       {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
       <Route path="/guest/:studyId" element={<GuestView />} />
+      <Route path="/dashboard" element={<Dashboard />} />
     </Routes>
   </BrowserRouter>
 );

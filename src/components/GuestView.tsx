@@ -1856,7 +1856,7 @@ export default function GuestView() {
                   : safeData.detailsCash
                 )
                   .slice(0, safeData.projectionYears)
-                  .map((row) => {
+                  .map((row, idx) => {
                     const divider = tableMode === "mensuel" ? 12 : 1;
                     const noSolar = row.edfBillWithoutSolar / divider;
                     const credit = (row.creditPayment || 0) / divider;
@@ -1869,7 +1869,7 @@ export default function GuestView() {
 
                     return (
                       <tr
-                        key={row.year}
+                        key={`${row.year}-${idx}`}
                         className="border-b border-white/5 hover:bg-white/5 transition-colors"
                       >
                         <td className="py-3 px-4 text-slate-500">{row.year}</td>

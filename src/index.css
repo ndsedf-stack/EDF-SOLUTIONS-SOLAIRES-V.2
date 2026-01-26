@@ -2,235 +2,199 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "./styles/designSystem.css";
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* ✅ INSTITUTIONAL THEME */
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-  background-color: #020202;
-  color: white;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #09090b; /* Zinc 950 - Background solide et profond */
+  color: #a1a1aa; /* Zinc 400 - Texte principal plus doux */
 }
 
-/* === FIX PERMANENT POUR REACHARTS (THÈME SOMBRE) === */
+/* PANNEAU INSTITUTIONNEL - PLAT ET SÉRIEUX */
+.glass-panel {
+  background: rgba(24, 24, 27, 0.4); /* Zinc 950 avec légère transparence */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(39, 39, 42, 1); /* Zinc 800 - Bordure fine et nette */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* Ombre très légère */
+}
+
+.glass-panel:hover {
+  border-color: rgba(63, 63, 70, 0.8); /* Zinc 700 au survol */
+}
+
+/* === RECHARTS (THÈME INSTITUTIONNEL / BLOOMBERG) === */
 .recharts-line path {
-  stroke: #60a5fa !important; /* Bleu clair visible sur fond noir */
-  stroke-width: 3px !important;
+  stroke: #3b82f6 !important; /* Blue 500 - Professionnel et lisible */
+  stroke-width: 2px !important; /* Ligne plus fine et précise */
+  filter: none !important; /* PAS de glow */
 }
 
 .recharts-line-dots circle {
-  fill: #60a5fa !important;
-  stroke: #1e40af !important;
+  fill: #1e3a8a !important; /* Blue 900 */
+  stroke: #3b82f6 !important;
+  r: 3 !important; /* Points plus petits */
 }
 
 .recharts-area path {
-  fill: rgba(96, 165, 250, 0.2) !important; /* Bleu très transparent */
+  fill: rgba(59, 130, 246, 0.1) !important; /* Bleu très subtil */
 }
 
 .recharts-bar-rectangle {
-  fill: #34d399 !important; /* Vert émeraude clair */
+  fill: #10b981 !important; /* Emerald 500 - Vert standard */
 }
 
 .recharts-text {
-  fill: #e5e7eb !important; /* Gris très clair (presque blanc) */
+  fill: #71717a !important; /* Zinc 500 - Texte graphique discret */
   font-family: "Inter", sans-serif !important;
   font-weight: 500 !important;
-  font-size: 14px !important;
+  font-size: 11px !important; /* Plus petit et précis */
 }
 
 .recharts-cartesian-axis-line {
-  stroke: rgba(229, 231, 235, 0.3) !important; /* Gris clair pour axes */
+  stroke: rgba(63, 63, 70, 0.5) !important; /* Zinc 700 */
 }
 
 .recharts-cartesian-grid line {
-  stroke: rgba(229, 231, 235, 0.1) !important; /* Grille très discrète */
+  stroke: rgba(63, 63, 70, 0.2) !important;
+  stroke-dasharray: 3 3; /* Pointillés discrets */
 }
 
 .recharts-tooltip-wrapper {
-  background-color: rgba(17, 24, 39, 0.95) !important; /* Fond tooltip sombre */
-  border: 1px solid rgba(75, 85, 99, 0.5) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8) !important;
-  backdrop-filter: blur(8px) !important;
+  background-color: #18181b !important; /* Zinc 900 */
+  border: 1px solid #27272a !important; /* Zinc 800 */
+  border-radius: 4px !important; /* Coins moins arrondis */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: none !important;
 }
 
 .recharts-tooltip-label {
-  color: #60a5fa !important; /* Bleu pour les labels */
+  color: #e4e4e7 !important; /* Zinc 200 */
   font-weight: 600 !important;
+  font-size: 12px !important;
 }
 
 .recharts-tooltip-item {
-  color: #e5e7eb !important;
+  color: #a1a1aa !important; /* Zinc 400 */
+  font-size: 12px !important;
 }
 
 .recharts-legend-item-text {
-  fill: #e5e7eb !important;
-  font-size: 14px !important;
+  fill: #a1a1aa !important;
+  font-size: 12px !important;
 }
 
 .recharts-default-legend {
-  color: #e5e7eb !important;
+  color: #a1a1aa !important;
 }
 
 /* Assure la visibilité des légendes */
 .recharts-legend-item {
-  color: white !important;
+  color: #a1a1aa !important;
 }
 
 /* Pour les graphiques en secteur (pie) */
 .recharts-pie-sector {
-  stroke: #020202 !important;
-  stroke-width: 2px !important;
+  stroke: #09090b !important;
+  stroke-width: 1px !important;
 }
 
-/* === TES STYLES EXISTANTS (conservés) === */
+/* === STYLES UTILITAIRES === */
 
-/* Custom Scrollbar */
+/* Custom Scrollbar - Plus fin et sombre */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.2);
+  background: transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: #27272a; /* Zinc 800 */
+  border-radius: 3px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: #3f3f46; /* Zinc 700 */
 }
 
-/* Chart Glow Effects */
+/* Suppression des effets Neon/Glow */
 .recharts-sector {
-  filter: drop-shadow(0 0 8px currentColor);
+  filter: none !important;
 }
 
-/* Améliore le glow pour thème sombre */
-.recharts-line path {
-  filter: drop-shadow(0 0 4px rgba(96, 165, 250, 0.5));
-}
-
-/* Neon Text Shadow */
 .text-shadow-neon {
-  text-shadow: 0 0 10px currentColor;
+  text-shadow: none !important;
 }
 
-/* Card Hover Glow Transition */
+/* Card Hover - Subtil */
 .hover-card-glow {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease-out;
 }
 
 .hover-card-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 40px -10px rgba(var(--glow-color), 0.3);
-  border-color: rgba(var(--glow-color), 0.5);
+  transform: translateY(-1px);
+  border-color: #3f3f46; /* Zinc 700 */
 }
 
-/* Custom Scan Animation */
+/* Custom Scan Animation - Conservé mais atténué (pour l'urgence) */
 @keyframes scan {
   0% {
     transform: translateY(-100%);
     opacity: 0;
   }
   15% {
-    opacity: 1;
+    opacity: 0.5;
   }
   85% {
-    opacity: 1;
+    opacity: 0.5;
   }
   100% {
     transform: translateY(300%);
     opacity: 0;
   }
 }
-/* === ANIMATIONS POUR BILAN TOTAL SUR 20 ANS === */
 
-/* Animation shimmer (effet brillant qui se déplace) */
+/* === ANIMATIONS DISCRÈTES === */
+
 @keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .animate-shimmer {
   animation: shimmer 3s ease-in-out infinite;
 }
 
-/* Animation pulse-glow (pulsation lumineuse) */
-@keyframes pulse-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
-  }
+/* Pulse très discret pour urgences */
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+.animate-pulse {
+  animation: pulse-subtle 3s ease-in-out infinite;
 }
 
-/* Animation pour les barres (apparition progressive) */
-@keyframes bar-fill {
-  from {
-    width: 0%;
-  }
-  to {
-    width: var(--bar-width);
-  }
-}
+/* Suppression des animations trop voyantes */
+.animate-pulse-glow { animation: none; }
+.glow-emerald { box-shadow: none; }
+.glow-emerald:hover { box-shadow: none; }
+.btn-premium-glow:hover { box-shadow: none; filter: brightness(1.05); }
 
-.animate-bar-fill {
-  animation: bar-fill 1.5s ease-out forwards;
-}
+/* ============================================================ */
+/* FORCE HIDE : MASQUAGE ÉLÉMENTS INDÉSIRABLES */
+/* ============================================================ */
 
-/* Animation flottement doux pour les badges */
-@keyframes float-badge {
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-.animate-float {
-  animation: float-badge 3s ease-in-out infinite;
-}
-
-/* Glow pour le badge de différence */
-.glow-emerald {
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3), 0 0 40px rgba(16, 185, 129, 0.1),
-    inset 0 0 20px rgba(16, 185, 129, 0.05);
-}
-
-.glow-emerald:hover {
-  box-shadow: 0 0 30px rgba(16, 185, 129, 0.5), 0 0 60px rgba(16, 185, 129, 0.2),
-    inset 0 0 30px rgba(16, 185, 129, 0.1);
-}
-
-/* Effet de brillance au survol pour les boutons de validation */
-.btn-premium-glow:hover {
-  box-shadow: 0 0 25px rgba(var(--btn-rgb), 0.4);
-  filter: brightness(1.1);
-}
-/* ============================================================
-   FORCE HIDE : SUPPRESSION RADICALE DU BOUTON DROITE & COACH
-   ============================================================ */
-
-/* 1. ON TUE LE BOUTON À DROITE (L'input Standard de la photo) */
-/* On cible la classe exacte que tu as trouvée dans l'inspecteur */
+/* 1. Masquer Input Photo / Selecteur Haut Droite */
 .absolute.top-4.right-4.text-xs,
 div[class*="top-4"][class*="right-4"] select,
 select.bg-black.border-white\/20 {
@@ -240,34 +204,27 @@ select.bg-black.border-white\/20 {
   pointer-events: none !important;
 }
 
-/* 2. GESTION DU MASQUAGE DU COACH (MODE PRÉSENTATION) */
-/* Par défaut, on cache le coach pour le client (Plein écran / HDMI) */
+/* 2. Coach (Présentation) */
 .presenter-only-view {
   display: none !important;
 }
 
-/* On ne l'affiche QUE si la fenêtre est réduite (Ton écran PC de contrôle) */
-/* J'ai mis 1450px pour être large : au-dessus de ça, il disparaît */
 @media screen and (max-width: 1450px) {
   .presenter-only-view {
     display: block !important;
     position: fixed !important;
     bottom: 20px !important;
     right: 20px !important;
-    z-index: 999999 !important; /* On le met tout en haut */
+    z-index: 999999 !important;
   }
 }
+
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
+
 .edf-numbers {
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.01em;
 }
