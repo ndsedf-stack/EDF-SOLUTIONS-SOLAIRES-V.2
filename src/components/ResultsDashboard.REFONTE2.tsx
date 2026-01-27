@@ -34,6 +34,7 @@ import { useParams } from "react-router-dom"; // ← ajoute ça
 import { formatCurrency, formatPercent } from "../../utils/format";
 import { InfoBubble } from "../components/ui/InfoBubble";
 import ModuleTransition from "@/components/ModuleTransition";
+import StudyStatusBadge from "./StudyStatusBadge";
 
 import {
   validateSimulation,
@@ -1983,6 +1984,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [inputValue, setInputValue] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
   const [currentStudyId, setCurrentStudyId] = useState<string | null>(null);
+  const [studyStatus, setStudyStatus] = useState<string | null>(null);
   const [isSigned, setIsSigned] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
@@ -1992,6 +1994,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     data?.client_id || null
   );
   const [inputClientPhone, setInputClientPhone] = useState("");
+  const [inputCivility, setInputCivility] = useState("M./Mme");
   const [inputCommercialName, setInputCommercialName] = useState("");
   const [inputCommercialEmail, setInputCommercialEmail] = useState("");
   const [paymentType, setPaymentType] = useState("financing");
@@ -2030,7 +2033,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         inputCommercialEmail,
         inputClientId || undefined,
         inputClientEmail, // ← AJOUTÉ
-        inputClientPhone // ← AJOUTÉ
+        inputClientPhone, // ← AJOUTÉ
+        inputCivility
       );
       // ✅ reset signature car nouvelle étude
       setIsSigned(false);
@@ -2053,9 +2057,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       return;
     }
 
-    if (!confirm("📤 Envoyer l'étude au client (non signé) ?\n\nCela déclenchera les emails de relance automatiques.")) {
-      return;
-    }
+
 
     try {
       setIsLoading(true);
@@ -2075,6 +2077,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       alert("✅ Étude envoyée ! Les emails de relance seront envoyés automatiquement.");
       console.log("✅ Étude passée en 'sent':", currentStudyId);
+      setStudyStatus("sent"); // ✅ Badge status
     } catch (err) {
       console.error("❌ Erreur:", err);
       alert("❌ Une erreur est survenue.");
@@ -2190,6 +2193,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       if (updateError) throw updateError;
 
       setIsSigned(true);
+      setStudyStatus("signed"); // ✅ Badge status
 
       // 🧾 Log métier
       await supabase.from("decision_logs").insert({
@@ -2908,7 +2912,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     forcedCommercialEmail?: string,
     forcedClientId?: string,
     forcedClientEmail?: string,
-    forcedClientPhone?: string
+    forcedClientPhone?: string,
+    forcedCivility?: string
   ) => {
     console.log("🟢 DÉBUT handleGenerateStudy");
     console.log("🧪 ÉTAT DES PRIX =", {
@@ -2981,6 +2986,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               first_name: nameParts[0] || cleanedClientName,
               last_name: nameParts.slice(1).join(" ") || "",
               phone: cleanedPhone || null,
+              civility: forcedCivility || "M./Mme",
             })
             .eq("id", clientId);
 
@@ -2998,6 +3004,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
               last_name: nameParts.slice(1).join(" ") || "",
               email: cleanedEmail,
               phone: cleanedPhone || null,
+              civility: forcedCivility || "M./Mme",
             })
             .select("id")
             .single();
@@ -3178,6 +3185,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
       // ✅ on stocke l'id pour le bouton SIGNÉ
       setCurrentStudyId(realStudyId);
+      setStudyStatus("draft"); // ✅ Badge status
 
       // ═══════════════════════════════════════════════════════════
       // 🔗 UPDATE guest_view_url (RESTE EN DRAFT)
@@ -9420,7 +9428,7 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
             >
               📄{" "}
               <span className="font-black uppercase tracking-widest">
-                Exporter PDF
+                Envoyer la Synthèse
               </span>
             </button>
 
@@ -9430,7 +9438,7 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
             >
               📱{" "}
               <span className="font-black uppercase tracking-widest">
-                Transmettre la synthèse EDF
+                Générer la Synthèse EDF
               </span>
             </button>
           </div>
@@ -9447,11 +9455,32 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
                 Remplissez les informations pour générer l'étude personnalisée
               </p>
 
+              {/* ====== STUDY STATUS BADGE ====== */}
+              {studyStatus && (
+                <div className="flex justify-center mb-6">
+                  <StudyStatusBadge status={studyStatus} />
+                </div>
+              )}
+
               {/* ====== INFORMATIONS CLIENT ====== */}
               <div className="mb-6">
                 <label className="text-white text-[13px] font-semibold mb-2 block uppercase tracking-wide">
                   Client
                 </label>
+
+                {/* Civilité */}
+                <div className="relative mb-4">
+                  <select
+                    value={inputCivility}
+                    onChange={(e) => setInputCivility(e.target.value)}
+                    className="w-full bg-black border-[1.5px] border-[#3A3A3C] rounded-[14px] py-3.5 px-4 text-white text-[16px] outline-none focus:border-[#0A84FF] transition-colors appearance-none"
+                    style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'white\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 1rem center', backgroundSize: '1.5em' }}
+                  >
+                    <option value="M.">M.</option>
+                    <option value="Mme">Mme</option>
+                    <option value="M./Mme">M./Mme</option>
+                  </select>
+                </div>
 
                 {/* Nom du client */}
                 <div className="relative mb-4">
@@ -9535,7 +9564,7 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
                   }
                   className="flex-1 py-4 bg-[#0A84FF] text-white font-bold rounded-[18px] text-[16px] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
                 >
-                  {isLoading ? "Génération..." : "Générer l'étude"}
+                  {isLoading ? "Génération..." : "Générer la Synthèse EDF"}
                 </button>
               </div>
 
@@ -9557,13 +9586,11 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
 
                   <div className="flex w-full gap-3">
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(generatedLink);
-                        alert("✅ Lien copié !");
-                      }}
-                      className="flex-1 py-4 bg-slate-100 text-black font-black rounded-2xl text-[10px] uppercase transition-transform active:scale-95"
+                      onClick={handleSendStudy}
+                      disabled={isLoading}
+                      className="flex-1 py-4 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-2xl text-[10px] uppercase transition-transform active:scale-95 shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Copier Lien
+                      {isLoading ? "Envoi..." : "📤 Envoyer la Synthèse"}
                     </button>
                     <button
                       onClick={() => {
@@ -9575,15 +9602,6 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
                       Ouvrir
                     </button>
                   </div>
-
-                  {/* 📤 BOUTON ENVOYER L'ÉTUDE (CLIENT NON SIGNÉ) */}
-                  <button
-                    onClick={handleSendStudy}
-                    disabled={isLoading}
-                    className="w-full mt-4 py-4 bg-orange-600 hover:bg-orange-500 text-white font-black rounded-2xl text-[10px] uppercase transition-all active:scale-95 shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isLoading ? "Envoi..." : "📤 Envoyer l'étude (Client non signé)"}
-                  </button>
                 </div>
               )}
             </div>

@@ -125,7 +125,7 @@ export function mapStudyToDisplay(s: any, st: any, antiAnnul: Record<string, any
     cash_apport: s.cash_apport || 0,
     total_price: totalCost, // ✅ CALCULÉ depuis study_data (PAS s.total_price qui n'existe pas!)
     install_cost: s.install_cost || 0,
-    contract_secured: s.contract_secured || false,
+    contract_secured: s.status === "signed" && ((daysSinceSigned !== null && daysSinceSigned >= 14) || (s.deposit_paid || false)),
     cancellation_deadline: s.cancellation_deadline || null,
     // Champs calculés
     views,

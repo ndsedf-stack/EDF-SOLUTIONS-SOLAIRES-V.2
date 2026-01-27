@@ -39,22 +39,28 @@ export function computeFinancialStats(
     0
   );
 
-  // ✅ CORRECTION 2 : Contrats sécurisés = délai dépassé ET acompte payé
-  const secured = signedStudies.filter(
-    (s) => s.contract_secured === true && s.deposit_paid === true
-  );
+  // ✅ CA Sécurisé (Signé && (>14j || Acompte Payé))
+  const secured = signedStudies.filter((s) => s.contract_secured);
   const cashSecured = secured.reduce((sum, s) => sum + (s.total_price || 0), 0);
 
-  // ✅ NOUVEAU : Acomptes en attente (signés sans acompte)
-  // 🔍 Filtre strict : Doit être signé, non payé, ET AVEC ACOMPTE REQUIS
-  const waitingDeposit = signedStudies.filter((s) => !s.deposit_paid && s.has_deposit);
+  // ✅ Acomptes en attente (Signé && <14j && Acompte non payé && Besoin d'acompte)
+  const waitingDeposit = signedStudies.filter((s) => 
+    !s.contract_secured && 
+    !s.deposit_paid && 
+    s.has_deposit
+  );
   const cashWaitingDeposit = waitingDeposit.reduce(
     (sum, s) => sum + 1500, // ✅ RÈGLE MÉTIER : ACOMPTE TOUJOURS 1500€
     0
   );
 
-  // ✅ NOUVEAU : CA annulable (signés dans délai annulation)
-  const cancellable = signedStudies.filter((s) => !s.contract_secured);
+  // ✅ CA Annulable (Signé && <14j && Acompte non payé && PAS de besoin d'acompte)
+  // Note: On exclut ceux qui attendent un acompte pour ne pas doubler dans la barre
+  const cancellable = signedStudies.filter((s) => 
+    !s.contract_secured && 
+    !s.deposit_paid && 
+    !s.has_deposit
+  );
   const cashCancellable = cancellable.reduce(
     (sum, s) => sum + (s.total_price || 0),
     0

@@ -18,6 +18,16 @@ import {
   AlertTriangle as LucideAlertTriangle,
   CreditCard as LucideCreditCard,
 } from "lucide-react";
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Legend
+} from "recharts";
 
 import {
   buildSystemBrain,
@@ -50,6 +60,9 @@ import { LoadingScreen } from "./dashboard/LoadingScreen";
 import { StrategicCharts } from "./StrategicCharts";
 import { MonthlyRevenueChart } from "./MonthlyRevenueChart";
 import { SteeringCharts } from "./dashboard/SteeringCharts";
+import StudyStatusBadge from "./StudyStatusBadge";
+import { WarRoom as WarRoomV2 } from './WarRoom/WarRoom';
+import { takeSystemSnapshot } from '@/lib/brain/synthesis/systemSnapshot';
 
 // ============================================
 // CONFIGURATION SUPABASE
@@ -273,6 +286,7 @@ export function useDashboard() {
   const [postRefusByStudy, setPostRefusByStudy] = useState<Record<string, any>>(
     {}
   );
+  const [trafficData, setTrafficData] = useState<any[]>([]); // ✅ NOUVEAU
 
   // ✅ NOUVEAU : État pour le système de progression
   const [loadingProgress, setLoadingProgress] = useState(0);
@@ -617,6 +631,31 @@ export function useDashboard() {
 
       setMetrics(brain);
       setFinancialStats(brain.financialStats);
+
+      // ✅ 🧪 NOUVEAU : AGRÉGATION ANALYTICS TRAFIC (Pression vs Réaction)
+      const trafficMap = new Map<string, { date: string, envois: number, ouvertures: number }>();
+      
+      // 1. Compter les envois (email_queue statut SUCCESS/SENT)
+      queueEmails.forEach(e => {
+        const dateKey = new Date(e.sent_at || e.scheduled_for || new Date()).toISOString().split('T')[0];
+        const isSent = ["sent", "SUCCESS", "success", "delivered", "processed"].includes(e.status?.toLowerCase() || "");
+        if (isSent && (e.sent_at || e.scheduled_for)) {
+          if (!trafficMap.has(dateKey)) trafficMap.set(dateKey, { date: dateKey, envois: 0, ouvertures: 0 });
+          trafficMap.get(dateKey)!.envois++;
+        }
+      });
+
+      // 2. Compter les ouvertures
+      (trackingData || []).forEach(evt => {
+        if (evt.event_type === "email_open" || evt.event_type === "view") {
+          const dateKey = new Date(evt.created_at).toISOString().split('T')[0];
+          if (!trafficMap.has(dateKey)) trafficMap.set(dateKey, { date: dateKey, envois: 0, ouvertures: 0 });
+          trafficMap.get(dateKey)!.ouvertures++;
+        }
+      });
+
+      const trafficArray = Array.from(trafficMap.values()).sort((a, b) => a.date.localeCompare(b.date));
+      setTrafficData(trafficArray);
     } catch (err: any) {
       console.error("❌ Erreur chargement données:", err);
       setError(err.message || "Erreur inconnue");
@@ -747,87 +786,88 @@ export function useDashboard() {
     },
     [loadData]
   );
+  // 🟢 VERSION VALIDÉE - onSignStudy
   const signStudy = useCallback(
-    async (
-      id: string,
-      name: string,
-      forced = false,
-      justification: string | null = null
-    ) => {
-      const { data, error } = await supabase
+    async (studyId: string, studyName?: string) => {
+      if (!confirm(`Signer définitivement le dossier "${studyName ?? ""}" ?`)) return;
+
+      const { error } = await supabase
         .from("studies")
         .update({
           status: "signed",
           signed_at: new Date().toISOString(),
         })
-        .eq("id", id)
-        .neq("status", "signed")
-        .select()
-        .single();
-      if (error || !data) {
-        alert("❌ Impossible de signer : déjà signé ou erreur.");
-        return;
+        .eq("id", studyId);
+
+      if (error) {
+        console.error("❌ SIGN ERROR:", error);
+        alert("Erreur lors de la signature");
+      } else {
+        alert("✅ Dossier signé. Anti-annulation activée.");
+        loadData();
       }
-
-      await supabase.from("decision_logs").insert({
-        study_id: id,
-        client_name: name,
-        action_performed: forced ? "FORCED_TO_SIGNED" : "SIGNED",
-        justification: forced ? justification : "Signature depuis dashboard",
-      });
-
-      alert("✅ Dossier signé. Automatisations déclenchées.");
-      loadData();
     },
     [loadData]
   );
+  // 🔴 VERSION VALIDÉE - onCancelStudy
   const cancelStudy = useCallback(
-    async (id: string, name: string) => {
-      await supabase
+    async (studyId: string, studyName?: string) => {
+      if (!confirm(`⚠️ Annuler définitivement le dossier "${studyName ?? ""}" ?`)) return;
+
+      const { error } = await supabase
         .from("studies")
-        .update({ status: "cancelled" })
-        .eq("id", id);
-      // Annuler tous les emails en attente
-      await supabase
-        .from("email_queue")
-        .update({ status: "cancelled" })
-        .eq("study_id", id)
-        .in("status", ["pending", "scheduled"]);
+        .update({
+          status: "cancelled",
+        })
+        .eq("id", studyId);
 
-      await supabase.from("decision_logs").insert({
-        study_id: id,
-        client_name: name,
-        action_performed: "CANCELLED",
-        justification: "Annulation depuis dashboard",
-      });
-
-      alert("✅ Dossier annulé. Emails stoppés.");
-      loadData();
+      if (error) {
+        console.error("❌ CANCEL ERROR:", error);
+        alert("Erreur lors de l'annulation");
+      } else {
+        alert("🛑 Dossier annulé. Tous les emails sont stoppés.");
+        loadData();
+      }
     },
     [loadData]
   );
   const markDepositPaid = useCallback(
     async (id: string, name: string) => {
+      // 1️⃣ Demander confirmation
+      const confirmPay = confirm(`Confirmer le paiement de l'acompte pour ${name} ?`);
+      if (!confirmPay) return;
+
+      // 2️⃣ Demander le mode de paiement
+      const paymentMode = prompt(
+        'Mode de paiement ?\n\n1. virement\n2. cheque\n3. especes\n4. carte',
+        'virement'
+      );
+      if (!paymentMode) return;
+
+      // 3️⃣ Mettre à jour dans Supabase
       const { error } = await supabase
         .from("studies")
         .update({
           deposit_paid: true,
           deposit_paid_at: new Date().toISOString(),
+          deposit_payment_mode: paymentMode.toLowerCase().trim()
         })
         .eq("id", id);
+      
       if (error) {
         alert("❌ Erreur : " + error.message);
         return;
       }
 
+      // 4️⃣ Logger l'action
       await supabase.from("decision_logs").insert({
         study_id: id,
         client_name: name,
         action_performed: "DEPOSIT_PAID_CONFIRMED",
-        justification: "Acompte validé depuis dashboard",
+        justification: `Acompte validé depuis dashboard - Mode: ${paymentMode}`,
       });
 
-      alert("✅ Acompte validé !");
+      alert(`✅ Acompte validé !\nMode de paiement: ${paymentMode}`);
       loadData();
     },
     [loadData]
@@ -1031,6 +1071,7 @@ export function useDashboard() {
     emailFlowByClient,
     antiAnnulationByStudy,
     postRefusByStudy,
+    trafficData, // ✅ NOUVEAU
 
     // Actions
     actions: {
@@ -1522,6 +1563,15 @@ export const StudyCardPremium: React.FC<StudyCardPremiumProps> = ({
             <h3 className="text-white font-black tracking-tight text-lg uppercase">
               {study.name}
             </h3>
+            
+            {/* 🌟 ULTRA-PREMIUM STATUS BADGE */}
+            <div className="relative group/badge">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-xl opacity-0 group-hover/badge:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative">
+                <StudyStatusBadge status={study.status} />
+              </div>
+            </div>
+            
             {study.status === "signed" && (
               <LucideShieldCheck className="w-4 h-4 text-emerald-400" />
             )}
@@ -1772,8 +1822,13 @@ export const StudyCardPremium: React.FC<StudyCardPremiumProps> = ({
           <div className="flex flex-row lg:flex-col gap-2 border-l border-white/5 pl-4 ml-4">
              <button
                onClick={() => {
-                const frontendUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || "";
-                if (frontendUrl) window.open(`${frontendUrl}/guest/${study.id}`, "_blank");
+                // ✅ Utiliser l'origine actuelle du navigateur au lieu de la variable d'environnement
+                const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+                if (baseUrl) {
+                  window.open(`${baseUrl}/guest/${study.id}`, "_blank");
+                } else {
+                  console.error("❌ Impossible d'ouvrir l'étude : URL de base introuvable");
+                }
                }}
                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-95"
                title="Voir Document"
@@ -1790,14 +1845,42 @@ export const StudyCardPremium: React.FC<StudyCardPremiumProps> = ({
                <span className="text-sm">📞</span>
              </button>
 
-             {/* NOUVEAU : BOUTON SIGNER SI PAS ENCORE SIGNÉ */}
-             {study.status === "sent" && onSignStudy && (
+             {/* ✅ NOUVEAU : BOUTON PREMIUM "SIGNER LE DOSSIER" (Croix jaune bas droite) */}
+             {study.status !== "signed" && study.status !== "cancelled" && onSignStudy && (
                <button
                  onClick={() => onSignStudy(study.id, study.name)}
-                 className="p-2.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-600/30 hover:text-emerald-300 transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
-                 title="Marquer comme Signé"
+                 className="group/sign relative p-2.5 rounded-xl bg-gradient-to-br from-emerald-600/20 to-emerald-500/10 border border-emerald-500/40 text-emerald-400 hover:from-emerald-600/30 hover:to-emerald-500/20 hover:text-emerald-300 hover:border-emerald-400/60 transition-all active:scale-95 shadow-lg shadow-emerald-900/30 hover:shadow-emerald-900/50"
+                 title="Signer le Dossier"
                >
-                 <span className="text-sm">🖊️</span>
+                 {/* Glow effect */}
+                 <div className="absolute inset-0 rounded-xl bg-emerald-500/20 blur-md opacity-0 group-hover/sign:opacity-100 transition-opacity duration-300"></div>
+                 <span className="relative text-base">✍️</span>
+               </button>
+             )}
+
+             {/* ✅ NOUVEAU : BOUTON PREMIUM "ANNULER L'ÉTUDE" (Croix jaune haut droite) */}
+             {study.status !== "cancelled" && onCancelStudy && (
+               <button
+                 onClick={() => onCancelStudy(study.id, study.name)}
+                 className="group/cancel relative p-2.5 rounded-xl bg-gradient-to-br from-red-600/20 to-red-500/10 border border-red-500/40 text-red-400 hover:from-red-600/30 hover:to-red-500/20 hover:text-red-300 hover:border-red-400/60 transition-all active:scale-95 shadow-lg shadow-red-900/30 hover:shadow-red-900/50"
+                 title="Annuler l'Étude"
+               >
+                 {/* Glow effect */}
+                 <div className="absolute inset-0 rounded-xl bg-red-500/20 blur-md opacity-0 group-hover/cancel:opacity-100 transition-opacity duration-300"></div>
+                 <span className="relative text-base">❌</span>
+               </button>
+             )}
+
+             {/* 💰 NOUVEAU : BOUTON PREMIUM "MARQUER ACOMPTE PAYÉ" */}
+             {study.status === "signed" && study.has_deposit && !study.deposit_paid && onMarkDepositPaid && (
+               <button
+                 onClick={() => onMarkDepositPaid(study.id, study.name)}
+                 className="group/deposit relative p-2.5 rounded-xl bg-gradient-to-br from-green-600/20 to-green-500/10 border border-green-500/40 text-green-400 hover:from-green-600/30 hover:to-green-500/20 hover:text-green-300 hover:border-green-400/60 transition-all active:scale-95 shadow-lg shadow-green-900/30 hover:shadow-green-900/50"
+                 title="Marquer Acompte Payé"
+               >
+                 {/* Glow effect */}
+                 <div className="absolute inset-0 rounded-xl bg-green-500/20 blur-md opacity-0 group-hover/deposit:opacity-100 transition-opacity duration-300"></div>
+                 <span className="relative text-base">💰</span>
                </button>
              )}
           </div>
@@ -2214,6 +2297,180 @@ export const CriticalAlert: React.FC<CriticalAlertProps> = ({
 };
 
 // ============================================
+// 🚀 NOUVEAU COMPOSANT : ANALYSE DE LA PRESSION EMAIL
+// ============================================
+function DashboardTrafficChart({ data }: { data: any[] }) {
+  const [timeRange, setTimeRange] = useState("30d");
+  const [activeMetric, setActiveMetric] = useState<"envois" | "ouvertures" | "both">("both");
+
+  const filteredData = useMemo(() => {
+    return data.filter((item) => {
+      const date = new Date(item.date);
+      const now = new Date();
+      let days = 30;
+      if (timeRange === "90d") days = 90;
+      if (timeRange === "7d") days = 7;
+      
+      const startDate = new Date();
+      startDate.setDate(now.getDate() - days);
+      return date >= startDate;
+    });
+  }, [data, timeRange]);
+
+  const totals = useMemo(() => {
+    return filteredData.reduce((acc, item) => ({
+      envois: acc.envois + (item.envois || 0),
+      ouvertures: acc.ouvertures + (item.ouvertures || 0)
+    }), { envois: 0, ouvertures: 0 });
+  }, [filteredData]);
+
+  return (
+    <div className="mt-8 mb-12 glass-panel rounded-3xl border border-white/10 bg-slate-900/40 backdrop-blur-3xl shadow-2xl relative overflow-hidden flex flex-col">
+       {/* HEADER PREMIUM INTERACTIF */}
+      <div className="flex flex-col sm:flex-row items-center justify-between p-8 border-b border-white/5 gap-6 relative z-10">
+        <div className="flex flex-col gap-2">
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Analyse de la Pression Email</h3>
+            <p className="text-slate-400 text-sm font-medium">Corrélation entre volume d'envois et engagement réel</p>
+        </div>
+
+        <div className="flex items-center gap-4">
+            <div className="flex bg-slate-950/50 p-1 rounded-2xl border border-white/5">
+                <button 
+                  onClick={() => setActiveMetric("envois")}
+                  className={`px-4 py-3 rounded-xl transition-all flex flex-col items-start gap-1 min-w-[140px] ${activeMetric === 'envois' ? 'bg-blue-600 shadow-lg' : 'hover:bg-white/5 text-slate-400'}`}
+                >
+                    <span className="text-[10px] uppercase font-black tracking-widest opacity-60">Total Envois</span>
+                    <span className={`text-xl font-black ${activeMetric === 'envois' ? 'text-white' : 'text-slate-200'}`}>{totals.envois.toLocaleString()}</span>
+                </button>
+                <button 
+                  onClick={() => setActiveMetric("ouvertures")}
+                  className={`px-4 py-3 rounded-xl transition-all flex flex-col items-start gap-1 min-w-[140px] ${activeMetric === 'ouvertures' ? 'bg-emerald-600 shadow-lg' : 'hover:bg-white/5 text-slate-400'}`}
+                >
+                    <span className="text-[10px] uppercase font-black tracking-widest opacity-60">Total Ouvertures</span>
+                    <span className={`text-xl font-black ${activeMetric === 'ouvertures' ? 'text-white' : 'text-slate-200'}`}>{totals.ouvertures.toLocaleString()}</span>
+                </button>
+            </div>
+
+            <select 
+              value={timeRange} 
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="bg-slate-950/50 border border-white/10 rounded-2xl py-4 px-6 text-white font-black text-sm outline-none focus:ring-2 focus:ring-blue-500/50 appearance-none min-w-[180px] cursor-pointer hover:bg-slate-900 transition-all uppercase tracking-widest"
+            >
+              <option value="7d">7 JOURS</option>
+              <option value="30d">30 JOURS</option>
+              <option value="90d">90 JOURS</option>
+            </select>
+        </div>
+      </div>
+
+      <div className="p-8 h-[350px] w-full relative z-10">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={filteredData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="fillEnvoisPremium" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="fillOuverturesPremium" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" />
+            <XAxis
+              dataKey="date"
+              tickLine={false}
+              axisLine={false}
+              tickMargin={15}
+              tick={{ fill: '#475569', fontSize: 10, fontWeight: 900 }}
+              tickFormatter={(value) => {
+                return new Date(value).toLocaleDateString("fr-FR", {
+                  month: "short",
+                  day: "numeric",
+                }).toUpperCase()
+              }}
+            />
+            <YAxis hide domain={[0, 'auto']} />
+            
+            <Tooltip
+              cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 p-5 rounded-2xl shadow-2xl min-w-[200px]">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 border-b border-white/5 pb-3">
+                        {new Date(payload[0].payload.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).toUpperCase()}
+                      </p>
+                      <div className="space-y-4">
+                        {(activeMetric === 'both' || activeMetric === 'envois') && (
+                          <div className="flex items-center justify-between gap-8">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.6)]"></div>
+                              <span className="text-[11px] font-black text-slate-300 uppercase">Envois</span>
+                            </div>
+                            <span className="text-sm font-black text-white">{payload.find(p => p.dataKey === 'envois')?.value || 0}</span>
+                          </div>
+                        )}
+                        {(activeMetric === 'both' || activeMetric === 'ouvertures') && (
+                          <div className="flex items-center justify-between gap-8">
+                            <div className="flex items-center gap-3">
+                              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]"></div>
+                              <span className="text-[11px] font-black text-slate-300 uppercase tracking-tighter">Ouvertures</span>
+                            </div>
+                            <span className="text-sm font-black text-emerald-400">{payload.find(p => p.dataKey === 'ouvertures')?.value || 0}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              }}
+            />
+            
+            <Area
+              dataKey="envois"
+              type="monotone"
+              fill="url(#fillEnvoisPremium)"
+              stroke="#3b82f6"
+              strokeWidth={3}
+              strokeOpacity={activeMetric === 'ouvertures' ? 0.1 : 1}
+              fillOpacity={activeMetric === 'ouvertures' ? 0.05 : 1}
+              animationDuration={1500}
+            />
+            <Area
+              dataKey="ouvertures"
+              type="monotone"
+              fill="url(#fillOuverturesPremium)"
+              stroke="#10b981"
+              strokeWidth={4}
+              strokeOpacity={activeMetric === 'envois' ? 0.1 : 1}
+              fillOpacity={activeMetric === 'envois' ? 0.05 : 1}
+              animationDuration={2000}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* FOOTER LEGEND / ACTION */}
+      <div className="px-8 pb-8 pt-4 flex items-center justify-between relative z-10 transition-all">
+         <div className="flex items-center gap-8">
+            <button 
+              onClick={() => setActiveMetric("both")}
+              className={`text-[10px] font-black uppercase tracking-[0.2em] transition-all pb-1 border-b-2 ${activeMetric === 'both' ? 'text-white border-blue-500' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+            >
+              Afficher Tout
+            </button>
+         </div>
+         <div className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">
+            Real-time Pipeline Tracking 2026
+         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
 // AUTOPILOTE SOLAIRE FUSION - PARTIE 4/6
 // War Room Augmentée + Stats Financières + Zone d'Action
 // ============================================
@@ -2223,11 +2480,22 @@ export const CriticalAlert: React.FC<CriticalAlertProps> = ({
 // ============================================
 interface FinancialStatsProps {
   stats: FinancialStats;
+  studies: Study[];
+  onMarkDepositPaid: (id: string, name: string) => void;
+  onMarkRibSent: (id: string, name: string) => void;
+  onCancelStudy: (id: string, name: string) => void;
+  onDeleteStudy: (id: string, name: string) => void;
 }
 
 export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
   stats,
+  studies,
+  onMarkDepositPaid,
+  onMarkRibSent,
+  onCancelStudy,
+  onDeleteStudy,
 }) => {
+  const [activeMetric, setActiveMetric] = useState<"secured" | "waiting" | "cancellable" | "all">("all");
   const caTotal = stats.caTotal || 0;
   const cashSecured = stats.cashSecured || 0;
   const securedCount = stats.securedCount || 0;
@@ -2236,6 +2504,52 @@ export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
   const cashCancellable = stats.cashCancellable || 0;
   const cancellableCount = stats.cancellableCount || 0;
   const tauxConversion = stats.tauxConversion || 0;
+
+  // ✅ PRÉPARATION DES DONNÉES POUR LE GRAPHIQUE D'AIRE (CUMULATIVE STATE LOGIC)
+  const chartData = useMemo(() => {
+    // 1. On ne garde que les études signées avec une date de signature
+    const signedWithDate = studies
+      .filter(s => s.status === 'signed' && s.signed_at)
+      .sort((a, b) => new Date(a.signed_at!).getTime() - new Date(b.signed_at!).getTime());
+
+    if (signedWithDate.length === 0) return [];
+
+    let cumSecured = 0;
+    let cumWaiting = 0;
+    let cumCancellable = 0;
+
+    // 2. Grouper par date mais garder le cumulétif
+    const dataPoints: any[] = [];
+    
+    signedWithDate.forEach(s => {
+      const price = s.total_price || 0;
+      
+      // Catégorisation identique à finance.ts
+      if (s.contract_secured) {
+        cumSecured += price;
+      } else if (!s.deposit_paid && s.has_deposit) {
+        cumWaiting += 1500;
+      } else if (!s.deposit_paid && !s.has_deposit) {
+        cumCancellable += price;
+      }
+
+      dataPoints.push({
+        date: new Date(s.signed_at!).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+        fullDate: s.signed_at,
+        secured: cumSecured,
+        waiting: cumWaiting,
+        cancellable: cumCancellable
+      });
+    });
+
+    // 3. Unifier par jour pour éviter les surcharges de points sur la même date (X-Axis clarity)
+    const dailyMap = new Map<string, any>();
+    dataPoints.forEach(pt => {
+      dailyMap.set(pt.date, pt); // Le dernier point de la journée contient le cumul final du jour
+    });
+
+    return Array.from(dailyMap.values());
+  }, [studies]);
 
   return (
     <div className="mb-8">
@@ -2275,7 +2589,7 @@ export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
             <div className="text-[10px] font-bold text-blue-400/80 uppercase tracking-wider mb-2 flex items-center gap-1">
               <span>📊</span> CA Réalisé
             </div>
-            <div className="text-3xl font-black text-white mb-1">
+            <div className="text-4xl font-black mb-1 tracking-tighter bg-gradient-to-br from-white via-blue-100 to-blue-400 bg-clip-text text-transparent">
               {formatCurrency(caTotal)}
             </div>
             <div className="text-xs text-slate-400">
@@ -2292,7 +2606,7 @@ export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
             <div className="text-[10px] font-bold text-emerald-400/80 uppercase tracking-wider mb-2 flex items-center gap-1">
               <span>🛡️</span> CA Sécurisé
             </div>
-            <div className="text-3xl font-black text-white mb-1">
+            <div className="text-4xl font-black mb-1 tracking-tighter bg-gradient-to-br from-white via-emerald-100 to-emerald-400 bg-clip-text text-transparent">
               {formatCurrency(cashSecured)}
             </div>
             <div className="text-xs text-slate-400 flex items-center justify-between">
@@ -2310,7 +2624,7 @@ export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
             <div className="text-[10px] font-bold text-orange-400/80 uppercase tracking-wider mb-2 flex items-center gap-1">
               <span>⏳</span> Acomptes Attente
             </div>
-            <div className="text-3xl font-black text-white mb-1">
+            <div className="text-4xl font-black mb-1 tracking-tighter bg-gradient-to-br from-white via-orange-100 to-orange-400 bg-clip-text text-transparent">
               {formatCurrency(cashWaitingDeposit)}
             </div>
             <div className="text-xs text-slate-400 flex items-center justify-between">
@@ -2328,7 +2642,7 @@ export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
             <div className="text-[10px] font-bold text-red-400/80 uppercase tracking-wider mb-2 flex items-center gap-1">
               <span>⚠️</span> CA Annulable
             </div>
-            <div className="text-3xl font-black text-white mb-1">
+            <div className="text-4xl font-black mb-1 tracking-tighter bg-gradient-to-br from-white via-red-100 to-red-400 bg-clip-text text-transparent">
               {formatCurrency(cashCancellable)}
             </div>
             <div className="text-xs text-slate-400 flex items-center justify-between">
@@ -2339,62 +2653,153 @@ export const FinancialStatsPanel: React.FC<FinancialStatsProps> = ({
         </div>
       </div>
 
-      {/* Barre de progression visuelle */}
-      <div className="mt-4 glass-panel p-3 rounded-xl border border-white/5">
-        <div className="flex items-center justify-between text-xs mb-2">
-          <span className="text-slate-500 font-bold uppercase tracking-wider">Répartition du CA</span>
-          <span className="text-slate-400 font-mono">{formatCurrency(caTotal)}</span>
+      {/* RÉPARTITION DU CA - VISUALISATION AVANCÉE (AREA CHART) */}
+      <div className="mt-8 glass-panel p-8 rounded-3xl border border-white/10 bg-slate-900/40 backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-[150px]"></div>
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-rose-500/5 rounded-full blur-[120px]"></div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-8 relative z-10 gap-6">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-6 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+              <span className="text-xs font-black text-slate-500 uppercase tracking-[0.3em]">Institutional Asset Radar v2.0</span>
+            </div>
+            <h3 className="text-3xl font-black text-white uppercase tracking-tighter">Répartition du CA</h3>
+          </div>
+
+          <div className="flex items-center gap-4 bg-slate-950/50 p-1.5 rounded-2xl border border-white/5">
+            <button 
+              onClick={() => setActiveMetric("secured")}
+              className={`px-4 py-2 rounded-xl transition-all flex flex-col items-start gap-1 min-w-[120px] ${activeMetric === 'secured' ? 'bg-emerald-600 shadow-lg scale-105' : 'hover:bg-white/5 text-slate-400'}`}
+            >
+              <span className="text-[9px] uppercase font-black tracking-widest opacity-60">Sécurisé</span>
+              <span className={`text-sm font-black ${activeMetric === 'secured' ? 'text-white' : 'text-slate-200'}`}>{formatCurrency(cashSecured)}</span>
+            </button>
+            <button 
+              onClick={() => setActiveMetric("waiting")}
+              className={`px-4 py-2 rounded-xl transition-all flex flex-col items-start gap-1 min-w-[120px] ${activeMetric === 'waiting' ? 'bg-orange-600 shadow-lg scale-105' : 'hover:bg-white/5 text-slate-400'}`}
+            >
+              <span className="text-[9px] uppercase font-black tracking-widest opacity-60">Attente</span>
+              <span className={`text-sm font-black ${activeMetric === 'waiting' ? 'text-white' : 'text-slate-200'}`}>{formatCurrency(cashWaitingDeposit)}</span>
+            </button>
+            <button 
+              onClick={() => setActiveMetric("cancellable")}
+              className={`px-4 py-2 rounded-xl transition-all flex flex-col items-start gap-1 min-w-[120px] ${activeMetric === 'cancellable' ? 'bg-red-600 shadow-lg scale-105' : 'hover:bg-white/5 text-slate-400'}`}
+            >
+              <span className="text-[9px] uppercase font-black tracking-widest opacity-60">Risque</span>
+              <span className={`text-sm font-black ${activeMetric === 'cancellable' ? 'text-white' : 'text-slate-200'}`}>{formatCurrency(cashCancellable)}</span>
+            </button>
+            <button 
+              onClick={() => setActiveMetric("all")}
+              className={`px-4 py-2 rounded-xl transition-all flex items-center justify-center min-w-[60px] ${activeMetric === 'all' ? 'bg-slate-700 text-white' : 'hover:bg-white/5 text-slate-400'}`}
+            >
+              <span className="text-[9px] uppercase font-black tracking-widest">Tout</span>
+            </button>
+          </div>
         </div>
-        <div className="h-2 bg-slate-800/50 rounded-full overflow-hidden flex">
-          {cashSecured > 0 && (
-            <div 
-              className="h-full bg-emerald-500 transition-all duration-1000"
-              style={{ width: `${(cashSecured / caTotal) * 100}%` }}
-              title={`Sécurisé: ${formatCurrency(cashSecured)}`}
-            ></div>
-          )}
-          {cashWaitingDeposit > 0 && (
-            <div 
-              className="h-full bg-orange-500 transition-all duration-1000"
-              style={{ width: `${(cashWaitingDeposit / caTotal) * 100}%` }}
-              title={`En attente: ${formatCurrency(cashWaitingDeposit)}`}
-            ></div>
-          )}
-          {cashCancellable > 0 && (
-            <div 
-              className="h-full bg-red-500 transition-all duration-1000"
-              style={{ width: `${(cashCancellable / caTotal) * 100}%` }}
-              title={`Annulable: ${formatCurrency(cashCancellable)}`}
-            ></div>
-          )}
-        </div>
-        <div className="flex items-center justify-between mt-2 text-[10px]">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-            <span className="text-slate-500">Sécurisé</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-            <span className="text-slate-500">Attente Acompte</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-red-500"></div>
-            <span className="text-slate-500">Annulable</span>
-          </div>
+
+        {/* Graphique Recharts */}
+        <div className="h-[380px] w-full relative z-10">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorSecured" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.6}/>
+                  <stop offset="100%" stopColor="#10b981" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorWaiting" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.5}/>
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0}/>
+                </linearGradient>
+                <linearGradient id="colorCancellable" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#ef4444" stopOpacity={0.4}/>
+                  <stop offset="100%" stopColor="#ef4444" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.03)" />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#475569', fontSize: 11, fontWeight: 800 }} 
+                dy={15}
+                minTickGap={40}
+              />
+              <Tooltip 
+                cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 1 }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-slate-950/95 backdrop-blur-2xl border border-white/10 p-5 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] min-w-[200px]">
+                        <p className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-4 border-b border-white/5 pb-3">
+                          {data.date} • DÉTAILS FLUX
+                        </p>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-400">Sécurisé</span>
+                            <span className="text-sm font-black text-emerald-400">{formatCurrency(data.secured)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-400">Attente</span>
+                            <span className="text-sm font-black text-orange-400">{formatCurrency(data.waiting)}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-slate-400">Risque</span>
+                            <span className="text-sm font-black text-red-500">{formatCurrency(data.cancellable)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="secured" 
+                stackId="a"
+                stroke="#10b981" 
+                strokeWidth={4}
+                fill="url(#colorSecured)" 
+                strokeOpacity={activeMetric !== 'all' && activeMetric !== 'secured' ? 0.1 : 1}
+                fillOpacity={activeMetric !== 'all' && activeMetric !== 'secured' ? 0.05 : 1}
+                animationDuration={1500}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="waiting" 
+                stackId="a"
+                stroke="#f59e0b" 
+                strokeWidth={3}
+                fill="url(#colorWaiting)" 
+                strokeOpacity={activeMetric !== 'all' && activeMetric !== 'waiting' ? 0.1 : 1}
+                fillOpacity={activeMetric !== 'all' && activeMetric !== 'waiting' ? 0.05 : 1}
+                animationDuration={1800}
+              />
+              <Area 
+                type="monotone" 
+                dataKey="cancellable" 
+                stackId="a"
+                stroke="#ef4444" 
+                strokeWidth={3}
+                fill="url(#colorCancellable)" 
+                strokeOpacity={activeMetric !== 'all' && activeMetric !== 'cancellable' ? 0.1 : 1}
+                fillOpacity={activeMetric !== 'all' && activeMetric !== 'cancellable' ? 0.05 : 1}
+                animationDuration={2000}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </div>
+
     </div>
   );
 };
 
 // ============================================
-// ✅ NOUVEAU : WAR ROOM AUGMENTÉE AVEC TENSION
-// ============================================
-// ============================================
 // ✅ NOUVEAU : WAR ROOM - SYSTEM BRAIN v2
 // ============================================
-import { WarRoom as WarRoomV2 } from './WarRoom/WarRoom';
-import { takeSystemSnapshot } from '@/lib/brain/synthesis/systemSnapshot';
 
 const WarRoom: React.FC<{
   metrics: Metrics;
@@ -2727,20 +3132,6 @@ export const Pipeline: React.FC<PipelineProps> = ({
 
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-3xl">📊</span>
-          <div>
-            <h2 className="text-2xl font-black text-white">
-              AXE B — PIPELINE COMMERCIAL
-            </h2>
-            <div className="text-sm text-slate-400">
-              {filtered.length} dossier{filtered.length > 1 ? "s" : ""} en cours
-            </div>
-          </div>
-        </div>
-      </div>
-
       {filtered.length === 0 ? (
         <div className="p-8 bg-slate-800/30 border border-slate-700/50 rounded-2xl text-center">
           <div className="text-4xl mb-3">🔍</div>
@@ -2914,12 +3305,14 @@ export const SignedStudies: React.FC<SignedStudiesProps> = ({
 // ============================================
 interface EmailLeadsProps {
   leads: EmailLead[];
+  trafficData: any[]; // ✅ AJOUTÉ
   onSetOptOut: (email: string) => void;
   onDeleteLead: (clientId: string, email: string, name: string) => void;
 }
 
 export const EmailLeads: React.FC<EmailLeadsProps> = ({
   leads,
+  trafficData, // ✅ AJOUTÉ
   onSetOptOut,
   onDeleteLead,
 }) => {
@@ -2976,6 +3369,9 @@ export const EmailLeads: React.FC<EmailLeadsProps> = ({
           </div>
         </div>
       </div>
+
+      {/* 🚀 NOUVEAU : ANALYSE DE LA PRESSION EMAIL (DESIGN SOLAIRE) - AXE C */}
+      <DashboardTrafficChart data={trafficData} />
 
       {/* Filtres */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -3355,19 +3751,8 @@ export default function Dashboard() {
   const handleSignStudy = useCallback(
     (id: string, name: string) => {
       if (!dashboard?.actions) return;
-
-      setOverrideModal({
-        isOpen: true,
-        title: "Forcer signature",
-        message:
-          "Cette action marquera le dossier comme signé même sans preuve d'engagement.",
-        studyName: name,
-        actionType: "force_sign",
-        onConfirm: async (reason: string) => {
-          await dashboard.actions.signStudy(id, name, true, reason);
-          setOverrideModal((prev) => ({ ...prev, isOpen: false }));
-        },
-      });
+      // ✅ Utilise la nouvelle version validée (confirmation incluse dans la fonction)
+      dashboard.actions.signStudy(id, name);
     },
     [dashboard?.actions]
   );
@@ -3643,7 +4028,14 @@ export default function Dashboard() {
         )}
 
         {!zenMode && financialStats && (
-          <FinancialStatsPanel stats={financialStats} />
+          <FinancialStatsPanel 
+            stats={dashboard.financialStats!}
+            studies={dashboard.studies} 
+            onMarkDepositPaid={actions.markDepositPaid}
+            onMarkRibSent={actions.markRibSent}
+            onCancelStudy={actions.cancelStudy}
+            onDeleteStudy={actions.deleteStudy}
+          />
         )}
 
         {!zenMode &&
@@ -3940,19 +4332,33 @@ export default function Dashboard() {
           />
         )}
 
-        {/* --- SEPARATION VISUELLE --- */}
+        {/* --- SEPARATION VISUELLE ET TITRE AXE B --- */}
         {!zenMode && (
-          <div className="my-12 relative flex items-center justify-center">
+          <div className="mt-16 mb-8 relative flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-700/50"></div>
+              <div className="w-full border-t border-slate-700/30"></div>
             </div>
-            <div className="relative bg-[#020617] px-4 text-slate-500 text-sm font-bold tracking-widest uppercase">
-              Pipeline Commercial (En Cours)
+            <div className="relative bg-[#020617] px-6 py-2 rounded-full border border-white/5 backdrop-blur-xl text-slate-400 text-[10px] font-black tracking-[0.4em] uppercase shadow-2xl">
+              AXE B — PIPELINE COMMERCIAL (EN COURS)
             </div>
           </div>
         )}
 
-        {!zenMode && <Filters filters={filters} onFilterChange={setFilters} />}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3 mb-2">
+            <span className="text-3xl">📊</span>
+            <div>
+              <h2 className="text-2xl font-black text-white">
+                AXE B — PIPELINE COMMERCIAL
+              </h2>
+              <div className="text-sm text-slate-400 font-bold uppercase tracking-widest opacity-50">
+                Gestion des dossiers en cours
+              </div>
+            </div>
+          </div>
+          
+          {!zenMode && <Filters filters={filters} onFilterChange={setFilters} />}
+        </div>
 
         <Pipeline
           studies={filteredStudies}
@@ -3970,6 +4376,7 @@ export default function Dashboard() {
         {!zenMode && (
           <EmailLeads
             leads={emailLeads}
+            trafficData={dashboard.trafficData}
             onSetOptOut={actions.setOptOut}
             onDeleteLead={actions.deleteLeadPermanently}
           />

@@ -48,6 +48,9 @@ export interface Study {
   total_price: number;
   install_cost: number;
 
+  // Guest view URL
+  guest_view_url?: string; // ✅ Added for guest view link
+
   // Calculated/Optional fields
   requiresDeposit?: boolean;
   daysLate?: number;
