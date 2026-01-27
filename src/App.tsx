@@ -133,6 +133,9 @@ const MainApp: React.FC = () => {
 
 const App = () => (
   <BrowserRouter>
+    <div style={{background:'red', color:'white', padding:20, fontSize:30, fontWeight: 'bold', textAlign: 'center', position: 'relative', zIndex: 9999}}>
+      🚨 VERSION TEST V2 – 27/01
+    </div>
     <Routes>
       <Route path="/" element={<MainApp />} />
       {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
