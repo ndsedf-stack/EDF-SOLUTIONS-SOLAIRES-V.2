@@ -6,7 +6,7 @@ import { SpeechView } from "./components/SpeechView";
 import { supabase } from "./lib/supabase";
 import GuestView from "./components/GuestView";
 import { calculateGreenPositioningFromAddress } from "./greenValueEngine.ts";
-import Dashboard from "..//src/components/Dashboard";
+import Dashboard from "./components/Dashboard";
 
 const MainApp: React.FC = () => {
   const [hasData, setHasData] = useState(false);

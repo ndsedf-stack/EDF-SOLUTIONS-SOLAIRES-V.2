@@ -1,3 +1,4 @@
+console.log("⚠️ ATTENTION : ANCIEN DASHBOARD0 CHARGÉ !");
 // ============================================
 // AUTOPILOTE SOLAIRE - PARTIE 1/5
 // Configuration, Types & Utilitaires
