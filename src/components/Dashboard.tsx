@@ -1,3 +1,4 @@
+console.log("🔥 DASHBOARD ACTUEL CHARGÉ :", import.meta.url);
 import React, {
   useState,
   useEffect,
