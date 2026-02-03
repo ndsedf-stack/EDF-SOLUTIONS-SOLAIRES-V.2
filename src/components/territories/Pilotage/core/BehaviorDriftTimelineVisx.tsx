@@ -91,8 +91,9 @@ export const BehaviorDriftTimelineVisx: React.FC<Props> = ({ data, width, height
             stroke="#ffffff10"
             tickStroke="#ffffff10"
             tickLabelProps={() => ({
-              fill: '#ffffff30',
-              fontSize: 10,
+              fill: '#ffffff',
+              fontSize: 12,
+              opacity: 0.8,
               fontFamily: 'IBM Plex Mono',
               textAnchor: 'middle',
             })}
@@ -104,8 +105,9 @@ export const BehaviorDriftTimelineVisx: React.FC<Props> = ({ data, width, height
             stroke="#ffffff10"
             tickStroke="#ffffff10"
             tickLabelProps={() => ({
-              fill: '#ffffff30',
-              fontSize: 10,
+              fill: '#ffffff',
+              fontSize: 12,
+              opacity: 0.8,
               fontFamily: 'IBM Plex Mono',
               textAnchor: 'end',
               verticalAnchor: 'middle',

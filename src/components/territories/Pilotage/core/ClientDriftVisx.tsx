@@ -90,7 +90,7 @@ export const ClientDriftVisx: React.FC<Props> = ({ data, width, height }) => {
         fill="#FF4757"
         fillOpacity={0.05}
       />
-       <text
+      <text
         x={xScale(14) + 8}
         y={20}
         fill="#FF4757"
@@ -100,6 +100,15 @@ export const ClientDriftVisx: React.FC<Props> = ({ data, width, height }) => {
       >
         J+14 Non-retour
       </text>
+
+      {/* ✅ AUDIT FIX ID: LEGEND_MISSING */}
+      <Group top={20} left={width - 150}>
+         <rect x={0} y={0} width={8} height={8} fill={COLORS.active} rx={2} />
+         <text x={12} y={8} fill="#94A3B8" fontSize={10} fontFamily="IBM Plex Mono">ACTIFS</text>
+         
+         <rect x={60} y={0} width={8} height={8} fill={COLORS.silent} rx={2} />
+         <text x={72} y={8} fill="#94A3B8" fontSize={10} fontFamily="IBM Plex Mono">SILENCE</text>
+      </Group>
 
       <Group>
         {/* Grille horizontale discrète */}
@@ -121,7 +130,7 @@ export const ClientDriftVisx: React.FC<Props> = ({ data, width, height }) => {
           x={d => xScale(d.day)}
           y={d => yScale(d.active)}
           stroke={COLORS.active}
-          strokeWidth={1.5}
+          strokeWidth={2.5}
           strokeLinecap="round"
         />
 
@@ -130,7 +139,7 @@ export const ClientDriftVisx: React.FC<Props> = ({ data, width, height }) => {
           x={d => xScale(d.day)}
           y={d => yScale(d.silent)}
           stroke={COLORS.silent}
-          strokeWidth={1.5}
+          strokeWidth={2.5}
           strokeDasharray="6,4"
         />
 
@@ -139,7 +148,7 @@ export const ClientDriftVisx: React.FC<Props> = ({ data, width, height }) => {
           x={d => xScale(d.day)}
           y={d => yScale(d.closing)}
           stroke={COLORS.closing}
-          strokeWidth={1.5}
+          strokeWidth={2.5}
         />
       </Group>
 

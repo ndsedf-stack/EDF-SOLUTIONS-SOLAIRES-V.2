@@ -151,8 +151,9 @@ export const FinancialRiskProofVisx: React.FC<Props> = ({ data, width, height })
           tickStroke="#ffffff10"
           tickValues={tickDates}
           tickLabelProps={() => ({
-            fill: '#ffffff40',
-            fontSize: 10,
+            fill: '#ffffff',
+            fontSize: 12,
+            opacity: 0.8,
             fontFamily: 'IBM Plex Mono',
             textAnchor: 'middle',
           })}
@@ -166,9 +167,10 @@ export const FinancialRiskProofVisx: React.FC<Props> = ({ data, width, height })
           scale={yScale}
           stroke="#ffffff10"
           tickStroke="#ffffff10"
-          tickLabelProps={() => ({
-            fill: '#ffffff40',
-            fontSize: 10,
+            tickLabelProps={() => ({
+            fill: '#ffffff',
+            fontSize: 12,
+            opacity: 0.8,
             fontFamily: 'IBM Plex Mono',
             textAnchor: 'end',
             verticalAnchor: 'middle',

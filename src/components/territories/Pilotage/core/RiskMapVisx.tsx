@@ -101,8 +101,9 @@ export function RiskMapVisx({
             tickFormat={d => `${d}j`}
             label="Dernier signal (jours) →"
             labelProps={{
-                fill: '#ffffff30',
-                fontSize: 11,
+                fill: '#ffffff',
+                fontSize: 12,
+                opacity: 0.8,
                 fontFamily: 'Manrope',
                 fontWeight: 'bold',
                 textAnchor: 'middle',
@@ -115,8 +116,9 @@ export function RiskMapVisx({
             stroke="#ffffff10"
             tickStroke="#ffffff10"
             tickLabelProps={() => ({
-              fill: '#ffffff40',
-              fontSize: 11,
+              fill: '#ffffff',
+              fontSize: 12,
+              opacity: 0.8,
               fontFamily: 'IBM Plex Mono',
               textAnchor: 'end',
               verticalAnchor: 'middle',

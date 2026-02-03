@@ -13,12 +13,25 @@ import { AxisBottom } from '@visx/axis';
 
 interface TrafficData {
   date: string;
-  count: number;
+  count: number; // Represents SENT
+  opened?: number;
+  clicked?: number;
 }
 
 interface EmailPressureVisxProps {
   data: TrafficData[];
 }
+
+import { BarStack } from '@visx/shape';
+import { LegendOrdinal } from '@visx/legend';
+import { scaleOrdinal } from '@visx/scale';
+
+const KEYS = ['clicked', 'opened', 'sentNeg']; // Stack order: Click (bottom), Open, Sent (top remnant)
+const COLORS_MAP = {
+  clicked: '#4ADE80', // Green (Success)
+  opened: '#818CF8',  // Indigo (Interest)
+  sentNeg: '#312E81'  // Dark Indigo (Noise/Sent only)
+};
 
 const EmailPressureContent: React.FC<EmailPressureVisxProps & { width: number; height: number }> = ({ 
   data, 
@@ -29,10 +42,33 @@ const EmailPressureContent: React.FC<EmailPressureVisxProps & { width: number; h
   const xMax = width - margin.left - margin.right;
   const yMax = height - margin.top - margin.bottom;
 
+  // 1. TRANSFORM DATA : Use Real Breakdown
+  const stackedData = data.map(d => {
+      const sent = d.count;
+      // Use real data if available, else 0 (don't mock anymore)
+      const opened = d.opened || 0; 
+      const clicked = d.clicked || 0;
+      
+      // Broken Stack Logic:
+      // Clicked is bottom layer
+      // Opened is middle layer (we subtract clicked to avoid double counting height)
+      // Sent is top layer (we subtract opened to show "unread/unacted" rest)
+      const openedSegment = Math.max(0, opened - clicked);
+      const sentSegment = Math.max(0, sent - opened); // Assuming open implies sent
+      
+      return {
+          date: d.date,
+          clicked,
+          opened: openedSegment,
+          sentNeg: sentSegment,
+          originalTotal: sent
+      };
+  });
+
   const xScale = scaleBand<string>({
     range: [0, xMax],
     round: true,
-    domain: data.map((d) => d.date),
+    domain: stackedData.map((d) => d.date),
     padding: 0.4,
   });
 
@@ -42,44 +78,62 @@ const EmailPressureContent: React.FC<EmailPressureVisxProps & { width: number; h
     domain: [0, Math.max(...data.map((d) => d.count)) || 10],
   });
 
+  const colorScale = scaleOrdinal({
+    domain: KEYS,
+    range: [COLORS_MAP.clicked, COLORS_MAP.opened, COLORS_MAP.sentNeg],
+  });
+
   return (
     <svg width={width} height={height}>
       <Group top={margin.top} left={margin.left}>
-        {data.map((d) => {
-          const barWidth = xScale.bandwidth();
-          const barHeight = yMax - (yScale(d.count) ?? 0);
-          const barX = xScale(d.date) ?? 0;
-          const barY = yMax - barHeight;
+        
+        {/* LÉGENDE IN-CHART (Top Right) */}
+        <Group left={xMax - 180} top={-5}>
+             <rect x={0} y={0} width={8} height={8} fill={COLORS_MAP.sentNeg} rx={2} />
+             <text x={12} y={8} fill="#ffffff" opacity={0.6} fontSize={9} fontFamily="sans-serif">ENVOYÉ</text>
+             
+             <rect x={60} y={0} width={8} height={8} fill={COLORS_MAP.opened} rx={2} />
+             <text x={72} y={8} fill="#ffffff" opacity={0.6} fontSize={9} fontFamily="sans-serif">OUVERT</text>
 
-          return (
-            <React.Fragment key={`bar-${d.date}`}>
-               <Bar
-                  x={barX}
-                  y={barY}
-                  width={barWidth}
-                  height={barHeight}
-                  fill="url(#pressure-gradient)"
-                  rx={2}
-                  onMouseOver={(e) => {
-                     (e.target as SVGRectElement).style.fillOpacity = "0.8";
-                  }}
-                  onMouseOut={(e) => {
-                     (e.target as SVGRectElement).style.fillOpacity = "1";
-                  }}
-               >
-                   <title>{`${new Date(d.date).toLocaleDateString('fr-FR')} : ${d.count} interactions`}</title>
-               </Bar>
-            </React.Fragment>
-          );
-        })}
+             <rect x={120} y={0} width={8} height={8} fill={COLORS_MAP.clicked} rx={2} />
+             <text x={132} y={8} fill="#ffffff" opacity={0.6} fontSize={9} fontFamily="sans-serif">CLIQUÉ</text>
+        </Group>
+
+        <BarStack
+            data={stackedData}
+            keys={KEYS}
+            x={d => d.date}
+            xScale={xScale}
+            yScale={yScale}
+            color={colorScale}
+        >
+            {barStacks =>
+                barStacks.map(stack =>
+                    stack.bars.map(bar => (
+                        <rect
+                            key={`bar-stack-${stack.key}-${bar.index}`}
+                            x={bar.x}
+                            y={bar.y}
+                            width={bar.width}
+                            height={bar.height}
+                            fill={bar.color}
+                            rx={2} // Rounded stacks
+                            opacity={0.9}
+                        />
+                    ))
+                )
+            }
+        </BarStack>
+
         <AxisBottom
             top={yMax}
             scale={xScale}
             stroke="rgba(255,255,255,0.1)"
             tickStroke="rgba(255,255,255,0.1)"
             tickLabelProps={() => ({
-              fill: 'rgba(255,255,255,0.4)',
-              fontSize: 9,
+              fill: '#ffffff',
+              fontSize: 12, // High Contrast Fix (Option A kept)
+              opacity: 0.8,
               textAnchor: 'middle',
               fontFamily: 'sans-serif',
               fontWeight: 600,
@@ -90,12 +144,6 @@ const EmailPressureContent: React.FC<EmailPressureVisxProps & { width: number; h
             }}
           />
       </Group>
-      <defs>
-        <linearGradient id="pressure-gradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4F46E5" stopOpacity={0.9} />
-          <stop offset="100%" stopColor="#4F46E5" stopOpacity={0.2} />
-        </linearGradient>
-      </defs>
     </svg>
   );
 };

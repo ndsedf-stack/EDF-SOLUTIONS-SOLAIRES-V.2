@@ -59,8 +59,9 @@ export const LeadsFlowVisx: React.FC<Props> = ({ data, width, height }) => {
           stroke="#ffffff10"
           tickStroke="#ffffff10"
           tickLabelProps={() => ({
-            fill: '#ffffff20',
-            fontSize: 9,
+            fill: '#ffffff',
+            fontSize: 12,
+            opacity: 0.8,
             fontFamily: 'IBM Plex Mono',
             textAnchor: 'middle',
           })}
@@ -70,9 +71,10 @@ export const LeadsFlowVisx: React.FC<Props> = ({ data, width, height }) => {
           scale={yScale}
           stroke="#ffffff10"
           tickStroke="#ffffff10"
-          tickLabelProps={() => ({
-            fill: '#ffffff20',
-            fontSize: 9,
+            tickLabelProps={() => ({
+            fill: '#ffffff',
+            fontSize: 12,
+            opacity: 0.8,
             fontFamily: 'IBM Plex Mono',
             textAnchor: 'end',
             verticalAnchor: 'middle',
@@ -94,7 +96,7 @@ export const LeadsFlowVisx: React.FC<Props> = ({ data, width, height }) => {
             x={d => xScale(d.day)}
             y={d => yScale(d.lost)}
             stroke={COLORS.lost}
-            strokeWidth={1}
+            strokeWidth={2.5}
             strokeDasharray="4 4"
             curve={curveMonotoneX}
         />
