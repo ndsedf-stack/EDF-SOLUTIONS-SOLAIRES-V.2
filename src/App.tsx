@@ -7,6 +7,7 @@ import { supabase } from "./lib/supabase";
 import GuestView from "./components/GuestView";
 import { calculateGreenPositioningFromAddress } from "./greenValueEngine.ts";
 import Dashboard from "./components/Dashboard";
+import { OpsAuditApi } from "./pages/api/_mock/OpsAuditApi";
 
 const MainApp: React.FC = () => {
   const [hasData, setHasData] = useState(false);
@@ -21,6 +22,9 @@ const MainApp: React.FC = () => {
   console.log("profileDetected:", profileDetected);
   console.log("simulationData:", simulationData);
   console.log("study:", study);
+
+  // NOUVEAU STATE Pour stocker tout le résultat de SpeechView (pas juste le profil)
+  const [detectionResult, setDetectionResult] = useState<any>(null);
 
   const handleUploadSuccess = async (data: any) => {
     setIsLoading(true); // 👈 ICI
@@ -48,9 +52,26 @@ const MainApp: React.FC = () => {
     setIsLoading(false); // 👈 ICI
   };
 
-  const applyProfile = (profile: string) => {
+  const applyProfile = (result: any) => {
+    // result est maintenant un objet { profile, signals, alerts, rawScores, ... }
+    const profile = result.profile || result; // Fallback
+    
+    // LOGS ET ALERTES (Demande User)
     console.log("✅ Profil détecté:", profile);
-    setProfileDetected(profile);
+    console.log("🧠 Signaux psychologiques:", result.signals);
+
+    if (result.alerts) {
+        console.log("🛡️ Alertes Garde-Fous:", result.alerts);
+        if (result.alerts.fatigueCritical) {
+            console.warn("🚨 FATIGUE CRITIQUE — Parcours ultra-simplifié imposé");
+        }
+        if (result.alerts.incoherentAnswers) {
+            console.warn("⚠️ CONTRADICTIONS — Bascule prudente activée");
+        }
+    }
+
+    setDetectionResult(result); // Stocke tout le résultat
+    setProfileDetected(profile); // Déclenche l'affichage
   };
 
   return (
@@ -82,6 +103,7 @@ const MainApp: React.FC = () => {
         <ResultsDashboard
           data={{
             profile: profileDetected,
+            speechResult: detectionResult, // ✅ On passe tout le résultat ici
             greenPositioning: greenPositioning, // ✅ AJOUT UNIQUE ICI
             params: {
               // ✅ MAPPING CORRECT FileUpload → ResultsDashboard
@@ -119,6 +141,7 @@ const MainApp: React.FC = () => {
           onReset={() => {
             setHasData(false);
             setProfileDetected(null);
+            setDetectionResult(null);
             setSimulationData(null);
             setStudy(null);
           }}
@@ -133,14 +156,13 @@ const MainApp: React.FC = () => {
 
 const App = () => (
   <BrowserRouter>
-    <div style={{background:'red', color:'white', padding:20, fontSize:30, fontWeight: 'bold', textAlign: 'center', position: 'relative', zIndex: 9999}}>
-      🚨 VERSION TEST V2 – 27/01
-    </div>
     <Routes>
       <Route path="/" element={<MainApp />} />
       {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
       <Route path="/guest/:studyId" element={<GuestView />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/api/ops/audit" element={<OpsAuditApi mode="json" />} />
+      <Route path="/api/ops/audit/download" element={<OpsAuditApi mode="download" />} />
     </Routes>
   </BrowserRouter>
 );

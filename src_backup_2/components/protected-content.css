@@ -1,0 +1,70 @@
+/* 🛡️ PROTECTION FRONTEND */
+
+/* 1. Bloquer la sélection de texte */
+.protected-mode {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 2. Bloquer les interactions sur les images (drag & drop) */
+.protected-mode img {
+    pointer-events: none;
+    -webkit-user-drag: none;
+}
+
+/* 3. Filigrane "CONFIDENTIEL" */
+.watermark-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Laisse passer les clics au travers */
+    z-index: 9999;
+    overflow: hidden;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    opacity: 0.04; /* Très discret */
+    mix-blend-mode: overlay;
+}
+
+.watermark-item {
+    width: 300px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-30deg);
+    font-family: sans-serif;
+    font-weight: 900;
+    font-size: 24px;
+    color: white;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* 4. Protection Impression */
+@media print {
+    body * {
+        display: none !important;
+    }
+    
+    body:after {
+        content: "DOCUMENT CONFIDENTIEL - IMPRESSION INTERDITE - IP LOGGÉE";
+        display: block !important;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24pt;
+        color: black;
+        border: 5px solid black;
+        padding: 40px;
+        text-align: center;
+        background: white;
+        z-index: 99999;
+    }
+}

@@ -184,7 +184,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         <div className="col-span-1 lg:col-span-7 space-y-4 sm:space-y-6 lg:space-y-8">
           {/* PROFIL ÉNERGÉTIQUE */}
           <div className="bg-[#0a0a0a] border border-zinc-800/60 rounded-2xl sm:rounded-[32px] p-4 sm:p-6 lg:p-8 shadow-2xl">
-            <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-red-500">
+            <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-blue-500">
               <TrendingDown size={16} className="sm:w-[18px] sm:h-[18px]" />{" "}
               Profil Énergétique
             </h3>
@@ -199,18 +199,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                     name="currentBillYear"
                     value={formData.currentBillYear}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent text-4xl sm:text-5xl lg:text-6xl font-black outline-none"
+                    className="w-full bg-transparent text-4xl sm:text-5xl lg:text-6xl font-black outline-none text-blue-500"
                   />
-                  <div className="text-xs sm:text-sm text-purple-400/60 font-bold mt-2">
-                    {formData.creditMonthly}€/mois
+                  <div className="text-xs sm:text-sm text-slate-400/60 font-bold mt-2">
+                    {(safeParseFloat(formData.currentBillYear) / 12).toFixed(2)}€/mois
                   </div>
                 </div>
               </div>
               <div className="space-y-3 text-left sm:text-right">
-                <label className="text-[9px] sm:text-[10px] font-bold text-emerald-500 uppercase block tracking-widest ml-1 sm:mr-1">
+                <label className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase block tracking-widest ml-1 sm:mr-1">
                   Prix kWh (€)
                 </label>
-                <div className="w-full bg-[#111] border border-zinc-800 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-4 sm:py-6 text-4xl sm:text-5xl lg:text-6xl font-black text-emerald-500 tracking-tighter tabular-nums">
+                <div className="w-full bg-[#111] border border-zinc-800 rounded-xl sm:rounded-2xl px-4 sm:px-6 py-4 sm:py-6 text-4xl sm:text-5xl lg:text-6xl font-black text-blue-400/80 tracking-tighter tabular-nums">
                   {formData.pricePerKwh}
                 </div>
               </div>
@@ -239,7 +239,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                     name="yearlyConsumption"
                     value={formData.yearlyConsumption}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent text-3xl sm:text-4xl font-black text-yellow-500 outline-none"
+                    className="w-full bg-transparent text-3xl sm:text-4xl font-black text-blue-500 outline-none"
                   />
                   <button className="bg-blue-600 p-2 rounded-full hover:scale-110 transition-transform shadow-lg shadow-blue-600/20">
                     <UploadCloud size={14} className="text-white" />
@@ -255,7 +255,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   name="inflation"
                   value={formData.inflation}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent text-3xl sm:text-4xl font-black text-white outline-none sm:text-right"
+                  value={formData.inflation}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent text-3xl sm:text-4xl font-black text-blue-400/60 outline-none sm:text-right"
                 />
               </div>
             </div>
@@ -263,7 +265,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
           {/* FINANCEMENT (Calculé via ton code) */}
           <div className="bg-[#0a0a0a] border border-zinc-800/60 rounded-2xl sm:rounded-[32px] p-4 sm:p-6 lg:p-8 shadow-2xl">
-            <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-purple-500">
+            <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-orange-500">
               <Calendar size={16} className="sm:w-[18px] sm:h-[18px]" />{" "}
               Financement & Investissement
             </h3>
@@ -277,14 +279,16 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   name="installPrice"
                   value={formData.installPrice}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent text-xl sm:text-2xl font-black text-white outline-none"
+                  value={formData.installPrice}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent text-xl sm:text-2xl font-black text-orange-400/80 outline-none"
                 />
               </div>
-              <div className="bg-[#111] border-2 border-purple-500/30 p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-purple-500/5">
-                <label className="text-[8px] sm:text-[9px] font-bold text-purple-400 uppercase block mb-2 italic">
+              <div className="bg-[#111] border border-zinc-800 p-3 sm:p-5 rounded-xl sm:rounded-2xl">
+                <label className="text-[8px] sm:text-[9px] font-bold text-orange-400/60 uppercase block mb-2 italic">
                   Mensualité (€)
                 </label>
-                <div className="text-2xl sm:text-3xl font-black text-purple-400 tabular-nums">
+                <div className="text-2xl sm:text-3xl font-black text-orange-400 tabular-nums">
                   {formData.creditMonthly}
                 </div>
               </div>
@@ -310,7 +314,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   name="creditRate"
                   value={formData.creditRate}
                   onChange={handleInputChange}
-                  className="w-full bg-transparent text-xl sm:text-2xl font-black text-white outline-none"
+                  value={formData.creditRate}
+                  onChange={handleInputChange}
+                  className="w-full bg-transparent text-xl sm:text-2xl font-black text-orange-400/80 outline-none"
                 />
               </div>
             </div>
@@ -320,13 +326,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         {/* COLONNE DROITE EXPERTISE */}
         <div className="col-span-1 lg:col-span-5">
           <div className="bg-[#0a0a0a] border border-zinc-800/60 rounded-2xl sm:rounded-[32px] p-4 sm:p-6 lg:p-8 flex flex-col h-full shadow-2xl">
-            <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-blue-500">
+            <h3 className="text-xs sm:text-sm font-black uppercase italic tracking-wider mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 text-emerald-500">
               <Sun size={18} className="sm:w-5 sm:h-5" /> Expertise PVGIS
             </h3>
 
             <div className="space-y-4 sm:space-y-6 lg:space-y-8 flex-grow">
               <div className="relative">
-                <label className="text-[9px] sm:text-[10px] font-bold text-blue-400 uppercase mb-2 sm:mb-3 flex items-center gap-2 tracking-[0.1em]">
+                <label className="text-[9px] sm:text-[10px] font-bold text-emerald-600 uppercase mb-2 sm:mb-3 flex items-center gap-2 tracking-[0.1em]">
                   <MapPin size={12} /> Localisation
                 </label>
                 <input
@@ -350,7 +356,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                     name="puissanceInstallee"
                     value={formData.puissanceInstallee}
                     onChange={handleInputChange}
-                    className="w-full bg-transparent text-2xl sm:text-3xl font-black text-blue-500 outline-none"
+                    className="w-full bg-transparent text-2xl sm:text-3xl font-black text-emerald-600 outline-none"
                   />
                 </div>
                 <div className="bg-black/40 border border-zinc-800 p-3 sm:p-5 rounded-xl sm:rounded-2xl">
@@ -373,7 +379,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 </span>
                 <div className="flex items-center justify-between">
                   <div className="flex items-baseline gap-3">
-                    <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tabular-nums tracking-tighter">
+                    <span className={`text-4xl sm:text-5xl lg:text-6xl font-black tabular-nums tracking-tighter ${formData.production === "0" ? "text-zinc-800" : "text-emerald-500"}`}>
                       {formData.production}
                     </span>
                     <span className="text-xs sm:text-sm font-black text-zinc-700 uppercase">
@@ -382,14 +388,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   </div>
                   <button
                     onClick={fetchProductionAuto}
-                    className="bg-emerald-500 p-2 sm:p-3 rounded-lg sm:rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:scale-105 active:scale-95 transition-all"
+                    className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 p-2 sm:p-3 rounded-lg sm:rounded-xl hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all"
                   >
                     {isPvgisLoading ? (
-                      <Loader2 className="animate-spin w-5 h-5 sm:w-6 sm:h-6 text-black" />
+                      <Loader2 className="animate-spin w-5 h-5 sm:w-6 sm:h-6" />
                     ) : (
                       <Zap
                         size={20}
-                        className="w-5 h-5 sm:w-6 sm:h-6 text-black"
+                        className="w-5 h-5 sm:w-6 sm:h-6"
                         fill="currentColor"
                       />
                     )}
@@ -403,7 +409,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <span className="text-[8px] sm:text-[9px] text-zinc-600 font-bold uppercase italic block tracking-widest">
                   Rendement de zone
                 </span>
-                <div className="text-xl sm:text-2xl font-black text-blue-500 tabular-nums">
+                <div className="text-xl sm:text-2xl font-black text-emerald-500 tabular-nums">
                   {formData.ratioLocal || "—"}{" "}
                   <span className="text-[9px] sm:text-[10px] text-zinc-700">
                     kWh/kWc
