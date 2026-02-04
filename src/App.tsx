@@ -154,13 +154,33 @@ const MainApp: React.FC = () => {
   );
 };
 
+import { AuthGuard } from "./components/AuthGuard";
+
+import AdminDashboard from "./pages/admin/AdminDashboard";
+
 const App = () => (
   <BrowserRouter>
     <Routes>
-      <Route path="/" element={<MainApp />} />
+      <Route path="/" element={
+        <AuthGuard>
+          <MainApp />
+        </AuthGuard>
+      } />
       {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
       <Route path="/guest/:studyId" element={<GuestView />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/dashboard" element={
+        <AuthGuard>
+          <Dashboard />
+        </AuthGuard>
+      } />
+      
+      {/* ✅ ADMIN DASHBOARD (Cockpit Gouvernance) */}
+      <Route path="/admin" element={
+        <AuthGuard>
+          <AdminDashboard />
+        </AuthGuard>
+      } />
+
       <Route path="/api/ops/audit" element={<OpsAuditApi mode="json" />} />
       <Route path="/api/ops/audit/download" element={<OpsAuditApi mode="download" />} />
     </Routes>

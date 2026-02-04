@@ -441,41 +441,43 @@ export function SpeechView({ onProfileDetected }: SpeechViewProps) {
   // Question bonus
   if (step === "bonus") {
     return (
-      <div className="w-full max-w-2xl mx-auto bg-zinc-900/50 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
-        {/* Progression : 100% (5/5) */}
-        <div className="flex gap-2 mb-6">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-1 flex-1 rounded-full bg-blue-500"
-            />
-          ))}
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4 w-full">
+        <div className="w-full max-w-2xl mx-auto bg-zinc-900/50 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
+          {/* Progression : 100% (5/5) */}
+          <div className="flex gap-2 mb-6">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-1 flex-1 rounded-full bg-blue-500"
+              />
+            ))}
+          </div>
 
-        <p className="text-xs text-zinc-400 mb-4 italic">
-          Une dernière pour affiner — toujours sans bonne ou mauvaise réponse.
-        </p>
+          <p className="text-xs text-zinc-400 mb-4 italic">
+            Une dernière pour affiner — toujours sans bonne ou mauvaise réponse.
+          </p>
 
-        <p className="text-[10px] text-blue-400/80 font-semibold uppercase tracking-wide mb-2">
-          QUESTION BONUS
-        </p>
+          <p className="text-[10px] text-blue-400/80 font-semibold uppercase tracking-wide mb-2">
+            QUESTION BONUS
+          </p>
 
-        <h2 className="text-2xl font-bold text-white mb-8 leading-tight">
-          {bonusQuestion.q}
-        </h2>
+          <h2 className="text-2xl font-bold text-white mb-8 leading-tight">
+            {bonusQuestion.q}
+          </h2>
 
-        <div className="space-y-4">
-          {bonusQuestion.answers.map((a, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                setTimeout(() => handleBonusAnswer(a.scores, a.neutral), 600);
-              }}
-              className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/10 text-left text-white rounded-2xl transition-all"
-            >
-              {a.text}
-            </button>
-          ))}
+          <div className="space-y-4">
+            {bonusQuestion.answers.map((a, i) => (
+              <button
+                key={i}
+                onClick={() => {
+                  setTimeout(() => handleBonusAnswer(a.scores, a.neutral), 600);
+                }}
+                className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/10 text-left text-white rounded-2xl transition-all"
+              >
+                {a.text}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -483,47 +485,49 @@ export function SpeechView({ onProfileDetected }: SpeechViewProps) {
 
   // Questions principales (1-4)
   return (
-    <div className="w-full max-w-2xl mx-auto bg-zinc-900/50 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
-      {/* Progression visuelle */}
-      <div className="flex gap-2 mb-6">
-        {[0, 1, 2, 3].map((i) => (
-          <div
-            key={i}
-            className={`h-1 flex-1 rounded-full transition-all ${
-              i <= questionIndex ? "bg-blue-500" : "bg-white/10"
-            }`}
-          />
-        ))}
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 w-full">
+      <div className="w-full max-w-2xl mx-auto bg-zinc-900/50 backdrop-blur-md p-8 rounded-3xl border border-white/10 shadow-2xl">
+        {/* Progression visuelle */}
+        <div className="flex gap-2 mb-6">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className={`h-1 flex-1 rounded-full transition-all ${
+                i <= questionIndex ? "bg-blue-500" : "bg-white/10"
+              }`}
+            />
+          ))}
+        </div>
 
-      {/* Phrase neutralisante */}
-      <p className="text-xs text-zinc-400 mb-4 italic">
-        Aucune bonne ou mauvaise réponse — juste pour adapter la manière dont on vous explique les choses.
-      </p>
+        {/* Phrase neutralisante */}
+        <p className="text-xs text-zinc-400 mb-4 italic">
+          Aucune bonne ou mauvaise réponse — juste pour adapter la manière dont on vous explique les choses.
+        </p>
 
-      {/* Titre */}
-      <p className="text-[10px] text-blue-400/80 font-semibold uppercase tracking-wide mb-2">
-        4 QUESTIONS — VOTRE SITUATION
-      </p>
+        {/* Titre */}
+        <p className="text-[10px] text-blue-400/80 font-semibold uppercase tracking-wide mb-2">
+          4 QUESTIONS — VOTRE SITUATION
+        </p>
 
-      {/* Question */}
-      <h2 className="text-2xl font-bold text-white mb-8 leading-tight">
-        {questions[questionIndex].q}
-      </h2>
+        {/* Question */}
+        <h2 className="text-2xl font-bold text-white mb-8 leading-tight">
+          {questions[questionIndex].q}
+        </h2>
 
-      {/* Réponses */}
-      <div className="space-y-4">
-        {questions[questionIndex].answers.map((a, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              setTimeout(() => handleAnswer(a.scores, a.neutral), 800);
-            }}
-            className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/10 text-left text-white rounded-2xl transition-all"
-          >
-            {a.text}
-          </button>
-        ))}
+        {/* Réponses */}
+        <div className="space-y-4">
+          {questions[questionIndex].answers.map((a, i) => (
+            <button
+              key={i}
+              onClick={() => {
+                setTimeout(() => handleAnswer(a.scores, a.neutral), 800);
+              }}
+              className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/10 text-left text-white rounded-2xl transition-all"
+            >
+              {a.text}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

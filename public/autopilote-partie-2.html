@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoPilote Solaire - Partie 2: Système & ROI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* STRICT PALETTE: Deep Space Black, White/Silver, Orange Accent */
+        :root {
+            --bg-deep: #050505;
+            --bg-card: rgba(20, 20, 20, 0.6);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            
+            --accent: #f97316; /* Orange */
+            --accent-glow: rgba(249, 115, 22, 0.15);
+            
+            /* Muted semantic colors (only when strictly necessary) */
+            --semantic-green: #34d399;
+            --semantic-red: #f87171;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% -20%, rgba(40, 40, 40, 1) 0%, rgba(5, 5, 5, 1) 60%);
+            color: var(--text-main);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        .container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            padding: 0 40px 140px; 
+            position: relative;
+        }
+
+        /* Subtle Ambient Glow */
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 30%, rgba(249, 115, 22, 0.03), transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        nav {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(24px);
+            z-index: 100;
+            margin: 0 -40px 60px;
+            padding: 0 40px;
+        }
+
+        .logo { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-main); opacity: 0.9; }
+        .badge { padding: 6px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 100px; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; }
+
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .hero, section, .cta-section { animation: fadeUp 0.8s ease-out forwards; opacity: 0; }
+        .hero { animation-delay: 0.1s; }
+
+        .hero { padding: 40px 0 80px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 100px; }
+        h1 { font-family: 'Outfit', sans-serif; font-size: clamp(3.5rem, 6vw, 5.5rem); font-weight: 700; line-height: 1.05; margin-bottom: 32px; letter-spacing: -0.03em; color: var(--text-main); }
+        .accent { background: linear-gradient(135deg, #fff 30%, #999 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { font-size: 1.35rem; color: var(--text-muted); max-width: 800px; line-height: 1.6; margin-bottom: 50px; font-weight: 300; }
+
+        .kicker { font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 16px; display: inline-block; border: 1px solid var(--border-subtle); padding: 4px 10px; border-radius: 100px; }
+        
+        h2 { font-family: 'Outfit', sans-serif; font-size: clamp(2.2rem, 4vw, 3.2rem); font-weight: 600; margin-bottom: 32px; letter-spacing: -0.02em; color: var(--text-main); }
+        h3 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 600; margin-bottom: 16px; color: var(--text-main); }
+        h4 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; color: var(--text-main); }
+
+        .accordion { margin-top: 40px; }
+        .accordion-item { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px; margin-bottom: 16px; overflow: hidden; transition: all 0.3s; }
+        .accordion-item:hover { border-color: var(--border-hover); background: rgba(30,30,30,0.6); }
+        .accordion-header { padding: 24px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-family: 'Outfit', sans-serif; font-weight: 600; color: var(--text-main); transition: background 0.2s; }
+        .accordion-icon { transition: transform 0.3s; color: var(--accent); opacity: 0.8; }
+        .accordion-item.active .accordion-icon { transform: rotate(180deg); }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; background: rgba(0,0,0,0.2); }
+        .accordion-item.active .accordion-content { max-height: 2000px; }
+        .accordion-body { padding: 24px; color: var(--text-muted); line-height: 1.6; border-top: 1px solid var(--border-subtle); }
+
+        .grid { display: grid; gap: 24px; margin-top: 40px; }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        
+        @media (max-width: 1024px) { .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+        
+        .card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 40px; transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .card:hover { border-color: var(--border-hover); transform: translateY(-4px); background: rgba(30, 30, 30, 0.6); box-shadow: 0 20px 40px rgba(0,0,0,0.3); }
+
+        .pill { display: inline-flex; padding: 6px 14px; border-radius: 100px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+        .pill-orange { background: rgba(249,115,22,0.1); color: #fdba74; border: 1px solid rgba(249,115,22,0.2); }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; background: transparent; border: 1px solid var(--border-subtle); border-radius: 16px; overflow: hidden; margin: 40px 0; }
+        thead { background: rgba(255,255,255,0.02); }
+        th { padding: 24px; text-align: left; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle); }
+        td { padding: 24px; border-bottom: 1px solid var(--border-subtle); color: var(--text-main); font-size: 1.05rem; }
+        tr:last-child td { border-bottom: none; }
+
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 50px; }
+        .comparison-before { background: rgba(255, 50, 50, 0.03); border: 1px solid rgba(255, 50, 50, 0.1); border-radius: 16px; padding: 40px; }
+        .comparison-after { background: rgba(50, 255, 100, 0.03); border: 1px solid rgba(50, 255, 100, 0.1); border-radius: 16px; padding: 40px; }
+        .comparison-title { font-family: 'Outfit', sans-serif; font-weight: 600; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; font-size: 1.25rem; color: var(--text-main); }
+        @media (max-width: 900px) { .comparison { grid-template-columns: 1fr; } }
+
+        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px; margin-top: 60px; }
+        .pricing-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 20px; padding: 40px; display: flex; flex-direction: column; transition: all 0.3s; position: relative; }
+        .pricing-card.featured { border-color: rgba(249,115,22,0.3); background: linear-gradient(135deg, rgba(249,115,22,0.05), rgba(20,20,20,0.8)); transform: scale(1.02); z-index: 10; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        .pricing-name { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px; }
+        .pricing-amount { font-family: 'Outfit', sans-serif; font-size: 3.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 8px; letter-spacing: -0.02em; }
+        .pricing-period { color: var(--text-muted); margin-bottom: 32px; }
+        .pricing-features { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+        .pricing-feature { display: flex; align-items: center; gap: 12px; color: var(--text-muted); font-size: 0.95rem; }
+        .pricing-feature span:first-child { color: var(--accent); }
+
+        .cta-section { background: radial-gradient(circle at 50% 150%, rgba(249,115,22,0.1), transparent 70%); border: 1px solid var(--border-subtle); border-radius: 24px; padding: 80px; text-align: center; margin-top: 120px; box-shadow: 0 0 80px rgba(0,0,0,0.2); }
+        
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; height: 56px; padding: 0 40px; background: var(--text-main); color: #000; font-weight: 700; font-size: 1rem; border-radius: 8px; text-decoration: none; transition: all 0.3s; margin-top: 32px; cursor: pointer; letter-spacing: -0.01em; border: none; }
+        .btn:hover { background: #e5e5e5; transform: scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+        .callout { padding: 32px; border-radius: 12px; margin: 40px 0; border-left: 2px solid; font-size: 1.1rem; background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent); }
+        .callout-info { border-color: var(--accent); color: #e5e5e5; }
+        .callout-success { border-color: var(--semantic-green); color: #e5e5e5; }
+
+        footer { border-top: 1px solid var(--border-subtle); padding: 60px 0; margin-top: 120px; text-align: center; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="container">
+        <nav>
+            <div class="logo">⚡ AutoPilote Solaire</div>
+            <div class="badge">🔒 PARTIE 2/2</div>
+        </nav>
+
+        <header class="hero">
+            <div class="kicker">Document Confidentiel — Partie 2: Système, ROI & Engagement</div>
+            <h1>Architecture <span class="accent">& ROI</span></h1>
+            <p class="subtitle">
+                Architecture technique complète en 5 phases, ROI mesuré sur cas clients réels, 
+                tarification transparente et processus d'engagement.
+            </p>
+        </header>
+
+        <section>
+            <div class="kicker">Section 04 — Architecture Technique</div>
+            <h2>Système Intégral en 5 Phases</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px; max-width: 800px; font-size: 1.1rem;">
+                Le système fonctionne en 5 phases interconnectées, de la capture de données client 
+                jusqu'à l'action commerciale validée. Chaque phase est auditée et traçable.
+            </p>
+
+            <div class="accordion">
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>PHASE 1 — Expérience Client Intelligente (Interface Adaptative)</span><span class="accordion-icon">▼</span></div>
+                    <div class="accordion-content"><div class="accordion-body">
+                        <p style="margin-bottom: 16px;">Le système ne présente pas la même chose à tout le monde. Il observe, s'adapte, et personnalise en temps réel.</p>
+                        <h4 style="margin-bottom: 12px;">MODULE 1 : Simulateur financier intelligent (ResultsDashboard)</h4>
+                        <ul style="color: var(--text-muted); margin-left: 20px; margin-bottom: 20px; line-height: 1.8;"><li>Inflation 5% annuelle, prix kWh évolutif, taille habitation, orientation toiture</li><li>ROI précis, cashflow mensuel, point mort sur 3 scénarios (10, 15, 20 ans)</li><li>Validation solvabilité : taux d'endettement max 35%, revenus déclarés</li><li>Comparaison avec/sans installation : économies année par année</li></ul>
+                        <h4 style="margin-bottom: 12px;">MODULE 2 : Profilage psychologique comportemental</h4>
+                        <ul style="color: var(--text-muted); margin-left: 20px; margin-bottom: 20px; line-height: 1.8;"><li><strong>Hésitation :</strong> temps de réponse sur chaque question</li><li><strong>Besoin de preuves :</strong> clics sur 'Voir détails', 'Certifications'</li><li><strong>Peur de l'erreur :</strong> retours en arrière, re-lecture</li><li><strong>Sensibilité au prix :</strong> temps passé sur tarif</li></ul>
+                        <h4 style="margin-bottom: 12px;">MODULE 3 : Agent Zero (Cerveau d'adaptation temps réel)</h4>
+                        <ul style="color: var(--text-muted); margin-left: 20px;"><li>Réorganise l'ordre des modules selon profil détecté</li><li>Règle vitesse d'affichage (750ms rassure, 200ms dynamise)</li><li>Adapte vocabulaire (technique/simplifié/urgent)</li><li>Décide du niveau de détail (masque ou expose)</li></ul>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>PHASE 2 — Stockage & Tracking (Supabase PostgreSQL)</span><span class="accordion-icon">▼</span></div>
+                    <div class="accordion-content"><div class="accordion-body">
+                        <p style="margin-bottom: 16px;">Base de données centrale stockant vérité commerciale et comportementale.</p>
+                        <ul style="color: var(--text-muted); margin-left: 20px; line-height: 1.8;"><li><strong>Table 'studies' :</strong> simulations financières avec statut (simulated → signed → paid)</li><li><strong>Table 'tracking_events' :</strong> vues, clics, temps passé → détection état 'Agité' ou 'Muet'</li><li><strong>Table 'email_queue' :</strong> file d'attente emails validés par Guards</li><li><strong>Table 'decision_logs' :</strong> boîte noire inviolable de toute recommandation système (audit trail complet)</li></ul>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>PHASE 3 — Cerveau Décisionnel (SystemBrain - TypeScript)</span><span class="accordion-icon">▼</span></div>
+                    <div class="accordion-content"><div class="accordion-body">
+                        <p style="margin-bottom: 16px;">Intelligence locale tournant dans dashboard admin. Analyse et recommande.</p>
+                        <h4 style="margin-bottom: 12px;">1. Analyse des signaux (Engine)</h4>
+                        <ul style="color: var(--text-muted); margin-left: 20px; margin-bottom: 20px; line-height: 1.8;"><li><strong>Danger Score (0-100)</strong> par dossier : (Poids Temps) + (Poids Valeur) + (Poids Comportement)</li><li><strong>États :</strong> Muet (0 réaction), Agité (stress sans clic), Intéressé (clics actifs), Fatigué (trop de relances)</li></ul>
+                        <h4 style="margin-bottom: 12px;">2. Segmentation stratégique (3 axes)</h4>
+                        <ul style="color: var(--text-muted); margin-left: 20px; line-height: 1.8;"><li><strong>AXE A (Signés) :</strong> priorité absolue, sécurisation acompte</li><li><strong>AXE B (Pipeline) :</strong> opportunités chaudes à closer</li><li><strong>AXE C (Leads) :</strong> vivier à nurturer avec parcimonie</li></ul>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>PHASE 4 — Agents Autonomes de Gouvernance (Ops Agent)</span><span class="accordion-icon">▼</span></div>
+                    <div class="accordion-content"><div class="accordion-body">
+                        <p style="margin-bottom: 16px;">Couche de sécurité empêchant toute action non-conforme. Aucune recommandation n'atteint le commercial sans validation de TOUS les Guards.</p>
+                        <ul style="color: var(--text-muted); margin-left: 20px; line-height: 1.8;"><li><strong>Temporal Guard :</strong> bloque si &lt; 24h depuis dernier contact (prévention harcèlement)</li><li><strong>Fatigue Guard :</strong> bloque si client 'Fatigué' (&gt;3 relances sans réponse)</li><li><strong>Integrity Guard :</strong> vérifie cohérence données (aucune donnée orpheline)</li><li><strong>Privacy Guard :</strong> bloque tout si opt-out RGPD détecté</li><li><strong>OpsAudit :</strong> génère PDF de conformité prouvant respect des règles</li></ul>
+                    </div></div>
+                </div>
+
+                <div class="accordion-item">
+                    <div class="accordion-header" onclick="toggleAccordion(this)"><span>PHASE 5 — Interface Décisionnelle (Dashboard Admin)</span><span class="accordion-icon">▼</span></div>
+                    <div class="accordion-content"><div class="accordion-body">
+                        <p style="margin-bottom: 16px;">4 vues selon rôle utilisateur :</p>
+                        <ul style="color: var(--text-muted); margin-left: 20px; margin-bottom: 20px; line-height: 1.8;"><li><strong>Cockpit (Pilote) :</strong> UNE seule info → 'Qu'est-ce qui brûle maintenant ?'</li><li><strong>War Room (Exécution) :</strong> tableau tactique AXE A/B, actions [Relancer] [Acompte]</li><li><strong>Pilotage (Stratège) :</strong> graphiques performance, cartes thermiques de risque</li><li><strong>Registres (Comptable) :</strong> accès brut aux tables, export, analyse forensique</li></ul>
+                        <h4 style="margin-bottom: 12px;">Stack Technique</h4>
+                        <ul style="color: var(--text-muted); margin-left: 20px; line-height: 1.8;"><li><strong>Front-end :</strong> React + TypeScript + Vite (Vercel, CDN global)</li><li><strong>Base de données :</strong> Supabase PostgreSQL + Edge Functions</li><li><strong>IA Core :</strong> Python Flask (PythonAnywhere) avec clé API sécurisée</li><li><strong>Connexion :</strong> API REST HTTPS-only, authentification JWT</li><li><strong>Logs :</strong> Table decision_logs = boîte noire inviolable (append-only)</li></ul>
+                    </div></div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 24px;">Couverture du Cycle Commercial — 3 Axes Critiques</h3>
+            <div class="grid grid-3">
+                <div class="card">
+                    <div class="pill pill-orange">AXE A</div>
+                    <h4>POST-SIGNATURE</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px;">Protection du CA acquis. Détecter les signaux d'annulation.</p>
+                    <div style="font-size: 0.85rem; color: #6b7280;">Signaux : Silence &gt;72h, conditions générales, recherche "annulation"</div>
+                </div>
+
+                <div class="card">
+                    <div class="pill pill-orange">AXE B</div>
+                    <h4>POST-RENDEZ-VOUS</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px;">Conversion sans pression. Distinguer réflexion saine d'évitement.</p>
+                    <div style="font-size: 0.85rem; color: #6b7280;">Signaux : Consultation doc, absence 5 jours, relecture devis</div>
+                </div>
+
+                <div class="card">
+                    <div class="pill pill-orange">AXE C</div>
+                    <h4>LEADS NON JOINTS</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 12px;">Protection de l'énergie commerciale. Prioriser selon probabilité.</p>
+                    <div style="font-size: 0.85rem; color: #6b7280;">Signaux : Score comportemental, adéquation ICP, historique</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 24px;">Sécurité, Conformité & Gouvernance</h3>
+            <table>
+                <thead><tr><th>Dimension</th><th>Garantie</th></tr></thead>
+                <tbody>
+                    <tr><td><strong>RGPD</strong></td><td>Conformité totale. Données France (OVH Gravelines). DPO dédié. Droit d'accès sous 48h.</td></tr>
+                    <tr><td><strong>Certifications</strong></td><td>ISO 27001 (sécurité), SOC 2 Type II (en cours, Q2 2026). Audit annuel cabinet tiers.</td></tr>
+                    <tr><td><strong>Mode lecture seule</strong></td><td>Par défaut, accès CRM en lecture seule. Aucune écriture automatique. Traçabilité complète.</td></tr>
+                    <tr><td><strong>Auditabilité décisionnelle</strong></td><td>Chaque recommandation documentée : input data, scores agents, justification. Export CSV.</td></tr>
+                    <tr><td><strong>Scalabilité enterprise</strong></td><td>Testé sur 10 000 opportunités simultanées. Multi-pays, multidevise, multi-BU. Latence &lt;200ms.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section>
+            <div class="kicker">Section 05 — Impact Business</div>
+            <h2>ROI Mesuré & Résultats Terrain</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px; font-size: 1.1rem;">
+                Validation réalisée dans un contexte critique : vente one-shot 10-30k€, 
+                rendez-vous unique, droit de rétractation 14 jours.
+            </p>
+
+            <div class="grid grid-4">
+                <div class="card" style="border-top-color: var(--semantic-green);">
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--semantic-green); margin-bottom: 8px;">+100%</div>
+                    <div style="color: var(--text-main); font-weight: 600;">Taux de Closing</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">De 15% à 30% avec ResultDashboard</div>
+                </div>
+
+                <div class="card" style="border-top-color: var(--semantic-green);">
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--semantic-green); margin-bottom: 8px;">-53%</div>
+                    <div style="color: var(--text-main); font-weight: 600;">Annulations</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">De 15% à 7% post-signature</div>
+                </div>
+
+                <div class="card" style="border-top-color: var(--semantic-green);">
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--semantic-green); margin-bottom: 8px;">2-3h</div>
+                    <div style="color: var(--text-main); font-weight: 600;">Temps Récupéré</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">Par commercial chaque jour</div>
+                </div>
+
+                <div class="card" style="border-top-color: var(--semantic-green);">
+                    <div style="font-size: 2.5rem; font-weight: 800; color: var(--semantic-green); margin-bottom: 8px;">2090%</div>
+                    <div style="color: var(--text-main); font-weight: 600;">ROI Année 1</div>
+                    <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">Payback en 18 jours</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 24px;">Cas Client : ROI Concret (Entreprise Solaire PME)</h3>
+            <div class="comparison">
+                <div class="comparison-before">
+                    <div class="comparison-title"><span style="font-size: 1.5rem;">❌</span><span>AVANT AUTOPILOTE</span></div>
+                    <ul style="list-style: none; padding: 0; color: var(--text-muted);">
+                        <li style="margin-bottom: 10px;">• Leads traités/an : <strong>200</strong></li>
+                        <li style="margin-bottom: 10px;">• Signatures : <strong>30</strong> (15% closing)</li>
+                        <li style="margin-bottom: 10px;">• Annulations : <strong>4,5</strong> (15% des 30)</li>
+                        <li style="margin-bottom: 10px;">• CA réalisé : <strong>1,7M€</strong></li>
+                        <li style="margin-bottom: 10px;">• Temps perdu : <strong>500h/an</strong></li>
+                    </ul>
+                </div>
+
+                <div class="comparison-after">
+                    <div class="comparison-title"><span style="font-size: 1.5rem;">✅</span><span>APRÈS AUTOPILOTE</span></div>
+                    <ul style="list-style: none; padding: 0; color: var(--text-muted);">
+                        <li style="margin-bottom: 10px;">• Leads traités/an : <strong>200</strong> (même volume)</li>
+                        <li style="margin-bottom: 10px;">• Signatures : <strong>60</strong> (30% closing)</li>
+                        <li style="margin-bottom: 10px;">• Annulations : <strong>4,2</strong> (7% des 60)</li>
+                        <li style="margin-bottom: 10px;">• CA réalisé : <strong>2,3M€</strong></li>
+                        <li style="margin-bottom: 10px;">• Temps récupéré : <strong style="color: var(--semantic-green);">500h → prospection</strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <table style="margin-top: 40px;">
+                <thead><tr><th>Ligne d'Impact</th><th>Montant Annuel</th></tr></thead>
+                <tbody>
+                    <tr><td>Coût système (10 licences × 79€ × 12 mois)</td><td style="color: var(--semantic-red);">-9 480€</td></tr>
+                    <tr><td>Gain annulations évitées (2 400 opps × 7% closing × 11% annul. évitée × 18k€)</td><td style="color: var(--semantic-green); font-weight: 700;">+332 640€</td></tr>
+                    <tr><td>Gain closing amélioré (2 400 × 7% hausse × 18k€)</td><td style="color: var(--semantic-green); font-weight: 700;">+302 400€</td></tr>
+                    <tr><td>Économie temps commercial (10 vendeurs × 4.2h/sem × 47 sem × 65€/h)</td><td style="color: var(--semantic-green); font-weight: 700;">+128 310€</td></tr>
+                    <tr style="background: rgba(16, 185, 129, 0.05);"><td><strong>GAIN NET ANNUEL</strong></td><td style="color: var(--semantic-green); font-weight: 800; font-size: 1.25rem;">+753 870€</td></tr>
+                    <tr style="background: rgba(249, 115, 22, 0.05);"><td><strong>ROI</strong></td><td style="color: var(--accent); font-weight: 800; font-size: 1.25rem;">7 952% (payback 18 jours)</td></tr>
+                </tbody>
+            </table>
+
+            <div class="callout callout-success">
+                <strong>💰 Garantie contractuelle :</strong> Si le ROI mesuré &lt; 500% sur 12 mois, 
+                remboursement intégral des licences (hors pilote).
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 24px;">Modèle Économique & Tarification</h3>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-name">Setup Initial</div>
+                    <div class="pricing-amount">20k€</div>
+                    <div class="pricing-period">Paiement unique</div>
+                    <div class="pricing-features"><div class="pricing-feature"><span>✓</span><span>Déploiement industrialisable</span></div><div class="pricing-feature"><span>✓</span><span>Configuration métier complète</span></div><div class="pricing-feature"><span>✓</span><span>Formation équipe incluse</span></div><div class="pricing-feature"><span>✓</span><span>Support fondateurs 6 mois</span></div></div>
+                </div>
+
+                <div class="pricing-card featured">
+                    <div class="pill pill-orange">RECOMMANDÉ</div>
+                    <div class="pricing-name">Abonnement Mensuel</div>
+                    <div class="pricing-amount">1,8k€</div>
+                    <div class="pricing-period">Par mois</div>
+                    <div class="pricing-features"><div class="pricing-feature"><span>✓</span><span>Licence logicielle complète</span></div><div class="pricing-feature"><span>✓</span><span>Infrastructure refacturée</span></div><div class="pricing-feature"><span>✓</span><span>Support prioritaire 9h-18h</span></div><div class="pricing-feature"><span>✓</span><span>Mises à jour continues</span></div><div class="pricing-feature"><span>✓</span><span>Accès API complet</span></div></div>
+                </div>
+
+                <div class="pricing-card">
+                    <div class="pricing-name">Options Premium</div>
+                    <div class="pricing-amount">600€</div>
+                    <div class="pricing-period">Par mois (optionnel)</div>
+                    <div class="pricing-features"><div class="pricing-feature"><span>✓</span><span>Formations avancées continues</span></div><div class="pricing-feature"><span>✓</span><span>Intégrations spécifiques</span></div><div class="pricing-feature"><span>✓</span><span>Services conseil dédiés</span></div><div class="pricing-feature"><span>✓</span><span>CSM dédié</span></div></div>
+                </div>
+            </div>
+
+            <div class="callout callout-info" style="margin-top: 40px;">
+                <strong>📊 Argument de masse critique :</strong> Une seule annulation évitée = 10 000€ à 30 000€ de CA sauvé. 
+                Le système se rembourse sur la première intervention efficace.
+            </div>
+        </section>
+
+        <section>
+            <div class="kicker">Section 06 — FAQ Dirigeants</div>
+            <h2>Traitement des Objections Standards</h2>
+
+            <div class="accordion">
+                <div class="accordion-item"><div class="accordion-header" onclick="toggleAccordion(this)"><span>OBJECTION 1 — "C'est trop cher"</span><span class="accordion-icon">▼</span></div><div class="accordion-content"><div class="accordion-body"><p>Setup 20k€ + 1,8k€/mois = <strong>41,6k€ la première année</strong>. Mais vous gagnez <strong>+870k€ de CA protégé</strong>. ROI : <strong>2090% en année 1</strong>. Payback : <strong>18 jours</strong>.</p></div></div></div>
+                <div class="accordion-item"><div class="accordion-header" onclick="toggleAccordion(this)"><span>OBJECTION 2 — "On a déjà un CRM"</span><span class="accordion-icon">▼</span></div><div class="accordion-content"><div class="accordion-body"><p>Un CRM vous dit ce qui s'est passé (historique). Notre système vous dit <strong>ce qui va casser</strong> si vous n'agissez pas maintenant (prédictif). C'est complémentaire.</p></div></div></div>
+                <div class="accordion-item"><div class="accordion-header" onclick="toggleAccordion(this)"><span>OBJECTION 3 — "Pourquoi pas une IA plus agressive ?"</span><span class="accordion-icon">▼</span></div><div class="accordion-content"><div class="accordion-body"><p>Dans les environnements régulés, <strong>une décision inexplicable est un risque juridique.</strong> Notre système est <strong>auditable</strong>. Nous n'automatisons pas l'action. Nous automatisons la vigilance.</p></div></div></div>
+                <div class="accordion-item"><div class="accordion-header" onclick="toggleAccordion(this)"><span>OBJECTION 4 — "On veut tester d'abord"</span><span class="accordion-icon">▼</span></div><div class="accordion-content"><div class="accordion-body"><p>Tester, c'est accepter de laisser <strong>une partie du CA sans protection</strong>. Nous proposons un <strong>pilote de 3 mois sur 1 BU</strong> (12 000€) avec garantie satisfaction.</p></div></div></div>
+                <div class="accordion-item"><div class="accordion-header" onclick="toggleAccordion(this)"><span>OBJECTION 5 — "On n'a pas besoin d'un logiciel de plus"</span><span class="accordion-icon">▼</span></div><div class="accordion-content"><div class="accordion-body"><p>Ce n'est pas un logiciel de plus. C'est un système qui <strong>REMPLACE</strong> vos relances manuelles. Vos commerciaux récupèrent <strong>2-3h par jour</strong>.</p></div></div></div>
+            </div>
+        </section>
+
+        <section>
+            <div class="cta-section">
+                <h2 style="margin-bottom: 24px;">Prêt à Sécuriser Votre Chiffre d'Affaires ?</h2>
+                <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 32px; font-size: 1.1rem;">
+                    Vos commerciaux gagnent 2-3h par jour. Votre CA est sécurisé. 
+                    Votre dirigeant dort mieux. Tout ça en 18 jours.
+                </p>
+
+                <div class="grid grid-3" style="margin-bottom: 40px; text-align: left;">
+                    <div class="card"><div style="font-size: 1.5rem; margin-bottom: 8px;">📊</div><h4>ÉTAPE 1</h4><p style="color: var(--text-muted); font-size: 0.95rem;"><strong>Diagnostic Gratuit (30 min)</strong><br>Analyse de votre situation actuelle<br>Calcul de votre ROI potentiel<br>Pas d'engagement</p></div>
+                    <div class="card"><div style="font-size: 1.5rem; margin-bottom: 8px;">🎯</div><h4>ÉTAPE 2</h4><p style="color: var(--text-muted); font-size: 0.95rem;"><strong>Démo Personnalisée (1h)</strong><br>Voir ResultDashboard en action<br>Comprendre le Brain et le tracking<br>Questions/réponses</p></div>
+                    <div class="card"><div style="font-size: 1.5rem; margin-bottom: 8px;">🚀</div><h4>ÉTAPE 3</h4><p style="color: var(--text-muted); font-size: 0.95rem;"><strong>Déploiement Rapide (2-3 sem)</strong><br>Setup industrialisé<br>Formation équipe<br>Support fondateurs</p></div>
+                </div>
+
+                <a href="mailto:contact@autopilote-solaire.fr" class="btn">
+                    <span>📧</span><span>Demander un Diagnostic Gratuit</span>
+                </a>
+
+                <div style="margin-top: 32px; color: var(--text-muted); font-size: 0.9rem;">
+                    <div><strong>Email :</strong> contact@autopilote-solaire.fr</div>
+                    <div><strong>Téléphone :</strong> +33 X XX XX XX XX</div>
+                </div>
+
+                <div class="callout callout-success" style="margin-top: 32px; text-align: left;">
+                    <strong>💯 Garantie Satisfaction :</strong> Si vous n'êtes pas satisfait après 30 jours, remboursement intégral. Zéro risque.
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="kicker">Synthèse Décisionnelle</div>
+            <h2>Un Système de Discernement Commercial</h2>
+
+            <div class="grid grid-3">
+                <div class="card"><h4>Le risque est visible</h4><p style="color: var(--text-muted); font-size: 0.95rem;">CA sécurisé, CA à risque, opportunités récupérables : vision instantanée de la réalité commerciale.</p></div>
+                <div class="card"><h4>L'effort est piloté</h4><p style="color: var(--text-muted); font-size: 0.95rem;">Priorisation intelligente des actions humaines selon les moments critiques du cycle client.</p></div>
+                <div class="card"><h4>Les erreurs sont réduites</h4><p style="color: var(--text-muted); font-size: 0.95rem;">Protocole validé pour éliminer les décisions coûteuses et sécuriser les conversions à l'échelle.</p></div>
+            </div>
+
+            <div class="callout callout-info" style="margin-top: 32px;">
+                <strong>🎯 Synthèse :</strong> Ce n'est pas un outil. C'est un cerveau opérationnel de pilotage du CA. 
+                Il ne cherche pas à vendre plus — il cherche à faire moins d'erreurs humaines coûteuses.
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.03), rgba(20, 20, 20, 0.4)); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 40px; display: grid; grid-template-columns: auto 1fr; gap: 40px; align-items: center; margin-top: 60px;">
+                <div>
+                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--semantic-green); line-height: 1;">753k€</div>
+                    <div style="color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-top: 8px;">Gain Net Annuel Moyen</div>
+                </div>
+                <div>
+                    <h3>Ce système n'est pas dangereux.</h3>
+                    <p style="color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+                        <strong style="color: var(--text-main);">Ce qui est dangereux, c'est de continuer sans.</strong>
+                    </p>
+                    <p style="color: var(--text-muted); line-height: 1.6;">
+                        Le risque n'est pas d'adopter ce système. Le risque est de continuer à perdre 15-34% du CA signé 
+                        sans visibilité sur les causes, sans capacité d'intervention, sans contrôle.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <footer style="border-top: 1px solid var(--border-subtle); padding: 40px 0; margin-top: 80px; text-align: center; color: var(--text-muted);">
+            <div style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-main); font-size: 1.1rem; margin-bottom: 8px;">
+                ⚡ AUTOPILOTE SOLAIRE
+            </div>
+            <div style="margin-bottom: 8px; font-size: 0.95rem;">Système de Revenue Assurance pour Ventes Complexes</div>
+            <div style="font-size: 0.85rem; opacity: 0.6;">© 2026 AutoPilote Solaire — DOCUMENT CONFIDENTIEL — PARTIE 2/2</div>
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-subtle); font-size: 0.75rem;">
+                La première assurance logicielle contre la perte de chiffre d'affaires post-signature
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        function toggleAccordion(header) {
+            const item = header.parentElement;
+            const wasActive = item.classList.contains('active');
+            document.querySelectorAll('.accordion-item').forEach(accordion => { accordion.classList.remove('active'); });
+            if (!wasActive) { item.classList.add('active'); }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://ugwqfvwclwctzgtxcakp.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE';
+        const DEMO_STUDY_ID = 'bbc7c2fd-0b75-43f9-9f11-99d919383387';
+        const { createClient } = window.supabase || window.supa || { createClient: () => ({ from: () => ({ insert: () => ({ error: 'No lib' }) }) }) };
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        async function trackView() {
+            try { await supabase.from('tracking_events').insert({ study_id: DEMO_STUDY_ID, event_type: 'view', meta: { page: 'AutoPilote Partie 2' } }); } catch (e) {}
+        }
+        trackView();
+    </script>
+</body>
+</html>

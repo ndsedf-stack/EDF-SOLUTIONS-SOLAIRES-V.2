@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoPilote Solaire - Partie 1: Problème & Solution</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* 
+           STRICT PALETTE: 
+           1. Dark Backgrounds (Black/Grey)
+           2. White Text
+           3. Orange Accent (#f97316)
+           
+           Semantic colors (Green/Red) are desaturated/darkened to blend in.
+        */
+        :root {
+            --bg-deep: #050505;
+            --bg-card: rgba(20, 20, 20, 0.6);
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-hover: rgba(255, 255, 255, 0.15);
+            
+            --text-main: #ffffff;
+            --text-muted: #888888;
+            
+            --accent: #f97316; /* Orange */
+            --accent-glow: rgba(249, 115, 22, 0.15);
+            
+            /* Muted semantic colors */
+            --semantic-green: #34d399;
+            --semantic-red: #f87171;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% -20%, rgba(40, 40, 40, 1) 0%, rgba(5, 5, 5, 1) 60%);
+            color: var(--text-main);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* PREMIUM LAYOUT - 1600px */
+        .container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+            padding: 0 40px 140px; 
+            position: relative;
+        }
+
+        /* Subtle Ambient Glow */
+        .ambient-glow {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
+            height: 100vh;
+            background: radial-gradient(circle at 50% 30%, rgba(249, 115, 22, 0.03), transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        nav {
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            background: rgba(5, 5, 5, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            z-index: 100;
+            margin: 0 -40px 60px;
+            padding: 0 40px;
+        }
+
+        .logo { 
+            font-family: 'Outfit', sans-serif; 
+            font-weight: 700; 
+            font-size: 1.1rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            color: var(--text-main); 
+            opacity: 0.9;
+        }
+        
+        .badge {
+            padding: 6px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .hero, section, .next-part {
+            animation: fadeUp 0.8s ease-out forwards;
+            opacity: 0; /* JS usually handles scroll reveal, but we'll adapt for static */
+        }
+        .hero { animation-delay: 0.1s; animation-fill-mode: forwards; }
+
+        .hero { 
+            padding: 40px 0 80px; 
+            border-bottom: 1px solid var(--border-subtle); 
+            margin-bottom: 100px; 
+        }
+
+        h1 { 
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(3.5rem, 6vw, 5.5rem); 
+            font-weight: 700; 
+            line-height: 1.05; 
+            margin-bottom: 32px; 
+            letter-spacing: -0.03em;
+            color: var(--text-main);
+        }
+
+        .accent { 
+            background: linear-gradient(135deg, #fff 30%, #999 100%); /* Monochrome metal look */
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            /* Or Keep User's subtle Orange preference */
+            color: var(--accent);
+            -webkit-text-fill-color: var(--accent); 
+        }
+
+        .subtitle { 
+            font-size: 1.35rem; 
+            color: var(--text-muted); 
+            max-width: 800px; 
+            line-height: 1.6; 
+            margin-bottom: 50px; 
+            font-weight: 300; 
+        }
+
+        .grid { display: grid; gap: 24px; margin-top: 40px; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+        @media (max-width: 1024px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 40px;
+            transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .card:hover { 
+            border-color: var(--border-hover);
+            transform: translateY(-4px); 
+            background: rgba(30, 30, 30, 0.6);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Subtle tinting instead of full colored borders */
+        .card-orange { border-top: 1px solid rgba(249,115,22,0.3); } 
+
+        h2 { 
+            font-family: 'Outfit', sans-serif; 
+            font-size: clamp(2.2rem, 4vw, 3.2rem); 
+            font-weight: 600; 
+            margin-bottom: 32px; 
+            letter-spacing: -0.02em; 
+            color: var(--text-main);
+        }
+        
+        h3 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 600; margin-bottom: 16px; color: var(--text-main); }
+        h4 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; color: var(--text-main); }
+        
+        .kicker { 
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            color: var(--text-muted); 
+            text-transform: uppercase; 
+            letter-spacing: 0.2em; 
+            margin-bottom: 16px; 
+            display: inline-block;
+            border: 1px solid var(--border-subtle);
+            padding: 4px 10px;
+            border-radius: 100px;
+        }
+
+        .stat-big {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 60px;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(255,255,255,0.01), transparent);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 50px;
+            margin: 50px 0;
+        }
+
+        .stat-number { 
+            font-family: 'Outfit', sans-serif;
+            font-size: 6rem; 
+            font-weight: 800; 
+            color: var(--accent); 
+            line-height: 0.9; 
+            letter-spacing: -0.04em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 40px 0;
+        }
+        
+        thead { background: rgba(255,255,255,0.02); }
+        
+        th {
+            padding: 24px;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        
+        td {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-main);
+            font-size: 1.05rem;
+        }
+        
+        tr:last-child td { border-bottom: none; }
+
+        .callout {
+            padding: 32px;
+            border-radius: 12px;
+            margin: 40px 0;
+            border-left: 2px solid;
+            font-size: 1.1rem;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent);
+        }
+
+        /* Desaturated alerts to keep the "3 colors max" vibe */
+        .callout-warning { border-color: var(--semantic-red); color: #e5e5e5; }
+        .callout-info { border-color: var(--accent); color: #e5e5e5; }
+        .callout-success { border-color: var(--semantic-green); color: #e5e5e5; }
+
+        .timeline {
+            position: relative;
+            padding-left: 50px;
+            margin: 60px 0;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 20px;
+            bottom: 20px;
+            width: 1px;
+            background: var(--border-subtle);
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 60px;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -40px;
+            top: 5px;
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--bg-deep);
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            z-index: 10;
+        }
+
+        .phase { 
+            font-size: 0.75rem; 
+            color: var(--accent); 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            margin-bottom: 8px; 
+            letter-spacing: 0.1em; 
+        }
+
+        .pill {
+            display: inline-flex;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 16px;
+        }
+
+        .pill-orange { background: rgba(249,115,22,0.1); color: #fdba74; border: 1px solid rgba(249,115,22,0.2); }
+        .pill-green { background: rgba(16,185,129,0.1); color: #86efac; border: 1px solid rgba(16,185,129,0.2); }
+        .pill-muted { background: rgba(255,255,255,0.03); color: #a3a3a3; border: 1px solid var(--border-subtle); }
+
+        .next-part {
+            background: radial-gradient(circle at 50% 150%, rgba(249,115,22,0.1), transparent 70%);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 80px;
+            text-align: center;
+            margin-top: 120px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            height: 56px;
+            padding: 0 40px;
+            background: var(--text-main);
+            color: #000;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
+            margin-top: 32px;
+            cursor: pointer;
+            letter-spacing: -0.01em;
+        }
+        
+        .btn:hover { 
+            background: #e5e5e5; 
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+        }
+
+        @media (max-width: 900px) {
+            .container { padding: 0 24px 80px; }
+            nav { margin: 0 -24px 40px; padding: 0 24px; }
+            .stat-big { grid-template-columns: 1fr; gap: 24px; }
+            .stat-number { font-size: 4rem; }
+            h1 { font-size: 3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient-glow"></div>
+    <div class="container">
+        <nav>
+            <div class="logo">⚡ AutoPilote Solaire</div>
+            <div class="badge">DOCUMENT CONFIDENTIEL</div>
+        </nav>
+
+        <header class="hero">
+            <div class="kicker">Diagnostic & Solution</div>
+            <h1>AutoPilote <span class="accent">Solaire</span></h1>
+            <p class="subtitle">
+                Le système d'intelligence décisionnelle qui protège votre chiffre d'affaires, 
+                élimine les annulations et optimise le temps commercial dans la vente complexe.
+            </p>
+
+            <div class="grid grid-3">
+                <div class="card">
+                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--text-main); line-height: 1;">+29%</div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Taux de Closing</div>
+                </div>
+                <div class="card">
+                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--semantic-green); line-height: 1;">-36%</div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Annulations</div>
+                </div>
+                <div class="card">
+                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--accent); line-height: 1;">1h</div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Gagnées/Jour</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SECTION 1: PROBLÈME -->
+        <section>
+            <div class="kicker">01 — Diagnostic</div>
+            <h2>Le Problème Structurel des Entreprises de Vente Complexe</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px; font-size: 1.1rem; max-width: 800px;">
+                Dans les cycles de vente complexes B2B, les pertes de chiffre d'affaires ne résultent pas 
+                d'un manque d'effort commercial, mais d'erreurs systémiques de timing d'intervention.
+            </p>
+
+            <div class="stat-big">
+                <div>
+                    <div class="stat-number">72%</div>
+                    <div style="color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 8px;">Zone de Danger</div>
+                </div>
+                <div>
+                    <h3>La Fenêtre Critique de 5 Jours</h3>
+                    <p style="color: var(--text-muted); font-size: 1.1rem;">
+                        <strong style="color: var(--text-main);">72% des projets non aboutis</strong> s'enlisent 
+                        dans les 5 jours suivant la signature. Cette période représente le volume maximal de 
+                        dépenses d'acquisition perdues.
+                    </p>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Métrique Critique</th>
+                        <th>Impact Financier</th>
+                        <th>Source</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Annulations post-signature</strong></td>
+                        <td>15-34% du CA signé</td>
+                        <td>Gartner 2024 (B2B complexe)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Leads qualifiés non convertis</strong></td>
+                        <td>18-27% de perte sur pipeline</td>
+                        <td>HBR Sales Benchmark 2024</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Coût moyen annulation (10-30k€)</strong></td>
+                        <td>14 200€ par contrat annulé</td>
+                        <td>CAC + temps commercial perdu</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Taux annulation solaire</strong></td>
+                        <td>51% des projets signés</td>
+                        <td>NREL (National Renewable Energy Lab)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="callout callout-warning">
+                <strong>⚠️ Cause principale identifiée :</strong> Intervention humaine au mauvais moment — 
+                relance prématurée générant du doute, ou inaction prolongée créant un abandon silencieux.
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 32px;">Les 3 Phases Critiques</h3>
+            <div class="grid grid-3">
+                <div class="card">
+                    <h4 style="color: var(--semantic-red);">Avant Signature</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Études mal comprises, faible engagement client, closing raté en one-shot. 
+                        Commerciaux obligés de relancer "à l'aveugle".
+                    </p>
+                </div>
+                <div class="card">
+                    <h4 style="color: var(--semantic-red);">Après Signature</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Décisions fragiles, délai de rétractation 14 jours, acompte non encaissé, 
+                        silence client. Annulations évitables représentant 15% du CA.
+                    </p>
+                </div>
+                <div class="card">
+                    <h4 style="color: var(--semantic-red);">Côté Organisation</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Dirigeants aveugles sur le risque réel, équipes mal priorisées, 
+                        temps perdu sur dossiers morts, aucune traçabilité décisionnelle.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: LA SOLUTION -->
+        <section>
+            <div class="kicker">02 — Architecture</div>
+            <h2>La Solution : 6 Leviers Simultanés</h2>
+            <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 1.1rem;">
+                Ce n'est pas un outil. C'est un cerveau opérationnel de pilotage du chiffre d'affaires. 
+                Système de Revenue Assurance conçu pour protéger le CA déjà gagné.
+            </p>
+
+            <div class="grid grid-2">
+                <div class="card card-orange">
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">📊</div>
+                    <h4>1. ResultDashboard</h4>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+                        Étude solaire personnalisée avec simulations en temps réel, traitement des objections, 
+                        et génération de Guest View.
+                    </p>
+                    <div class="pill pill-orange">Interface Client</div>
+                </div>
+
+                <div class="card card-orange">
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">👁️</div>
+                    <h4>2. Guest View</h4>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+                        L'étude reste chez le client, consultable à tout moment, créant un actif vivant 
+                        et un re-engagement intelligent.
+                    </p>
+                    <div class="pill pill-orange">Actif Permanent</div>
+                </div>
+
+                <div class="card card-orange">
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">📡</div>
+                    <h4>3. Tracking Comportemental</h4>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+                        Observation temps réel des ouvertures, clics, temps passé, récence et fréquence 
+                        pour nourrir l'intelligence décisionnelle.
+                    </p>
+                    <div class="pill pill-orange">127 Signaux</div>
+                </div>
+
+                <div class="card card-orange">
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">大脑</div> <!-- Using plain text emoji fallback if icon fails -->
+                    <h4>4. The Brain</h4>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+                        Intelligence décisionnelle calculant Danger Score, Score d'engagement et 
+                        Score d'opportunité avec recommandation priorisée.
+                    </p>
+                    <div class="pill pill-orange">Multi-Agents IA</div>
+                </div>
+
+                <div class="card card-orange">
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">✉️</div>
+                    <h4>5. Email Engine</h4>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+                        Automatisations post-signature anti-annulation, post-refus et 
+                        pré-qualification des leads avec timing intelligent validé par Guards.
+                    </p>
+                    <div class="pill pill-orange">Timing Optimal</div>
+                </div>
+
+                <div class="card card-orange">
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">📈</div>
+                    <h4>6. Pilotage Global</h4>
+                    <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
+                        Visibilité instantanée du pipeline réel, performance mesurée, équipes mieux utilisées, 
+                        CA exposé vs CA sécurisé.
+                    </p>
+                    <div class="pill pill-orange">Cockpit Décisionnel</div>
+                </div>
+            </div>
+
+            <div class="callout callout-info">
+                <strong>💡 Notre différenciation radicale :</strong> Nous n'automatisons pas l'action. 
+                Nous automatisons la vigilance. Le système indique précisément où l'énergie humaine doit se porter, maintenant.
+            </div>
+        </section>
+
+        <!-- SECTION 3: MÉTHODOLOGIE NET CLOSE -->
+        <section>
+            <div class="kicker">03 — Méthodologie</div>
+            <h2>L'Art du "Net" Close — Protocole en 6 Phases</h2>
+            <p style="color: var(--text-muted); margin-bottom: 32px; max-width: 800px; font-size: 1.1rem;">
+                Le protocole institutionnel pour sécuriser les signatures, éliminer les annulations 
+                et maximiser la conversion dans la vente solaire résidentielle.
+            </p>
+
+            <h3 style="margin-bottom: 24px;">Psychologie Stratégique & Identité</h3>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h4 style="color: var(--text-muted);">❌ Le Vendeur Commercial</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Approche transactionnelle basée sur la pression temporelle et l'urgence artificielle. 
+                        Le prospect active immédiatement ses défenses cognitives.
+                    </p>
+                    <div class="pill pill-muted">Focus : Transaction</div>
+                </div>
+
+                <div class="card" style="border-color: rgba(16,185,129,0.3);">
+                    <h4 style="color: var(--semantic-green);">✅ Le Closer Institutionnel</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Repositionnement en validateur neutre et expert technique. Cette posture consultative 
+                        élimine la résistance et établit une crédibilité immédiate.
+                    </p>
+                    <div class="pill pill-green">Focus : Crédibilité absolue</div>
+                </div>
+            </div>
+
+            <div class="callout callout-success">
+                <strong>✓ Principe clé :</strong> On ne vend pas. On valide une décision rationnelle déjà prise 
+                par le client. La signature devient une formalité administrative, non un combat de volontés.
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 32px;">Les 6 Phases du Protocole</h3>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="phase">Phase 01</div>
+                    <h4>Entrée Professionnelle</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Établissement immédiat de la crédibilité. Les 30 premières secondes déterminent 
+                        le niveau de défense cognitive du prospect.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="phase">Phase 02</div>
+                    <h4>Étude Technique</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Analyse drone et mesures précises. Démonstration tangible de l'expertise et 
+                        validation de faisabilité technique.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="phase">Phase 03</div>
+                    <h4>Découverte Points de Douleur</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Identification des freins psychologiques à travers un questionnement socratique stratégique.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="phase">Phase 04</div>
+                    <h4>Solution Visuelle</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Présentation 3D personnalisée créant un impact émotionnel et une projection concrète 
+                        dans l'avenir avec ResultDashboard.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="phase">Phase 05</div>
+                    <h4>Validation & Closing</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        La signature devient une simple formalité administrative, conséquence naturelle 
+                        du processus de validation.
+                    </p>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="phase">Phase 06</div>
+                    <h4>Ancrage Post-Vente</h4>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">
+                        Immunisation contre le regret post-achat à travers la confirmation cognitive et 
+                        l'anticipation des objections futures (Email Engine).
+                    </p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 24px;">Les 4 Profils Cognitifs</h3>
+            <div class="grid grid-4">
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">🛡️</div>
+                    <h4>LE SENIOR</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Aversion au risque, peur des erreurs. <strong>Stratégie :</strong> preuves sociales, 
+                        garanties institutionnelles, zéro urgence.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">💰</div>
+                    <h4>LE BANQUIER</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Besoin de ROI quantifié. <strong>Stratégie :</strong> tables financières détaillées, 
+                        flux de trésorerie, analyse d'amortissement.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">✅</div>
+                    <h4>LE STANDARD</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Pragmatisme fonctionnel. <strong>Stratégie :</strong> équilibre simplicité/efficacité, 
+                        démonstration de fiabilité.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">🔄</div>
+                    <h4>L'HYBRIDE</h4>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        Mélange d'attributs. <strong>Stratégie :</strong> adaptation flexible, ajustement du tempo 
+                        selon signaux dominants détectés.
+                    </p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 24px;">Stratégie Protection CA</h3>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h4>Pré-signature</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px; color: var(--text-muted); font-size: 0.95rem;">
+                        <div>✓ Présenter <strong style="color: var(--text-main);">98% de garanties institutionnelles</strong> avant prix</div>
+                        <div>✓ Neutraliser la résistance financière par la confiance absolue</div>
+                        <div>✓ Volume maximal de dépenses d'acquisition récupérées</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h4>Post-approbation</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px; color: var(--text-muted); font-size: 0.95rem;">
+                        <div>⚠️ 20% des projets échouent après approbation</div>
+                        <div>⚠️ Coût <strong style="color: var(--text-main);">deux fois supérieur</strong> par projet échoué</div>
+                        <div>✓ L'ancrage Phase 6 protège cet investissement critique</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEXT PART CTA -->
+        <div class="next-part">
+            <h2 style="margin-bottom: 16px;">Suite dans la Partie 2</h2>
+            <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 32px;">
+                📋 Architecture Système Complète (5 Phases)<br>
+                💰 ROI Détaillé & Cas Client Concret<br>
+                💬 FAQ Objections & Tarification<br>
+                📞 Contact & Processus d'Engagement
+            </p>
+            <div class="btn" onclick="document.location.href='autopilote-partie-2.html'">
+                <span>Accéder à la Partie 2 →</span>
+            </div>
+        </div>
+
+        <footer style="border-top: 1px solid var(--border-subtle); padding: 60px 0; margin-top: 120px; text-align: center; color: var(--text-muted);">
+            <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-main); font-size: 1rem; margin-bottom: 8px;">
+                ⚡ AUTOPILOTE SOLAIRE
+            </div>
+            <div style="font-size: 0.85rem; opacity: 0.6;">© 2026 AutoPilote Solaire — DOCUMENT CONFIDENTIEL — PARTIE 1/2</div>
+        </footer>
+    </div>
+
+    <!-- TRACKING SCRIPT -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const supabaseUrl = 'https://ugwqfvwclwctzgtxcakp.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE';
+        const DEMO_STUDY_ID = 'bbc7c2fd-0b75-43f9-9f11-99d919383387';
+        const { createClient } = window.supabase || window.supa || { createClient: () => ({ from: () => ({ insert: () => ({ error: 'No lib' }) }) }) };
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        async function trackView() {
+            try { await supabase.from('tracking_events').insert({ study_id: DEMO_STUDY_ID, event_type: 'view', meta: { page: 'AutoPilote Partie 1' } }); } catch (e) {}
+        }
+        trackView();
+    </script>
+</body>
+</html>

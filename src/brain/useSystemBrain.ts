@@ -281,53 +281,42 @@ export function useSystemBrain() {
         }
       }
 
-      // 7. TRAFFIC DATA REBUILD
-      // 7. TRAFFIC DATA REBUILD (CONTIGUOUS 14 DAYS)
+      // 7. TRAFFIC DATA REBUILD (REAL DATA AGGREGATION)
       const TRAFFIC_DAYS = 14; 
-      const trafficMap = new Map<string, { date: string, count: number, envois: number, ouvertures: number }>();
+      const dailyStats = new Map<string, { date: string, count: number, opened: number, clicked: number }>();
       
-      // Init last X days with 0
+      // Init last X days
       const today = new Date();
       for (let i = TRAFFIC_DAYS - 1; i >= 0; i--) {
         const d = new Date();
         d.setDate(today.getDate() - i);
         const dateKey = d.toISOString().split('T')[0];
-        trafficMap.set(dateKey, { date: dateKey, count: 0, envois: 0, ouvertures: 0 });
+        dailyStats.set(dateKey, { date: dateKey, count: 0, opened: 0, clicked: 0 });
       }
 
+      // A. Count SENT (from Email Queue)
       queueEmails.forEach((e: any) => {
-        const dateKey = new Date(e.sent_at || e.scheduled_for || new Date()).toISOString().split('T')[0];
+        const dateKey = new Date(e.sent_at || e.created_at || new Date()).toISOString().split('T')[0];
         const isSent = ["sent", "SUCCESS", "success", "delivered", "processed"].includes(e.status?.toLowerCase() || "");
-        if (isSent) {
-          if (trafficMap.has(dateKey)) {
-             const entry = trafficMap.get(dateKey)!;
-             entry.envois++;
-             entry.count++; // Aggregation for visualization
-          }
-        }
-      });
-      trackingData.forEach((evt) => {
-        if (evt.event_type === "email_open" || evt.event_type === "view") {
-          const dateKey = new Date(evt.created_at).toISOString().split('T')[0];
-          if (trafficMap.has(dateKey)) {
-             const entry = trafficMap.get(dateKey)!;
-             entry.ouvertures++;
-             entry.count++;
-          }
+        
+        if (dailyStats.has(dateKey) && isSent) {
+            dailyStats.get(dateKey)!.count++;
         }
       });
 
-      // FILLER DATA FOR DEMO IF EMPTY (USER REQUEST "TOUT PLAT")
-      // If total count is 0, we inject some subtle fake pressure to make the chart look alive
-      const totalActivity = Array.from(trafficMap.values()).reduce((acc, v) => acc + v.count, 0);
-      if (totalActivity === 0) {
-          trafficMap.forEach((val, key) => {
-             // Random subtle noise 1-3
-             val.count = Math.floor(Math.random() * 3) + 1;
-          });
-      }
+      // B. Count OPEN/CLICK (from Tracking Events)
+      trackingData.forEach((t: any) => {
+          const dateKey = new Date(t.created_at).toISOString().split('T')[0];
+          if (dailyStats.has(dateKey)) {
+              const stat = dailyStats.get(dateKey)!;
+              if (t.event_type === "email_open" || t.event_type === "view") stat.opened++;
+      if (t.event_type === "email_click" || t.event_type === "click") stat.clicked++;
+          }
+      });
 
-      setTrafficData(Array.from(trafficMap.values()).sort((a, b) => a.date.localeCompare(b.date)));
+      // Convert Map to Sorted Array
+      const trafficData = Array.from(dailyStats.values()).sort((a, b) => a.date.localeCompare(b.date));
+      setTrafficData(trafficData);
 
     } catch (err: any) {
       console.error("❌ System Brain Error:", err);

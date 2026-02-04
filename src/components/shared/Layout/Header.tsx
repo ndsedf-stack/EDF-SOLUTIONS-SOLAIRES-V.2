@@ -1,5 +1,6 @@
 
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   zenMode: boolean;
@@ -67,6 +68,8 @@ export const Header: React.FC<HeaderProps> = ({
     warning: "bg-orange-500 shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse",
     critical: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] animate-ping"
   };
+
+  const navigate = useNavigate();
 
   return (
     <header className="fixed top-4 left-4 right-4 z-50">
@@ -172,9 +175,12 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          <div className="w-auto h-8 px-3 rounded-full border border-white/10 flex items-center justify-center bg-slate-900 ml-1 flex-shrink-0">
-             <span className="text-[10px] font-black text-slate-400">ADMIN</span>
-          </div>
+          <button 
+            onClick={() => navigate('/admin')}
+            className="w-auto h-8 px-3 rounded-full border border-white/10 flex items-center justify-center bg-slate-900 ml-1 flex-shrink-0 hover:bg-slate-800 hover:border-orange-500/50 hover:text-orange-500 transition-all cursor-pointer group"
+          >
+             <span className="text-[10px] font-black text-slate-400 group-hover:text-orange-500 transition-colors">ADMIN</span>
+          </button>
         </div>
       </div>
     </header>
