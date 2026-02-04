@@ -6,7 +6,6 @@ import { SpeechView } from "./components/SpeechView";
 import { supabase } from "./lib/supabase";
 import GuestView from "./components/GuestView";
 import { calculateGreenPositioningFromAddress } from "./greenValueEngine.ts";
-import Dashboard from "./components/Dashboard";
 import { OpsAuditApi } from "./pages/api/_mock/OpsAuditApi";
 
 const MainApp: React.FC = () => {
@@ -156,34 +155,47 @@ const MainApp: React.FC = () => {
 
 import { AuthGuard } from "./components/AuthGuard";
 
-import AdminDashboard from "./pages/admin/AdminDashboard";
+const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
+const Dashboard = React.lazy(() => import("./components/Dashboard"));
+
+// Loading Component
+const PageLoader = () => (
+  <div className="min-h-screen bg-[#020202] flex items-center justify-center">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-white/10 border-t-orange-500 rounded-full animate-spin"></div>
+      <div className="text-white text-sm font-bold uppercase tracking-widest animate-pulse">Chargement du système...</div>
+    </div>
+  </div>
+);
 
 const App = () => (
   <BrowserRouter>
-    <Routes>
-      <Route path="/" element={
-        <AuthGuard>
-          <MainApp />
-        </AuthGuard>
-      } />
-      {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
-      <Route path="/guest/:studyId" element={<GuestView />} />
-      <Route path="/dashboard" element={
-        <AuthGuard>
-          <Dashboard />
-        </AuthGuard>
-      } />
-      
-      {/* ✅ ADMIN DASHBOARD (Cockpit Gouvernance) */}
-      <Route path="/admin" element={
-        <AuthGuard>
-          <AdminDashboard />
-        </AuthGuard>
-      } />
+    <React.Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/" element={
+          <AuthGuard>
+            <MainApp />
+          </AuthGuard>
+        } />
+        {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
+        <Route path="/guest/:studyId" element={<GuestView />} />
+        <Route path="/dashboard" element={
+          <AuthGuard>
+            <Dashboard />
+          </AuthGuard>
+        } />
+        
+        {/* ✅ ADMIN DASHBOARD (Cockpit Gouvernance) */}
+        <Route path="/admin" element={
+          <AuthGuard>
+            <AdminDashboard />
+          </AuthGuard>
+        } />
 
-      <Route path="/api/ops/audit" element={<OpsAuditApi mode="json" />} />
-      <Route path="/api/ops/audit/download" element={<OpsAuditApi mode="download" />} />
-    </Routes>
+        <Route path="/api/ops/audit" element={<OpsAuditApi mode="json" />} />
+        <Route path="/api/ops/audit/download" element={<OpsAuditApi mode="download" />} />
+      </Routes>
+    </React.Suspense>
   </BrowserRouter>
 );
 

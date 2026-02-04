@@ -255,8 +255,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   name="inflation"
                   value={formData.inflation}
                   onChange={handleInputChange}
-                  value={formData.inflation}
-                  onChange={handleInputChange}
                   className="w-full bg-transparent text-3xl sm:text-4xl font-black text-blue-400/60 outline-none sm:text-right"
                 />
               </div>
@@ -277,8 +275,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                 <input
                   type="number"
                   name="installPrice"
-                  value={formData.installPrice}
-                  onChange={handleInputChange}
                   value={formData.installPrice}
                   onChange={handleInputChange}
                   className="w-full bg-transparent text-xl sm:text-2xl font-black text-orange-400/80 outline-none"
@@ -312,8 +308,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
                   type="number"
                   step="0.01"
                   name="creditRate"
-                  value={formData.creditRate}
-                  onChange={handleInputChange}
                   value={formData.creditRate}
                   onChange={handleInputChange}
                   className="w-full bg-transparent text-xl sm:text-2xl font-black text-orange-400/80 outline-none"
