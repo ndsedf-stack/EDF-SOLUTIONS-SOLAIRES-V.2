@@ -82,13 +82,21 @@ export const OpsAuditControl: React.FC<OpsAuditControlProps> = ({ system, charts
 
   const handleDownloadPdf = () => {
     if (!auditResult) return;
-    const pdfDataUri = generateAuditPdf(auditResult);
-    const link = document.createElement('a');
-    link.href = pdfDataUri;
-    link.download = `EDF_OPS_AUDIT_REPORT_${new Date().toISOString().split('T')[0]}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    console.log("📄 Generating PDF with result:", auditResult);
+
+    try {
+      const pdfDataUri = generateAuditPdf(auditResult);
+      const link = document.createElement('a');
+      link.href = pdfDataUri;
+      link.download = `EDF_OPS_AUDIT_REPORT_${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e: any) {
+      console.error("❌ PDF Generation Failed:", e);
+      alert(`Erreur génération PDF: ${e.message}\nVoir console pour détails.`);
+    }
   };
 
   if (status === 'IDLE') {
