@@ -35,7 +35,7 @@ const COLORS = {
   tooltipBg: '#0F172A',
 };
 
-const formatDate = timeFormat("%d %b");
+const formatDate = timeFormat("%Y");
 const getDate = (d: FinancialPoint) => new Date(d.date);
 const getSecured = (d: FinancialPoint) => d.securedCA;
 const getExposed = (d: FinancialPoint) => d.exposedCA;
@@ -239,7 +239,6 @@ const FinancialRiskProofInner = ({ data, width, height }: Props) => {
         {/* TOOLTIP HTML */}
         {tooltipData && (
             <TooltipWithBounds
-                key={Math.random()}
                 top={tooltipTop}
                 left={tooltipLeft}
                 style={{

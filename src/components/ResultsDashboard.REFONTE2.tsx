@@ -126,6 +126,7 @@ interface ModuleSectionProps {
   defaultOpen?: boolean;
   onOpen?: (id: string) => void;
   onClose?: (id: string) => boolean | void; // 🔥 CORRIGÉ : peut retourner boolean ou void
+  forceOpen?: boolean; // 🆕 Permet d'ouvrir le module programmatiquement (ex: via Agent Zero)
 }
 
 const ModuleSection: React.FC<ModuleSectionProps> = ({
@@ -136,8 +137,16 @@ const ModuleSection: React.FC<ModuleSectionProps> = ({
   defaultOpen = false,
   onOpen,
   onClose,
+  forceOpen, // 🆕 Prop pour forcer l'ouverture
 }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+
+  // 🆕 Effet pour réagir à forceOpen
+  useEffect(() => {
+    if (forceOpen) {
+      setIsOpen(true);
+    }
+  }, [forceOpen]);
 
   const toggle = () => {
     const next = !isOpen;
@@ -5700,7 +5709,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           SCÉNARIO SANS SOLAIRE
                         </div>
                         <div className="text-[14px] text-slate-400 mt-1">
-                          Dépense énergétique totale sur 20 ans
+                          Dépense énergétique totale sur {projectionYears} ans
                         </div>
                       </div>
                     </div>
@@ -6111,7 +6120,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 {/* 🔥 BLOC PSYCHOLOGIQUE ANTI-ÂGE / ANTI-VENTE */}
                 <div className="mt-2 bg-[#0b1220] border border-blue-500/20 rounded-2xl p-5">
                   <p className="text-[13px] text-slate-200 italic leading-relaxed">
-                    Ce projet n'est pas pensé pour "dans 20 ans".
+                    Ce projet n'est pas pensé pour "dans {projectionYears} ans".
                     <br />
                     <span className="text-white font-bold">
                       Il est pensé pour que votre maison vous coûte moins et
@@ -7238,22 +7247,15 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
         {/*  ACCORDÉON GLOBAL – DÉTAILS COMPLÉMENTAIRES           */}
         {/* ═══════════════════════════════════════════════════════ */}
 
-        <ModuleSection
-          id="details"
-          title="Informations annexes – non nécessaires à la décision"
-          icon={<ChevronDown className="opacity-60" />}
-          defaultOpen={false}
-        >
-          <div className="space-y-10"></div>
-
           {/* ============================================
    MODULE 12 : PROJECTION FINANCIÈRE – ÉCART CONSTATÉ
    ============================================ */}
           <ModuleSection
-            id="projection-financiere"
+            id="projection"
             title="PROJECTION FINANCIÈRE – ÉCART CONSTATÉ"
             icon={<Flame className="text-orange-500" />}
             defaultOpen={false}
+            forceOpen={activeModule === "projection"}
             onOpen={(id) => {
               handleModuleChange(id);
             }}
@@ -7290,7 +7292,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
               <div className="h-[280px] sm:h-[340px] md:h-[360px] lg:h-[420px] w-full">
                 <FinancialRiskProofVisx 
                   data={gouffreChartData.map(d => ({
-                    date: new Date(new Date().getFullYear() + d.year, 0, 1).toISOString(),
+                    date: new Date(d.year > 2000 ? d.year : new Date().getFullYear() + d.year, 0, 1).toISOString(),
                     securedCA: d.cumulativeSpendSolar, // Coût maîtrisé (Vert)
                     exposedCA: d.cumulativeSpendNoSolar - d.cumulativeSpendSolar // Surcoût évitale (Rouge)
                   }))} 
@@ -7357,12 +7359,13 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 </button>
               </div>
 
-              {/* POPUPS - RESPONSIVE */}
-              {popup && (
-                <div
-                  className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-                  onClick={closePopup}
-                >
+              {/* POPUPS - RESPONSIVE (PORTAL) */}
+              {popup &&
+                createPortal(
+                  <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[99999] p-4"
+                    onClick={closePopup}
+                  >
                   <div
                     className="bg-[#0b0f13] border border-white/10 rounded-xl w-full max-w-[420px] p-4 sm:p-6 text-slate-200 relative max-h-[90vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
@@ -7485,11 +7488,15 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </>
                     )}
                   </div>
-                </div>
+                </div>,
+                document.body
               )}
 
               {/* BADGE FOOTER – RESPONSIVE */}
-              <div className="mt-4 sm:mt-6 text-center select-none">
+              <div
+                id="garanties"
+                className="mt-4 sm:mt-6 text-center select-none scroll-mt-24"
+              >
                 <p className="text-[9px] sm:text-[10px] text-slate-400 uppercase tracking-wider font-bold">
                   Installation garantie à vie — EDF
                 </p>
@@ -8105,10 +8112,11 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
         MODULE 5 : COMPARAISON – Vos autres options (CLOSING NET)
         ============================================ */}
           <ModuleSection
-            id="comparaison"
+            id="comparateur"
             title="Comparaison avec vos autres options"
             icon={<Landmark className="text-purple-500" />}
             defaultOpen={false}
+            forceOpen={activeModule === "comparateur"}
             onOpen={(id) => {
               handleModuleChange(id);
             }}
@@ -8399,7 +8407,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
           ============================================ */}
           <ModuleSection
             id="bilan-total"
-            title="Bilan Total sur X ans"
+            title={`Bilan Total sur ${projectionYears} ans`}
             icon={<Scale className="text-slate-400" />}
             defaultOpen={false}
             onOpen={(id) => {
@@ -8634,15 +8642,16 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
           Objectif : Sécuriser la décision & éliminer l’annulation J+7
           ============================================ */}
           <ModuleSection
-            id="tableau-detaille"
-            title="Projection Financière — 20 ans"
+            id="projection-table"
+            title={`Projection Financière — ${projectionYears} ans`}
             icon={<Table2 className="text-slate-400" />}
             defaultOpen={false}
+            forceOpen={activeModule === "projection"}
             onOpen={(id) => {
               handleModuleChange(id);
             }}
           >
-            <p className="text-[10px] sm:text-[14px] text-slate-300 italic mb-3 px-2 leading-relaxed">
+            <p className="text-[10px] sm:text-[16px] text-slate-300 italic mb-3 px-2 leading-relaxed">
               Ce tableau ne sert pas à prendre la décision. Il sert à{" "}
               <strong className="text-white">vérifier dans le temps</strong> que
               la décision que vous prenez aujourd’hui reste cohérente,
@@ -8790,43 +8799,43 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
             {/* ===== LECTURE BUSINESS ===== */}
             <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-black/50 border border-white/10 rounded-lg p-3">
-                <p className="text-[10px] uppercase text-slate-400 tracking-wider">
+                <p className="text-[14px] uppercase text-slate-400 tracking-wider">
                   Point de bascule
                 </p>
                 <p className="text-lg font-black text-white">
                   {breakEvenYear ? `Année ${breakEvenYear}` : "—"}
                 </p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[14px] text-slate-400">
                   Moment où l’investissement est totalement absorbé
                 </p>
               </div>
 
               <div className="bg-black/50 border border-white/10 rounded-lg p-3">
-                <p className="text-[10px] uppercase text-slate-400 tracking-wider">
+                <p className="text-[14px] uppercase text-slate-400 tracking-wider">
                   Gain total
                 </p>
                 <p className="text-lg font-black text-emerald-400">
                   {formatMoney(finalGain)}
                 </p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[14px] text-slate-400">
                   Trésorerie nette à {projectionYears} ans
                 </p>
               </div>
 
               <div className="bg-black/50 border border-white/10 rounded-lg p-3">
-                <p className="text-[10px] uppercase text-slate-400 tracking-wider">
+                <p className="text-[14px] uppercase text-slate-400 tracking-wider">
                   Lecture investissement
                 </p>
                 <p className="text-lg font-black text-blue-400">
                   {roiPercent}% ROI
                 </p>
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[14px] text-slate-400">
                   Rapport entre mise de départ et gain final
                 </p>
               </div>
             </div>
 
-            <p className="mb-3 text-[11px] text-slate-400 italic">
+            <p className="mb-3 text-[14px] text-slate-400 italic">
               Les premières années, vous remplacez une facture par un
               investissement. À partir de{" "}
               <span className="text-white font-bold">
@@ -8843,7 +8852,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                   className="w-full text-left border-collapse"
                 >
                   <thead>
-                    <tr className="border-b border-white/10 text-[9px] sm:text-[10px] uppercase text-slate-500 font-bold tracking-wider">
+                    <tr className="border-b border-white/10 text-[12px] sm:text-[13px] uppercase text-slate-500 font-bold tracking-wider">
                       <th className="py-2 sm:py-3 px-2 sm:px-4 whitespace-nowrap">
                         Année
                       </th>
@@ -8893,7 +8902,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           -
                         </td>
                       )}
-                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-yellow-400 font-bold uppercase text-[10px] sm:text-xs whitespace-nowrap">
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-yellow-400 font-bold uppercase text-xs sm:text-sm whitespace-nowrap">
                         APPORT :{" "}
                         {formatMoney(
                           tableScenario === "financing"
@@ -8999,7 +9008,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       {/* ✅ CORRIGÉ : colspan adapté */}
                       <td
                         colSpan={showDetails ? 6 : 5}
-                        className="py-2 sm:py-3 px-2 sm:px-4 text-right text-[10px] sm:text-xs font-bold text-slate-400 uppercase"
+                        className="py-2 sm:py-3 px-2 sm:px-4 text-right text-xs sm:text-sm font-bold text-slate-400 uppercase"
                       >
                         Gain total sur {projectionYears} ans
                       </td>
@@ -9026,17 +9035,18 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
               {showDetails ? "Vue globale" : "Vue complète"}
             </button>
           </ModuleSection>
-        </ModuleSection>
+
         {/* ============================================
 MODULE D’ANCRAGE DÉCISIONNEL — POINT DE LUCIDITÉ
 Objectif : faire apparaître la bascule comme un constat, pas comme une vente
 ============================================ */}
 
         <ModuleSection
-          id="decision-anchor"
+          id="decision"
           title="Lecture de trajectoire"
           icon={<Target className="text-slate-400" />}
           defaultOpen={false}
+          forceOpen={activeModule === "decision"}
         >
           <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-[28px] p-6 md:p-8">
             {/* HEADER */}
@@ -9190,28 +9200,29 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
           subtitle="Il reste juste à se positionner."
         />
         {/* ✅ VALIDATION FINANCEMENT - EN BAS DU DASHBOARD */}
-
-        <ModuleTauxUltraPremium
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxPrivilege
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
-        <ModuleTauxStandard
-          taux={interestRate}
-          mensualite={creditMonthlyPayment}
-          duree={creditDurationMonths}
-          montantFinance={remainingToFinance}
-          hasPromoCode={codeValidated}
-        />
+        <div id="taux" className="scroll-mt-24">
+          <ModuleTauxUltraPremium
+            taux={interestRate}
+            mensualite={creditMonthlyPayment}
+            duree={creditDurationMonths}
+            montantFinance={remainingToFinance}
+            hasPromoCode={codeValidated}
+          />
+          <ModuleTauxPrivilege
+            taux={interestRate}
+            mensualite={creditMonthlyPayment}
+            duree={creditDurationMonths}
+            montantFinance={remainingToFinance}
+            hasPromoCode={codeValidated}
+          />
+          <ModuleTauxStandard
+            taux={interestRate}
+            mensualite={creditMonthlyPayment}
+            duree={creditDurationMonths}
+            montantFinance={remainingToFinance}
+            hasPromoCode={codeValidated}
+          />
+        </div>
 
         {/* ============================================
           MODULE : PROCESSUS DE QUALIFICATION TERMINAL – VERSION CLOSING NET

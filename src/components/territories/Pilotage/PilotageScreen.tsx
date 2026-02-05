@@ -18,13 +18,39 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
     cancelledCA: financialStats.cashLost || (financialStats.totalPotentialCA * 0.1) || 50000,
   }), [financialStats]);
 
-  // 2. DATA S02: CLIENT DRIFT (SIMULÉ J+0 à J+14)
+  // 2. DATA S02: CLIENT DRIFT (REAL DATA: "Lead Freshness")
+  // Analyse de la fraîcheur : Quand a eu lieu la dernière interaction ?
   const driftData = useMemo(() => {
-    return Array.from({ length: 15 }).map((_, i) => ({
+    if (!emailLeads || emailLeads.length === 0) return Array.from({ length: 15 }).map((_, i) => ({ day: i, activeRate: 0 }));
+
+    const now = new Date();
+    // Distribution des jours depuis la dernière activité
+    const inactivityDistribution = new Array(15).fill(0);
+    
+    emailLeads.forEach((lead: any) => {
+      const lastInteraction = [lead.last_opened_at, lead.last_clicked_at, lead.created_at]
+        .filter(Boolean)
+        .map(d => new Date(d))
+        .sort((a, b) => b.getTime() - a.getTime())[0]; // Plus récent
+      
+      if (lastInteraction) {
+        const diffDays = Math.floor((now.getTime() - lastInteraction.getTime()) / (1000 * 3600 * 24));
+        if (diffDays < 15) inactivityDistribution[diffDays]++;
+      }
+    });
+
+    const total = emailLeads.length;
+    // On convertit en "Pourcentage encore actif à J+X" (Courbe de survie simulée)
+    // Ici on simplifie : on montre le % de leads ayant eu une activité il y a exactement X jours
+    // Pour matcher visuellement une courbe de drift, on peut afficher "Combien sont 'frais' (activité <= X jours)"
+    // Ou simplement la distribution brute. L'utilisateur veut "bonne data".
+    // La distribution brute est plus honnête : "Volume d'activité par récence".
+    
+    return inactivityDistribution.map((count, i) => ({
       day: i,
-      activeRate: Math.max(20, 100 - (i * 5) - (i > 7 ? (i-7) * 8 : 0)), // Décrochage accentué après J+7
+      activeRate: Math.round((count / total) * 100), // % du parc ayant interagi il y a i jours
     }));
-  }, []);
+  }, [emailLeads]);
 
   // 3. DATA S03: PIPELINE MOMENTUM
   const pipelineData = useMemo(() => [
@@ -34,19 +60,24 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
     { stage: 'Acomptes', count: studies?.filter((s:any) => s.deposit_paid).length || 0, color: '#4ADE80' },
   ], [emailLeads, studies]);
 
-  // 4. DATA S04: REVENUE PROJECTION (90J)
+  // 4. DATA S04: REVENUE PROJECTION (REAL DATA: Cash + Pipeline Probabilisé)
   const projectionData = useMemo(() => {
     const points = [];
     const now = new Date();
-    const target = (financialStats.cashSecured || 500000) * 1.5;
+    const currentCash = financialStats.cashSecured || 0;
+    const potentialAddition = (financialStats.cashAtRisk || 0) * 0.5 + (financialStats.totalPotentialCA || 0) * 0.2; // Hypothèse conversion
+    const target = currentCash + potentialAddition * 1.2; // Objectif un peu au-dessus du réaliste
     
+    // Projection linéaire sur 90j
     for (let i = 0; i <= 90; i += 10) {
       const date = new Date(now);
       date.setDate(date.getDate() + i);
+      const progress = i / 90; // 0..1
+      
       points.push({
         date,
-        secured: financialStats.cashSecured || 100000,
-        projected: (financialStats.cashSecured || 100000) + (i * 2000),
+        secured: currentCash, // Socle acquis
+        projected: currentCash + (potentialAddition * progress), // Montée progressive
         target: target
       });
     }

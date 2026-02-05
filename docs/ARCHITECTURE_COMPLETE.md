@@ -1,89 +1,89 @@
-# AUTOPILOTE SOLAIRE — Architecture Complète & Algorithmes
+# AUTOPILOTE SOLAIRE — Architecture Complète (La Bible)
 
-Résumé
-- Produit : Autopilote Solaire — système complet de vente terrain + protection du CA.
-- Objectif principal : Augmenter le CLOSING NET (signatures qui tiennent), réduire annulations J+7.
+**Dernière mise à jour :** 04 Février 2026
+**Statut :** SYSTÈME UNIFIÉ & ACTIF
 
-Diagramme de haut niveau (mermaid)
-```mermaid
-graph TD
-  A[ResultDashboard] -->|create study| B[Supabase: studies]
-  B --> C[Email Engine / email_queue]
-  C --> D[Client (GuestView / Email)]
-  D -->|view/click| E[Supabase: tracking_events]
-  E --> F[Brain Ingestion (useSystemBrain)]
-  F --> G[Engine.buildSystemBrain]
-  G --> H[Dashboard / War Room / Pilotage]
-  H --> I[Actions humaines & Email Engine]
-  I -->|logs| J[Supabase: decision_logs]
-```
+Ce document est la **Source de Vérité Unique**. Il décrit le fonctionnement technique, logique et fonctionnel de la plateforme.
 
-Composants & rôle
+---
 
-ResultDashboard (terrain) : création étude, projection financière, génération guest_view_url.
-GuestView : vue client publique/privée de l’étude, enregistre view/click.
-Tracking : table tracking_events (events: email_open, view, email_click, click, download, sign_intent).
-Brain (hook useSystemBrain) : ingestion, déduplication tracking, mapping études.
-Engine (buildSystemBrain) : calculs (Danger Score, cancellationRisk, tensionLevel, priorityCase, priorityActions).
-Email Engine : séquences anti‑annulation / post‑refus / nurture.
-War Room : interface d’action priorisée (signed && deposit non payé).
+## 1. Vue d'Ensemble (The Big Picture)
 
-Schéma simplifié des tables (utilisées)
+Le système est un **Organisme Vivant** composé de 3 organes majeurs :
+1.  **Le Corps (ResultsDashboard)** : L'interface terrain où la vente se passe (`Simulation`).
+2.  **Le Cerveau (Agent Zero / Brain)** : L'intelligence qui décide *comment* vendre (Psychologie).
+3.  **Le Moniteur (Ops Agent / Email Engine)** : L'arrière-boutique qui protège et relance (Gouvernance).
 
-studies: id, client_id, status, install_cost (alias total_price), deposit_paid, deposit_amount, signed_at, study_data, guest_view_url
-clients: id, first_name, last_name, email, phone, email_optout
-email_queue: study_id, client_id, email_type, status, sent_at, scheduled_for, created_at
-email_leads: client_id, email_step, total_opens, total_clicks, next_email_scheduled_at
-tracking_events: study_id, event_type, created_at, meta
-decision_logs: study_id, action_performed, justification, created_at
+---
 
-Algorithmes clés (résumé opérationnel)
+## 2. Le Corps : `ResultsDashboard.REFONTE2.tsx`
+C'est le *front-line*. Tout part d'ici.
+- **Rôle** : Calculatrice financière, Présentateur, Closer.
+- **Architecture** : Single Page Application (SPA) massive.
+- **Système** : Le dashboard obéit aux ordres du Cerveau via un **Contrat de Mapping** (`agentZeroModuleContract.ts`).
 
-Danger Score (0–100):
-Inputs: daysSinceSigned, total_price(normalized), engagementScore (opens/clicks/last_open), deposit_paid boolean.
-Pseudocode:
-timeFactor = clamp((signed_age_days / 14) * 100, 0, 100)
-valueFactor = normalize(total_price) * 100
-engagementFactor = (1 - engagementNormalized) * 100
-danger = clamp( w_time * timeFactor + w_value * valueFactor + w_eng * engagementFactor, 0, 100 )
-default weights: w_time=0.45, w_value=0.30, w_eng=0.25 (configurable)
+---
 
-Cancellation Risk:
-combine Danger Score + TensionLevel + BehaviorCategory
-computeCancellationRisk({dangerScore, tensionLevel, behavior}) => value 0..1
+## 3. Le Cerveau : Agent Zero (`src/brain/agentZeroClient.ts`)
+L'intelligence déportée qui analyse la psychologie du prospect.
 
-PriorityCase:
-select signed && !deposit_paid && (dangerScore >= 60 OR total_price > highValueThreshold)
-rank by (cancellationRisk * total_price)
+### Anatomie
+- **Localisation** : `src/brain/agentZeroClient.ts` (Client) -> `autopilote.pythonanywhere.com` (Serveur Python).
+- **Entrée** : `ProfileDetectionResult` (Signaux faibles, hésitations, réponses).
+- **Sortie** : `Plan` (Stratégie, Ordre des modules, Vitesse).
+- **Sécurité** :
+    - **Mode Fallback** : Si le serveur ne répond pas en 5s, le client bascule en mode "Standard" (Plan de secours local).
+    - **Isolation** : Agent Zero ne connait pas l'identité du client, seulement son profil psychologique.
 
-Dedup Tracking:
-de‑dupe events per study per window (config: TRACK_DEDUP_SECONDS default 60–90)
-count opens per window to compute total_opens
+---
 
-War Room Rules (operational)
+## 4. Le Moniteur : Ops Agent (`src/ops-agent/`)
+C'est le système de **Gouvernance Opérationnelle**. Il ne vend pas, il empêche les erreurs.
 
-Entry conditions:
-status === 'signed' && deposit_paid === false && (dangerScore >= 60 OR total_price > X)
-Actions:
-call client (script), send RIB + confirmation, escalate to manager, schedule immediate follow up email (anti‑annulation).
-Logging:
-every action must be appended to decision_logs with justification (audit trail).
+### Philosophie
+"Ops Agent ne devine rien. Il observe la base de données matérialisée."
+*Fichier Moteur : `src/ops-agent/opsAgent.engine.ts`*
 
-Sécurité, RGPD & infra notes
+### Les 3 Axes de Décision
+L'agent scanne chaque dossier et l'attribue à un Axe :
+- **AXE A (Anti-Annulation)** : Dossiers signés mais à risque (Pas d'acompte, SRU proche).
+    - *Action* : WAR ROOM immédiate.
+- **AXE B (Inertie)** : Dossiers post-RDV qui refroidissent.
+    - *Action* : Relance prioritaire.
+- **AXE C (Leads)** : Nouveaux contacts entrants.
+    - *Action* : Qualification ou Abandon.
 
-Respecter client.email_optout to prevent email sends.
-GuestView links : expiration configurable; tokenized URL (short TTL recommended).
-Indexes recommandés : indexes sur study_id, client_id et created_at pour tracking_events et email_queue.
-Jobs : pg_cron pour wake-up du Email Engine / scheduled tasks.
+### Auditabilité
+Chaque décision de l'Ops Agent génère une trace (`decision_logs`) expliquant **POURQUOI** une action est demandée (Ex: "Axe A - Acompte manquant depuis 48h").
 
-Tests recommandés
+---
 
-Unit tests: Danger Score boundaries, cancellationRisk extremes, priorityCase selection.
-Integration tests: simulate a signed study -> no deposit -> generate tracking events -> confirm War Room selection and decision_logs insert.
-Staging: full smoke test with realistic datasets.
+## 5. L'Exécuteur : Email Engine (`src/email-engine/`)
+Le moteur d'envoi autonome, conçu pour tourner en tâche de fond (Cron/Worker).
+*Fichier : `src/email-engine/sendNextEmail.ts`*
 
-Change log summary (à date)
+### Le Flux de Sécurité (Guards)
+Avant d'envoyer le moindre mail, le moteur passe 3 check-points :
+1.  **RGPD Guard** : Le client est-il Opt-out ? (Si oui -> Stop).
+2.  **Fatigue Guard** : Le client a-t-il été trop sollicité aujourd'hui ? (Si > X actions -> Stop).
+3.  **Temporal Guard** : Est-ce le bon moment ? (Pas de mail la nuit, respect des délais d'espacement).
 
-Refonte Brain load order (useSystemBrain) recommandée pour éviter race condition.
-Déplacement du logDecision pour persistance awaitée.
-Protections sur .in() queries, dedup window paramétrable.
+### Logique d'Envoi
+Si tous les feux sont verts, le mail part via le provider (SendGrid/Resend) et la base est mise à jour (`email_leads`).
+
+---
+
+## 6. Synthèse des Flux (Cross-check)
+
+| Composant | Fichier Maître | Déclencheur | Cible |
+| :--- | :--- | :--- | :--- |
+| **Simulateur** | `ResultsDashboard.REFONTE2.tsx` | Interaction Utilisateur | Client Final |
+| **Banquier Coach** | `coaches/BanquierCoachPhases.ts` | Scroll / Clic | Modules UI (Graphique) |
+| **Agent Zero** | `brain/agentZeroClient.ts` | Réponse Question | UX Dashboard |
+| **Ops Agent** | `ops-agent/opsAgent.engine.ts` | Snapshot Base de Données | Dashboard Manager (War Room) |
+| **Email Engine** | `email-engine/sendNextEmail.ts` | Cron Job | Boîte Mail Client |
+
+---
+
+**FIN DU DOCUMENT**
+*Architecture validée et auditée le 04/02/2026.*
