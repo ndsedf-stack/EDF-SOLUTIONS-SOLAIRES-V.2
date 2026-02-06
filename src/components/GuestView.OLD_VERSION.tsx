@@ -142,44 +142,21 @@ export default function GuestView() {
   );
   const [tableMode, setTableMode] = useState<"annuel" | "mensuel">("mensuel");
   const [showDetails, setShowDetails] = useState(false);
-  const { token } = useParams<{ token: string }>();
-  const studyId = token; // ✅ ALIAS pour compatibilité avec le reste du code
+  const { studyId } = useParams<{ studyId: string }>();
   const [isSigned, setIsSigned] = useState(false);
 
   useEffect(() => {
     const loadStudy = async () => {
       try {
-        if (!token) {
-          throw new Error("Lien invalide (Token manquant)");
+        if (!studyId) {
+          throw new Error("ID d'étude manquant");
         }
 
-        // 1️⃣ ESSAI 1 : Recherche par TOKEN
-        let { data, error } = await supabase
+        const { data, error } = await supabase
           .from("studies")
           .select("id, status, study_data, expires_at, created_at")
-          .eq("guest_view_token", token)
+          .eq("id", studyId)
           .single();
-
-        // 2️⃣ ESSAI 2 : Fallback sur ID (Anciens liens)
-        if (!data || error) {
-             const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
-             if (isUUID) {
-                console.log("🔄 Fallback: recherche par ID pour", token);
-                const { data: dataById, error: errorById } = await supabase
-                    .from("studies")
-                    .select("id, status, study_data, expires_at, created_at")
-                    .eq("id", token)
-                    .single();
-                
-                if (dataById && !errorById) {
-                    data = dataById;
-                    error = null;
-                }
-             }
-        }
-
-        if (error) throw error;
-        if (!data) throw new Error("Étude introuvable");
 
         if (error) throw error;
         if (!data) throw new Error("Étude introuvable");
