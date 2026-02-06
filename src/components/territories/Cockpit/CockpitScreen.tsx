@@ -333,9 +333,14 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       <div className="border-t border-white/10 pt-10 mt-10">
          <h4 className="text-xs font-black text-white/30 uppercase tracking-[0.4em] mb-6">Ops Intelligence (Pure Scoring)</h4>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-             {opsInsights.slice(0, 12).map(insight => (
-                <div key={insight.study_id} className="bg-white/5 p-4 rounded-xl border border-white/5 text-xs flex justify-between items-center">
-                    <span className="text-white/50 font-mono">{insight.study_id.substring(0, 8)}...</span>
+             {opsInsights.slice(0, 12).map(insight => {
+                 // @ts-ignore
+                 const study = studies.find((s: any) => s.id === insight.study_id);
+                 const clientName = (study?.client_name || study?.name || insight.study_id.substring(0, 8)).toUpperCase();
+                 
+                 return (
+                <div key={insight.study_id} className="bg-white/5 p-4 rounded-xl border border-white/5 text-xs flex justify-between items-center group hover:bg-white/10 transition-colors">
+                    <span className="text-white/70 font-mono font-bold group-hover:text-white transition-colors">{clientName}</span>
                     <div className="flex gap-3">
                          <div className="flex flex-col items-center">
                             <span className="text-[9px] uppercase text-white/30">RISK</span>
@@ -347,58 +352,124 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                          </div>
                     </div>
                 </div>
-             ))}
+             );
+             })}
          </div>
       </div>
 
-      {/* 🤖 OPS AGENT DECISIONS (MOMENT OF TRUTH) */}
-      <div className="mt-8 border-t border-white/10 pt-8">
-        <h3 className="text-sm font-bold uppercase text-slate-400 mb-3">
-          OPS AGENT — PRIORITÉS (AGRÉGATEUR)
-        </h3>
-
-        <div className="space-y-2">
-          {opsDecisions.slice(0, 12).map((d) => (
-            <div
-              key={d.studyId}
-              className="flex items-center justify-between bg-black/40 border border-white/10 rounded-lg px-3 py-2"
-            >
-              <span className="text-xs text-white/90 font-bold truncate max-w-[150px]">
-                {(() => {
-                    // @ts-ignore
-                    const study = studies.find((s: any) => s.id === d.studyId);
-                    return study?.client_name || study?.name || d.studyId.slice(0, 8) + '...';
-                })()}
-              </span>
-
-              <div className="flex gap-4 items-center">
-                 <span
-                    className={`text-xs font-bold ${
-                      d.priority === "WAR_ROOM"
-                        ? "text-red-500 animate-pulse"
-                        : d.priority === "PRIORITY_ACTION"
-                        ? "text-orange-400"
-                        : d.priority === "WATCH"
-                        ? "text-yellow-400"
-                        : d.priority === "STOP"
-                        ? "text-slate-600 line-through"
-                        : "text-emerald-400"
-                    }`}
-                 >
-                    {d.priority}
-                 </span>
-                 {d.sourceAxis && (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/10 text-white/60">
-                       AXIS {d.sourceAxis}
-                    </span>
-                 )}
-              </div>
-
-              <span className="text-[10px] text-slate-500 italic">
-                {d.recommendation}
-              </span>
+      {/* 🤖 OPS AGENT DECISIONS (MOMENT OF TRUTH) - ULTRA PREMIUM REDESIGN */}
+      <div className="mt-12 pt-12 border-t border-white/5">
+        <div className="flex items-center justify-between mb-8">
+            <div className="relative">
+                <div className="absolute -left-4 top-1 w-1 h-full bg-gradient-to-b from-red-500 to-transparent opacity-50"></div>
+                <h3 className="text-2xl font-black uppercase text-white tracking-[0.2em] flex items-center gap-4 pl-4">
+                   <div className="p-2 bg-red-500/10 rounded-full border border-red-500/20 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
+                       <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                   </div>
+                   OPS INTELLIGENCE CENTRE
+                </h3>
+                <p className="text-white/30 text-xs font-mono mt-1 pl-16 tracking-widest uppercase">
+                    Live Priority Matrix • Automated Strategy
+                </p>
             </div>
-          ))}
+        </div>
+
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0F1629]/60 backdrop-blur-2xl shadow-2xl ring-1 ring-white/5">
+           <table className="w-full text-left border-collapse">
+              <thead>
+                 <tr className="border-b border-white/10 bg-white/[0.02]">
+                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em] w-1/3">Client Identity</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em]">Operational Status</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em]">Strategy Axis</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em] text-right">Recommended Protocol</th>
+                 </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
+                {opsDecisions.slice(0, 12).map((d) => {
+                   // Resolving client name safe (FORCE UPPERCASE)
+                   // @ts-ignore
+                   const study = studies.find((s: any) => s.id === d.studyId);
+                   const clientName = (study?.client_name || study?.name || d.studyId.slice(0, 12)).toUpperCase();
+                   const city = (study?.city || "N/A").toUpperCase();
+                   
+                   // Formatted Recommendation (No underscores)
+                   const recommendation = d.recommendation.replace(/_/g, ' ').toUpperCase();
+
+                   return (
+                    <tr 
+                      key={d.studyId} 
+                      className="group hover:bg-white/[0.04] transition-all duration-300 ease-out"
+                    >
+                      {/* CLIENT IDENTITY */}
+                      <td className="py-5 px-8">
+                         <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-3">
+                                <span className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-blue-400 transition-colors"></span>
+                                <span className="text-sm font-black text-slate-200 group-hover:text-white transition-colors tracking-wide">
+                                   {clientName}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-2 pl-4">
+                                <span className="text-[9px] font-mono text-white/20 px-1.5 rounded border border-white/5">{d.studyId.slice(0,4)}</span>
+                                <span className="text-[9px] font-bold text-white/30 tracking-wider">{city}</span>
+                            </div>
+                         </div>
+                      </td>
+
+                      {/* PRIORITY BADGE */}
+                      <td className="py-5 px-8">
+                          <div className={`
+                             inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-transform group-hover:scale-105
+                             ${d.priority === "WAR_ROOM" ? "bg-red-500/20 border-red-500/50 text-red-100 shadow-[0_0_20px_rgba(220,38,38,0.3)]" : 
+                               d.priority === "PRIORITY_ACTION" ? "bg-orange-500/10 border-orange-500/30 text-orange-200" :
+                               d.priority === "WATCH" ? "bg-blue-500/10 border-blue-500/30 text-blue-200" :
+                               "bg-slate-500/5 border-slate-500/20 text-slate-500 opacity-50"}
+                          `}>
+                              {d.priority === "WAR_ROOM" && <div className="w-1.5 h-1.5 bg-red-400 rounded-full animate-ping" />}
+                              {d.priority.replace(/_/g, ' ')}
+                          </div>
+                      </td>
+
+                      {/* STRATEGY AXIS */}
+                      <td className="py-5 px-8">
+                          {d.sourceAxis ? (
+                             <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-mono text-white/30">AXIS</span>
+                                <span className="font-bold text-xs text-white/70 bg-white/5 px-2 py-1 rounded border border-white/10 group-hover:border-white/30 transition-colors">
+                                    {d.sourceAxis}
+                                </span>
+                             </div>
+                          ) : (
+                             <span className="text-white/10 text-[10px]">—</span>
+                          )}
+                      </td>
+
+                      {/* ACTION TEXT */}
+                      <td className="py-5 px-8 text-right">
+                          <span className={`
+                             text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded
+                             ${d.recommendation.includes('RELANCER') ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-500 bg-white/[0.02]'}
+                          `}>
+                             {recommendation}
+                          </span>
+                      </td>
+                    </tr>
+                   );
+                })}
+              </tbody>
+           </table>
+           
+           {/* EMPTY STATE */}
+           {opsDecisions.length === 0 && (
+                <div className="p-20 text-center flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                        <div className="w-4 h-4 bg-emerald-500 rounded-full" />
+                    </div>
+                    <div className="text-white/20 text-xs uppercase tracking-widest font-mono">
+                        No active priorities detected
+                    </div>
+                </div>
+           )}
         </div>
       </div>
 
