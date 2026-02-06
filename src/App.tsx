@@ -178,7 +178,7 @@ const App = () => (
           </AuthGuard>
         } />
         {/* ✅ CORRECTION: Changé de :id à :studyId pour correspondre au composant */}
-        <Route path="/guest/:studyId" element={<GuestView />} />
+        <Route path="/guest/:token" element={<GuestView />} />
         <Route path="/dashboard" element={
           <AuthGuard>
             <Dashboard />

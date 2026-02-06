@@ -33,19 +33,40 @@ export default function GuestView({ study: initialStudy }: GuestViewProps) {
 
     const fetchStudy = async () => {
         try {
-            // 🔒 QUERY SECURISEE : On ne cherche QUE par token
-            const { data, error } = await supabase
+            // 1️⃣ ESSAI 1 : Recherche par TOKEN
+            let { data, error } = await supabase
                 .from('studies')
                 .select('*')
                 .eq('guest_view_token', token)
                 .single();
 
+            // 2️⃣ ESSAI 2 : Fallback sur ID (Anciens liens)
+            if (!data || error) {
+                 // On vérifie si le token ressemble à un UUID pour éviter erreur SQL
+                 const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token);
+                 
+                 if (isUUID) {
+                    console.log("🔄 Fallback: recherche par ID pour", token);
+                    const { data: dataById, error: errorById } = await supabase
+                        .from('studies')
+                        .select('*')
+                        .eq('id', token)
+                        .single();
+                    
+                    if (dataById && !errorById) {
+                        data = dataById;
+                        error = null;
+                    }
+                 }
+            }
+
             if (error || !data) {
+                console.error("❌ Supabase Error or No Data:", error);
                 throw new Error("Dossier introuvable ou lien incorrect.");
             }
 
             // ⏳ CHECK EXPIRATION (Si la colonne existe)
-            if (data.guest_view_expires_at && new Date(data.guest_view_expires_at) < new Date()) {
+            if ((data as any).guest_view_expires_at && new Date((data as any).guest_view_expires_at) < new Date()) {
                 throw new Error("Ce lien sécurisé a expiré.");
             }
 

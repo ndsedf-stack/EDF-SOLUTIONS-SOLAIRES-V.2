@@ -3488,8 +3488,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       // ✅ ID OFFICIEL SUPABASE
       const realStudyId = result.data.id;
 
-      // ✅ URL guest basée sur le vrai ID
-      const guestUrl = `${window.location.origin}/guest/${realStudyId}`;
+      // ✅ URL guest basée sur le TOKEN (et non l'ID) pour matcher avec GuestView
+      const guestToken = result.data.guest_view_token || result.data.id;
+      const guestUrl = `${window.location.origin}/guest/${guestToken}`;
 
       console.log("✅ ÉTUDE CRÉÉE AVEC SUCCÈS:", realStudyId);
 
