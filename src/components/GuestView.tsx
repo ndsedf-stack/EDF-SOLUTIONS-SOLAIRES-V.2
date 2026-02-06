@@ -406,6 +406,25 @@ export default function GuestView() {
   const phone = "+336683623329";
   const isMobile = /iPhone|Android/i.test(navigator.userAgent);
 
+  if (isExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black text-white p-8">
+        <div className="max-w-xl text-center">
+          <div className="text-5xl mb-6">⏳</div>
+          <h1 className="text-3xl font-black mb-4">Offre expirée</h1>
+          <p className="text-white/70 text-lg leading-relaxed">
+            Le délai de validité de cette étude est dépassé.
+            <br />
+            Les conditions tarifaires ne sont plus garanties.
+          </p>
+          <p className="text-white/40 text-sm mt-6">
+            Merci de contacter votre conseiller pour actualiser l'offre.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (isSigned) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-black text-white p-8">
