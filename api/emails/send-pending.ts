@@ -9,10 +9,14 @@ const supabase = createClient(
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req: any, res: any) {
-  const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
+  const isCron =
+  req.headers["user-agent"]?.includes("vercel-cron") ||
+  req.headers.authorization === `Bearer ${process.env.CRON_SECRET}`;
+
+if (!isCron) {
+  return res.status(401).json({ error: "Unauthorized" });
+}
+
 
   try {
     const { data: queue, error } = await supabase
@@ -47,7 +51,7 @@ export default async function handler(req: any, res: any) {
       if (!study || !study.client_email) continue;
 
       const { data, error: sendError } = await resend.emails.send({
-        from: "EDF Solutions <noreply@tondomaine.com>",
+        from: "EDF Solutions <nicolas@nicolas-distefano-edf.fr>",
         to: [study.client_email], // On utilise 'study' au lieu de 'item.studies'
         subject: `Suite à votre étude : ${item.email_type}`,
         html: `<strong>Bonjour ${study.client_name},</strong><p>Nous revenons vers vous concernant votre étude...</p>`,
