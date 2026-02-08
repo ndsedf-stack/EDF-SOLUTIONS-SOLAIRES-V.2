@@ -85,7 +85,8 @@ serve(async (req) => {
     const html = render(template.body_html);
 
     const sendResult = await resend.emails.send({
-      from: `${variables.commercial_name} <${variables.commercial_email}>`,
+      from: `${variables.commercial_name} <nicolas@nicolas-distefano-edf.fr>`,
+      replyTo: variables.commercial_email,
       to: [clientEmail],
       subject,
       html,
