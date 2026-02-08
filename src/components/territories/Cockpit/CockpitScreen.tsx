@@ -252,7 +252,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                    </div>
                    <p className="text-2xl font-black text-white mt-1 uppercase tracking-tight">
                       {Math.round(studies
-                        .filter((s:any) => s.status === 'signed' && new Date(s.signed_at).getMonth() === new Date().getMonth() && new Date(s.signed_at).getFullYear() === new Date().getFullYear())
+                        .filter((s:any) => s.total_price && !['cancelled', 'refused'].includes(s.status) && s.signed_at && new Date(s.signed_at).getMonth() === new Date().getMonth() && new Date(s.signed_at).getFullYear() === new Date().getFullYear())
                         .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
                       ).toLocaleString('fr-FR')} k€
                    </p>
@@ -263,12 +263,13 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                    <p className="text-2xl font-black text-white/50 mt-1 uppercase tracking-tight">
                       {Math.round(studies
                         .filter((s:any) => {
+                           if (!s.signed_at || ['cancelled', 'refused'].includes(s.status) || !s.total_price) return false;
                            const d = new Date(s.signed_at);
                            const now = new Date();
                            // Logic for last month
                            const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
                            const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-                           return s.status === 'signed' && d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+                           return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
                         })
                         .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
                       ).toLocaleString('fr-FR')} k€
