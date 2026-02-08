@@ -15,39 +15,15 @@ export type WarRoomPoint = {
   engagementScore: number;
 };
 
-interface Props {
+export interface RiskMapProps {
   studies: WarRoomPoint[];
   width: number;
   height: number;
+  onPointClick?: (studyId: string) => void;
 }
 
-const COLORS = {
-  low: '#4ADE80',
-  medium: '#FB923C',
-  high: '#F87171',
-  axis: '#ffffff10'
-};
-
-const RiskMapInner = ({ studies, width, height }: Props) => {
-  const margin = { top: 40, right: 40, bottom: 60, left: 80 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
-
-  const xScale = useMemo(() => scaleLinear({
-    domain: [0, Math.max(14, ...studies.map(d => d.daysBeforeDeadline))],
-    range: [innerWidth, 0], // Inversé : 0 jours (danger) à droite
-  }), [studies, innerWidth]);
-
-  const yScale = useMemo(() => scaleLinear({
-    domain: [0, max(studies, d => d.totalPrice) || 50000] as [number, number],
-    range: [innerHeight, 0],
-    nice: true,
-  }), [studies, innerHeight]);
-
-  const sizeScale = useMemo(() => scaleLinear({
-    domain: [0, 100],
-    range: [8, 30],
-  }), []);
+const RiskMapInner = ({ studies, width, height, onPointClick }: RiskMapProps) => {
+  // ... existing code ...
 
   const colorScale = (score: number) => {
     if (score < 40) return COLORS.low;
@@ -72,7 +48,8 @@ const RiskMapInner = ({ studies, width, height }: Props) => {
             fillOpacity={0.4}
             stroke={colorScale(study.dangerScore)}
             strokeWidth={2}
-            className="cursor-pointer hover:fill-opacity-80 transition-all"
+            className="cursor-pointer hover:fill-opacity-80 transition-all hover:r-30"
+            onClick={() => onPointClick && onPointClick(study.studyId)}
           >
              <title>{`${study.name}: ${Math.round(study.totalPrice / 1000)}k€ - ${study.daysBeforeDeadline}j`}</title>
           </Circle>

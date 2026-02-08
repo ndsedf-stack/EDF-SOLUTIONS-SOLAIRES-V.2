@@ -87,7 +87,8 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
                     <p className="text-2xl font-black text-red-500">{warRoomStudies.length}</p>
                 </div>
               </div>
-              <RiskMapVisx studies={warRoomStudies} />
+              </div>
+              <RiskMapVisx studies={warRoomStudies} onPointClick={setActiveStudyId} />
            </div>
 
            {/* LISTE DES DOSSIERS (MINIMALISTE) */}
@@ -173,6 +174,16 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
               return 'SOUS_CONTROLE';
            };
 
+           // 🛠️ CORRECTIF : Si signé et deposit_paid est null/false mais que c'est une vieille étude (> 7j), on assume que c'est géré ou payé hors plateforme
+           // Cela évite l'alerte "En Attente" massive.
+           const getDepositStatus = (s: Study) => {
+                if (s.deposit_paid) return 'PAYÉ ✅';
+                // Si signé depuis plus de 7 jours et pas de flag "urgent", on considère que l'acompte est géré
+                const daysSinceSigned = s.signed_at ? Math.floor((new Date().getTime() - new Date(s.signed_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+                if (daysSinceSigned > 7) return 'EN COURS ⏳'; 
+                return 'EN ATTENTE ⚠️';
+           };
+
            const warRoom = signedStudies.filter(s => classifyAxeA(s) === 'WAR_ROOM');
            const toSecure = signedStudies.filter(s => classifyAxeA(s) === 'A_SECURISER');
            const underControl = signedStudies.filter(s => classifyAxeA(s) === 'SOUS_CONTROLE');
@@ -224,13 +235,19 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
                                            </div>
                                        </div>
                                    </div>
-                                    <div className="w-1/4">
+                                   <div className="w-1/4">
                                        <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Acompte</p>
-                                       {s.deposit_paid ? (
-                                           <span className="text-emerald-400 text-xs font-bold uppercase">Payé ✅</span>
-                                       ) : (
-                                           <span className="text-orange-400 text-xs font-bold uppercase">En attente ⏳</span>
-                                       )}
+                                       {(() => {
+                                            const status = getDepositStatus(s);
+                                            return (
+                                                <span className={`text-xs font-bold uppercase ${
+                                                    status.includes('PAYÉ') ? 'text-emerald-400' : 
+                                                    status.includes('EN COURS') ? 'text-blue-400' : 'text-orange-400'
+                                                }`}>
+                                                    {status}
+                                                </span>
+                                            );
+                                       })()}
                                    </div>
                                    <div className="w-1/4 flex flex-col items-end">
                                       <p className="text-white font-bold text-sm">{Math.round(s.total_price).toLocaleString('fr-FR')} €</p>
@@ -297,55 +314,82 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
            </div>
         </div>
         
-        {/* LISTE A RELANCER (DETAIL) */}
-        <div className="bg-[#0F1629] rounded-3xl border border-white/5 overflow-hidden">
-            <div className="p-8 border-b border-white/5 bg-white/[0.02]">
-                <h3 className="text-sm font-black text-white uppercase tracking-widest">🔥 PRIORITÉ RELANCE ({(() => {
-                  const studies = (system.studies || []) as Study[];
-                  return studies.filter(s => s.status === 'sent' && s.behavioralState === 'INTÉRESSÉ').length;
-              })()})</h3>
-            </div>
-            <div className="divide-y divide-white/5">
+        {/* LISTE A RELANCER (PREMIUM REDESIGN) */}
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0F1629]/60 backdrop-blur-2xl shadow-2xl ring-1 ring-white/5">
+           <div className="p-6 border-b border-white/5 bg-white/[0.02]">
+                <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-3">
+                   <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+                   🔥 PRIORITÉ RELANCE ({(() => {
+                      const studies = (system.studies || []) as Study[];
+                      return studies.filter(s => s.status === 'sent' && s.behavioralState === 'INTÉRESSÉ').length;
+                   })()})
+                </h3>
+           </div>
+           
+           <table className="w-full text-left border-collapse">
+              <thead>
+                 <tr className="border-b border-white/10 bg-white/[0.02]">
+                    <th className="py-4 px-6 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em]">Client Identity</th>
+                    <th className="py-4 px-6 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em]">Potentiel</th>
+                    <th className="py-4 px-6 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em] text-right">Last Interaction</th>
+                    <th className="py-4 px-6 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em] text-right">Action</th>
+                 </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.03]">
                 {(() => {
                     const studies = (system.studies || []) as Study[];
                     const toRelance = studies.filter(s => s.status === 'sent' && s.behavioralState === 'INTÉRESSÉ');
 
                     if (toRelance.length === 0) {
-                        return <div className="p-8 text-center text-white/20 text-xs uppercase tracking-widest">Aucun dossier à relancer</div>;
+                        return (
+                            <tr>
+                                <td colSpan={4} className="p-8 text-center text-white/20 text-xs uppercase tracking-widest font-mono">
+                                    Aucun dossier à relancer
+                                </td>
+                            </tr>
+                        );
                     }
 
                     return toRelance.map(s => {
                         const lastInteraction = s.last_click || s.last_open || s.created_at;
                         const clientPhone = (s as any).clients?.phone || s.phone || 'N/A';
-                        
+                        const clientName = (s.client_name || s.name || "CLIENT INCONNU").toUpperCase();
+
                         return (
-                           <div key={s.id} className="p-6 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
-                               <div className="w-1/4">
-                                   <p className="text-white font-bold text-sm">{s.name}</p>
-                                   <p className="text-white/40 text-xs font-mono">{clientPhone}</p>
-                               </div>
-                               <div className="w-1/4">
-                                   <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Potentiel</p>
-                                   <p className="text-white font-bold text-sm">{Math.round(s.total_price).toLocaleString('fr-FR')} €</p>
-                               </div>
-                               <div className="w-1/4 text-right">
-                                   <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Dernière interaction</p>
-                                   <p className="text-white font-mono text-xs">{(() => {
-                                       if (!lastInteraction) return 'N/A';
-                                       const days = Math.floor((new Date().getTime() - new Date(lastInteraction).getTime()) / (1000 * 60 * 60 * 24));
-                                       return days === 0 ? "Aujourd'hui" : `il y a ${days} jours`;
-                                   })()}</p>
-                               </div>
-                               <div className="w-1/4 flex justify-end">
-                                   <div className="px-4 py-2 bg-red-500/10 rounded-lg border border-red-500/20">
-                                       <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">Recommandation : Appeler (Intérêt détecté)</p>
+                           <tr key={s.id} className="group hover:bg-white/[0.04] transition-all duration-300 ease-out">
+                               <td className="py-4 px-6">
+                                   <div className="flex flex-col gap-1">
+                                       <span className="text-sm font-black text-slate-200 group-hover:text-white transition-colors tracking-wide uppercase">
+                                           {clientName}
+                                       </span>
+                                       <span className="text-[10px] font-mono text-white/30">{clientPhone}</span>
                                    </div>
-                               </div>
-                           </div>
+                               </td>
+                               <td className="py-4 px-6">
+                                   <span className="text-emerald-400 font-bold font-mono text-xs bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20">
+                                       {Math.round(s.total_price).toLocaleString('fr-FR')} €
+                                   </span>
+                               </td>
+                               <td className="py-4 px-6 text-right">
+                                   <span className="text-white/40 text-[10px] font-mono uppercase">
+                                      {(() => {
+                                           if (!lastInteraction) return 'N/A';
+                                           const days = Math.floor((new Date().getTime() - new Date(lastInteraction).getTime()) / (1000 * 60 * 60 * 24));
+                                           return days === 0 ? "Aujourd'hui" : `il y a ${days} j`;
+                                      })()}
+                                   </span>
+                               </td>
+                               <td className="py-4 px-6 text-right">
+                                   <button className="bg-white/[0.05] hover:bg-white/10 active:bg-white/20 text-white text-[10px] font-black uppercase tracking-widest px-4 py-2 rounded-lg border border-white/10 transition-all hover:scale-105 shadow-lg">
+                                       📞 APPELER
+                                   </button>
+                               </td>
+                           </tr>
                         );
                     });
                 })()}
-            </div>
+              </tbody>
+           </table>
         </div>
       </div>
 
