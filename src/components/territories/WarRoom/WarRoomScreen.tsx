@@ -457,15 +457,15 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
                                    return days === 0 ? "Aujourd'hui" : `il y a ${days} jours`;
                                })()}</p>
                            </div>
-                           <div className="px-4 py-2 bg-red-500/10 rounded-lg border border-red-500/20">
-                               <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">Recommandation : Appeler</p>
-                           </div>
-                       </div>
-                   ));
-                })()}
-            </div>
-        </div>
-      </div>
+                            <div className="px-4 py-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                                <p className="text-red-400 text-[10px] font-black uppercase tracking-widest">Recommandation : Appeler</p>
+                            </div>
+                        </div>
+                    ));
+                 })()}
+             </div>
+         </div>
+       </div>
     </div>
   );
 }
