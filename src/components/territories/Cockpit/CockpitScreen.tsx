@@ -241,9 +241,41 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       {/* 2️⃣ FINANCIAL RISK PROOF (Graphe HERO) */}
       <div className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-8">
         <div>
-           <h2 className="text-xl font-black text-white uppercase tracking-widest">Protection du Chiffre d’Affaires</h2>
-           <p className="text-white/40 text-sm font-medium italic">"Vérité absolue sur la dérive entre CA sécurisé et CA à risque (30j)."</p>
-        </div>
+            <h2 className="text-xl font-black text-white uppercase tracking-widest">Protection du Chiffre d’Affaires</h2>
+            <p className="text-white/40 text-sm font-medium italic">"Vérité absolue sur la dérive entre CA sécurisé et CA à risque (30j)."</p>
+            {/* MONTHLY REVENUE METRICS */}
+            <div className="flex items-center gap-12 mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/5 w-fit">
+                <div>
+                   <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <p className="text-white/40 text-[10px] uppercase font-black tracking-widest">CA Ce Mois ({new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase()})</p>
+                   </div>
+                   <p className="text-2xl font-black text-white mt-1 uppercase tracking-tight">
+                      {Math.round(studies
+                        .filter((s:any) => s.status === 'signed' && new Date(s.signed_at).getMonth() === new Date().getMonth() && new Date(s.signed_at).getFullYear() === new Date().getFullYear())
+                        .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
+                      ).toLocaleString('fr-FR')} k€
+                   </p>
+                </div>
+                <div className="w-px h-8 bg-white/10" />
+                <div>
+                   <p className="text-white/40 text-[10px] uppercase font-black tracking-widest">CA Mois Dernier</p>
+                   <p className="text-2xl font-black text-white/50 mt-1 uppercase tracking-tight">
+                      {Math.round(studies
+                        .filter((s:any) => {
+                           const d = new Date(s.signed_at);
+                           const now = new Date();
+                           // Logic for last month
+                           const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+                           const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+                           return s.status === 'signed' && d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+                        })
+                        .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
+                      ).toLocaleString('fr-FR')} k€
+                   </p>
+                </div>
+            </div>
+         </div>
         <FinancialRiskProofVisx data={financialRiskData} />
       </div>
 
