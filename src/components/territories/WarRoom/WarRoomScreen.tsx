@@ -87,7 +87,6 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
                     <p className="text-2xl font-black text-red-500">{warRoomStudies.length}</p>
                 </div>
               </div>
-              </div>
               <RiskMapVisx studies={warRoomStudies} onPointClick={setActiveStudyId} />
            </div>
 
@@ -353,7 +352,7 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
                     return toRelance.map(s => {
                         const lastInteraction = s.last_click || s.last_open || s.created_at;
                         const clientPhone = (s as any).clients?.phone || s.phone || 'N/A';
-                        const clientName = (s.client_name || s.name || "CLIENT INCONNU").toUpperCase();
+                        const clientName = ((s as any).client_name || s.name || "CLIENT INCONNU").toUpperCase();
 
                         return (
                            <tr key={s.id} className="group hover:bg-white/[0.04] transition-all duration-300 ease-out">

@@ -17,9 +17,12 @@ export type WarRoomPoint = {
 
 export interface RiskMapProps {
   studies: WarRoomPoint[];
+  onPointClick?: (studyId: string) => void;
+}
+
+interface RiskMapInnerProps extends RiskMapProps {
   width: number;
   height: number;
-  onPointClick?: (studyId: string) => void;
 }
 
 const COLORS = {
@@ -29,7 +32,7 @@ const COLORS = {
   axis: '#ffffff10'
 };
 
-const RiskMapInner = ({ studies, width, height, onPointClick }: RiskMapProps) => {
+const RiskMapInner = ({ studies, width, height, onPointClick }: RiskMapInnerProps) => {
   const margin = { top: 40, right: 40, bottom: 60, left: 80 };
   const innerWidth = width - margin.left - margin.right;
   const innerHeight = height - margin.top - margin.bottom;
@@ -118,11 +121,11 @@ function max<T>(data: T[], value: (d: T) => number): number {
     return data.reduce((acc, d) => Math.max(acc, value(d)), 0);
 }
 
-export function RiskMapVisx({ studies }: { studies: WarRoomPoint[] }) {
+export function RiskMapVisx({ studies, onPointClick }: RiskMapProps) {
   return (
     <div style={{ width: '100%', height: '400px' }}>
       <ParentSize>
-        {({ width, height }) => <RiskMapInner studies={studies} width={width} height={height} />}
+        {({ width, height }) => <RiskMapInner studies={studies} width={width} height={height} onPointClick={onPointClick} />}
       </ParentSize>
     </div>
   );
