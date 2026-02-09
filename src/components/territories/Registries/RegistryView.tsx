@@ -29,7 +29,7 @@ export const RegistryView: React.FC<RegistryViewProps> = ({ system }) => {
     optout: false,
   });
 
-  const [hideSignedInPipeline, setHideSignedInPipeline] = useState(false);
+
 
   return (
     <div className="space-y-12">
@@ -41,15 +41,6 @@ export const RegistryView: React.FC<RegistryViewProps> = ({ system }) => {
             <div className="text-sm text-emerald-400 font-medium">Historique complet et gestion du pipeline</div>
           </div>
         </div>
-        
-        <button
-            onClick={() => setHideSignedInPipeline(!hideSignedInPipeline)} 
-            className={`px-4 py-2 rounded-lg border text-xs font-bold uppercase transition-all ${hideSignedInPipeline 
-              ? 'bg-slate-800 text-slate-500 border-slate-700 hover:border-slate-600' 
-              : 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40'}`}
-        >
-            {hideSignedInPipeline ? 'Voir Signés' : 'Masquer Signés'}
-        </button>
       </div>
       
       <Filters filters={filters} onFilterChange={setFilters} />
@@ -81,7 +72,6 @@ export const RegistryView: React.FC<RegistryViewProps> = ({ system }) => {
           <Pipeline
               studies={studies}
               filters={filters}
-              hideSignedInPipeline={hideSignedInPipeline}
               emailFlowByClient={emailFlowByClient}
               antiAnnulationByStudy={antiAnnulationByStudy}
               postRefusByStudy={postRefusByStudy}

@@ -154,7 +154,7 @@ export const StudyCardPremium: React.FC<StudyCardPremiumProps> = ({
         }`}
       ></div>
 
-      <div className="relative glass-panel rounded-2xl bg-slate-950/40 border border-white/5 p-6 flex flex-col lg:grid lg:grid-cols-[220px_1fr_200px_120px_auto] lg:items-center gap-6 transition-all hover:bg-slate-900/40 hover:border-white/10 shadow-lg">
+      <div className="relative backdrop-blur-xl rounded-2xl bg-slate-950/40 border border-white/5 p-6 flex flex-col lg:grid lg:grid-cols-[220px_1fr_200px_120px_auto] lg:items-center gap-6 transition-all hover:bg-slate-900/40 hover:border-white/10 shadow-lg">
         {/* COLONNE 1 : IDENTITÉ & STATUT (Vertical Stack) */}
         <div className="flex flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">

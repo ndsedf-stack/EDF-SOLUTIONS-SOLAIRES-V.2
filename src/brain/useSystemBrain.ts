@@ -304,23 +304,57 @@ export function useSystemBrain() {
         dailyStats.set(dateKey, { date: dateKey, count: 0, opened: 0, clicked: 0 });
       }
 
-      // A. Count SENT (from Email Queue)
+      // A. Create a Map of Send Dates per Study to attribute interactions correctly
+      const sendsByStudy = new Map<string, number[]>(); // study_id -> timestamp[]
+      
       queueEmails.forEach((e: any) => {
-        const dateKey = new Date(e.sent_at || e.created_at || new Date()).toISOString().split('T')[0];
         const isSent = ["sent", "SUCCESS", "success", "delivered", "processed"].includes(e.status?.toLowerCase() || "");
-        
-        if (dailyStats.has(dateKey) && isSent) {
+        if (isSent && e.sent_at && e.study_id) {
+          const timestamp = new Date(e.sent_at).getTime();
+          if (!sendsByStudy.has(e.study_id)) sendsByStudy.set(e.study_id, []);
+          sendsByStudy.get(e.study_id)!.push(timestamp);
+          
+          const dateKey = new Date(e.sent_at).toISOString().split('T')[0];
+          if (dailyStats.has(dateKey)) {
             dailyStats.get(dateKey)!.count++;
+          }
         }
       });
 
-      // B. Count OPEN/CLICK (from Tracking Events)
+      // Sort send timestamps for each study to allow binary search or simple find
+      sendsByStudy.forEach(times => times.sort((a, b) => a - b));
+
+      // B. Count OPEN/CLICK (Attributed to Send Date)
+      const openedByStudySend = new Set<string>(); // "studyId-sendDate"
+      const clickedByStudySend = new Set<string>();
+
       trackingData.forEach((t: any) => {
-          const dateKey = new Date(t.created_at).toISOString().split('T')[0];
-          if (dailyStats.has(dateKey)) {
-              const stat = dailyStats.get(dateKey)!;
-              if (t.event_type === "email_open" || t.event_type === "view") stat.opened++;
-      if (t.event_type === "email_click" || t.event_type === "click") stat.clicked++;
+          if (!t.study_id || !t.created_at) return;
+          const eventTime = new Date(t.created_at).getTime();
+          
+          // Find the latest send before or at this event time
+          const studySends = sendsByStudy.get(t.study_id);
+          if (!studySends) return;
+
+          const attributedSendTime = [...studySends].reverse().find(sendTime => sendTime <= eventTime);
+          if (!attributedSendTime) return;
+
+          const sendDateKey = new Date(attributedSendTime).toISOString().split('T')[0];
+          if (!dailyStats.has(sendDateKey)) return;
+
+          const uniqueKey = `${t.study_id}-${sendDateKey}`;
+
+          if (t.event_type === "email_open" || t.event_type === "view") {
+              if (!openedByStudySend.has(uniqueKey)) {
+                  openedByStudySend.add(uniqueKey);
+                  dailyStats.get(sendDateKey)!.opened++;
+              }
+          }
+          if (t.event_type === "email_click" || t.event_type === "click") {
+              if (!clickedByStudySend.has(uniqueKey)) {
+                  clickedByStudySend.add(uniqueKey);
+                  dailyStats.get(sendDateKey)!.clicked++;
+              }
           }
       });
 

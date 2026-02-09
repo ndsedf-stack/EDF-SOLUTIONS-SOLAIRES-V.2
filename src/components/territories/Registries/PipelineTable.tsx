@@ -7,7 +7,6 @@ import { StudyCardPremium } from '@/components/dashboard/StudyCardPremium';
 interface PipelineProps {
   studies: Study[];
   filters: DashboardFilters;
-  hideSignedInPipeline: boolean;
   emailFlowByClient: Record<string, any>;
   antiAnnulationByStudy: Record<string, any>;
   postRefusByStudy: Record<string, any>;
@@ -20,7 +19,6 @@ interface PipelineProps {
 export const Pipeline: React.FC<PipelineProps> = ({
   studies,
   filters,
-  hideSignedInPipeline,
   emailFlowByClient,
   antiAnnulationByStudy,
   postRefusByStudy,
@@ -31,8 +29,8 @@ export const Pipeline: React.FC<PipelineProps> = ({
 }) => {
   // Filtrage
   let filtered = studies.filter((s) => {
-    // Masquer les signés si demandé
-    if (hideSignedInPipeline && s.status === "signed") return false;
+    // AXE B : STRICTEMENT NON-SIGNÉ
+    if (s.status === "signed") return false;
 
     if (filters.search) {
       const search = filters.search.toLowerCase();

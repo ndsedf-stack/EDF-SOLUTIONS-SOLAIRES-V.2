@@ -155,7 +155,7 @@ export const EmailLeads: React.FC<EmailLeadsProps> = ({
                     : "bg-slate-800/50 border-slate-700/50 hover:bg-slate-800/70"
                 }`}
               >
-                <div className="grid grid-cols-[2fr_1fr_1fr_1.5fr] gap-4 items-center">
+                <div className="grid grid-cols-[2fr_minmax(180px,1.2fr)_1.2fr_auto] gap-4 items-center">
                   {/* COLONNE 1 : Identité & Badges */}
                   <div>
                     <div className="mb-3">
