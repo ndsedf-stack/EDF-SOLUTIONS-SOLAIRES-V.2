@@ -94,9 +94,28 @@ export function mapStudyToDisplay(s: any, st: any, antiAnnul: Record<string, any
   if (s.financing_mode) financingMode = s.financing_mode;
 
   // ✅ LOGIQUE DE DÉPÔT / ACOMPTE
+  // RÈGLE MÉTIER VALIDÉE :
+  // has_deposit = Un acompte de 1500€ est-il REQUIS ?
+  //   → true pour cash_payment et partial_financing
+  //   → false pour full_financing
+  // CETTE VALEUR NE DOIT JAMAIS ÊTRE ÉCRASÉE PAR LA DB
   const requiresDepositCalc = 
-    financingMode !== "full_financing" && 
-    ((s.deposit_amount && s.deposit_amount > 0) || s.has_deposit || financingMode === "cash_payment" || financingMode === "with_deposit");
+    financingMode === "cash_payment" || 
+    financingMode === "partial_financing";
+
+  // 🔍 DEBUG DUCHENE
+  if (s.clients?.last_name?.toUpperCase().includes('DUCHENE')) {
+    console.log('🔍 MAPPERS DEBUG DUCHENE:', {
+      name: `${s.clients?.first_name} ${s.clients?.last_name}`,
+      apport,
+      totalCost,
+      mode,
+      financingMode,
+      requiresDepositCalc,
+      db_has_deposit: s.has_deposit,
+      db_deposit_amount: s.deposit_amount,
+    });
+  }
 
   const daysSinceSigned = s.signed_at
     ? Math.floor((now.getTime() - new Date(s.signed_at).getTime()) / 86400000)
@@ -129,7 +148,7 @@ export function mapStudyToDisplay(s: any, st: any, antiAnnul: Record<string, any
     payment_mode: mode,
     payment_type: s.payment_type || null,
     financing_mode: financingMode,
-    has_deposit: requiresDepositCalc, // ✅ On réutilise la logique calculée
+    has_deposit: requiresDepositCalc || s.has_deposit, // ✅ PRIORITÉ au calcul (règles métier), puis DB
     cash_apport: apport,
     total_price: totalCost, 
     install_cost: s.install_cost || 0,

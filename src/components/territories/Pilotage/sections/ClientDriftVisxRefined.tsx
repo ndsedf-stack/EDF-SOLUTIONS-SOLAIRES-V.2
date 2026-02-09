@@ -26,9 +26,12 @@ const COLORS = {
 };
 
 const ClientDriftInner = ({ data, width, height }: Props) => {
+  // SVG Safety Check
+  if (width < 10 || height < 10) return null;
+
   const margin = { top: 20, right: 30, bottom: 50, left: 60 };
-  const innerWidth = width - margin.left - margin.right;
-  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = Math.max(0, width - margin.left - margin.right);
+  const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
   const xScale = useMemo(() => scaleLinear({
     domain: [0, 14],
@@ -41,41 +44,49 @@ const ClientDriftInner = ({ data, width, height }: Props) => {
     nice: true,
   }), [innerHeight]);
 
+  const peakPoint = useMemo(() => {
+    if (!data || !data.length) return null;
+    return data.reduce((prev, current) => (prev.activeRate > current.activeRate) ? prev : current);
+  }, [data]);
+
   return (
     <svg width={width} height={height}>
       <Group left={margin.left} top={margin.top}>
-        {/* Zones de danger */}
-        {/* Zones de danger */}
-        {/* ✅ AUDIT FIX ID: J7_INVISIBLE -> Marqueur J+7 Stricte */}
-        <rect x={xScale(7)} y={0} width={3} height={innerHeight} fill="#FF9F40" fillOpacity={0.8} /> {/* Ligne verticale forte */}
-        <rect x={xScale(7)} y={0} width={xScale(14) - xScale(7)} height={innerHeight} fill="#FB923C" fillOpacity={0.1} />
+        {/* Zone critique churn (J+7 -> J+14) */}
+        <rect 
+          x={xScale(7)} 
+          y={0} 
+          width={Math.max(0, xScale(14) - xScale(7))} 
+          height={innerHeight} 
+          fill="#F59E0B" 
+          fillOpacity={0.04} 
+        />
         
-        {/* Lignes de référence J+7 et J+14 */}
-        <line x1={xScale(7)} y1={0} x2={xScale(7)} y2={innerHeight} stroke="#FF9F40" strokeWidth={2} strokeDasharray="4,2" />
-        <line x1={xScale(14)} y1={0} x2={xScale(14)} y2={innerHeight} stroke={COLORS.limit} strokeDasharray="4,4" opacity={0.5} />
-        
-        <text 
-            x={xScale(7) + 8} 
-            y={20} 
-            fill="#FF9F40" 
-            fontSize={11} 
-            fontFamily="IBM Plex Mono" 
-            fontWeight="bold" 
-            textAnchor="start"
-            className="uppercase tracking-widest"
-        >
-            ⚠️ RUPTURE SRU (J+7)
-        </text>
-        <text x={xScale(14)} y={-5} fill={COLORS.limit} fontSize={10} fontFamily="IBM Plex Mono" textAnchor="middle" opacity={0.5}>CRITIQUE (J+14)</text>
+        {/* Lignes de repère */}
+        <line x1={xScale(7)} y1={0} x2={xScale(7)} y2={innerHeight} stroke="#F59E0B" strokeWidth={1} strokeDasharray="4,4" opacity={0.3} />
+        <line x1={xScale(14)} y1={0} x2={xScale(14)} y2={innerHeight} stroke="#F87171" strokeWidth={1} strokeDasharray="4,4" opacity={0.3} />
 
-        {/* Courbe active */}
+        {/* Labels Zones */}
+        <text 
+          x={xScale(10.5)} 
+          y={20} 
+          fill="#F59E0B" 
+          fontSize={10} 
+          fontWeight="700" 
+          textAnchor="middle" 
+          className="uppercase tracking-[0.2em] opacity-40 hover:opacity-100 transition-opacity"
+        >
+          Zone critique churn
+        </text>
+
+        {/* Courbe active (Héros) */}
         <AreaClosed<DriftPoint>
           data={data}
           x={d => xScale(d.day)}
           y={d => yScale(d.activeRate)}
           yScale={yScale}
           fill={COLORS.area}
-          fillOpacity={0.1}
+          fillOpacity={0.05}
           curve={curveMonotoneX}
         />
         <LinePath<DriftPoint>
@@ -83,38 +94,65 @@ const ClientDriftInner = ({ data, width, height }: Props) => {
           x={d => xScale(d.day)}
           y={d => yScale(d.activeRate)}
           stroke={COLORS.line}
-          strokeWidth={3}
+          strokeWidth={4}
+          strokeOpacity={0.9}
           curve={curveMonotoneX}
         />
+
+        {/* Marqueur de Pic */}
+        {peakPoint && (
+          <Group>
+            <circle 
+              cx={xScale(peakPoint.day)} 
+              cy={yScale(peakPoint.activeRate)} 
+              r={5} 
+              fill="#F87171" 
+              className="animate-pulse"
+            />
+            <text 
+              x={xScale(peakPoint.day)} 
+              y={yScale(peakPoint.activeRate) - 15} 
+              fill="#F87171" 
+              fontSize={10} 
+              fontWeight="bold" 
+              textAnchor="middle"
+              className="font-sans uppercase tracking-widest"
+            >
+              Pic décrochage
+            </text>
+          </Group>
+        )}
 
         <AxisBottom
           top={innerHeight}
           scale={xScale}
-          stroke={COLORS.axis}
+          stroke="transparent"
           tickStroke={COLORS.axis}
-          label="JOURS POST-SIGNATURE"
-          labelProps={{ fill: '#ffffff20', fontSize: 10, fontWeight: 'black', textAnchor: 'middle', letterSpacing: '0.2em' }}
           tickLabelProps={() => ({
-            fill: '#ffffff30',
+            fill: '#ffffff20',
             fontSize: 10,
-            fontFamily: 'IBM Plex Mono',
+            fontWeight: 'bold',
+            className: 'font-sans',
             textAnchor: 'middle',
           })}
-          tickValues={[0, 2, 4, 6, 7, 8, 10, 12, 14]}
+          tickValues={[0, 2, 4, 6, 8, 10, 12, 14]}
+          tickFormat={v => `J+${v}`}
         />
         <AxisLeft
           scale={yScale}
-          stroke={COLORS.axis}
+          stroke="transparent"
           tickStroke={COLORS.axis}
-          label="ADHÉSION (%)"
-          labelProps={{ fill: '#ffffff20', fontSize: 10, fontWeight: 'black', textAnchor: 'middle', letterSpacing: '0.2em', angle: -90, dx: -40 }}
           tickLabelProps={() => ({
-            fill: '#ffffff30',
+            fill: '#ffffff20',
             fontSize: 10,
-            fontFamily: 'IBM Plex Mono',
+            fontWeight: 'bold',
+            className: 'font-sans',
             textAnchor: 'end',
             verticalAnchor: 'middle',
+            dx: -4
           })}
+          tickValues={[0, 25, 50, 75, 100]}
+          tickFormat={v => `${v}%`}
         />
       </Group>
     </svg>

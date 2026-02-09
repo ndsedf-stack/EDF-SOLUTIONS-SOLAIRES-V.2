@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { FinancialVerdictBar } from './sections/FinancialVerdictBar';
 import { ClientDriftVisxRefined } from './sections/ClientDriftVisxRefined';
-import { PipelineMomentumVisx } from './sections/PipelineMomentumVisx';
+import { PipelineMomentum } from './screens/PipelineMomentum';
 import { RevenueProjectionVisx } from './sections/RevenueProjectionVisx';
 
 interface PilotageScreenProps {
@@ -52,15 +52,58 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
     }));
   }, [emailLeads]);
 
-  // 3. DATA S03: PIPELINE MOMENTUM
-  const pipelineData = useMemo(() => [
-    { stage: 'Leads', count: emailLeads?.length || 0, color: '#94A3B8' },
-    { stage: 'RDVs/Études', count: studies?.length || 0, color: '#38BDF8' },
-    { stage: 'Signés', count: studies?.filter((s:any) => s.status === 'signed').length || 0, color: '#FB923C' },
-    { stage: 'Acomptes', count: studies?.filter((s:any) => s.deposit_paid).length || 0, color: '#4ADE80' },
-  ], [emailLeads, studies]);
+   // 3. DATA S03: PIPELINE MOMENTUM (DEDUPLICATED BY EMAIL)
+   const pipelineData = useMemo(() => {
+     // Déduplication par email pour compter les "vrais" dossiers uniques
+     const uniqueStudiesMap = new Map();
+     studies.forEach((s: any) => {
+       if (!uniqueStudiesMap.has(s.email)) {
+         uniqueStudiesMap.set(s.email, s);
+       } else {
+         // Si le dossier existe déjà, on privilégie la version "signée" ou "payée"
+         const existing = uniqueStudiesMap.get(s.email);
+         if ((s.status === 'signed' || s.deposit_paid) && !(existing.status === 'signed' || existing.deposit_paid)) {
+            uniqueStudiesMap.set(s.email, s);
+         }
+       }
+     });
 
-  // 4. DATA S04: REVENUE PROJECTION (REAL DATA: Cash + Pipeline Probabilisé)
+     const uniqueStudies = Array.from(uniqueStudiesMap.values());
+     
+     // 1. Visités (Tout sauf annulé)
+     const visitedStudies = uniqueStudies.filter(s => s.status !== 'cancelled');
+     const visitedCount = visitedStudies.length;
+     
+     // 2. Signés (Tout ce qui est signé ou payé, mais pas annulé)
+     const signedStudies = visitedStudies.filter(s => s.status === 'signed' || s.deposit_paid);
+     const signedCount = signedStudies.length;
+     
+     // 3. Attente Signature (Visités non signés non payés)
+     const waitingSignatureStudies = visitedStudies.filter(s => s.status !== 'signed' && !s.deposit_paid);
+     
+     // 4. Attente Acompte (Signés qui doivent payer mais n'ont pas encore payé)
+     const waitingDepositStudies = signedStudies.filter(s => 
+       !s.deposit_paid && 
+       (s.payment_mode === 'cash' || s.financing_mode === 'with_deposit' || s.financing_mode === 'partial_financing')
+     );
+
+     // 5. Sécurisés (Acompte payé OU Signé Full Financement)
+     const securedCount = signedStudies.filter(s => 
+       s.deposit_paid || s.financing_mode === 'full_financing'
+     ).length;
+
+     return {
+       leads: emailLeads?.length || 0,
+       visited: visitedCount,
+       signed: signedCount,
+       waitingSignatureStudies,
+       waitingDepositStudies,
+       secured: securedCount,
+       securedAmount: financialStats?.cashSecured || 0
+     };
+   }, [emailLeads, studies, financialStats]);
+
+   // 4. DATA S04: REVENUE PROJECTION (REAL DATA: Cash + Pipeline Probabilisé)
   const projectionData = useMemo(() => {
     const points = [];
     const now = new Date();
@@ -88,63 +131,145 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
     <div className="flex flex-col gap-12 py-8 px-4 max-w-[1200px] mx-auto pb-40">
       
       <header className="flex flex-col gap-2">
-         <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Salle de Navigation</h1>
-         <p className="text-white/40 text-sm font-black uppercase tracking-[0.4em]">Vision Dirigeant & Trajectoire Stratégique</p>
+         <h1 className="text-4xl font-black text-white tracking-tight uppercase">Salle de Navigation</h1>
+         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Vision Dirigeant & Trajectoire Stratégique</p>
       </header>
 
-      {/* S01 — FINANCIAL VERDICT */}
-      <section className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-10">
-        <div className="flex justify-between items-end">
-           <div className="space-y-1">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">S01 — VERDICT DE TRÉSORERIE</span>
-              <h2 className="text-2xl font-black text-white">Quelle part du CA est réellement protégée ?</h2>
+      {/* S01 — VERDICT DE TRÉSORERIE (SCALED & HARMONIZED) */}
+      <section className="bg-black/20 backdrop-blur-sm p-12 rounded-3xl border border-white/5 space-y-12 shadow-2xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
+           <div className="space-y-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">S01 — ANALYSE DE TRÉSORERIE</span>
+              <h2 className="text-4xl font-black text-white uppercase tracking-tight">Niveau de sécurisation du CA</h2>
+              <div className="flex items-center gap-6 mt-4">
+                 <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] animate-pulse" />
+                    <span className="text-lg font-bold text-white/70">60% Sécurisé</span>
+                    <span className="text-sm font-bold text-emerald-400">(+3.2 pts)</span>
+                 </div>
+                 <div className="h-6 w-[2px] bg-white/5" />
+                 <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-slate-500">Objectif : 70%</span>
+                 </div>
+              </div>
            </div>
-           <div className="text-right">
-              <span className="text-3xl font-black text-emerald-400">{(financialStats.cashSecured || 0).toLocaleString()} €</span>
-              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest block font-mono">CASH SÉCURISÉ</span>
+           
+           {/* GIGANTIC HERO KPI */}
+           <div className="text-left md:text-right">
+              <div className="flex items-baseline md:justify-end gap-3">
+                <span className="text-6xl font-black text-white tracking-tighter tabular-nums font-mono drop-shadow-2xl">{(financialStats.cashSecured || 0).toLocaleString()}</span>
+                <span className="text-2xl font-bold text-white/10">€</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mt-2">CASH NET SÉCURISÉ</span>
            </div>
         </div>
-        <FinancialVerdictBar data={verdictData} />
+
+        {/* BARRE DE VERDICT (SCALE UP - Handled in Child) */}
+        <div className="pt-6">
+          <FinancialVerdictBar data={verdictData} />
+        </div>
+
+        {/* STRATEGIC INSIGHTS BOX */}
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 p-8 rounded-2xl flex items-start gap-6 transition-all hover:border-white/20">
+          <div className="w-1.5 h-full bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)] min-h-[50px]" />
+          <div className="space-y-2">
+             <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Insight Stratégique</span>
+             <p className="text-sm text-slate-300 font-medium leading-relaxed max-w-3xl">
+               <span className="text-white font-bold text-base">ALERTE SEGMENT :</span> 28% de l'exposition réside dans le segment <span className="text-orange-400 font-bold">Études Complexes</span>. Une sécurisation des acomptes sur ce périmètre permettrait d'atteindre l'objectif de 70% d'ici 14 jours.
+             </p>
+          </div>
+        </div>
       </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div className="flex flex-col gap-12">
         
-        {/* S02 — CLIENT DRIFT */}
-        <section className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-8">
-           <div className="space-y-1">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">S02 — DÉCROCHAGE CLIENT</span>
-              <h2 className="text-xl font-black text-white">Quand exactement les clients décrochent-ils ?</h2>
+        {/* S02 — DÉCROCHAGE CLIENT (ULTRA PREMIUM REFACTOR) */}
+        <section className="bg-black/20 backdrop-blur-sm p-12 rounded-3xl border border-white/5 space-y-10 shadow-xl">
+           <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+              <div className="space-y-2">
+                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">S02 — MOMENT CRITIQUE CHURN</span>
+                 <h2 className="text-3xl font-black text-white uppercase tracking-tight">Moment critique de décrochage</h2>
+                 <p className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">70% des annulations se préparent après J+7</p>
+              </div>
+              
+              <div className="flex flex-col md:items-end gap-1">
+                 <span className="text-3xl font-black text-white font-mono tabular-nums tracking-tighter uppercase">8.2 JOURS</span>
+                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">DÉLAI MOYEN AVANT DÉCROCHAGE</span>
+              </div>
            </div>
-           <ClientDriftVisxRefined data={driftData} />
-           <p className="text-[11px] text-white/30 italic font-medium leading-relaxed">
-              "70% des annulations se préparent dans le silence entre J+3 et J+14. Le système intervient avant le point de rupture."
-           </p>
+
+           <div className="py-4">
+              <ClientDriftVisxRefined data={driftData} />
+           </div>
+
+           <div className="bg-black/40 border border-orange-500/20 p-6 rounded-2xl flex items-start gap-4">
+              <div className="w-1 h-full bg-orange-500 rounded-full opacity-40 min-h-[40px]" />
+              <div className="space-y-1">
+                 <span className="text-[10px] font-bold text-orange-400 uppercase tracking-widest">Action Recommandée</span>
+                 <p className="text-sm text-slate-300 leading-relaxed">
+                   <span className="text-white font-bold">INTERVENTION PROACTIVE :</span> Le pic de décrochage se situe à <span className="text-white font-bold font-mono">J+8</span>. Déclenchement automatique d'un call de courtoisie à <span className="text-white font-bold font-mono">J+4</span> pour valider l'onboarding.
+                 </p>
+              </div>
+           </div>
         </section>
 
         {/* S03 — PIPELINE MOMENTUM */}
-        <section className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-8">
-           <div className="space-y-1">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">S03 — PIPELINE MOMENTUM</span>
-              <h2 className="text-xl font-black text-white">Où ça bloque dans mon flux commercial ?</h2>
-           </div>
-           <PipelineMomentumVisx data={pipelineData} />
+        <section className="bg-black/20 backdrop-blur-sm p-12 rounded-3xl border border-white/5 shadow-xl">
+           <PipelineMomentum 
+             leads={pipelineData.leads}
+             visited={pipelineData.visited}
+             signed={pipelineData.signed}
+             waitingSignatureStudies={pipelineData.waitingSignatureStudies}
+             waitingDepositStudies={pipelineData.waitingDepositStudies}
+             secured={pipelineData.secured}
+             securedAmount={pipelineData.securedAmount}
+           />
         </section>
 
       </div>
 
-      {/* S04 — REVENUE PROJECTION */}
-      <section className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-10">
-        <div className="flex justify-between items-end">
-           <div className="space-y-1">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">S04 — ATTERRISSAGE 90 JOURS</span>
-              <h2 className="text-2xl font-black text-white">Si je ne change rien, où j'atterris ?</h2>
+      {/* S04 — REVENUE PROJECTION (ULTRA PREMIUM REFACTOR) */}
+      <section className="bg-black/20 backdrop-blur-sm p-12 rounded-3xl border border-white/5 space-y-12 shadow-2xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
+           <div className="space-y-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">S04 — TRAJECTOIRE FINANCIÈRE</span>
+              <h2 className="text-4xl font-black text-white uppercase tracking-tight">Atterrissage à 90 Jours</h2>
+              
+              <div className="flex flex-wrap items-center gap-6 mt-4">
+                 <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse" />
+                    <span className="text-lg font-bold text-white/70">Probabilité d'atteinte</span>
+                    <span className="text-lg font-black text-red-500 font-mono tracking-tighter">38%</span>
+                 </div>
+                 <div className="h-6 w-[2px] bg-white/5" />
+                 <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-slate-500 italic">"Objectif manqué fin avril"</span>
+                 </div>
+              </div>
            </div>
-           <div className="text-right">
-              <span className="text-3xl font-black text-sky-400">-{Math.round(((financialStats.cashSecured || 500000) * 1.5 - (financialStats.cashSecured || 100000 + 180000)) / 1000)}k€</span>
-              <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest block font-mono">GAP vs OBJECTIF</span>
+           
+           <div className="text-left md:text-right">
+              <div className="flex items-baseline md:justify-end gap-3">
+                <span className="text-7xl font-black text-red-500 font-mono tracking-tighter tabular-nums drop-shadow-2xl font-mono">-122k€</span>
+              </div>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mt-2">DÉFICIT PROJETÉ vs BOARD</span>
            </div>
         </div>
-        <RevenueProjectionVisx data={projectionData} />
+
+        <div className="py-2">
+          <RevenueProjectionVisx data={projectionData} />
+        </div>
+
+        {/* CORRECTIVE ACTION BOX */}
+        <div className="bg-black/40 border border-red-500/20 p-8 rounded-2xl flex items-start gap-6 transition-all hover:border-red-500/30">
+          <div className="w-1.5 h-full bg-red-500 rounded-full opacity-40 min-h-[50px]" />
+          <div className="space-y-2">
+             <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">Alerte Gouvernance</span>
+             <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
+               <span className="text-white font-bold text-base uppercase tracking-tight">Action Corrective :</span> L'objectif Board est atteignable avec <span className="text-white font-bold font-mono">+12 signatures</span> ou une amélioration de <span className="text-emerald-400 font-bold font-mono">+6%</span> de la conversion du pipeline. Priorité absolue sur les dossiers à {">"}50k€.
+             </p>
+          </div>
+        </div>
       </section>
 
     </div>

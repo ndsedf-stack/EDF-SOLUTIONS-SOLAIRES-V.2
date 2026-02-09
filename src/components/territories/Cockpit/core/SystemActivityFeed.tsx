@@ -12,7 +12,7 @@ export function SystemActivityFeed({ events }: { events: ActivityEvent[] }) {
   return (
     <div className="space-y-4 max-h-[400px] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-white/10">
       {events.map((event) => (
-        <div key={event.id} className="flex gap-4 p-4 bg-white/[0.02] border border-white/5 rounded-xl hover:bg-white/[0.04] transition-colors group">
+        <div key={event.id} className="flex gap-4 p-4 bg-black/40 border border-white/10 rounded-xl hover:border-white/20 transition-all group">
           <div className="flex flex-col items-center gap-2">
              <div className={`w-2 h-2 rounded-full mt-1.5 ${
                event.type === 'email_sent' ? 'bg-sky-400' :
@@ -24,11 +24,11 @@ export function SystemActivityFeed({ events }: { events: ActivityEvent[] }) {
           
           <div className="flex-1 flex flex-col gap-1">
             <div className="flex justify-between items-start">
-               <span className="text-[10px] font-black text-white/40 uppercase tracking-widest">{event.time}</span>
-               <span className="text-[9px] font-bold text-white/10 uppercase tracking-widest">{event.type.replace('_', ' ')}</span>
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest font-mono">{event.time}</span>
+               <span className="text-[9px] font-black text-white/20 uppercase tracking-widest">{event.type.replace('_', ' ')}</span>
             </div>
-            <p className="text-sm font-bold text-white/80">{event.label}</p>
-            <p className="text-[11px] text-white/30 italic font-medium">{event.detail}</p>
+            <p className="text-sm font-black text-white uppercase tracking-tight">{event.label}</p>
+            <p className="text-[11px] text-slate-400 italic font-medium">{event.detail}</p>
           </div>
         </div>
       ))}

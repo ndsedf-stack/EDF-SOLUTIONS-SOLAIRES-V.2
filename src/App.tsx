@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ResultsDashboard from "./components/ResultsDashboard.REFONTE2";
+import ResultsDashboard from "./components/ResultsDashboard";
 import { FileUpload } from "./components/FileUpload";
 import { SpeechView } from "./components/SpeechView";
 import { supabase } from "./lib/supabase";

@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FinancialRiskProofVisx, FinancialPoint } from './core/FinancialRiskProofVisx';
+import ParentSize from '@visx/responsive/lib/components/ParentSize';
+import { FinancialRiskProofVisx, FinancialPoint } from './core/FinancialRiskProofVisx_Premium';
+import { KPIClusters } from './core/PremiumKPICards';
 import { SystemActivityFeed, ActivityEvent } from './core/SystemActivityFeed';
 import { fetchOpsSnapshot } from '@/lib/opsSnapshot';
 import { useOpsInsights } from '@/ops-engine/useOpsInsights';
@@ -188,7 +190,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       {/* 🛑 DEPLOYMENT PRE-FLIGHT CHECK */}
       {isDeploymentBlocked.blocked && (
         <div className="bg-red-600 text-white p-6 rounded-2xl border-4 border-red-800 shadow-2xl animate-bounce">
-          <h2 className="text-2xl font-black uppercase tracking-widest flex items-center gap-4">
+          <h2 className="text-2xl font-bold uppercase tracking-widest flex items-center gap-4">
              <span>🚫 DEPLACEMENT BLOQUÉ</span>
           </h2>
           <p className="font-mono mt-2 text-sm opacity-90">
@@ -201,10 +203,10 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       {/* 1️⃣ GLOBAL STATUS BANNER (OPS BASED) */}
       <header className="p-10 rounded-3xl border border-white/10 bg-black/40 flex items-center justify-between">
         <div className="flex items-center gap-8">
-           <div className={`w-4 h-4 rounded-full animate-pulse ${counters.UNSECURED_DELAY > 0 ? 'bg-red-500' : 'bg-emerald-500'}`} />
+           <div className={`w-4 h-4 rounded-full shadow-[0_0_15px_rgba(239,68,68,0.5)] animate-pulse ${counters.UNSECURED_DELAY > 0 ? 'bg-red-500' : 'bg-emerald-500'}`} />
            <div className="space-y-1">
-              <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.4em]">ÉTAT OPS (DB MIRROR)</span>
-              <h1 className="text-4xl font-black text-white uppercase tracking-tighter">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">ÉTAT OPS (DB MIRROR)</span>
+              <h1 className="text-4xl font-black text-white uppercase tracking-tight">
                 {counters.UNSECURED_DELAY > 0 ? 'ATTENTION REQUISE' : 'SYSTÈME NOMINAL'}
               </h1>
            </div>
@@ -218,135 +220,132 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
             <div className="h-8 w-px bg-white/10 mx-2"></div>
 
             <div>
-                <div className="text-2xl font-black text-white">{counters.ACTIVE}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Actifs</div>
+                <div className="text-2xl font-black text-white font-mono">{counters.ACTIVE}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Actifs</div>
             </div>
             <div>
-                <div className="text-2xl font-black text-orange-400">{counters.SILENT}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Silencieux</div>
+                <div className="text-2xl font-black text-orange-400 font-mono">{counters.SILENT}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Silencieux</div>
             </div>
              <div>
-                <div className="text-2xl font-black text-red-500">{counters.UNSECURED_DELAY}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Retard</div>
+                <div className="text-2xl font-black text-red-500 font-mono">{counters.UNSECURED_DELAY}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Retard</div>
             </div>
             <div>
-                <div className="text-2xl font-black text-emerald-400">{counters.SECURED}</div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase">Sécurisés</div>
+                <div className="text-2xl font-black text-emerald-400 font-mono">{counters.SECURED}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sécurisés</div>
             </div>
         </div>
       </header>
 
       {/* ANCIEN CONTENU MASQUÉ OU MODIFIÉ SI DEMANDÉ, MAIS ICI ON LAISSE LE RESTE DU JSX QUI SUIT LE HEADER */}
 
-      {/* 2️⃣ FINANCIAL RISK PROOF (Graphe HERO) */}
-      <div className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-8">
-        <div>
-            <h2 className="text-xl font-black text-white uppercase tracking-widest">Protection du Chiffre d’Affaires</h2>
-            <p className="text-white/40 text-sm font-medium italic">"Vérité absolue sur la dérive entre CA sécurisé et CA à risque (30j)."</p>
-            {/* MONTHLY REVENUE METRICS */}
-            <div className="flex items-center gap-12 mt-6 p-4 rounded-xl bg-white/[0.02] border border-white/5 w-fit">
+      {/* 2️⃣ FINANCIAL RISK PROOF (Graphe HERO PREMIUM) */}
+      <div className="relative overflow-visible rounded-3xl border border-white/10 shadow-2xl">
+        <div className="absolute inset-0 bg-[#0F1629]/80 backdrop-blur-xl z-0" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20 pointer-events-none z-0" />
+        
+        <div className="relative z-10 p-8 space-y-8">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
                 <div>
-                   <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <p className="text-white/40 text-[10px] uppercase font-black tracking-widest">CA Ce Mois ({new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase()})</p>
-                   </div>
-                   <p className="text-2xl font-black text-white mt-1 uppercase tracking-tight">
-                      {Math.round(studies
-                        .filter((s:any) => s.total_price && !['cancelled', 'refused'].includes(s.status) && s.signed_at && new Date(s.signed_at).getMonth() === new Date().getMonth() && new Date(s.signed_at).getFullYear() === new Date().getFullYear())
-                        .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
-                      ).toLocaleString('fr-FR')} k€
-                   </p>
+                    <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
+                           Protection du Chiffre d’Affaires
+                        </span>
+                    </h2>
+                    <p className="text-slate-500 text-xs font-medium italic mt-2">
+                        "Vérité absolue sur la dérive entre CA sécurisé et CA à risque (30j)."
+                    </p>
                 </div>
-                <div className="w-px h-8 bg-white/10" />
-                <div>
-                   <p className="text-white/40 text-[10px] uppercase font-black tracking-widest">CA Mois Dernier</p>
-                   <p className="text-2xl font-black text-white/50 mt-1 uppercase tracking-tight">
-                      {Math.round(studies
-                        .filter((s:any) => {
-                           if (!s.signed_at || ['cancelled', 'refused'].includes(s.status) || !s.total_price) return false;
-                           const d = new Date(s.signed_at);
-                           const now = new Date();
-                           // Logic for last month
-                           const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-                           const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-                           return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
-                        })
-                        .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
-                      ).toLocaleString('fr-FR')} k€
-                   </p>
+
+                {/* MONTHLY REVENUE METRICS PREMIUM */}
+                <div className="flex items-center gap-4 bg-white/[0.03] p-2 pr-6 rounded-2xl border border-white/5 shadow-inner backdrop-blur-md">
+                     <div className="flex flex-col px-6 py-2 border-r border-white/5">
+                        <div className="flex items-center gap-2 mb-1">
+                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
+                           <span className="text-[9px] font-bold text-emerald-400/80 uppercase tracking-widest">
+                              {new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase()}
+                           </span>
+                        </div>
+                        <span className="text-2xl font-black text-white tracking-tighter font-mono">
+                           {Math.round(studies
+                             .filter((s:any) => s.total_price && !['cancelled', 'refused'].includes(s.status) && s.signed_at && new Date(s.signed_at).getMonth() === new Date().getMonth() && new Date(s.signed_at).getFullYear() === new Date().getFullYear())
+                             .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
+                           ).toLocaleString('fr-FR')} K€
+                        </span>
+                     </div>
+                                          <div className="flex flex-col px-4 py-2 opacity-60">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Mois Dernier</span>
+                        <span className="text-xl font-black text-white/60 tracking-tighter font-mono">
+                           {Math.round(studies
+                             .filter((s:any) => {
+                                if (!s.signed_at || ['cancelled', 'refused'].includes(s.status) || !s.total_price) return false;
+                                const d = new Date(s.signed_at);
+                                const now = new Date();
+                                const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
+                                const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+                                return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+                             })
+                             .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
+                           ).toLocaleString('fr-FR')} K€
+                        </span>
+                     </div>
                 </div>
             </div>
-         </div>
-        <FinancialRiskProofVisx data={financialRiskData} />
+
+            <div className="pt-4 h-[500px] w-full">
+                <ParentSize>
+                  {({ width, height }) => (
+                    <FinancialRiskProofVisx 
+                      data={financialRiskData} 
+                      width={width} 
+                      height={height} 
+                    />
+                  )}
+                </ParentSize>
+            </div>
+        </div>
       </div>
 
       {/* ✅ AUDIT FIX ID: KPI_OVERLOAD -> CLUSTERS SÉMANTIQUES (PATTERN UX-ORG-001) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* CLUSTER 1: RISQUE (Priorité Absolue) */}
-          <section className="bg-red-900/10 border border-red-500/20 p-8 rounded-3xl flex flex-col gap-6">
-              <header className="flex items-center gap-3 border-b border-red-500/20 pb-4">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  <h3 className="text-xs font-black text-red-400 uppercase tracking-[0.3em]">Risque IMMÉDIAT</h3>
-              </header>
-              <div className="space-y-4">
-                 <KPICard label="Dossiers War Room" value={metrics.warRoom.count} />
-                 <KPICard label="CA Exposé (Risque)" value={`${Math.round(exposedCA / 1000)}k€`} />
-                 <div className="flex justify-between items-center opacity-60">
-                    <span className="text-[10px] font-mono text-red-300 uppercase">Retards Ops</span>
-                    <span className="text-xl font-bold text-white">{counters.UNSECURED_DELAY}</span>
-                 </div>
-              </div>
-          </section>
+      <KPIClusters 
+          risk={{ 
+              exposedCA: exposedCA, 
+              warRoomCount: metrics?.warRoom?.count || 0, 
+              delayCount: counters.UNSECURED_DELAY 
+          }}
+          revenue={{ 
+              securedCA: financialStats?.cashSecured || 0, 
+              pipelineCount: (metrics?.sent?.length || 0) + (metrics?.healthy?.length || 0), 
+              avgTicket: (metrics?.signed?.length || 0) > 0 ? (financialStats?.cashSecured || 0) / metrics.signed.length : 0
+          }}
+          velocity={{ 
+              avgDelayDays: (() => {
+                  // Calcul réel du délai moyen depuis signature pour les dossiers en cours (ou depuis création si prospect)
+                  // On prend les dossiers signés non soldés (pas encore payés)
+                  const activeStudies = studies.filter((s: any) => s.status === 'signed' && !s.deposit_paid);
+                  if (!activeStudies.length) return 0;
+                  const totalDays = activeStudies.reduce((sum: number, s: any) => {
+                      const start = s.signed_at ? new Date(s.signed_at) : new Date(s.created_at);
+                      const diff = Math.floor((new Date().getTime() - start.getTime()) / (1000 * 3600 * 24));
+                      return sum + diff;
+                  }, 0);
+                  return totalDays / activeStudies.length;
+              })(), 
+              activeCount: counters.ACTIVE, 
+              silentCount: counters.SILENT 
+          }}
+          history={{
+              risk: financialRiskData.map(d => d.exposedCA / 1000),
+              revenue: financialRiskData.map(d => d.securedCA / 1000),
+              velocity: (system.trafficData || []).slice(-14).map((d: any) => d.count + d.opened + d.clicked) // Somme des interactions
+          }}
+      />
 
-          {/* CLUSTER 2: REVENU (Santé Financière) */}
-          <section className="bg-emerald-900/10 border border-emerald-500/20 p-8 rounded-3xl flex flex-col gap-6">
-              <header className="flex items-center gap-3 border-b border-emerald-500/20 pb-4">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em]">Santé REVENU</h3>
-              </header>
-              <div className="space-y-4">
-                 <KPICard label="CA Sécurisé" value={`${Math.round(financialStats.cashSecured / 1000)}k€`} />
-                 <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/5 p-4 rounded-xl">
-                          <span className="block text-[9px] uppercase text-white/30 mb-1">Panier Moyen</span>
-                          <span className="text-lg font-bold text-emerald-300">{(financialStats.avgCart || 0).toLocaleString()}€</span>
-                      </div>
-                      <div className="bg-white/5 p-4 rounded-xl">
-                          <span className="block text-[9px] uppercase text-white/30 mb-1">Pipeline</span>
-                          <span className="text-lg font-bold text-emerald-300">{(studies.length || 0)}</span>
-                      </div>
-                 </div>
-              </div>
-          </section>
-
-          {/* CLUSTER 3: COMPORTEMENT (Vélocité Ops) */}
-          <section className="bg-blue-900/10 border border-blue-500/20 p-8 rounded-3xl flex flex-col gap-6">
-              <header className="flex items-center gap-3 border-b border-blue-500/20 pb-4">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <h3 className="text-xs font-black text-blue-400 uppercase tracking-[0.3em]">Vélocité OPS</h3>
-              </header>
-              <div className="space-y-4">
-                  <KPICard label="Délai moyen deadline" value={`${metrics.avgDaysBeforeDeadline || 14} j`} />
-                  <div className="flex justify-between items-center">
-                    <div className="text-center">
-                        <div className="text-2xl font-black text-white">{counters.ACTIVE}</div>
-                        <div className="text-[9px] font-bold text-blue-300 uppercase tracking-wider">Actifs</div>
-                    </div>
-                    <div className="w-px h-8 bg-white/10" />
-                    <div className="text-center">
-                        <div className="text-2xl font-black text-orange-400">{counters.SILENT}</div>
-                        <div className="text-[9px] font-bold text-orange-300 uppercase tracking-wider">Silencieux</div>
-                    </div>
-                 </div>
-              </div>
-          </section>
-
-      </div>
 
       {/* 4️⃣ ACTIVITY FEED */}
-      <div className="bg-[#0F1629] p-12 rounded-3xl border border-white/5 space-y-8">
-          <h3 className="text-xs font-black text-white/40 uppercase tracking-[0.4em]">Preuve d'activité (Moteur Brain)</h3>
+      <div className="bg-black/20 backdrop-blur-sm p-12 rounded-3xl border border-white/5 space-y-8">
+          <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Preuve d'activité (Moteur Brain)</h3>
           <SystemActivityFeed events={activityFeed} />
       </div>
 
@@ -355,7 +354,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
          <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-50">
             <button 
               onClick={() => system.setActiveSection('war_room')}
-              className="px-12 py-5 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-[0.4em] text-xs rounded-2xl shadow-[0_20px_50px_rgba(220,38,38,0.4)] transition-all active:scale-95"
+              className="px-12 py-5 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-[0_20px_50px_rgba(220,38,38,0.4)] transition-all active:scale-95"
             >
               Entrer en War Room ({metrics.warRoom.count})
             </button>
@@ -364,7 +363,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       
       {/* 🕵️ OPS INSIGHTS (LIVE SCORING DISPLAY - V1 SAFE) */}
       <div className="border-t border-white/10 pt-10 mt-10">
-         <h4 className="text-xs font-black text-white/30 uppercase tracking-[0.4em] mb-6">Ops Intelligence (Pure Scoring)</h4>
+         <h4 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-6">Ops Intelligence (Pure Scoring)</h4>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
              {opsInsights.slice(0, 12).map(insight => {
                  // @ts-ignore
@@ -372,16 +371,16 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                  const clientName = (study?.client_name || study?.name || insight.study_id.substring(0, 8)).toUpperCase();
                  
                  return (
-                <div key={insight.study_id} className="bg-white/5 p-4 rounded-xl border border-white/5 text-xs flex justify-between items-center group hover:bg-white/10 transition-colors">
-                    <span className="text-white/70 font-mono font-bold group-hover:text-white transition-colors">{clientName}</span>
+                <div key={insight.study_id} className="bg-black/40 backdrop-blur-sm p-4 rounded-xl border border-white/5 text-xs flex justify-between items-center group hover:border-white/20 transition-all">
+                    <span className="text-slate-200 font-mono font-black group-hover:text-white transition-colors">{clientName}</span>
                     <div className="flex gap-3">
                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] uppercase text-white/30">RISK</span>
-                            <span className={`font-bold ${insight.risk_score_ops > 50 ? 'text-red-400' : 'text-emerald-400'}`}>{insight.risk_score_ops}</span>
+                            <span className="text-[8px] uppercase text-slate-500 font-bold">RISK</span>
+                            <span className={`font-black font-mono ${insight.risk_score_ops > 50 ? 'text-red-400' : 'text-emerald-400'}`}>{insight.risk_score_ops}</span>
                          </div>
                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] uppercase text-white/30">HEALTH</span>
-                            <span className="font-bold text-blue-400">{insight.ops_health_score}</span>
+                            <span className="text-[8px] uppercase text-slate-500 font-bold">HEALTH</span>
+                            <span className="font-black font-mono text-blue-400">{insight.ops_health_score}</span>
                          </div>
                     </div>
                 </div>
@@ -395,7 +394,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
         <div className="flex items-center justify-between mb-8">
             <div className="relative">
                 <div className="absolute -left-4 top-1 w-1 h-full bg-gradient-to-b from-red-500 to-transparent opacity-50"></div>
-                <h3 className="text-2xl font-black uppercase text-white tracking-[0.2em] flex items-center gap-4 pl-4">
+                <h3 className="text-2xl font-black uppercase text-white tracking-tight flex items-center gap-4 pl-4">
                    <div className="p-2 bg-red-500/10 rounded-full border border-red-500/20 shadow-[0_0_20px_rgba(220,38,38,0.2)]">
                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                    </div>
@@ -407,14 +406,14 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
             </div>
         </div>
 
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#0F1629]/60 backdrop-blur-2xl shadow-2xl ring-1 ring-white/5">
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl shadow-2xl ring-1 ring-white/5">
            <table className="w-full text-left border-collapse">
               <thead>
                  <tr className="border-b border-white/10 bg-white/[0.02]">
-                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em] w-1/3">Client Identity</th>
-                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em]">Operational Status</th>
-                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em]">Strategy Axis</th>
-                    <th className="py-6 px-8 text-[9px] uppercase font-black text-blue-200/40 tracking-[0.3em] text-right">Recommended Protocol</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-bold text-slate-500 tracking-widest w-1/3">Client Identity</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-bold text-slate-500 tracking-widest">Operational Status</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-bold text-slate-500 tracking-widest">Strategy Axis</th>
+                    <th className="py-6 px-8 text-[9px] uppercase font-bold text-slate-500 tracking-widest text-right">Recommended Protocol</th>
                  </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.03]">
@@ -438,7 +437,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                          <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-3">
                                 <span className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-blue-400 transition-colors"></span>
-                                <span className="text-sm font-black text-slate-200 group-hover:text-white transition-colors tracking-wide">
+                                <span className="text-sm font-bold text-slate-200 group-hover:text-white transition-colors tracking-wide">
                                    {clientName}
                                 </span>
                             </div>
@@ -480,7 +479,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                       {/* ACTION TEXT */}
                       <td className="py-5 px-8 text-right">
                           <span className={`
-                             text-[10px] font-bold uppercase tracking-wider py-1 px-3 rounded
+                             text-[10px] font-black uppercase tracking-widest py-1 px-3 rounded
                              ${d.recommendation.includes('RELANCER') ? 'bg-emerald-500/10 text-emerald-300' : 'text-slate-500 bg-white/[0.02]'}
                           `}>
                              {recommendation}
@@ -508,7 +507,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
 
       {/* 🧪 UX / DATA INTEGRITY AUDIT (NEUTRE) */}
       <section className="bg-slate-900/50 p-8 rounded-xl border border-dashed border-slate-700 mt-12">
-        <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-6">
           UX / DATA INTEGRITY AUDIT (PHASE 3)
         </h3>
 
@@ -573,7 +572,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
 
       {/* 📜 AUDIT HISTORY TRACKER */}
       <section className="mt-8 border-t border-white/5 pt-8">
-        <h4 className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-4">
+        <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-4">
            AUDIT HISTORY (LOCAL STORAGE)
         </h4>
         <div className="flex flex-wrap gap-2">
@@ -601,8 +600,8 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
 
 
 const KPICard = ({ label, value }: { label: string; value: string | number }) => (
-  <div className="bg-white/[0.02] p-8 rounded-3xl border border-white/5 flex flex-col gap-2">
-     <span className="text-[10px] font-black text-white/30 uppercase tracking-widest">{label}</span>
-     <span className="text-4xl font-black text-white tracking-tighter">{value}</span>
+  <div className="bg-black/20 backdrop-blur-sm p-8 rounded-3xl border border-white/5 flex flex-col gap-2">
+     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</span>
+     <span className="text-4xl font-black text-white font-mono tracking-tighter tabular-nums">{value}</span>
   </div>
 );

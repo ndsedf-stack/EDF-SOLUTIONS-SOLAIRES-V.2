@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 export interface DealFocusProps {
   study: {
@@ -17,52 +18,87 @@ export interface DealFocusProps {
 }
 
 export function DealFocusPanel({ study, recommendation, onAction }: DealFocusProps) {
+  const isCritical = study.dangerScore > 70;
+  
   return (
-    <div className="bg-gradient-to-br from-red-900/20 to-slate-900 p-12 rounded-3xl border border-red-500/20 flex flex-col gap-10">
-      <div className="flex justify-between items-start">
-        <div className="space-y-2">
-           <h2 className="text-4xl font-black text-white tracking-tighter">{study.name}</h2>
-           <div className="flex gap-4">
-              <span className="text-xl font-bold text-white/40">{Math.round(study.totalPrice).toLocaleString()} €</span>
-              <div className="w-px h-6 bg-white/10" />
-              <span className="text-xl font-black text-red-500">{study.daysBeforeDeadline} jours restants</span>
-           </div>
+    <div className="h-full bg-[#0B0F14] rounded-xl border border-white/5 flex flex-col overflow-hidden backdrop-blur-sm shadow-2xl">
+      {/* 1. HEADER: IDENTITÉ (Sobre & Structuré) */}
+      <div className="p-6 border-b border-white/5 flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-bold text-slate-100 tracking-tight mb-1 font-sans">
+            {study.name}
+          </h2>
+          <div className="flex items-center gap-3 text-sm font-medium font-mono text-slate-500">
+            <span className="text-emerald-400/80">
+              {Math.round(study.totalPrice).toLocaleString()} €
+            </span>
+            <span className="w-1 h-1 rounded-full bg-slate-700" />
+            <span className={isCritical ? 'text-red-400' : 'text-amber-400'}>
+              J-{study.daysBeforeDeadline}
+            </span>
+          </div>
         </div>
         
-        <div className="text-right">
-           <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em] block mb-2">Danger Score</span>
-           <span className="text-6xl font-black text-red-500 tracking-tighter">{study.dangerScore}</span>
+        {/* INDICATEUR RISQUE (Discret mais clair) */}
+        <div className={`
+          flex flex-col items-center justify-center w-12 h-12 rounded-lg border 
+          ${isCritical 
+            ? 'bg-red-500/5 border-red-500/20 text-red-500' 
+            : 'bg-amber-500/5 border-amber-500/20 text-amber-500'}
+        `}>
+          <span className="text-lg font-bold leading-none">{study.dangerScore}</span>
         </div>
       </div>
 
-      <div className="bg-black/40 p-10 rounded-2xl border border-white/5 space-y-4">
-         <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
-            <span className="text-[11px] font-black text-red-400 uppercase tracking-widest">Recommandation Stratégique</span>
-         </div>
-         <p className="text-2xl font-bold text-white leading-tight">
-            "{recommendation.reason}"
-         </p>
-         <div className="pt-4 flex gap-8 border-t border-white/5">
-            <div>
-               <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest block">Canal</span>
-               <span className="text-sm font-black text-white uppercase tracking-tighter">{recommendation.type}</span>
+      {/* 2. CORE: INSIGHT DÉCISIONNEL */}
+      <div className="flex-1 p-6 space-y-6">
+        
+        {/* CONTEXTE */}
+        <div className="space-y-2">
+            <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              Analyse Comportementale
+            </h3>
+            <p className="text-sm text-slate-300 leading-relaxed border-l-2 border-white/10 pl-3 italic">
+              "{recommendation.reason}"
+            </p>
+        </div>
+
+        {/* DATA POINTS CLÉS */}
+        <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/[0.02] p-3 rounded-lg border border-white/5">
+                <span className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Stratégie</span>
+                <span className="text-xs font-semibold text-slate-200">{recommendation.type}</span>
             </div>
-            <div>
-               <span className="text-[10px] font-bold text-white/20 uppercase tracking-widest block">Niveau d'urgence</span>
-               <span className={`text-sm font-black uppercase tracking-tighter ${
-                 recommendation.urgency === 'high' ? 'text-red-500' : 'text-orange-400'
-               }`}>{recommendation.urgency}</span>
+            <div className="bg-white/[0.02] p-3 rounded-lg border border-white/5">
+               <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Urgence</span>
+               <div className="flex items-center gap-2">
+                   <div className={`w-1.5 h-1.5 rounded-full ${isCritical ? 'bg-red-500 animate-pulse' : 'bg-amber-500'}`} />
+                   <span className="text-xs font-semibold text-slate-200 uppercase">{recommendation.urgency}</span>
+               </div>
             </div>
-         </div>
+        </div>
+
       </div>
 
-      <button 
-        onClick={() => onAction(study.id)}
-        className="w-full py-6 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-[0.4em] text-sm rounded-2xl shadow-[0_10px_30px_rgba(220,38,38,0.3)] transition-all active:scale-95 translate-y-0 hover:-translate-y-1"
-      >
-        Lancer l'Intervention Humaine
-      </button>
+      {/* 3. FOOTER: ACTION (Secondaire pro) */}
+      <div className="p-6 border-t border-white/5 bg-white/[0.01]">
+        <button 
+          onClick={() => onAction(study.id)}
+          className={`
+            w-full py-3 px-4 rounded-lg flex items-center justify-center gap-3 transition-all duration-200
+            ${isCritical 
+              ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20' 
+              : 'bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10'}
+          `}
+        >
+          <span className="text-xs font-bold uppercase tracking-wider">
+            {isCritical ? 'Déclencher Intervention' : 'Actions de Relance'}
+          </span>
+          <svg className="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }

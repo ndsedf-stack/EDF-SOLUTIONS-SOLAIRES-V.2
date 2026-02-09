@@ -137,6 +137,54 @@ Rôle : unité centrale business. Chaque étude = un dossier vivant.
 *   aucun dossier critique sans study
 *   jamais de `signed` sans `signed_at`
 
+**🔥 LOGIQUE CRITIQUE : DÉTECTION D'ACOMPTE (`has_deposit`)**
+
+> **RÈGLE MÉTIER VALIDÉE** (Février 2026)
+> 
+> Le champ `has_deposit` détermine si un acompte de 1500€ est REQUIS pour une étude.
+> Cette valeur est **CALCULÉE** par le Brain et ne doit **JAMAIS** être écrasée par la base de données.
+
+**Règles de calcul** :
+```typescript
+has_deposit = 
+  financing_mode === "cash_payment" ||      // Paiement cash → acompte requis
+  financing_mode === "partial_financing"    // Financement avec apport → acompte requis
+
+// financing_mode === "full_financing" → has_deposit = false (pas d'acompte)
+```
+
+**Calcul de `financing_mode`** :
+```typescript
+if (cash_apport >= total_price && total_price > 0) {
+  financing_mode = "cash_payment"
+} else if (cash_apport > 0 && cash_apport < total_price) {
+  financing_mode = "partial_financing"
+} else {
+  financing_mode = "full_financing"
+}
+```
+
+**Exemples** :
+| Cas | `cash_apport` | `total_price` | `financing_mode` | `has_deposit` |
+|-----|---------------|---------------|------------------|---------------|
+| Financement 100% | 0€ | 25000€ | `full_financing` | `false` |
+| Financement avec apport | 10000€ | 25000€ | `partial_financing` | `true` |
+| Paiement cash | 25000€ | 25000€ | `cash_payment` | `true` |
+
+**Montant d'acompte** :
+- Si `has_deposit = true` → `deposit_amount = 1500€`
+- Si `has_deposit = false` → `deposit_amount = null`
+
+**Statut d'acompte (War Room)** :
+- `deposit_paid = true` → Affiche **"PAYÉ ✅"**
+- `has_deposit = true` ET `deposit_paid = false` → Affiche **"EN ATTENTE ⚠️"**
+- `has_deposit = false` → Affiche **"NON REQUIS ➖"**
+
+**⚠️ ATTENTION** : Ne jamais utiliser la valeur de `has_deposit` depuis Supabase pour déterminer si un acompte est requis. Toujours recalculer basé sur `financing_mode`.
+
+**Localisation du code** : `src/brain/signals/mappers.ts` (fonction `mapStudyToDisplay`)
+
+
 ### � public.signed_contracts (Table Spécifique War Room)
 Rôle : Extension contractuelle.
 | Colonne | Type |

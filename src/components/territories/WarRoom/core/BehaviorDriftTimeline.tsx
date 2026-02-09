@@ -26,13 +26,13 @@ export function BehaviorDriftTimeline({ events }: { events: BehaviorTimelineEven
               <div className="flex-1">
                 <div className="flex justify-between items-baseline mb-1">
                   <span className={`text-[10px] font-black uppercase tracking-widest ${
-                     event.type === 'silence' ? 'text-red-400' : 'text-white/40'
+                     event.type === 'silence' ? 'text-red-400' : 'text-slate-500'
                   }`}>
                     {event.type.replace('_', ' ')}
                   </span>
-                  <span className="text-[10px] font-mono text-white/20">{event.date}</span>
+                  <span className="text-[10px] font-mono text-slate-500">{event.date}</span>
                 </div>
-                <p className={`text-sm font-bold ${event.type === 'silence' ? 'text-red-200' : 'text-white/80'}`}>
+                <p className={`text-sm font-black uppercase tracking-tight ${event.type === 'silence' ? 'text-red-200' : 'text-white'}`}>
                   {event.label}
                 </p>
               </div>

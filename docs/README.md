@@ -71,7 +71,13 @@ Dans l'écran **S0H (Leads & ROI)**, le chiffre herculéen (ex: 107k€) n'est p
 Un dossier entre en War Room si :
 1.  `Status = signed`
 2.  `Deposit_paid = false`
-3.  `Danger_score >= 60` (Calculé par : Absence de clic + Silcence + Montant élevé).
+3.  `Danger_score >= 60` (Calculé par : Absence de clic + Silence + Montant élevé).
+
+**🔥 Logique de Détection d'Acompte** :
+- `has_deposit` est **calculé** par le Brain basé sur `financing_mode`
+- `financing_mode = "cash_payment"` ou `"partial_financing"` → Acompte de 1500€ requis
+- `financing_mode = "full_financing"` → Pas d'acompte requis
+- **Voir** : `docs/bible.integrale.md` section "LOGIQUE CRITIQUE : DÉTECTION D'ACOMPTE"
 
 ---
 

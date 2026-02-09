@@ -39,7 +39,7 @@ const NavButton: React.FC<NavButtonProps> = ({ active, onClick, icon, label }) =
     `}
   >
     <span>{icon}</span>
-    <span>{label}</span>
+    <span className="hidden md:inline">{label}</span>
   </button>
 );
 
@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="fixed top-4 left-4 right-4 z-50">
-      <div className="glass-panel rounded-2xl px-4 py-2 border border-white/10 shadow-2xl relative overflow-hidden h-16 grid grid-cols-[1.2fr_auto_1fr] items-center">
+      <div className="glass-panel rounded-2xl px-2 md:px-4 py-2 border border-white/10 shadow-2xl relative overflow-hidden h-16 grid grid-cols-[auto_1fr_auto] md:grid-cols-[1.2fr_auto_1fr] items-center gap-2 md:gap-4">
         {/* Glow effect */}
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
         
@@ -118,7 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-center px-2">
+        <div className="flex justify-center px-0 md:px-2 overflow-x-auto no-scrollbar">
             <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-md">
                <NavButton active={activeSection === "cockpit" || activeSection === "dashboard"} onClick={() => setActiveSection("cockpit")} icon="🛰️" label="Cockpit" />
                <NavButton active={activeSection === "war_room"} onClick={() => setActiveSection("war_room")} icon="⚔️" label="War Room" />

@@ -128,7 +128,7 @@ const ProjectionChart = ({ data, width, height }: InternalProps) => {
             textAnchor: 'end',
             verticalAnchor: 'middle',
           })}
-          tickFormat={d => `${Math.round(d as number / 1000)}k€`}
+          tickFormat={d => `${Math.round(d as number / 1000)}k`}
         />
       </Group>
     </svg>

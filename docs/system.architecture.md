@@ -99,3 +99,18 @@ graph TD
 1.  **ResultsDashboard** : Le commercial fait la simulation pour Dominique Boucherie. Le client signe sur la tablette. -> **Supabase** reçoit `status: 'signed'`.
 2.  **Engine** : Lors du refresh, le moteur voit "Signé" mais "Pas d'acompte". Il calcule un risque élevé.
 3.  **Dashboard** : Affiche Dominique Boucherie en haut de la **War Room** avec le statut "CLIENT PRIORITAIRE" et l'objectif "SÉCURISER (Acompte Manquant)".
+
+## Mise à jour 08/02/2026 - Consolidation & Performance
+
+### Structure des Dashboards
+- **ResultsDashboard.tsx** : Dashboard Client (Simulation, Résultats). Remplace `ResultsDashboard.REFONTE2`.
+- **Dashboard.tsx** : Dashboard Admin/Manager (Cockpit, WarRoom). Restauré et optimisé avec `useMemo`.
+
+### Performance
+- **API** : Chargement parallèle dans `useSystemBrain`.
+- **Rendu** : `ModuleSection` utilise "render-on-reveal" pour alléger le DOM initial.
+- **Admin** : `systemSnapshot` mémoïsé pour éviter les re-renders inutiles des sous-modules (WarRoom, Cockpit).
+
+### Composants Financiers
+- Nouveaux composants isolés : `ExpenseCards`, `FinancingCards`, `Timeline`.
+- Validation financière stricte via `utils/finance.ts`.

@@ -163,10 +163,51 @@ export const PilotageView: React.FC<PilotageViewProps> = ({ system }) => {
         
         {activeTab === 'pipeline' && (
           <PipelineMomentum 
-            leads={system.emailLeads?.length || 0}
-            prospects={system.metrics?.behavioral?.interesses?.length || 0}
-            signed={system.metrics?.signed?.length || 0}
-            secured={system.financialStats?.securedCount || 0}
+            {...(() => {
+              const uniqueStudiesMap = new Map();
+              system.studies.forEach((s: any) => {
+                if (!uniqueStudiesMap.has(s.email)) {
+                  uniqueStudiesMap.set(s.email, s);
+                } else {
+                  const existing = uniqueStudiesMap.get(s.email);
+                  if ((s.status === 'signed' || s.deposit_paid) && !(existing.status === 'signed' || existing.deposit_paid)) {
+                    uniqueStudiesMap.set(s.email, s);
+                  }
+                }
+              });
+
+              const uniqueStudies = Array.from(uniqueStudiesMap.values());
+              
+              // 1. Visités (Sauf annulé)
+              const visitedStudies = uniqueStudies.filter(s => s.status !== 'cancelled');
+              
+              // 2. Signés (Signé/Payé sauf annulé)
+              const signedStudies = visitedStudies.filter(s => s.status === 'signed' || s.deposit_paid);
+              
+              // 3. Attente Signature
+              const waitingSignatureStudies = visitedStudies.filter(s => s.status !== 'signed' && !s.deposit_paid);
+              
+              // 4. Attente Acompte
+              const waitingDepositStudies = signedStudies.filter(s => 
+                !s.deposit_paid && 
+                (s.payment_mode === 'cash' || s.financing_mode === 'with_deposit' || s.financing_mode === 'partial_financing')
+              );
+
+              // 5. Sécurisés
+              const securedCount = signedStudies.filter(s => 
+                s.deposit_paid || s.financing_mode === 'full_financing'
+              ).length;
+
+              return {
+                leads: system.emailLeads?.length || 0,
+                visited: visitedStudies.length,
+                signed: signedStudies.length,
+                waitingSignatureStudies,
+                waitingDepositStudies,
+                secured: securedCount,
+                securedAmount: system.financialStats?.cashSecured || 0
+              };
+            })()}
           />
         )}
         

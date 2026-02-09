@@ -25,6 +25,7 @@
     "axios": "^1.13.4",
     "d3-array": "^3.2.4",
     "d3-time-format": "^4.1.0",
+    "framer-motion": "^12.33.0",
     "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "lucide-react": "^0.555.0",

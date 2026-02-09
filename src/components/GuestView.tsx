@@ -189,8 +189,12 @@ export default function GuestView() {
 
         // 👁️ TRACKING DE LA VUE
         try {
+          // 1. Incrémenter opened_count
+          await supabase.rpc('increment_opened_count', { study_uuid: data.id });
+          
+          // 2. Logger l'événement
           await supabase.from("tracking_events").insert({
-            study_id: studyId,
+            study_id: data.id,
             event_type: "view_study",
           });
         } catch (e) {

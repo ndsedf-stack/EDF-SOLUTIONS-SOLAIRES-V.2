@@ -20,6 +20,19 @@ export const formatCurrency = (value: number): string =>
     maximumFractionDigits: 0,
   }).format(value);
 
+export const validateMonthlyVsAnnual = (
+  monthly: number, 
+  annual: number,
+  tolerance: number = 0.5 // Increased tolerance for rounding
+): boolean => {
+  const calculatedAnnual = monthly * 12;
+  return Math.abs(calculatedAnnual - annual) < tolerance;
+};
+
+export const getAnnualFromMonthly = (monthly: number): number => {
+  return parseFloat((monthly * 12).toFixed(2));
+};
+
 // ============================================================================
 // 🔥 AJOUTER CETTE FONCTION ICI — extraction ville
 // ============================================================================

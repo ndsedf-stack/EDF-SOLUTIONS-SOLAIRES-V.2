@@ -99,9 +99,14 @@ export function useSystemBrain() {
       if (!isSilent) setLoading(true);
       setError(null);
 
-      // 1. CHARGEMENT PARALLÈLE DES SOURCES DE BASE
-      // On commence par charger les études car on a besoin des IDs pour le reste (batching)
-      const { data: studiesData, error: studiesError } = await fetchWithTimeout(supabase
+      // 1. CHARGEMENT PARALLÈLE DES SOURCES INDÉPENDANTES (Etudes + Logs)
+      const logsPromise = supabase
+          .from("decision_logs")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(50);
+
+      const studiesPromise = fetchWithTimeout(supabase
         .from("studies")
         .select(`
             id, client_id, status, created_at, signed_at, study_data,
@@ -111,12 +116,24 @@ export function useSystemBrain() {
             clients (id, first_name, last_name, email, phone, email_optout)
         `));
 
+      const [logsResponse, studiesResponse] = await Promise.all([
+        logsPromise,
+        studiesPromise
+      ]);
+
+      const { data: studiesData, error: studiesError } = studiesResponse;
+      
+      // Gestion Logs immédiate
+      const logsData = logsResponse.data || [];
+      if (logsResponse.error) console.error("Logs fetch failed", logsResponse.error);
+      setLogs(logsData);
+
       if (studiesError) throw studiesError;
 
       const studyIdsList = (studiesData || []).map(s => s.id);
       const clientIdsList = (studiesData || []).map(s => s.client_id).filter(Boolean);
 
-      // 2. CHARGEMENT BATCHÉ DES DONNÉES DÉPENDANTES
+      // 2. CHARGEMENT BATCHÉ DES DONNÉES DÉPENDANTES (Tracking, Emails)
       // Protection .in() : chunking automatique via helper
       
       const trackingPromise = studyIdsList.length > 0 
@@ -127,9 +144,7 @@ export function useSystemBrain() {
         ? fetchInChunks("email_queue", "client_id", clientIdsList, "study_id, client_id, email_type, status, sent_at, scheduled_for, created_at", { col: "created_at", ascending: false })
         : Promise.resolve({ data: [] });
       
-      const logsPromise = supabase.from("decision_logs").select("*").order("created_at", { ascending: false }).limit(50);
-
-      const [trackingResult, queueResult, logsResult] = await Promise.allSettled([trackingPromise, queuePromise, logsPromise]);
+      const [trackingResult, queueResult] = await Promise.allSettled([trackingPromise, queuePromise]);
 
       // @ts-ignore
       const trackingData = trackingResult.status === "fulfilled" ? (trackingResult.value.data || []) : [];
@@ -138,11 +153,6 @@ export function useSystemBrain() {
       // @ts-ignore
       const queueEmails = queueResult.status === "fulfilled" ? (queueResult.value.data || []) : [];
       if (queueResult.status === "rejected") console.error("Queue fetch failed", queueResult.reason);
-
-      const logsData = logsResult.status === "fulfilled" ? (logsResult.value.data || []) : [];
-      if (logsResult.status === "rejected") console.error("Logs fetch failed", logsResult.reason);
-
-      setLogs(logsData);
 
       // 3. INDEXATION TRACKING (BEFORE MAPPING)
       const statsMap = new Map<string, any>();

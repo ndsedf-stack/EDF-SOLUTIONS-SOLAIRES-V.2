@@ -123,7 +123,7 @@ export function RiskMapVisx({
               textAnchor: 'end',
               verticalAnchor: 'middle',
             })}
-            tickFormat={d => `${Math.round((d as number) / 1000)}k€`}
+            tickFormat={d => `${Math.round((d as number) / 1000)}k`}
           />
 
           {/* POINTS (DEALS) */}

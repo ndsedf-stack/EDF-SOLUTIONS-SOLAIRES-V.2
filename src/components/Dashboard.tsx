@@ -188,18 +188,59 @@ export default function Dashboard() {
   // RENDER
   // ============================================
 
+
+
+  // ✅ CORRECTION MAJEURE :
+  // 1. On utilise useMemo pour ne pas recalculer à chaque milliseconde (Performance)
+  // 2. On connecte les VRAIS agents via 'actions'
+  const systemSnapshot = useMemo(() => ({
+      studies, 
+      emailLeads: leads, 
+      logs, 
+      metrics, 
+      financialStats, 
+      loading, 
+      systemInitialized: true,
+      loadingProgress: 100, 
+      loadingStep: "Ready", 
+      error: null,
+      emailFlowByClient, 
+      antiAnnulationByStudy, 
+      postRefusByStudy, 
+      trafficData,
+      zenMode, 
+      setActiveSection, 
+      
+      actions: { 
+        refresh, 
+        // 🔒 UTILISATION DES HANDLERS SÉCURISÉS (Avec Modales)
+        signStudy: handleSignStudy, 
+        cancelStudy: handleCancelStudy, 
+        deleteStudy: handleDeleteStudy,
+        
+        // Actions directes
+        markDepositPaid: handleMarkDepositPaid, 
+        markRibSent: handleMarkRibSent, 
+        setOptOut: handleSetOptOut, 
+        deleteLeadPermanently: handleDeleteLead, 
+        
+        // 🧠 CONNEXION AGENTS : On passe la vraie fonction, pas une fonction vide !
+        // @ts-ignore
+        logForceAction: logForceAction || (async (id, action) => console.warn(`Agent Log System inactive: ${action} on ${id}`)), 
+        
+        // Si cette fonction manque dans useSystemBrain, on met un placeholder propre
+        updateStudyStatus: async () => console.warn("Update Study Status: Not connected to Agent yet") 
+      }
+  }), [
+    // Dépendances critiques pour le re-render
+    studies, leads, logs, metrics, financialStats, loading, 
+    emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData, 
+    zenMode, refresh, logForceAction
+  ]);
+
   if (loading) return <LoadingScreen progress={loadingProgress} step={loadingStep} />;
   
   if (error) return <div className="text-red-500 p-10 text-center text-xl font-bold bg-slate-900 h-screen flex items-center justify-center">🛑 {error}</div>;
-
-  // System snapshot for Territories
-  const systemSnapshot = {
-      studies, emailLeads: leads, logs, metrics, financialStats, loading, systemInitialized: true,
-      loadingProgress: 100, loadingStep: "Ready", error: null,
-      emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData,
-      zenMode, setActiveSection, // Pass control to territories
-      actions: { refresh, signStudy, cancelStudy, markDepositPaid, markRibSent, setOptOut, deleteLeadPermanently: deleteLead, deleteStudy, logForceAction: async () => {}, updateStudyStatus: async () => {} }
-  };
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-blue-500/30">
