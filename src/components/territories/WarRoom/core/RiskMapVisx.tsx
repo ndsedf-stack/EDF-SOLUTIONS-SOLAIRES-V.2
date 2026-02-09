@@ -76,20 +76,39 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
   }, [studies]);
 
   // 2. SCALES CORRIGÉES
-  // AXE X: 14 -> 0 jours (De gauche à droite pour l'urgence)
   const xScale = useMemo(() => scaleLinear({
     domain: [14, 0],
     range: [0, innerWidth],
     nice: true,
   }), [innerWidth]);
 
-  // AXE Y: Montant (Scale dynamique)
   const yMax = Math.max(...studies.map(d => d.totalPrice), 20000);
   const yScale = useMemo(() => scaleLinear({
     domain: [0, yMax * 1.1],
     range: [innerHeight, 0],
     nice: true,
   }), [yMax, innerHeight]);
+
+  // 2b. JITTER LOGIC (Detect & Offset overlapping points)
+  const studiesWithOffset = useMemo(() => {
+    const coordsMap = new Map<string, number>();
+    return studies.map(s => {
+      const key = `${s.daysBeforeDeadline}-${s.totalPrice}`;
+      const index = coordsMap.get(key) || 0;
+      coordsMap.set(key, index + 1);
+
+      let dx = 0;
+      let dy = 0;
+      if (index > 0) {
+        // Multi-bubble case: Spiral bloom pattern in pixels
+        const angle = index * (Math.PI * 0.7); // Spread angle
+        const distance = index * 12; // Step distance
+        dx = Math.cos(angle) * distance;
+        dy = Math.sin(angle) * distance;
+      }
+      return { ...s, dx, dy };
+    });
+  }, [studies]);
 
   // TAILLE BULLES: Scale Sqrt (Perception correcte des aires)
   const sizeScale = useMemo(() => scaleSqrt({
@@ -104,12 +123,11 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
     return THEME.colors.bubbles.critical;
   };
 
-  const handleTooltip = (event: React.MouseEvent<SVGCircleElement> | React.TouchEvent<SVGCircleElement>, study: WarRoomPoint) => {
-      const { x, y } = localPoint(event) || { x: 0, y: 0 };
+  const handleTooltip = (event: React.MouseEvent<SVGCircleElement> | React.TouchEvent<SVGCircleElement>, study: WarRoomPoint, finalX: number, finalY: number) => {
       showTooltip({
           tooltipData: study,
-          tooltipLeft: x,
-          tooltipTop: y,
+          tooltipLeft: finalX + margin.left,
+          tooltipTop: finalY + margin.top,
       });
   };
 
@@ -178,11 +196,16 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
 
           {/* BULLES (Animations douces & Cockpit Logic) */}
           <AnimatePresence>
-            {studies.map((study) => {
+            {studiesWithOffset.map((study) => {
                 const isHighlighted = highlightedStudyId === study.studyId;
                 const isCriticalPoint = criticalStudy?.studyId === study.studyId;
                 const isTopEnjeu = topEnjeuStudy?.studyId === study.studyId;
                 
+                const baseX = xScale(study.daysBeforeDeadline);
+                const baseY = yScale(study.totalPrice);
+                const finalX = baseX + study.dx;
+                const finalY = baseY + study.dy;
+
                 return (
                     <Group key={study.studyId}>
                        {/* ANNOTATION TOP ENJEU (Storytelling) */}
@@ -193,16 +216,16 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
                              transition={{ delay: 1 }}
                            >
                                <line 
-                                 x1={xScale(study.daysBeforeDeadline)} 
-                                 y1={yScale(study.totalPrice) - sizeScale(study.engagementScore) - 4}
-                                 x2={xScale(study.daysBeforeDeadline)}
-                                 y2={yScale(study.totalPrice) - sizeScale(study.engagementScore) - 20}
+                                 x1={finalX} 
+                                 y1={finalY - sizeScale(study.engagementScore) - 4}
+                                 x2={finalX}
+                                 y2={finalY - sizeScale(study.engagementScore) - 20}
                                  stroke={THEME.colors.textLight}
                                  strokeWidth={0.5}
                                />
                                <text
-                                 x={xScale(study.daysBeforeDeadline)}
-                                 y={yScale(study.totalPrice) - sizeScale(study.engagementScore) - 25}
+                                 x={finalX}
+                                 y={finalY - sizeScale(study.engagementScore) - 25}
                                  fill={THEME.colors.textLight}
                                  fontSize={8}
                                  fontWeight={800}
@@ -215,8 +238,8 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
                        )}
 
                         <motion.circle
-                          cx={xScale(study.daysBeforeDeadline)}
-                          cy={yScale(study.totalPrice)}
+                          cx={finalX}
+                          cy={finalY}
                           r={sizeScale(study.engagementScore)}
                           initial={{ opacity: 0, scale: 0 }}
                           animate={{ 
@@ -231,7 +254,7 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
                           strokeWidth={isHighlighted ? 3 : isCriticalPoint ? 2 : 1}
                           style={{ cursor: 'pointer', zIndex: isHighlighted ? 100 : 1 }}
                           whileHover={{ scale: 1.5, strokeOpacity: 1 }}
-                          onMouseEnter={(e: any) => handleTooltip(e, study)}
+                          onMouseEnter={(e: any) => handleTooltip(e, study, finalX, finalY)}
                           onMouseLeave={() => hideTooltip()}
                           onClick={() => onPointClick && onPointClick(study.studyId)}
                         />
