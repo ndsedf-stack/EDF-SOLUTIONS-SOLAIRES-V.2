@@ -147,6 +147,34 @@ Principe :
 - Zéro distorsion possible.
 Le Cockpit devient un outil de preuve, pas d'interprétation.
 
+<a name="section-72"></a>
+72. CHANGELOG — ÉVOLUTIONS MAJEURES
+
+### 2026-02-09 — ROI Module Data Accuracy & Graph Rendering Fix
+**Problème identifié :**
+- CA protégé affichait 520k€ (toutes études signées, tous temps)
+- Graphique montrait ligne bleue plate à 0 (échelle unique inadaptée)
+- Comptage leads emails au lieu de clients uniques
+
+**Corrections appliquées :**
+1. **Filtre temporel strict** : CA protégé = études signées dans le **mois en cours uniquement** (Feb 2026)
+2. **Dual-scale Y-axes** : Échelle gauche (clients, 0-16) + Échelle droite (CA, 0-164k€)
+3. **Comptage unique** : Ligne bleue = clients uniques (par email) au lieu de leads emails
+4. **Légende clarifiée** : "Création (Clients uniques)" + "Protection (CA Sécurisé)"
+
+**Fichiers modifiés :**
+- `src/components/territories/Sales/LeadsAndROIScreen.tsx`
+- `src/components/territories/Sales/sections/ConversionProtectionModuleFinal.tsx`
+
+**Impact :**
+- CA protégé : 520k€ → 164k€ (données réalistes, mois en cours)
+- Graphique : Les deux lignes sont maintenant visibles et exploitables
+- Précision métier : Comptage clients vs études (évite doublons)
+
+**Commit :** `7397602` — "fix(roi): Fix ROI module data accuracy and graph rendering"
+
+---
+
 PARTIE 1 : FONDATIONS & PHILOSOPHIE
 <a name="section-0"></a>
 0. INTENTION ORIGINELLE (À NE JAMAIS OUBLIER)
