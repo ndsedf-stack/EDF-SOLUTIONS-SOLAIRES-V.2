@@ -89,20 +89,30 @@ const RiskMapInner = ({ studies, width, height, onPointClick, highlightedStudyId
     nice: true,
   }), [yMax, innerHeight]);
 
-  // 2b. JITTER LOGIC (Detect & Offset overlapping points)
+  // 2b. JITTER LOGIC (Detect & Offset overlapping points - FUZZY MATCHING)
   const studiesWithOffset = useMemo(() => {
+    // 1. Sort by engagement score (smaller radius first to render underneath or larger first? 
+    // Usually larger first so smaller can be clicked if offset properly, 
+    // but better to sort larger bubbles to the bottom of the DOM so smaller are on top)
+    const sorted = [...studies].sort((a, b) => b.engagementScore - a.engagementScore);
+    
     const coordsMap = new Map<string, number>();
-    return studies.map(s => {
-      const key = `${s.daysBeforeDeadline}-${s.totalPrice}`;
+    return sorted.map(s => {
+      // Fuzzy key: round price to nearest 2000 and days to integer
+      // This groups studies that are VISUALLY overlapping even if not mathematically identical
+      const priceBucket = Math.round(s.totalPrice / 2000);
+      const dayBucket = Math.round(s.daysBeforeDeadline);
+      const key = `${dayBucket}-${priceBucket}`;
+      
       const index = coordsMap.get(key) || 0;
       coordsMap.set(key, index + 1);
 
       let dx = 0;
       let dy = 0;
       if (index > 0) {
-        // Multi-bubble case: Spiral bloom pattern in pixels
-        const angle = index * (Math.PI * 0.7); // Spread angle
-        const distance = index * 12; // Step distance
+        // Multi-bubble case: Spread them out more aggressively (25px minimum)
+        const angle = index * (Math.PI * 0.82); // Golden-ish angle spread
+        const distance = 25 + (index - 1) * 10; 
         dx = Math.cos(angle) * distance;
         dy = Math.sin(angle) * distance;
       }
