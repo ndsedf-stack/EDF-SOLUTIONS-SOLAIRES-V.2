@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 const AuditRow = ({ time, source, action, details, user, risk }: any) => (
     <tr className="border-b border-white/5 hover:bg-white/5 transition-colors group cursor-default text-xs">
@@ -28,6 +29,34 @@ const AuditRow = ({ time, source, action, details, user, risk }: any) => (
 );
 
 export const AuditLogs = () => {
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            const { data, error } = await supabase
+                .from('decision_logs')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(100);
+
+            if (data) {
+                setLogs(data);
+            }
+            setLoading(false);
+        };
+        fetchLogs();
+
+        // Realtime subscription could be added here
+        const channel = supabase.channel('realtime-logs')
+           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'decision_logs' }, (payload) => {
+               setLogs((current) => [payload.new, ...current]);
+           })
+           .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
+    }, []);
+
     return (
         <div className="space-y-6">
             {/* FILTERS */}
@@ -44,13 +73,24 @@ export const AuditLogs = () => {
                     <option>Warning</option>
                 </select>
                 <div className="flex-1"></div>
-                <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+                <button 
+                    onClick={() => {
+                        const csv = logs.map(row => Object.values(row).join(',')).join('\\n');
+                        const blob = new Blob([csv], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `audit_logs_${new Date().toISOString()}.csv`;
+                        a.click();
+                    }}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2"
+                >
                     <span>⬇</span> Export CSV
                 </button>
             </div>
 
             {/* LOGS TABLE (Forensic View) */}
-            <div className="bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden font-mono">
+            <div className="bg-[#0a0a0a] border border-white/5 rounded-xl overflow-hidden font-mono min-h-[400px]">
                 <table className="w-full text-left">
                     <thead className="bg-[#020202] text-[9px] uppercase font-bold text-slate-600 tracking-widest border-b border-white/5">
                         <tr>
@@ -63,18 +103,24 @@ export const AuditLogs = () => {
                         </tr>
                     </thead>
                     <tbody>
-                         <AuditRow time="14 Feb 10:42:01" source="SYSTEM" action="DECISION BLOCKED" details="Blocked by Conflict Guard: Incohérence entre score fin.(88) et score comp.(12)" user="OPS-GUARD" risk="high" />
-                         <AuditRow time="14 Feb 10:41:22" source="USER" action="OVERRIDE" details="User forced validation despite warning on Client #3302" user="N.Distefano" risk="medium" />
-                         <AuditRow time="14 Feb 10:40:05" source="SYSTEM" action="SCORE UPDATE" details="Danger Score updated for Client #1102: 44 > 65 (+21)" user="AGENT-ZERO" risk="low" />
-                         <AuditRow time="14 Feb 10:38:00" source="SYSTEM" action="EMAIL QUEUED" details="Relance J+3 queued for Campaign 'Solaire Hiver'" user="EMAIL-ENG" risk="low" />
-                         <AuditRow time="14 Feb 10:15:00" source="USER" action="LOGIN" details="Successful login from IP 82.120.x.x" user="S.Manager" risk="low" />
-                         <AuditRow time="14 Feb 09:00:00" source="SYSTEM" action="BATCH SYNC" details="Synchronized 142 records with Salesforce" user="CRM-BOT" risk="low" />
-                          <AuditRow time="14 Feb 08:30:00" source="SYSTEM" action="NIGHTLY PURGE" details="Purged 0 obsolete draft records" user="SYSTEM" risk="low" />
+                         {loading ? (
+                             <tr><td colSpan={6} className="text-center py-10 text-slate-500 animate-pulse">Chargement des logs...</td></tr>
+                         ) : logs.map((log) => (
+                             <AuditRow 
+                                key={log.id}
+                                time={new Date(log.created_at).toLocaleTimeString('fr-FR')} 
+                                source={log.action_performed?.includes('SYSTEM') ? 'SYSTEM' : 'USER'} 
+                                action={log.action_performed} 
+                                details={typeof log.justification === 'object' ? JSON.stringify(log.justification) : log.justification} 
+                                user={log.client_name || 'N/A'} 
+                                risk={log.action_performed?.includes('DELETE') || log.action_performed?.includes('CANCEL') ? 'high' : 'low'} 
+                             />
+                         ))}
                     </tbody>
                 </table>
             </div>
             <div className="text-center text-[10px] text-slate-600 uppercase font-bold tracking-widest mt-2">
-                Affichage des 7 derniers événements sur 14 202
+                Affichage des {logs.length} derniers événements sur serveur sécurisé
             </div>
         </div>
     );

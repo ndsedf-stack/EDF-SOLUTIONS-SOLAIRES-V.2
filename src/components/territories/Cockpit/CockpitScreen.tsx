@@ -3,7 +3,7 @@ import ParentSize from '@visx/responsive/lib/components/ParentSize';
 import { FinancialRiskProofVisx, FinancialPoint } from './core/FinancialRiskProofVisx_Premium';
 import { KPIClusters } from './core/PremiumKPICards';
 import { SystemActivityFeed, ActivityEvent } from './core/SystemActivityFeed';
-import { fetchOpsSnapshot } from '@/lib/opsSnapshot';
+// import { fetchOpsSnapshot } from '@/lib/opsSnapshot'; // REMOVED (Legacy)
 import { useOpsInsights } from '@/ops-engine/useOpsInsights';
 import { useOpsAgent } from '@/ops-agent/useOpsAgent';
 import { auditFinancialRisk } from '@/ops-ux-audit/charts/financialRisk.audit';
@@ -40,25 +40,76 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
   // 🟢 LOGIQUE EXISTANTE (DÉBRANCHÉE DE L'AFFICHAGE PRINCIPAL MAIS PRÉSENTE)
   const { studies, metrics, financialStats, logs } = system;
 
-  // 🔴 NOUVELLE SOURCE DE VÉRITÉ (OPS SNAPSHOT)
-  const [opsData, setOpsData] = useState<any[]>([]);
-  const [loadingOps, setLoadingOps] = useState(true);
+  // 🔴 CALCUL D'INTELLIGENCE OPS (HOOK PURE - LIVE DATA)
+  // REMPLACEMENT: On dérive les données Ops directement de `system.studies` (Live) au lieu de `ops_snapshot` (Static/Stale)
+  // Cela corrige:
+  // 1. La persistance des vieux dossiers (car on filtre ici)
+  // 2. Le manque de mise à jour des clics/vues (car `studies` est live via useSystemBrain)
 
-  useEffect(() => {
-    fetchOpsSnapshot()
-      .then((data) => {
-        setOpsData(data || []);
-        setLoadingOps(false);
+  const filteredOpsData = useMemo(() => {
+    return studies
+      .filter((s: any) => {
+          // 1. FILTRE TEMPOREL (DEMANDE UTILISATEUR: "Mois passé doit disparaitre")
+          // On se base sur la date de création ou de signature si elle existe
+          const d = new Date(s.created_at);
+          const now = new Date();
+          const isCurrentMonth = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+          
+          // DEBUG
+          if (!isCurrentMonth) {
+             console.log(`[Cockpit] Cleaning old study: ${s.id} (${s.created_at})`);
+          }
+          if (s.status === 'archived' || s.archived) {
+             console.log(`[Cockpit] Cleaning archived study: ${s.id}`);
+             return false;
+          }
+          
+          return isCurrentMonth;
       })
-      .catch((err) => {
-        console.error("Ops Fetch Error", err);
-        setLoadingOps(false);
+      .map((s: any) => {
+          // MAPPING LIVE STUDY -> OPS ROW
+          const daysSinceSigned = s.signed_at 
+            ? Math.floor((new Date().getTime() - new Date(s.signed_at).getTime()) / 86400000) 
+            : null;
+            
+          let opsState: 'ACTIVE' | 'SECURED' | 'UNSECURED_DELAY' | 'SILENT' | 'SRU_EXPIRED' = 'ACTIVE';
+
+          if (s.status === 'signed') {
+              if (s.deposit_paid) {
+                  opsState = 'SECURED';
+              } else if (daysSinceSigned !== null && daysSinceSigned > 14) {
+                  opsState = 'SRU_EXPIRED';
+              } else {
+                  opsState = 'UNSECURED_DELAY';
+              }
+          } else {
+              // Prospect / En cours
+              if (s.behavioralState === 'MUET' || (s.views === 0 && s.clicks === 0)) {
+                  opsState = 'SILENT';
+              } else {
+                  opsState = 'ACTIVE';
+              }
+          }
+
+          return {
+            study_id: s.id,
+            ops_state: opsState,
+            days_since_signature: daysSinceSigned,
+            days_since_last_event: s.diffDays || 0,
+            deposit_paid: s.deposit_paid || false,
+            signed_at: s.signed_at,
+            last_interaction_at: s.last_view || s.last_click || null,
+            install_cost: s.total_price || 0,
+            status: s.status,
+            interaction_score: (s.views || 0) * 10 + (s.clicks || 0) * 20,
+            email_optout: s.email_optout || false
+          };
       });
-  }, []);
+  }, [studies]);
 
   // MAPPING UI SIMPLE (Compteurs basés sur la DB)
   const counters = useMemo(() => {
-    return opsData.reduce((acc: any, row: any) => {
+    return filteredOpsData.reduce((acc: any, row: any) => {
       const state = row.ops_state || 'UNKNOWN';
       acc[state] = (acc[state] || 0) + 1;
       return acc;
@@ -69,7 +120,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       SRU_EXPIRED: 0,
       SECURED: 0
     });
-  }, [opsData]);
+  }, [filteredOpsData]);
 
   // --- ANCIEN CALCUL (GARDÉ POUR RÉFÉRENCE / BACKUP MAIS NON AFFICHÉ) ---
   const totalCA = financialStats.totalCA || studies.reduce((sum: number, s: any) => sum + (s.total_price || 0), 0);
@@ -77,28 +128,38 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
   const exposureRatio = totalCA > 0 ? exposedCA / totalCA : 0;
   // --- FIN ANCIEN CALCUL ---
 
-  // REPARATION: RESTORING LEGACY LOGIC FOR GRAPH DISPLAY (BUT DISCONNECTED FROM HEADER)
+
   const financialRiskData: FinancialPoint[] = useMemo(() => {
-    const days = Array.from({ length: 30 }).map((_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (29 - i));
+    // SCOPE FIX: Align Chart with "Current Month" (Février) to match the KP Box (202k).
+    const now = new Date();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    
+    const days = Array.from({ length: daysInMonth }).map((_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth(), i + 1);
       return d.toISOString().split('T')[0];
     });
 
     return days.map(dayStr => {
-      const studiesExistingAtDate = studies.filter((s: any) => s.created_at <= dayStr);
-      const dayDate = new Date(dayStr);
-      dayDate.setHours(23, 59, 59, 999); 
-
+      const dayEndOfDay = new Date(dayStr);
+      dayEndOfDay.setHours(23, 59, 59, 999);
+      
       let secured = 0;
       let exposed = 0;
 
-      studiesExistingAtDate.forEach((s: any) => {
-         const isSigned = s.status === 'signed';
-         if (!isSigned) return;
+      studies.forEach((s: any) => {
+         // SCOPE: Only studies signed THIS MONTH
+         if (!s.signed_at || ['cancelled', 'refused'].includes(s.status)) return;
+         
+         const signedDate = new Date(s.signed_at);
+         
+         // 1. Must be signed in the Current Month (Strict Match with "Février" Metric)
+         if (signedDate.getMonth() !== now.getMonth() || signedDate.getFullYear() !== now.getFullYear()) return;
+
+         // 2. Must be visible by this date in the chart
+         if (signedDate > dayEndOfDay) return; 
 
          const paidAt = s.deposit_paid_at ? new Date(s.deposit_paid_at) : null;
-         const isSecuredAtDate = s.deposit_paid && paidAt && paidAt <= dayDate;
+         const isSecuredAtDate = s.deposit_paid && paidAt && paidAt <= dayEndOfDay;
 
          if (isSecuredAtDate) {
            secured += (s.total_price || 0);
@@ -122,55 +183,31 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
     return recentLogs;
   }, [logs]);
 
-  // 🔴 CALCUL D'INTELLIGENCE OPS (HOOK PURE)
-  const opsInsights = useOpsInsights(opsData);
-  
-  // 🟢 OPS AGENT DECISION (AGREGATEUR)
-  const opsDecisions = useOpsAgent(opsData);
+  const opsInsights = useOpsInsights(filteredOpsData);
+  const opsDecisions = useOpsAgent(filteredOpsData);
 
   // 🛡️ OPS UX AUDIT ENGINE (New Architecture)
   const auditResults = useMemo(() => {
-    // 1. Audit Financial Risk Chart (Manual call removed, handled by runUXAudit internally or simplified)
-    // Legacy support: We call it to ensure it runs if engine relies on it, but engine seems self-contained.
-    // However, runUXAudit signature is clean.
-    
-    // 2. Audit Data Truth
     const integrityAudit = auditDataIntegrity(3000000, 3000000); // Correct values (Green)
-    
-    // 3. Assemble
     return runUXAudit({
-        dataIntegrityIssues: [] // Add integrity issues if any
+        dataIntegrityIssues: []
     });
   }, []);
 
-  // Handle Integrity separately for Alert (and technically should be passed to runUXAudit above for full correctness, but keeping split for alert logic preservation)
   const integrityIssue = useMemo(() => {
-      // (theoretical vs rendered)
       return auditDataIntegrity(500000, 500000); // Green
   }, []);
 
   const [uxAuditHistory, setUxAuditHistory] = useState<any[]>([]);
 
-  // ... (useEffect for history stays same) ...
-
   // Compatibility for UI display
-  // Use the new structure
   const uxAudit = [...auditResults.charts, ...auditResults.cards].flatMap(c => c.issues);
   const uxScore = auditResults.globalScore;
   
-  // ... (rest of code) ...
-
-  // ... (inside JSX) ...
   // 🛡️ DEPLOYMENT GUARD CHECK
   const isDeploymentBlocked = useMemo(() => {
-    // Re-implement guard logic locally or move logic to engine if strictly needed
-    // But for now, simple check based on new auditResults
-    const minUxScore = auditResults.globalScore; // Simplified
-    // Check integrity
+    const minUxScore = auditResults.globalScore;
     const hasCriticalBreach = integrityIssue?.severity === 'CRITICAL';
-    
-    // Deployment Guard Logic (inlined or imported if we kept the file, but file was deleted)
-    // Rule: UX < 60 or Integrity Breach = BLOCK
     if (minUxScore < 60 || hasCriticalBreach) {
         return { blocked: true, reason: hasCriticalBreach ? "DATA INTEGRITY BREACH" : "UX SCORE TOO LOW (<60)" };
     }
@@ -181,11 +218,11 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
   const [auditHistory, setAuditHistory] = useState<any[]>([]);
   useEffect(() => {
     setAuditHistory(loadUxAuditHistory());
-  }, [auditResults.globalScore]); // Reload when new audit runs
+  }, [auditResults.globalScore]);
 
 
   return (
-    <div className="flex flex-col gap-12 py-8 px-4 max-w-[1200px] mx-auto pb-40">
+    <div className="flex flex-col gap-12 py-8 px-4 w-full h-full pb-40">
       
       {/* 🛑 DEPLOYMENT PRE-FLIGHT CHECK */}
       {isDeploymentBlocked.blocked && (
@@ -199,7 +236,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
           </p>
         </div>
       )}
-      
+
       {/* 1️⃣ GLOBAL STATUS BANNER (OPS BASED) */}
       <header className="p-10 rounded-3xl border border-white/10 bg-black/40 flex items-center justify-between">
         <div className="flex items-center gap-8">
@@ -214,7 +251,6 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
         
         {/* OP DATA RAW COUNTERS & AUDIT CONTROL */}
         <div className="flex gap-8 text-center items-center">
-            {/* AUDIT BUTTON */}
             <OpsAuditControl system={system} />
 
             <div className="h-8 w-px bg-white/10 mx-2"></div>
@@ -274,7 +310,8 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                            ).toLocaleString('fr-FR')} K€
                         </span>
                      </div>
-                                          <div className="flex flex-col px-4 py-2 opacity-60">
+                     
+                     <div className="flex flex-col px-4 py-2 opacity-60">
                         <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Mois Dernier</span>
                         <span className="text-xl font-black text-white/60 tracking-tighter font-mono">
                            {Math.round(studies
@@ -282,9 +319,12 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
                                 if (!s.signed_at || ['cancelled', 'refused'].includes(s.status) || !s.total_price) return false;
                                 const d = new Date(s.signed_at);
                                 const now = new Date();
-                                const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-                                const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-                                return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+                                // Robust First Day of Month Calculation
+                                const firstDayCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
+                                const firstDayLast = new Date(firstDayCurrent);
+                                firstDayLast.setMonth(firstDayLast.getMonth() - 1);
+                                
+                                return d.getMonth() === firstDayLast.getMonth() && d.getFullYear() === firstDayLast.getFullYear();
                              })
                              .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
                            ).toLocaleString('fr-FR')} K€

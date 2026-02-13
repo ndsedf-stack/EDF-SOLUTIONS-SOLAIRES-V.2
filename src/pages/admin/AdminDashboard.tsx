@@ -36,12 +36,12 @@ const AdminDashboard: React.FC = () => {
             <aside className="w-72 border-r border-white/5 flex flex-col bg-[#050505]">
                 <div className="p-6 border-b border-white/5">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gradient-to-br from-[#f97316] to-orange-700 rounded-lg flex items-center justify-center shadow-lg shadow-orange-500/20">
-                            <span className="text-lg">⚡</span>
+                        <div className="w-8 h-8 flex items-center justify-center">
+                            <img src="/img/revenue-sentinel-logo.png" alt="Revenue Sentinel" className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
                         </div>
                         <div>
-                            <h1 className="text-sm font-black text-white tracking-widest leading-none">ADMIN</h1>
-                            <div className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">Gouvernance</div>
+                            <h1 className="text-sm font-black text-white tracking-widest leading-none">REVENUE <span className="text-orange-500">SENTINEL</span></h1>
+                            <div className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-1">Admin / Governance</div>
                         </div>
                     </div>
                 </div>

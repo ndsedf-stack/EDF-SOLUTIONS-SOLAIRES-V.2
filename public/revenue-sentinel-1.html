@@ -3,7 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoPilote Solaire - Partie 1: Problème & Solution</title>
+    <title>REVENUE SENTINEL - Partie 1: Problème & Solution</title>
+
+    <!-- SEO -->
+    <meta name="description" content="REVENUE SENTINEL : Système de Revenue Assurance pour la vente solaire. Sécurisez vos signatures et éliminez les annulations.">
+
+    <!-- Fonts preload (perf SaaS) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         /* 
@@ -15,55 +23,156 @@
            Semantic colors (Green/Red) are desaturated/darkened to blend in.
         */
         :root {
-            --bg-deep: #050505;
-            --bg-card: rgba(20, 20, 20, 0.6);
-            --border-subtle: rgba(255, 255, 255, 0.06);
-            --border-hover: rgba(255, 255, 255, 0.15);
+            /* Palette Signature IA Orange */
+            --accent: #f97316;
+            --accent-glow: rgba(249, 115, 22, 0.4);
+            --accent-soft: rgba(249, 115, 22, 0.1);
             
-            --text-main: #ffffff;
-            --text-muted: #888888;
+            /* Neutres Premium */
+            --bg-deep: #02050a;
+            --bg-card: rgba(15, 17, 21, 0.7);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(249, 115, 22, 0.2);
             
-            --accent: #f97316; /* Orange */
-            --accent-glow: rgba(249, 115, 22, 0.15);
+            /* Typo HI-END */
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Outfit', sans-serif;
             
-            /* Muted semantic colors */
-            --semantic-green: #34d399;
-            --semantic-red: #f87171;
+            /* Semantic */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --semantic-green: #10b981;
+            --semantic-red: #ef4444;
+
+            /* Spacing Scale - Base 8px (Harmonized) */
+            --space-xs: 8px;      /* 1x */
+            --space-sm: 16px;     /* 2x */
+            --space-md: 24px;     /* 3x */
+            --space-lg: 32px;     /* 4x */
+            --space-xl: 48px;     /* 6x */
+            --space-2xl: 64px;    /* 8x */
+            --space-3xl: 96px;    /* 12x */
+            --space-4xl: 128px;   /* 16x */
+
+            /* Contextual Spacing */
+            --section-padding-y: 96px;
+            --section-padding-y-mobile: 64px;
+            --grid-gap-sm: 20px;
+            --grid-gap-md: 24px;
+            --grid-gap-lg: 32px;
+            --card-padding: 32px;
+            --card-padding-mobile: 24px;
+            --timeline-item-gap: 48px;
+
+            /* Border Radius System */
+            --radius-sm: 12px;
+            --radius-md: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --radius-2xl: 32px;
+        }
+
+        @keyframes grain {
+            0%, 100% { transform:translate(0, 0) }
+            10% { transform:translate(-5%, -10%) }
+            30% { transform:translate(3%, -15%) }
+            50% { transform:translate(12%, 9%) }
+            70% { transform:translate(9%, 4%) }
+            90% { transform:translate(-10%, 10%) }
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @keyframes scrollHint {
+            0% { transform: translateY(0); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(20px); opacity: 0; }
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: var(--font-main);
             background-color: var(--bg-deep);
-            background-image: 
-                radial-gradient(circle at 50% -20%, rgba(40, 40, 40, 1) 0%, rgba(5, 5, 5, 1) 60%);
             color: var(--text-main);
-            line-height: 1.7;
+            line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
+            position: relative;
+        }
+        
+        p { line-height: 1.7; }
+        h1, h2, h3, h4 { line-height: 1.2; }
+        .subtitle { line-height: 1.5; }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: -150%;
+            left: -150%;
+            width: 400%;
+            height: 400%;
+            background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+            opacity: 0.04;
+            pointer-events: none;
+            z-index: 1000;
+            animation: grain 8s steps(10) infinite;
+        }
+
+        /* ===== CTA Sticky Conversion ===== */
+        .cta-fixed {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999;
+        }
+
+        /* CTA button enhancement */
+        .btn {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.4);
+        }
+
+        .img-premium {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8), 0 0 30px rgba(249, 115, 22, 0.1);
+            margin: 48px 0;
+            display: block;
+            background: #050505;
         }
 
         /* PREMIUM LAYOUT - 1600px */
         .container { 
-            max-width: 1600px; 
+            max-width: 1400px; 
             margin: 0 auto; 
             padding: 0 40px 140px; 
             position: relative;
+            perspective: 1000px;
         }
 
         /* Subtle Ambient Glow */
         .ambient-glow {
             position: fixed;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100vw;
-            height: 100vh;
-            background: radial-gradient(circle at 50% 30%, rgba(249, 115, 22, 0.03), transparent 50%);
-            pointer-events: none;
+            width: 60vw;
+            height: 60vw;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(100px);
             z-index: -1;
+            pointer-events: none;
+            opacity: 0.15;
+            mix-blend-mode: screen;
         }
+
+        .glow-top-right { top: -20%; right: -10%; }
+        .glow-bottom-left { bottom: -20%; left: -10%; opacity: 0.1; }
 
         nav {
             height: 100px;
@@ -75,117 +184,182 @@
             top: 0;
             background: rgba(5, 5, 5, 0.85);
             backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
             z-index: 100;
             margin: 0 -40px 60px;
             padding: 0 40px;
         }
 
-        .logo { 
-            font-family: 'Outfit', sans-serif; 
-            font-weight: 700; 
-            font-size: 1.1rem; 
-            text-transform: uppercase; 
-            letter-spacing: 0.1em; 
-            color: var(--text-main); 
-            opacity: 0.9;
-        }
-        
-        .badge {
-            padding: 6px 14px;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-subtle);
-            border-radius: 100px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            letter-spacing: 0.05em;
-        }
+        .logo { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-main); opacity: 0.9; }
+        .badge { padding: 6px 14px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-subtle); border-radius: 100px; font-size: 0.7rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.05em; }
 
-        /* ANIMATIONS */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .hero, section, .next-part {
-            animation: fadeUp 0.8s ease-out forwards;
-            opacity: 0; /* JS usually handles scroll reveal, but we'll adapt for static */
-        }
-        .hero { animation-delay: 0.1s; animation-fill-mode: forwards; }
-
-        .hero { 
-            padding: 40px 0 80px; 
-            border-bottom: 1px solid var(--border-subtle); 
-            margin-bottom: 100px; 
-        }
-
+        /* TYPO DRAMATIQUE */
         h1 { 
-            font-family: 'Outfit', sans-serif;
-            font-size: clamp(3.5rem, 6vw, 5.5rem); 
-            font-weight: 700; 
-            line-height: 1.05; 
+            font-family: var(--font-display);
+            font-size: clamp(4.5rem, 8vw, 6.5rem); 
+            font-weight: 850; 
+            line-height: 0.95; 
             margin-bottom: 32px; 
-            letter-spacing: -0.03em;
+            letter-spacing: -0.05em;
             color: var(--text-main);
+            animation: fadeInScale 1s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .accent { 
-            background: linear-gradient(135deg, #fff 30%, #999 100%); /* Monochrome metal look */
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            /* Or Keep User's subtle Orange preference */
             color: var(--accent);
-            -webkit-text-fill-color: var(--accent); 
+            text-shadow: 0 0 30px var(--accent-glow);
         }
 
         .subtitle { 
-            font-size: 1.35rem; 
+            font-size: 1.6rem; 
             color: var(--text-muted); 
             max-width: 800px; 
-            line-height: 1.6; 
+            line-height: 1.4; 
             margin-bottom: 50px; 
             font-weight: 300; 
+            letter-spacing: -0.01em;
         }
 
         .grid { display: grid; gap: 24px; margin-top: 40px; }
-        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); }
-        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
-        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(600px, 1fr)); gap: var(--space-lg); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: var(--space-md); }
+        .grid-4 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
 
-        @media (max-width: 1024px) {
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        @media (min-width: 1400px) {
+            .grid-4 { gap: 24px; }
+        }
+
+        /* Large Desktop - 1200px+ */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 1400px;
+            }
+            .grid-4 {
+                gap: 24px;
+            }
+        }
+
+        /* Tablet - 768px to 1199px */
+        @media (max-width: 1199px) and (min-width: 768px) {
+            section {
+                padding: 80px 0;
+            }
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            h1 {
+                font-size: 4rem;
+            }
+        }
+
+        /* Mobile - 767px et moins */
+        @media (max-width: 767px) {
+            .container { 
+                padding: 0 20px 60px; 
+            }
+            nav { 
+                margin: 0 -20px 32px; 
+                padding: 0 20px; 
+            }
+            section {
+                padding: 64px 0;
+            }
+            .stat-big { 
+                grid-template-columns: 1fr; 
+                gap: 24px;
+                padding: 32px;
+            }
+            .stat-number { 
+                font-size: 3.5rem; 
+            }
+            h1 { 
+                font-size: 2.5rem; 
+            }
+            h2 {
+                font-size: 2rem;
+            }
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            .next-part {
+                padding: 40px 24px;
+            }
+            .timeline {
+                padding-left: 32px;
+            }
         }
 
         .card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: 16px;
+            border-radius: var(--radius-xl);
             padding: 40px;
+            backdrop-filter: blur(20px);
             transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
         
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
         .card:hover { 
-            border-color: var(--border-hover);
-            transform: translateY(-4px); 
-            background: rgba(30, 30, 30, 0.6);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            border-color: var(--border-glow);
+            transform: translateY(-6px) scale(1.005);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.3), 0 0 20px var(--accent-glow);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card-feature {
+            padding: 36px;
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+        
+        .card-profile {
+            padding: 32px;
         }
 
         /* Subtle tinting instead of full colored borders */
         .card-orange { border-top: 1px solid rgba(249,115,22,0.3); } 
 
         h2 { 
-            font-family: 'Outfit', sans-serif; 
-            font-size: clamp(2.2rem, 4vw, 3.2rem); 
-            font-weight: 600; 
-            margin-bottom: 32px; 
-            letter-spacing: -0.02em; 
+            font-family: var(--font-display); 
+            font-size: clamp(2.5rem, 5vw, 4rem); 
+            font-weight: 800; 
+            margin-bottom: 48px; 
+            letter-spacing: -0.04em; 
             color: var(--text-main);
+            line-height: 1.1;
         }
         
-        h3 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 600; margin-bottom: 16px; color: var(--text-main); }
+        section {
+            padding: var(--space-3xl) 0;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px) scale(0.99) rotateX(-1deg);
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: blur(6px);
+            will-change: transform, opacity, filter;
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0);
+            filter: blur(0);
+        }
+        
+        h3 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 600; margin-bottom: var(--space-md); color: var(--text-main); }
         h4 { font-family: 'Outfit', sans-serif; font-size: 1.25rem; font-weight: 600; margin-bottom: 10px; color: var(--text-main); }
         
         .kicker { 
@@ -195,7 +369,7 @@
             color: var(--text-muted); 
             text-transform: uppercase; 
             letter-spacing: 0.2em; 
-            margin-bottom: 16px; 
+            margin-bottom: 20px; 
             display: inline-block;
             border: 1px solid var(--border-subtle);
             padding: 4px 10px;
@@ -205,13 +379,13 @@
         .stat-big {
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 60px;
+            gap: 48px;
             align-items: center;
             background: linear-gradient(135deg, rgba(255,255,255,0.01), transparent);
             border: 1px solid var(--border-subtle);
             border-radius: 24px;
             padding: 50px;
-            margin: 50px 0;
+            margin: var(--space-xl) 0;
         }
 
         .stat-number { 
@@ -229,15 +403,15 @@
             border-spacing: 0;
             background: transparent;
             border: 1px solid var(--border-subtle);
-            border-radius: 16px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            margin: 40px 0;
+            margin: var(--space-lg) 0;
         }
         
         thead { background: rgba(255,255,255,0.02); }
         
         th {
-            padding: 24px;
+            padding: 20px 24px;
             text-align: left;
             font-size: 0.8rem;
             font-weight: 600;
@@ -248,7 +422,7 @@
         }
         
         td {
-            padding: 24px;
+            padding: 20px 24px;
             border-bottom: 1px solid var(--border-subtle);
             color: var(--text-main);
             font-size: 1.05rem;
@@ -257,9 +431,9 @@
         tr:last-child td { border-bottom: none; }
 
         .callout {
-            padding: 32px;
-            border-radius: 12px;
-            margin: 40px 0;
+            padding: 28px 32px;
+            border-radius: var(--radius-md);
+            margin: var(--space-lg) 0;
             border-left: 2px solid;
             font-size: 1.1rem;
             background: linear-gradient(90deg, rgba(255,255,255,0.02), transparent);
@@ -267,13 +441,13 @@
 
         /* Desaturated alerts to keep the "3 colors max" vibe */
         .callout-warning { border-color: var(--semantic-red); color: #e5e5e5; }
-        .callout-info { border-color: var(--accent); color: #e5e5e5; }
+        .callout-info { border-color: var(--accent); color: #e5e5e5; margin-top: 32px; margin-bottom: 0; }
         .callout-success { border-color: var(--semantic-green); color: #e5e5e5; }
 
         .timeline {
             position: relative;
             padding-left: 50px;
-            margin: 60px 0;
+            margin: var(--space-xl) 0;
         }
         
         .timeline::before {
@@ -288,7 +462,10 @@
         
         .timeline-item {
             position: relative;
-            margin-bottom: 60px;
+            margin-bottom: var(--space-xl);
+        }
+        .timeline-item:last-child {
+            margin-bottom: 0;
         }
         
         .timeline-item::before {
@@ -332,10 +509,10 @@
         .next-part {
             background: radial-gradient(circle at 50% 150%, rgba(249,115,22,0.1), transparent 70%);
             border: 1px solid var(--border-subtle);
-            border-radius: 24px;
-            padding: 80px;
+            border-radius: var(--radius-xl);
+            padding: var(--space-2xl);
             text-align: center;
-            margin-top: 120px;
+            margin-top: var(--space-2xl);
         }
         
         .btn {
@@ -360,7 +537,42 @@
         .btn:hover { 
             background: #e5e5e5; 
             transform: scale(1.02);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 0 20px var(--accent-glow); 
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            opacity: 0.6;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
+
+        .scroll-indicator .mouse {
+            width: 26px;
+            height: 42px;
+            border: 2px solid var(--text-muted);
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .scroll-indicator .wheel {
+            width: 4px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 2px;
+            position: absolute;
+            left: 50%;
+            margin-left: -2px;
+            top: 8px;
+            animation: scrollHint 2s infinite;
         }
 
         @media (max-width: 900px) {
@@ -373,20 +585,34 @@
     </style>
 </head>
 <body>
-    <div class="ambient-glow"></div>
+    <div class="ambient-glow glow-top-right"></div>
+    <div class="ambient-glow glow-bottom-left"></div>
     <div class="container">
         <nav>
-            <div class="logo">⚡ AutoPilote Solaire</div>
+            <div class="logo">⚡ REVENUE SENTINEL</div>
             <div class="badge">DOCUMENT CONFIDENTIEL</div>
         </nav>
 
-        <header class="hero">
+        <header class="hero" style="position: relative; overflow: visible;">
+            <!-- SIGNATURE HALO -->
+            <div style="position: absolute; top: 10%; left: 50%; transform: translateX(-50%); width: 100%; height: 100%; background: radial-gradient(circle, var(--accent-soft) 0%, transparent 60%); z-index: -1; filter: blur(60px); opacity: 0.8;"></div>
+            
             <div class="kicker">Diagnostic & Solution</div>
-            <h1>AutoPilote <span class="accent">Solaire</span></h1>
+            <h1>REVENUE <span class="accent">SENTINEL</span></h1>
             <p class="subtitle">
                 Le système d'intelligence décisionnelle qui protège votre chiffre d'affaires, 
                 élimine les annulations et optimise le temps commercial dans la vente complexe.
             </p>
+
+            <div style="margin-bottom: 40px; display: flex; align-items: center; gap: 20px;">
+                <div style="height: 1px; flex: 1; background: linear-gradient(90deg, transparent, var(--border-subtle));"></div>
+                <p style="opacity: .5; font-size: .85rem; text-transform: uppercase; letter-spacing: 0.2em;">
+                    Revenue Assurance pour Vente Directe
+                </p>
+                <div style="height: 1px; flex: 1; background: linear-gradient(90deg, var(--border-subtle), transparent);"></div>
+            </div>
+
+            <img src="img/autopilote-hero.png" alt="AutoPilote Dashboard Analysis" class="img-premium">
 
             <div class="grid grid-3">
                 <div class="card">
@@ -398,64 +624,49 @@
                     <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Annulations</div>
                 </div>
                 <div class="card">
-                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--accent); line-height: 1;">1h</div>
-                    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Gagnées/Jour</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; color: var(--accent); line-height: 1;">+2h/j</div>
+                    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">Temps Commercial</div>
                 </div>
+            </div>
+            <div class="scroll-indicator">
+                <div class="mouse">
+                    <div class="wheel"></div>
+                </div>
+                <span>ANALYSE</span>
             </div>
         </header>
 
-        <!-- SECTION 1: PROBLÈME -->
-        <section>
-            <div class="kicker">01 — Diagnostic</div>
-            <h2>Le Problème Structurel des Entreprises de Vente Complexe</h2>
+        <section class="reveal">
+            <div class="kicker">01 — Diagnostique</div>
+            <h2>Le "Système de Perte" Par Défaut</h2>
             <p style="color: var(--text-muted); margin-bottom: 32px; font-size: 1.1rem; max-width: 800px;">
-                Dans les cycles de vente complexes B2B, les pertes de chiffre d'affaires ne résultent pas 
-                d'un manque d'effort commercial, mais d'erreurs systémiques de timing d'intervention.
+                Un audit sur 50 entreprises solaires révèle que la majorité des pertes ne viennent pas de "mauvais leads" 
+                mais d'une absence de sécurisation post-contact.
             </p>
-
-            <div class="stat-big">
-                <div>
-                    <div class="stat-number">72%</div>
-                    <div style="color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 8px;">Zone de Danger</div>
-                </div>
-                <div>
-                    <h3>La Fenêtre Critique de 5 Jours</h3>
-                    <p style="color: var(--text-muted); font-size: 1.1rem;">
-                        <strong style="color: var(--text-main);">72% des projets non aboutis</strong> s'enlisent 
-                        dans les 5 jours suivant la signature. Cette période représente le volume maximal de 
-                        dépenses d'acquisition perdues.
-                    </p>
-                </div>
-            </div>
 
             <table>
                 <thead>
                     <tr>
-                        <th>Métrique Critique</th>
-                        <th>Impact Financier</th>
+                        <th>Phase</th>
+                        <th>Réalité Terrain</th>
                         <th>Source</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Annulations post-signature</strong></td>
-                        <td>15-34% du CA signé</td>
-                        <td>Gartner 2024 (B2B complexe)</td>
+                        <td><strong>Closing (1er RDV)</strong></td>
+                        <td>Seulement 8% de closing 'One Shot' (vs 30% espéré)</td>
+                        <td>HubSpot Sales Data 2024</td>
                     </tr>
                     <tr>
-                        <td><strong>Leads qualifiés non convertis</strong></td>
-                        <td>18-27% de perte sur pipeline</td>
-                        <td>HBR Sales Benchmark 2024</td>
+                        <td><strong>Leads "Tièdes"</strong></td>
+                        <td>65% des leads ne sont jamais relancés après J+3</td>
+                        <td>Audit Interne 2024</td>
                     </tr>
-                    <tr>
-                        <td><strong>Coût moyen annulation (10-30k€)</strong></td>
-                        <td>14 200€ par contrat annulé</td>
-                        <td>CAC + temps commercial perdu</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Taux annulation solaire</strong></td>
-                        <td>51% des projets signés</td>
-                        <td>NREL (National Renewable Energy Lab)</td>
+                    <tr style="background: rgba(239, 68, 68, 0.05); border-left: 2px solid var(--semantic-red);">
+                        <td><strong>Annulation</strong></td>
+                        <td>51% des projets signés sont annulés sous 14 jours</td>
+                        <td>Moyenne Panéliste (Isolation/Solaire)</td>
                     </tr>
                 </tbody>
             </table>
@@ -492,7 +703,7 @@
         </section>
 
         <!-- SECTION 2: LA SOLUTION -->
-        <section>
+        <section class="reveal">
             <div class="kicker">02 — Architecture</div>
             <h2>La Solution : 6 Leviers Simultanés</h2>
             <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 1.1rem;">
@@ -532,7 +743,7 @@
                 </div>
 
                 <div class="card card-orange">
-                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">大脑</div> <!-- Using plain text emoji fallback if icon fails -->
+                    <div style="font-size: 2rem; margin-bottom: 16px; opacity: 0.8;">🧠</div>
                     <h4>4. The Brain</h4>
                     <p style="color: var(--text-muted); margin-bottom: 16px; font-size: 0.95rem;">
                         Intelligence décisionnelle calculant Danger Score, Score d'engagement et 
@@ -569,7 +780,7 @@
         </section>
 
         <!-- SECTION 3: MÉTHODOLOGIE NET CLOSE -->
-        <section>
+        <section class="reveal">
             <div class="kicker">03 — Méthodologie</div>
             <h2>L'Art du "Net" Close — Protocole en 6 Phases</h2>
             <p style="color: var(--text-muted); margin-bottom: 32px; max-width: 800px; font-size: 1.1rem;">
@@ -603,7 +814,7 @@
                 par le client. La signature devient une formalité administrative, non un combat de volontés.
             </div>
 
-            <h3 style="margin-top: 60px; margin-bottom: 32px;">Les 6 Phases du Protocole</h3>
+            <h3 style="margin-top: 48px; margin-bottom: 24px;">Les 6 Phases du Protocole</h3>
             <div class="timeline">
                 <div class="timeline-item">
                     <div class="phase">Phase 01</div>
@@ -659,9 +870,9 @@
                 </div>
             </div>
 
-            <h3 style="margin-top: 60px; margin-bottom: 24px;">Les 4 Profils Cognitifs</h3>
+            <h3 style="margin-top: 48px; margin-bottom: 28px;">Les 4 Profils Cognitifs</h3>
             <div class="grid grid-4">
-                <div class="card">
+                <div class="card card-profile">
                     <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">🛡️</div>
                     <h4>LE SENIOR</h4>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">
@@ -670,7 +881,7 @@
                     </p>
                 </div>
 
-                <div class="card">
+                <div class="card card-profile">
                     <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">💰</div>
                     <h4>LE BANQUIER</h4>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">
@@ -679,7 +890,7 @@
                     </p>
                 </div>
 
-                <div class="card">
+                <div class="card card-profile">
                     <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">✅</div>
                     <h4>LE STANDARD</h4>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">
@@ -688,7 +899,7 @@
                     </p>
                 </div>
 
-                <div class="card">
+                <div class="card card-profile">
                     <div style="font-size: 2rem; margin-bottom: 12px; opacity: 0.7;">🔄</div>
                     <h4>L'HYBRIDE</h4>
                     <p style="color: var(--text-muted); font-size: 0.9rem;">
@@ -698,9 +909,9 @@
                 </div>
             </div>
 
-            <h3 style="margin-top: 60px; margin-bottom: 24px;">Stratégie Protection CA</h3>
+            <h3 style="margin-top: 48px; margin-bottom: 24px;">Stratégie Protection CA</h3>
             <div class="grid grid-2">
-                <div class="card">
+                <div class="card card-profile">
                     <h4>Pré-signature</h4>
                     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px; color: var(--text-muted); font-size: 0.95rem;">
                         <div>✓ Présenter <strong style="color: var(--text-main);">98% de garanties institutionnelles</strong> avant prix</div>
@@ -709,7 +920,7 @@
                     </div>
                 </div>
 
-                <div class="card">
+                <div class="card card-profile">
                     <h4>Post-approbation</h4>
                     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px; color: var(--text-muted); font-size: 0.95rem;">
                         <div>⚠️ 20% des projets échouent après approbation</div>
@@ -722,7 +933,7 @@
 
         <!-- NEXT PART CTA -->
         <div class="next-part">
-            <h2 style="margin-bottom: 16px;">Suite dans la Partie 2</h2>
+            <h2 style="margin-bottom: 20px;">Suite dans la Partie 2</h2>
             <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 32px;">
                 📋 Architecture Système Complète (5 Phases)<br>
                 💰 ROI Détaillé & Cas Client Concret<br>
@@ -734,7 +945,7 @@
             </div>
         </div>
 
-        <footer style="border-top: 1px solid var(--border-subtle); padding: 60px 0; margin-top: 120px; text-align: center; color: var(--text-muted);">
+        <footer style="border-top: 1px solid var(--border-subtle); padding: 48px 0; margin-top: 80px; text-align: center; color: var(--text-muted);">
             <div style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-main); font-size: 1rem; margin-bottom: 8px;">
                 ⚡ AUTOPILOTE SOLAIRE
             </div>
@@ -742,16 +953,35 @@
         </footer>
     </div>
 
-    <!-- TRACKING SCRIPT -->
+    <!-- CTA Sticky -->
+    <div class="cta-fixed">
+        <a href="mailto:contact@autopilote-solaire.fr" class="btn" style="background: var(--accent); color: white; padding: 16px 24px; text-decoration: none; font-weight: 700; border-radius: 12px; display: block; text-align: center;">
+            → Voir si je perds du CA
+        </a>
+    </div>
+
+    <!-- TRACKING & ANIMATION SCRIPT -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Intersection Observer for Reveal animations
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+        // Supabase Tracking
         const supabaseUrl = 'https://ugwqfvwclwctzgtxcakp.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE';
         const DEMO_STUDY_ID = 'bbc7c2fd-0b75-43f9-9f11-99d919383387';
         const { createClient } = window.supabase || window.supa || { createClient: () => ({ from: () => ({ insert: () => ({ error: 'No lib' }) }) }) };
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        const supabaseClient = createClient(supabaseUrl, supabaseKey);
         async function trackView() {
-            try { await supabase.from('tracking_events').insert({ study_id: DEMO_STUDY_ID, event_type: 'view', meta: { page: 'AutoPilote Partie 1' } }); } catch (e) {}
+            try { await supabaseClient.from('tracking_events').insert({ study_id: DEMO_STUDY_ID, event_type: 'view' }); } catch (e) {}
         }
         trackView();
     </script>

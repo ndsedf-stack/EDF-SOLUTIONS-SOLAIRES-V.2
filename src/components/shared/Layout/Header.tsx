@@ -18,6 +18,8 @@ interface HeaderProps {
   unsubscribeRate?: number;
   activeSection: "dashboard" | "cockpit" | "leads" | "war_room" | "pilotage" | "registry" | "sales" | "roi";
   setActiveSection: (section: "dashboard" | "cockpit" | "leads" | "war_room" | "pilotage" | "registry" | "sales" | "roi") => void;
+  globalDateFilter?: 'current_month' | 'all_time'; // Optional to avoid breaking tests/other uses
+  onSetDateFilter?: (filter: 'current_month' | 'all_time') => void;
 }
 
 // ✅ NavButton Component
@@ -58,6 +60,8 @@ export const Header: React.FC<HeaderProps> = ({
   unsubscribeRate = 0,
   activeSection,
   setActiveSection,
+  globalDateFilter = 'current_month', // Default safe
+  onSetDateFilter
 }) => {
   const conversionRate =
     totalClients > 0 ? Math.round((signedClients / totalClients) * 100) : 0;
@@ -72,22 +76,23 @@ export const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
 
   return (
-    <header className="fixed top-4 left-4 right-4 z-50">
-      <div className="glass-panel rounded-2xl px-2 md:px-4 py-2 border border-white/10 shadow-2xl relative overflow-hidden h-16 grid grid-cols-[auto_1fr_auto] md:grid-cols-[1.2fr_auto_1fr] items-center gap-2 md:gap-4">
+    <header className="fixed top-2 left-2 right-2 z-50">
+      <div className="glass-panel rounded-2xl px-2 md:px-4 h-14 border border-white/10 shadow-2xl relative overflow-visible flex items-center justify-between gap-4 bg-[#050505]/95">
         {/* Glow effect */}
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
         
         {/* SLOT LEFT: BRAND & VITAL METRICS */}
-        <div className="flex items-center gap-4 overflow-hidden">
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 ring-1 ring-white/10">
-              <span className="text-xl">⚡</span>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            {/* LOGO REVENUE SENTINEL - NEW SHIELD BADGE */}
+            <div className="w-14 h-14 flex items-center justify-center -my-2 drop-shadow-[0_0_15px_rgba(59,130,246,0.2)]">
+               <img src="/img/revenue-sentinel-logo.png" alt="Revenue Sentinel" className="w-full h-full object-contain transform hover:scale-110 transition-transform duration-300" />
             </div>
-            <div className="hidden xl:block">
-              <h1 className="text-base font-black text-white tracking-widest leading-none">
-                AUTOPILOTE <span className="text-blue-400">SOLAIRE</span>
+            <div className="hidden xl:block ml-1">
+              <h1 className="text-base font-black text-white tracking-widest leading-none whitespace-nowrap">
+                REVENUE <span className="text-blue-400">SENTINEL</span>
               </h1>
-              <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight mt-1 truncate">
+              <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight mt-0.5 truncate">
                 Clients: {totalClients} <span className="mx-0.5 opacity-30">•</span> Dossiers: {totalStudies}
               </div>
             </div>
@@ -96,30 +101,31 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="hidden lg:flex items-center gap-3 pl-4 border-l border-white/5 overflow-hidden whitespace-nowrap">
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-black text-white">{conversionRate}%</span>
-                <div className="w-8 h-1 bg-white/5 rounded-full overflow-hidden">
+                <span className="text-xs font-black text-white">{conversionRate}%</span>
+                <div className="w-6 h-1 bg-white/5 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500" style={{ width: `${conversionRate}%` }} />
                 </div>
               </div>
             </div>
             
             <div className="flex flex-col">
-              <span className="text-[9px] text-emerald-500/70 font-black uppercase leading-none">Signés</span>
-              <span className="text-sm font-black text-emerald-400">{signedClients}</span>
+              <span className="text-[8px] text-emerald-500/70 font-black uppercase leading-none">Signés</span>
+              <span className="text-xs font-black text-emerald-400">{signedClients}</span>
             </div>
 
             <div className="flex flex-col">
-              <span className="text-[9px] text-red-500/70 font-black uppercase leading-none">Désab.</span>
+              <span className="text-[8px] text-red-500/70 font-black uppercase leading-none">Désab.</span>
               <div className="flex items-baseline gap-1">
-                <span className="text-sm font-black text-red-400">{unsubscribedCount}</span>
+                <span className="text-xs font-black text-red-400">{unsubscribedCount}</span>
                 <span className="text-[8px] text-red-500/40 font-bold">{unsubscribeRate.toFixed(0)}%</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-center px-0 md:px-2 overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-md">
+        {/* CENTER NAV - COMPACT */}
+        <div className="flex justify-center flex-1 min-w-0 overflow-x-auto no-scrollbar px-2">
+            <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5 shadow-inner backdrop-blur-md whitespace-nowrap">
                <NavButton active={activeSection === "cockpit" || activeSection === "dashboard"} onClick={() => setActiveSection("cockpit")} icon="🛰️" label="Cockpit" />
                <NavButton active={activeSection === "war_room"} onClick={() => setActiveSection("war_room")} icon="⚔️" label="War Room" />
                <NavButton active={activeSection === "pilotage"} onClick={() => setActiveSection("pilotage")} icon="🧭" label="Pilotage" />
@@ -129,57 +135,72 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
         </div>
 
-        {/* SLOT RIGHT: SYSTEM TOOLS & USER */}
-        <div className="flex items-center justify-end gap-2">
-          {lastRefresh && (
-            <div className="hidden min-[1600px]:flex items-center gap-2 px-2 py-1 rounded-lg bg-black/20 border border-white/5 whitespace-nowrap">
+          {/* SYSTEM TOOLS - RIGHT (Condensed) */}
+          <div className="flex items-center justify-end gap-2 flex-shrink-0">
+           {lastRefresh && (
+            <div className="hidden 2xl:flex items-center gap-2 px-2 py-1 rounded-lg bg-black/20 border border-white/5 whitespace-nowrap">
               <div className={`w-1.5 h-1.5 rounded-full ${statusColors[systemStatus] || statusColors.normal}`} />
               <div className="text-[9px] text-slate-500 font-mono font-bold">
-                SYNC: {lastRefresh.toLocaleTimeString("fr-FR")}
+                {lastRefresh.toLocaleTimeString("fr-FR", {hour: '2-digit', minute:'2-digit'})}
               </div>
             </div>
           )}
 
-          <button
-            onClick={onRefresh}
-            className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-all active:scale-95 group border border-white/5"
-          >
-            <span className="text-xs group-hover:rotate-180 transition-transform duration-700">🔄</span>
-          </button>
+          {/* DATE FILTER */}
+          <div className="hidden md:flex bg-black/40 p-0.5 rounded-lg border border-white/10">
+              <button
+                onClick={() => onSetDateFilter?.("current_month")}
+                className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
+                  globalDateFilter === "current_month" 
+                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Mois
+              </button>
+              <button
+                onClick={() => onSetDateFilter?.("all_time")}
+                className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
+                  globalDateFilter === "all_time" 
+                    ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20" 
+                    : "text-slate-500 hover:text-slate-300"
+                }`}
+              >
+                Tout
+              </button>
+          </div>
 
-          <div className="h-4 w-px bg-white/10 mx-1"></div>
+          <div className="hidden sm:block h-4 w-px bg-white/10 mx-1"></div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1">
             <button
               onClick={onTogglePriorityMode}
-              className={`h-8 px-2.5 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              className={`h-7 px-2 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                 priorityMode
                   ? "bg-orange-600 text-white shadow-lg shadow-orange-600/20"
                   : "bg-white/5 text-slate-500 hover:text-slate-300"
               }`}
             >
               <span>🔥</span>
-              <span className="hidden sm:inline">Priorité</span>
             </button>
 
             <button
               onClick={onToggleZenMode}
-              className={`h-8 px-2.5 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1.5 ${
+              className={`h-7 px-2 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all flex items-center gap-1.5 ${
                 zenMode
                   ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20"
                   : "bg-white/5 text-slate-500 hover:text-slate-300"
               }`}
             >
               <span>🧘</span>
-              <span className="hidden sm:inline">Zen</span>
             </button>
           </div>
 
           <button 
             onClick={() => navigate('/admin')}
-            className="w-auto h-8 px-3 rounded-full border border-white/10 flex items-center justify-center bg-slate-900 ml-1 flex-shrink-0 hover:bg-slate-800 hover:border-orange-500/50 hover:text-orange-500 transition-all cursor-pointer group"
+            className="w-auto h-7 px-2 rounded-full border border-white/10 flex items-center justify-center bg-slate-900 ml-1 hover:bg-slate-800 hover:border-orange-500/50 hover:text-orange-500 transition-all cursor-pointer group"
           >
-             <span className="text-[10px] font-black text-slate-400 group-hover:text-orange-500 transition-colors">ADMIN</span>
+             <span className="text-[9px] font-black text-slate-400 group-hover:text-orange-500 transition-colors">ADMIN</span>
           </button>
         </div>
       </div>

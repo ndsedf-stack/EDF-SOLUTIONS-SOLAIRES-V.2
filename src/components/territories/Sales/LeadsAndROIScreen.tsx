@@ -81,7 +81,7 @@ export function LeadsAndROIScreen({ system }: LeadsAndROIScreenProps) {
   }, [studies]);
 
   return (
-    <div className="flex flex-col gap-8 py-12 px-6 max-w-[1400px] mx-auto pb-40">
+    <div className="flex flex-col gap-8 py-12 px-6 w-full h-full pb-40">
       <ConversionProtectionModuleFinal
         data={graphData}
         securedRevenue={caProtected}

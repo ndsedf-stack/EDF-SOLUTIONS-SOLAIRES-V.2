@@ -168,7 +168,7 @@ export function SalesActivityScreen({ system }: SalesActivityScreenProps) {
   }, [uniqueStudies]);
 
   return (
-    <div className="flex flex-col gap-12 py-12 px-8 max-w-[1400px] mx-auto pb-40">
+    <div className="flex flex-col gap-12 py-12 px-8 w-full h-full pb-40">
       
       {/* 🚀 EXECUTIVE SUMMARY BRUTAL */}
       <section className="bg-[#0F1115] p-10 rounded-3xl border border-white/[0.08] shadow-[0_20px_50px_rgba(0,0,0,0.5)]">

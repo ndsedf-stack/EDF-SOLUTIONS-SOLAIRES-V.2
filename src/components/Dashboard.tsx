@@ -9,6 +9,7 @@ import React, {
 import { useSystemBrain } from "@/brain/useSystemBrain";
 import { Metrics, DashboardFilters, Study, EmailLead } from "@/brain/types";
 import { calculateSystemMetrics } from "@/brain/intelligence/stats";
+import { buildSystemBrain } from "@/brain/Engine";
 
 // ✅ CORE COMPONENTS
 // ✅ TERRITORIES
@@ -142,7 +143,7 @@ export default function Dashboard() {
       studyName: name,
       actionType: "delete",
       onConfirm: async (reason) => {
-        await cancelStudy(id, name);
+        await cancelStudy(id, name, reason); // ✅ Pass Reason to Brain
         setOverrideModal((prev) => ({ ...prev, isOpen: false }));
       },
     });
@@ -190,15 +191,68 @@ export default function Dashboard() {
 
 
 
+  // ============================================
+  // GLOBAL DATE FILTER (NEW 🔥)
+  // ============================================
+  const [globalDateFilter, setGlobalDateFilter] = useState<'current_month' | 'all_time'>('current_month');
+
+  // Filter Logic wrapped in useMemo to prevent unnecessary rebuilds
+  const { filteredStudies, filteredLeads, filteredMetrics, filteredFinancialStats } = useMemo(() => {
+    // 1. Pass-through if "all_time"
+    if (globalDateFilter === 'all_time') {
+      return { 
+        filteredStudies: studies, 
+        filteredLeads: leads, 
+        filteredMetrics: metrics, 
+        filteredFinancialStats: financialStats 
+      };
+    }
+
+    // 2. Filter for "current_month"
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const isCurrentMonth = (dateStr?: string | null) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    };
+
+    // Filter Studies (Created OR Signed OR Paid in current month - Activity based)
+    // STRICT REQUEST: "Dossiers du mois en cours" => Created At OR Signed At to capture new business closed this month from old leads.
+    const fStudies = studies.filter(s => 
+      isCurrentMonth(s.created_at) || 
+      (s.signed_at && isCurrentMonth(s.signed_at)) || 
+      (s.deposit_paid_at && isCurrentMonth(s.deposit_paid_at))
+    );
+
+    // Filter Leads (Created this month)
+    const fLeads = leads.filter(l => isCurrentMonth(l.created_at));
+
+    // 3. Re-calculate Brain (Metrics & Financials)
+    // We import buildSystemBrain to get consistent stats
+    const newBrain = buildSystemBrain(fStudies);
+
+    return {
+      filteredStudies: fStudies,
+      filteredLeads: fLeads,
+      filteredMetrics: newBrain,
+      filteredFinancialStats: newBrain.financialStats
+    };
+  }, [studies, leads, metrics, financialStats, globalDateFilter]);
+
+
   // ✅ CORRECTION MAJEURE :
   // 1. On utilise useMemo pour ne pas recalculer à chaque milliseconde (Performance)
   // 2. On connecte les VRAIS agents via 'actions'
+  // 3. On passe les DONNÉES FILTRÉES au système
   const systemSnapshot = useMemo(() => ({
-      studies, 
-      emailLeads: leads, 
+      studies: filteredStudies, 
+      emailLeads: filteredLeads, 
       logs, 
-      metrics, 
-      financialStats, 
+      metrics: filteredMetrics, 
+      financialStats: filteredFinancialStats, 
       loading, 
       systemInitialized: true,
       loadingProgress: 100, 
@@ -207,7 +261,7 @@ export default function Dashboard() {
       emailFlowByClient, 
       antiAnnulationByStudy, 
       postRefusByStudy, 
-      trafficData,
+      trafficData, // Traffic data is complex to filter day-by-day, keeping as is for trend context or TODO: filter trafficData needs deep dive
       zenMode, 
       setActiveSection, 
       
@@ -233,7 +287,7 @@ export default function Dashboard() {
       }
   }), [
     // Dépendances critiques pour le re-render
-    studies, leads, logs, metrics, financialStats, loading, 
+    filteredStudies, filteredLeads, logs, filteredMetrics, filteredFinancialStats, loading, 
     emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData, 
     zenMode, refresh, logForceAction
   ]);
@@ -271,6 +325,8 @@ export default function Dashboard() {
         totalStudies={systemMetrics.totalStudies}
         totalClients={systemMetrics.totalStudies}
         signedClients={systemMetrics.signedStudies}
+        globalDateFilter={globalDateFilter}
+        onSetDateFilter={setGlobalDateFilter}
       />
 
       <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-12 mt-20">

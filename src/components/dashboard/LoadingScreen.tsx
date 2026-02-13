@@ -38,16 +38,20 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
       <div className="relative z-10 flex flex-col items-center gap-10 p-12 w-full max-w-3xl">
         {/* Logo Container */}
         <div className="relative">
-          <div className="w-32 h-32 glass-panel rounded-3xl flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.3)]">
-            <span className="text-6xl filter drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">⚡</span>
+          <div className="w-32 h-32 glass-panel rounded-3xl flex items-center justify-center shadow-[0_0_40px_rgba(59,130,246,0.3)] bg-black/40 border border-white/10">
+            <img 
+               src="/img/revenue-sentinel-logo.png" 
+               alt="Revenue Sentinel" 
+               className="w-20 h-20 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.8)] animate-pulse-slow" 
+            />
           </div>
           <div className="absolute inset-0 rounded-3xl border border-blue-500/30 animate-ping" style={{animationDuration: '3s'}}></div>
         </div>
 
         {/* Titre */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-black text-white tracking-tight neon-text-blue">
-            AUTOPILOTE SOLAIRE
+          <h1 className="text-4xl font-black text-white tracking-tight neon-text-blue flex items-center gap-3">
+             REVENUE <span className="text-blue-500">SENTINEL</span>
           </h1>
           <div className="text-sm text-slate-400 uppercase tracking-[0.3em] font-mono">
             Initialisation du Système

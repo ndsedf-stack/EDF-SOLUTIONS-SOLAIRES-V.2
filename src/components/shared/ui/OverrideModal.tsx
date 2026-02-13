@@ -92,11 +92,12 @@ export const OverrideModal: React.FC<OverrideModalProps> = ({
 
   // ✅ NOUVEAU : Templates de justification
   const templates = [
-    "Contact téléphonique confirmé",
-    "Accord oral en attente",
-    "Erreur de tracking connue",
-    "Client en déplacement",
-    "Paiement en cours de validation",
+    "Trop cher / Budget",
+    "Raison Technique / Toiture",
+    "Concurrent moins cher",
+    "Refus Client / Ne répond plus",
+    "Projet Abandonné",
+    "Erreur de saisie / Doublon"
   ];
   const handleConfirm = async () => {
     if (!reason.trim()) {

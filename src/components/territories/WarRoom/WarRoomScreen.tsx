@@ -72,13 +72,34 @@ export function WarRoomScreen({ system }: WarRoomScreenProps) {
   const toWakeUpStudies = useMemo(() => axeBStudies.filter((s: any) => s.behavioralState === 'MUET' && s.diffDays < 7), [axeBStudies]);
   const toStopStudies = useMemo(() => axeBStudies.filter((s: any) => s.behavioralState === 'FATIGUE'), [axeBStudies]);
 
-  const axeCLeads = useMemo(() => (system.emailLeads || []).filter((l: any) => !l.study_id), [system.emailLeads]);
+  // AXE C: HYBRID LOGIC (Email Leads + New Studies)
+  // "ACQUISITION CONTROL" : On veut attraper tout ce qui est NOUVEAU et pas encore traité.
+  const axeCLeads = useMemo(() => {
+     const rawEmailLeads = (system.emailLeads || []).filter((l: any) => !l.study_id);
+     
+     // On ajoute les dossiers "Nouveaux" (Saisie manuelle ou API) qui ne sont pas encore partis en "Sent"
+     const newStudies = (studies || []).filter((s: any) => s.status === 'new' || s.status === 'lead');
+     
+     // On normalise les dossiers en format "Lead" pour l'affichage
+     const normalizedStudies = newStudies.map((s: any) => ({
+        id: s.id,
+        client_name: s.client_name || s.name || 'Prospect',
+        client_email: s.client_email || s.email || 'Pas d\'email',
+        total_clicks: 1, // On considère qu'un dossier créé est un engagement fort (équivalent clic)
+        total_opens: 0,
+        last_clicked_at: s.created_at, // Date de création = Date d'intérêt
+        is_study_proxy: true // Flag pour debugging ou UI spécifique si besoin
+     }));
+
+     return [...rawEmailLeads, ...normalizedStudies];
+  }, [system.emailLeads, studies]);
+
   const toCallLeads = useMemo(() => axeCLeads.filter((l: any) => l.total_clicks >= 1), [axeCLeads]);
   const toObserveLeads = useMemo(() => axeCLeads.filter((l: any) => l.total_clicks === 0 && l.total_opens >= 1), [axeCLeads]);
   const toDropLeads = useMemo(() => axeCLeads.filter((l: any) => l.total_clicks === 0 && l.total_opens === 0), [axeCLeads]);
 
   return (
-    <div className="flex flex-col gap-12 py-8 px-4 max-w-[1400px] mx-auto pb-40">
+    <div className="flex flex-col gap-12 py-8 px-4 w-full h-full pb-40">
       
       <header className="flex flex-col gap-1">
          <h1 className="text-3xl font-black text-slate-100 tracking-tight uppercase">War Room Operations</h1>

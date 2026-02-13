@@ -3,6 +3,7 @@ import { FinancialVerdictBar } from './sections/FinancialVerdictBar';
 import { ClientDriftVisxRefined } from './sections/ClientDriftVisxRefined';
 import { PipelineMomentum } from './screens/PipelineMomentum';
 import { RevenueProjectionVisx } from './sections/RevenueProjectionVisx';
+import { CancellationInsights } from './sections/CancellationInsights';
 
 interface PilotageScreenProps {
   system: any;
@@ -21,36 +22,35 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
   // 2. DATA S02: CLIENT DRIFT (REAL DATA: "Lead Freshness")
   // Analyse de la fraîcheur : Quand a eu lieu la dernière interaction ?
   const driftData = useMemo(() => {
-    if (!emailLeads || emailLeads.length === 0) return Array.from({ length: 15 }).map((_, i) => ({ day: i, activeRate: 0 }));
+    // FALLBACK: Si pas de leads, on regarde les dossiers
+    const sourceData = (emailLeads && emailLeads.length > 0) ? emailLeads : studies; 
+
+    if (!sourceData || sourceData.length === 0) return Array.from({ length: 15 }).map((_, i) => ({ day: i, activeRate: 0 }));
 
     const now = new Date();
     // Distribution des jours depuis la dernière activité
     const inactivityDistribution = new Array(15).fill(0);
     
-    emailLeads.forEach((lead: any) => {
-      const lastInteraction = [lead.last_opened_at, lead.last_clicked_at, lead.created_at]
-        .filter(Boolean)
-        .map(d => new Date(d))
-        .sort((a, b) => b.getTime() - a.getTime())[0]; // Plus récent
+    sourceData.forEach((item: any) => {
+      // Compatibility: Handle both Leak and Study objects
+      const lastInteractionDate = item.last_opened_at || item.last_clicked_at || item.updated_at || item.created_at;
       
-      if (lastInteraction) {
-        const diffDays = Math.floor((now.getTime() - lastInteraction.getTime()) / (1000 * 3600 * 24));
-        if (diffDays < 15) inactivityDistribution[diffDays]++;
+      if (lastInteractionDate) {
+        const d = new Date(lastInteractionDate);
+        const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 3600 * 24));
+        if (diffDays < 15 && diffDays >= 0) inactivityDistribution[diffDays]++;
       }
     });
 
-    const total = emailLeads.length;
+    const total = sourceData.length;
     // On convertit en "Pourcentage encore actif à J+X" (Courbe de survie simulée)
     // Ici on simplifie : on montre le % de leads ayant eu une activité il y a exactement X jours
-    // Pour matcher visuellement une courbe de drift, on peut afficher "Combien sont 'frais' (activité <= X jours)"
-    // Ou simplement la distribution brute. L'utilisateur veut "bonne data".
-    // La distribution brute est plus honnête : "Volume d'activité par récence".
     
     return inactivityDistribution.map((count, i) => ({
       day: i,
       activeRate: Math.round((count / total) * 100), // % du parc ayant interagi il y a i jours
     }));
-  }, [emailLeads]);
+  }, [emailLeads, studies]);
 
    // 3. DATA S03: PIPELINE MOMENTUM (DEDUPLICATED BY EMAIL)
    const pipelineData = useMemo(() => {
@@ -92,8 +92,13 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
        s.deposit_paid || s.financing_mode === 'full_financing'
      ).length;
 
+     // HYBRID LEAD COUNT: If emailLeads is empty, we assume leads = visited (Manual Entry mode)
+     // This prevents the "0 Leads" bug when data is inserted directly as studies.
+     const rawLeadsCount = emailLeads?.length || 0;
+     const adjustedLeadsCount = Math.max(rawLeadsCount, visitedCount);
+
      return {
-       leads: emailLeads?.length || 0,
+       leads: adjustedLeadsCount,
        visited: visitedCount,
        signed: signedCount,
        waitingSignatureStudies,
@@ -104,13 +109,22 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
    }, [emailLeads, studies, financialStats]);
 
    // 4. DATA S04: REVENUE PROJECTION (REAL DATA: Cash + Pipeline Probabilisé)
-  const projectionData = useMemo(() => {
+  const { projectionData, projectionMetrics } = useMemo(() => {
     const points = [];
     const now = new Date();
     const currentCash = financialStats.cashSecured || 0;
-    const potentialAddition = (financialStats.cashAtRisk || 0) * 0.5 + (financialStats.totalPotentialCA || 0) * 0.2; // Hypothèse conversion
-    const target = currentCash + potentialAddition * 1.2; // Objectif un peu au-dessus du réaliste
     
+    // Board Target = Total Potential (Secured + Exposed + Latent)
+    // This represents "Winning everything on the table" -> High Bar
+    const boardTarget = (financialStats.cashSecured || 0) + (financialStats.cashAtRisk || 0) + (financialStats.totalPotentialCA || 0) * 0.2; 
+    
+    // Projected Landing = Secured + (Weighted Risk * Conversion)
+    // We assume we convert 60% of Risk and 10% of new Latent
+    const projectedLanding = currentCash + ((financialStats.cashAtRisk || 0) * 0.6) + ((financialStats.totalPotentialCA || 0) * 0.1);
+
+    const deficit = projectedLanding - boardTarget;
+    const probability = Math.min(100, Math.round((projectedLanding / (boardTarget || 1)) * 100));
+
     // Projection linéaire sur 90j
     for (let i = 0; i <= 90; i += 10) {
       const date = new Date(now);
@@ -120,15 +134,18 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
       points.push({
         date,
         secured: currentCash, // Socle acquis
-        projected: currentCash + (potentialAddition * progress), // Montée progressive
-        target: target
+        projected: currentCash + ((projectedLanding - currentCash) * progress), // Montée progressive vers atterrissage
+        target: boardTarget // Ligne fixe
       });
     }
-    return points;
+    return { 
+        projectionData: points, 
+        projectionMetrics: { deficit, probability, projectedLanding, boardTarget }
+    };
   }, [financialStats]);
 
   return (
-    <div className="flex flex-col gap-12 py-8 px-4 max-w-[1200px] mx-auto pb-40">
+    <div className="flex flex-col gap-12 py-8 px-4 w-full h-full pb-40">
       
       <header className="flex flex-col gap-2">
          <h1 className="text-4xl font-black text-white tracking-tight uppercase">Salle de Navigation</h1>
@@ -237,27 +254,38 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
               
               <div className="flex flex-wrap items-center gap-6 mt-4">
                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.3)] animate-pulse" />
+                    <div className={`w-2.5 h-2.5 rounded-full ${projectionMetrics.probability >= 50 ? 'bg-emerald-500 shadow-emerald-500/30' : 'bg-red-500 shadow-red-500/30'} shadow-[0_0_10px_rgba(255,255,255,0.1)] animate-pulse`} />
                     <span className="text-lg font-bold text-white/70">Probabilité d'atteinte</span>
-                    <span className="text-lg font-black text-red-500 font-mono tracking-tighter">38%</span>
+                    <span className={`text-lg font-black ${projectionMetrics.probability >= 50 ? 'text-emerald-500' : 'text-red-500'} font-mono tracking-tighter`}>{projectionMetrics.probability}%</span>
                  </div>
                  <div className="h-6 w-[2px] bg-white/5" />
                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-slate-500 italic">"Objectif manqué fin avril"</span>
+                    <span className="text-lg font-bold text-slate-500 italic">
+                        {projectionMetrics.probability >= 75 ? '"Objectif en voie de sécurisation"' : 
+                         projectionMetrics.probability >= 50 ? '"Trajectoire incertaine, action requise"' :
+                         '"Objectif manqué fin avril"'}
+                    </span>
                  </div>
               </div>
            </div>
            
            <div className="text-left md:text-right">
               <div className="flex items-baseline md:justify-end gap-3">
-                <span className="text-7xl font-black text-red-500 font-mono tracking-tighter tabular-nums drop-shadow-2xl font-mono">-122k€</span>
+                <span className={`text-7xl font-black ${projectionMetrics.deficit >= 0 ? 'text-emerald-500' : 'text-red-500'} font-mono tracking-tighter tabular-nums drop-shadow-2xl`}>
+                    {projectionMetrics.deficit > 0 ? '+' : ''}{Math.round(projectionMetrics.deficit / 1000)}k€
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mt-2">DÉFICIT PROJETÉ vs BOARD</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mt-2">
+                  ÉCART vs POTENTIEL MAX ({Math.round(projectionMetrics.boardTarget / 1000)}k€)
+              </span>
            </div>
         </div>
 
-        <div className="py-2">
-          <RevenueProjectionVisx data={projectionData} />
+        <div className="py-2 relative">
+           <RevenueProjectionVisx data={projectionData} />
+           <p className="absolute bottom-0 right-0 text-[9px] text-slate-600 font-mono text-right">
+              *Objectif calculé sur 100% du Pipeline Actif + 20% des Pistes Froides
+           </p>
         </div>
 
         {/* CORRECTIVE ACTION BOX */}
@@ -271,6 +299,18 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
           </div>
         </div>
       </section>
+
+      {/* S05 — ANALYSE DES PERTES (NEW - REQUESTED BY USER) */}
+      <section className="bg-black/20 backdrop-blur-sm p-12 rounded-3xl border border-white/5 space-y-12 shadow-2xl">
+         <div className="flex flex-col gap-4">
+             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">S05 — POST-MORTEM & REFUS</span>
+             <h2 className="text-4xl font-black text-white uppercase tracking-tight">Pourquoi perd-on des affaires ?</h2>
+         </div>
+         
+         <div className="bg-black/40 rounded-2xl p-8 border border-white/5">
+             <CancellationInsights studies={studies} />
+         </div>
+       </section>
 
     </div>
   );

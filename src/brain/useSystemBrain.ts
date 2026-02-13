@@ -44,11 +44,11 @@ export function useSystemBrain() {
   const initializeSystem = useCallback(async () => {
     if (systemInitialized) return;
     const steps = [
-      { progress: 15, text: "Connexion Supabase...", duration: 600 },
-      { progress: 35, text: "Chargement dossiers...", duration: 800 },
-      { progress: 60, text: "Analyse métriques...", duration: 700 },
-      { progress: 85, text: "Calcul risques...", duration: 600 },
-      { progress: 100, text: "Système prêt !", duration: 500 },
+      { progress: 15, text: "Connexion Supabase...", duration: 800 },
+      { progress: 35, text: "Chargement dossiers...", duration: 1000 },
+      { progress: 60, text: "Analyse métriques...", duration: 900 },
+      { progress: 85, text: "Calcul risques...", duration: 800 },
+      { progress: 100, text: "Système prêt !", duration: 700 },
     ];
 
     for (let i = 0; i < steps.length; i++) {
@@ -58,7 +58,7 @@ export function useSystemBrain() {
       setLoadingStep(step.text);
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 500));
     setSystemInitialized(true);
   }, [systemInitialized]);
 
@@ -462,9 +462,27 @@ export function useSystemBrain() {
     return true;
   }, [loadData]);
 
-  const cancelStudy = useCallback(async (studyId: string, studyName?: string): Promise<boolean> => {
-    const { error } = await supabase.from("studies").update({ status: "cancelled" }).eq("id", studyId);
+  const cancelStudy = useCallback(async (studyId: string, studyName?: string, reason: string = "Annulation Manuelle"): Promise<boolean> => {
+    // 1. Update Study Status & Store Reason (in study_data to avoid schema issues)
+    // We try to fetch current data first to preserve existing study_data
+    const { data: current } = await supabase.from("studies").select("study_data").eq("id", studyId).single();
+    const updatedData = { ...current?.study_data, cancellation_reason: reason };
+
+    const { error } = await supabase.from("studies").update({ 
+        status: "cancelled", 
+        study_data: updatedData 
+    }).eq("id", studyId);
+
     if (error) { console.error("Erreur annulation", error); return false; }
+    
+    // 2. Log Decision
+    await supabase.from("decision_logs").insert({ 
+        study_id: studyId, 
+        client_name: studyName, 
+        action_performed: "CANCEL_STUDY", 
+        justification: reason 
+    });
+
     await loadData(true);
     return true;
   }, [loadData]);
