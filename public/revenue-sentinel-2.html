@@ -1131,10 +1131,30 @@
         const supabaseUrl = 'https://ugwqfvwclwctzgtxcakp.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE';
         const DEMO_STUDY_ID = 'bbc7c2fd-0b75-43f9-9f11-99d919383387';
-        const { createClient } = window.supabase || window.supa || { createClient: () => ({ from: () => ({ insert: () => ({ error: 'No lib' }) }) }) };
-        const supabaseClient = createClient(supabaseUrl, supabaseKey);
+        
+        let supabaseClient = null;
+        try {
+            const { createClient } = window.supabase;
+            supabaseClient = createClient(supabaseUrl, supabaseKey);
+            console.log("⚡ Supabase Client Initialized");
+        } catch (e) {
+            console.error("❌ Supabase Init Error:", e);
+        }
+
         async function trackView() {
-            try { await supabaseClient.from('tracking_events').insert({ study_id: DEMO_STUDY_ID, event_type: 'view' }); } catch (e) {}
+            if (!supabaseClient) return;
+            try { 
+                const { error } = await supabaseClient
+                    .from('tracking_events')
+                    .insert({ 
+                        study_id: DEMO_STUDY_ID, 
+                        event_type: 'view_study'
+                    }); 
+                if (error) console.error("❌ Tracking Error:", error);
+                else console.log("✅ View Tracked");
+            } catch (e) {
+                console.error("❌ Track View Exception:", e);
+            }
         }
         trackView();
     </script>

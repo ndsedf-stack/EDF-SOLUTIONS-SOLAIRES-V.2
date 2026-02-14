@@ -1,4 +1,3 @@
-
 import React, {
   useState,
   useEffect,
@@ -6,6 +5,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useSystemBrain } from "@/brain/useSystemBrain";
 import { Metrics, DashboardFilters, Study, EmailLead } from "@/brain/types";
 import { calculateSystemMetrics } from "@/brain/intelligence/stats";
@@ -61,7 +61,10 @@ export default function Dashboard() {
   // ============================================
   // UI STATE (View-only state)
   // ============================================
-  const [activeSection, setActiveSection] = useState<"dashboard" | "cockpit" | "leads" | "war_room" | "pilotage" | "registry" | "sales" | "roi">("cockpit");
+  const location = useLocation();
+  const [activeSection, setActiveSection] = useState<"dashboard" | "cockpit" | "leads" | "war_room" | "pilotage" | "registry" | "sales" | "roi">(
+    location.pathname === "/pilotage" ? "pilotage" : "cockpit"
+  );
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
   const [filters, setFilters] = useState<DashboardFilters>({

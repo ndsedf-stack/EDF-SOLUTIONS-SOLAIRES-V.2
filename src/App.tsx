@@ -192,6 +192,13 @@ const App = () => (
           </AuthGuard>
         } />
 
+        {/* ✅ PILOTAGE ROUTE (Direct access) */}
+        <Route path="/pilotage" element={
+          <AuthGuard>
+            <Dashboard />
+          </AuthGuard>
+        } />
+
         <Route path="/api/ops/audit" element={<OpsAuditApi mode="json" />} />
         <Route path="/api/ops/audit/download" element={<OpsAuditApi mode="download" />} />
       </Routes>

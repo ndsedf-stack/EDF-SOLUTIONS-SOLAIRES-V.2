@@ -1,9 +1,17 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import ParentSize from '@visx/responsive/lib/components/ParentSize';
+import { AreaClosed, Line, LinePath, Bar } from '@visx/shape';
+import { curveMonotoneX } from '@visx/curve';
+import { scaleTime, scaleLinear } from '@visx/scale';
+import { AxisBottom, AxisLeft } from '@visx/axis';
+import { GridRows } from '@visx/grid';
+import { LinearGradient } from '@visx/gradient';
+import { localPoint } from '@visx/event';
+import { useTooltip, TooltipWithBounds, defaultStyles } from '@visx/tooltip';
+import { bisector } from 'd3-array';
 import { FinancialRiskProofVisx, FinancialPoint } from './core/FinancialRiskProofVisx_Premium';
 import { KPIClusters } from './core/PremiumKPICards';
 import { SystemActivityFeed, ActivityEvent } from './core/SystemActivityFeed';
-// import { fetchOpsSnapshot } from '@/lib/opsSnapshot'; // REMOVED (Legacy)
 import { useOpsInsights } from '@/ops-engine/useOpsInsights';
 import { useOpsAgent } from '@/ops-agent/useOpsAgent';
 import { auditFinancialRisk } from '@/ops-ux-audit/charts/financialRisk.audit';
@@ -11,15 +19,12 @@ import { auditDataIntegrity } from '@/ops-ux-audit/truth/dataVsRender.audit';
 import { runUXAudit } from '@/ops-ux-audit/engine/uxAudit.engine';
 import { saveUxAudit, loadUxAuditHistory } from '@/ops-ux-audit/engine/uxAudit.history.store';
 import { ShieldCheck, AlertTriangle } from 'lucide-react';
-// Removed: useUxAudit, uxAudit.types, etc.
+import { useOpsControl } from '../../../ops-engine/useOpsControl';
+import { OpsAuditControl } from './OpsAuditControl';
 
 interface CockpitScreenProps {
   system: any;
 }
-
-import { useOpsControl } from '../../../ops-engine/useOpsControl';
-
-import { OpsAuditControl } from './OpsAuditControl';
 
 // 🕵️ OPS PROBE COMPONENT (MIRROR MODE)
 const OpsMirrorProbe = ({ study }: { study: any }) => {
@@ -35,6 +40,499 @@ const OpsMirrorProbe = ({ study }: { study: any }) => {
   useOpsControl(context);
   return null; 
 };
+
+// --- FINANCIAL DASHBOARD COMPONENTS ---
+
+// Types
+interface Study {
+  id: string;
+  signed_at: string | null;
+  total_price: number | null;
+  status: string;
+  client_name: string;
+}
+
+interface DataPoint {
+  date: Date;
+  cumulative: number;
+  daily: number;
+  label: string;
+}
+
+interface FinancialDashboardProps {
+  studies: any[];
+}
+
+// Accessors
+const getDate = (d: DataPoint) => d.date;
+const getValue = (d: DataPoint) => d.cumulative;
+const bisectDate = bisector<DataPoint, Date>((d) => d.date).left;
+
+// Configuration visuelle premium
+const COLORS_CHART = {
+  primary: '#00D9FF',
+  secondary: '#7C3AED', 
+  accent: '#F59E0B',
+  danger: '#EF4444',
+  success: '#10B981',
+  background: {
+    dark: '#0A0E1A',
+    card: '#111827',
+    overlay: 'rgba(17, 24, 39, 0.85)',
+  },
+  gradient: {
+    primary: ['#00D9FF', '#7C3AED'],
+    danger: ['#EF4444', '#DC2626'],
+    success: ['#10B981', '#059669'],
+  },
+  text: {
+    primary: '#F9FAFB',
+    secondary: '#9CA3AF',
+    muted: '#6B7280',
+  },
+  border: 'rgba(255, 255, 255, 0.08)',
+};
+
+const FONTS_CHART = {
+  display: '"Archivo Black", "Impact", sans-serif',
+  body: '"Inter", -apple-system, sans-serif',
+  mono: '"JetBrains Mono", "Fira Code", monospace',
+};
+
+// Composant principal
+function FinancialDashboard({ studies }: FinancialDashboardProps) {
+  // CALCUL CORRECT DU CA MENSUEL
+  const currentMonthCA = useMemo(() => {
+    const now = new Date();
+    return studies
+      .filter((s) => {
+        if (!s.signed_at || !s.total_price || ['cancelled', 'refused'].includes(s.status)) return false;
+        const signedDate = new Date(s.signed_at);
+        return (
+          signedDate.getMonth() === now.getMonth() &&
+          signedDate.getFullYear() === now.getFullYear()
+        );
+      })
+      .reduce((acc, s) => acc + (s.total_price || 0), 0);
+  }, [studies]);
+
+  // CALCUL CORRECT DU MOIS DERNIER
+  const lastMonthCA = useMemo(() => {
+    const now = new Date();
+    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    
+    return studies
+      .filter((s) => {
+        if (!s.signed_at || !s.total_price || ['cancelled', 'refused'].includes(s.status)) return false;
+        const signedDate = new Date(s.signed_at);
+        return (
+          signedDate.getMonth() === lastMonth.getMonth() &&
+          signedDate.getFullYear() === lastMonth.getFullYear()
+        );
+      })
+      .reduce((acc, s) => acc + (s.total_price || 0), 0);
+  }, [studies]);
+
+  // CALCUL CORRECT DES DONNÉES DU GRAPHE (CA CUMULÉ PAR JOUR)
+  const chartData = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Filtrer et trier les dossiers signés ce mois
+    const monthStudies = studies
+      .filter((s) => {
+        if (!s.signed_at || !s.total_price || ['cancelled', 'refused'].includes(s.status)) return false;
+        const signedDate = new Date(s.signed_at);
+        return signedDate >= startOfMonth && signedDate <= now;
+      })
+      .sort((a, b) => new Date(a.signed_at!).getTime() - new Date(b.signed_at!).getTime());
+
+    // Grouper par jour et calculer le cumulatif
+    const dailyData: Map<string, { cumulative: number; daily: number; date: Date }> = new Map();
+    let cumulative = 0;
+
+    monthStudies.forEach((study) => {
+      const date = new Date(study.signed_at!);
+      const dateKey = date.toISOString().split('T')[0];
+      
+      cumulative += study.total_price || 0;
+      
+      if (dailyData.has(dateKey)) {
+        const existing = dailyData.get(dateKey)!;
+        existing.daily += study.total_price || 0;
+        existing.cumulative = cumulative;
+      } else {
+        dailyData.set(dateKey, {
+          date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
+          cumulative,
+          daily: study.total_price || 0,
+        });
+      }
+    });
+
+    // Convertir en array et ajouter les labels
+    return Array.from(dailyData.values())
+      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .map((d) => ({
+        ...d,
+        label: d.date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
+      }));
+  }, [studies]);
+
+  // Calcul de la progression
+  const progression = lastMonthCA > 0 ? ((currentMonthCA - lastMonthCA) / lastMonthCA) * 100 : 0;
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl border shadow-2xl" 
+         style={{ 
+           borderColor: COLORS_CHART.border,
+           background: `linear-gradient(135deg, ${COLORS_CHART.background.card} 0%, #0F1629 100%)`
+         }}>
+      
+      {/* Overlay gradients décoratifs */}
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-cyan-500/20 to-transparent blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-purple-500/20 to-transparent blur-3xl" />
+      </div>
+
+      <div className="relative z-10 p-8 space-y-6">
+        
+        {/* Header avec métriques */}
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 pb-6 border-b" 
+             style={{ borderColor: COLORS_CHART.border }}>
+          
+          {/* Titre */}
+          <div className="space-y-2">
+            <h2 className="text-3xl font-black tracking-tight flex items-center gap-3"
+                style={{ fontFamily: FONTS_CHART.display, color: COLORS_CHART.text.primary }}>
+              <span className="inline-block w-1 h-8 rounded-full bg-gradient-to-b" 
+                    style={{ backgroundImage: `linear-gradient(to bottom, ${COLORS_CHART.gradient.primary[0]}, ${COLORS_CHART.gradient.primary[1]})` }} />
+              PROTECTION DU CA
+            </h2>
+            <p className="text-sm italic" style={{ color: COLORS_CHART.text.muted, fontFamily: FONTS_CHART.body }}>
+              Évolution du chiffre d'affaires sécurisé — Vue temps réel
+            </p>
+          </div>
+
+          {/* Métriques mensuelles PREMIUM */}
+          <div className="flex items-stretch gap-3 p-1.5 rounded-2xl border backdrop-blur-xl" 
+               style={{ 
+                 borderColor: COLORS_CHART.border,
+                 background: 'rgba(255, 255, 255, 0.02)'
+               }}>
+            
+            {/* Mois en cours */}
+            <div className="flex flex-col px-8 py-4 rounded-xl border-r" 
+                 style={{ 
+                   borderColor: COLORS_CHART.border,
+                   background: 'linear-gradient(135deg, rgba(0, 217, 255, 0.08) 0%, rgba(124, 58, 237, 0.08) 100%)'
+                 }}>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 rounded-full animate-pulse shadow-lg" 
+                     style={{ 
+                       backgroundColor: COLORS_CHART.success,
+                       boxShadow: `0 0 12px ${COLORS_CHART.success}`
+                     }} />
+                <span className="text-[10px] font-bold uppercase tracking-widest" 
+                      style={{ color: COLORS_CHART.text.secondary, fontFamily: FONTS_CHART.body }}>
+                  {new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase()}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-black text-white tracking-tighter" 
+                      style={{ fontFamily: FONTS_CHART.mono, color: COLORS_CHART.text.primary }}>
+                  {Math.round(currentMonthCA / 1000).toLocaleString('fr-FR')}
+                </span>
+                <span className="text-xl font-bold" style={{ color: COLORS_CHART.text.secondary }}>K€</span>
+              </div>
+              
+              {/* Badge de progression */}
+              {progression !== 0 && (
+                <div className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold" 
+                     style={{ 
+                       background: progression > 0 
+                         ? 'rgba(16, 185, 129, 0.15)' 
+                         : 'rgba(239, 68, 68, 0.15)',
+                       color: progression > 0 ? COLORS_CHART.success : COLORS_CHART.danger
+                     }}>
+                  <span>{progression > 0 ? '↗' : '↘'}</span>
+                  <span>{Math.abs(progression).toFixed(0)}%</span>
+                </div>
+              )}
+            </div>
+
+            {/* Mois dernier */}
+            <div className="flex flex-col px-8 py-4 opacity-60">
+              <span className="text-[10px] font-bold uppercase tracking-widest mb-2" 
+                    style={{ color: COLORS_CHART.text.muted, fontFamily: FONTS_CHART.body }}>
+                Mois Dernier
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tighter" 
+                      style={{ fontFamily: FONTS_CHART.mono, color: COLORS_CHART.text.secondary }}>
+                  {Math.round(lastMonthCA / 1000).toLocaleString('fr-FR')}
+                </span>
+                <span className="text-lg font-bold" style={{ color: COLORS_CHART.text.muted }}>K€</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Graphique */}
+        <div className="pt-4 h-[500px] w-full">
+          {chartData.length > 0 ? (
+            <ParentSize>
+              {({ width, height }) => (
+                <FinancialChart 
+                  data={chartData} 
+                  width={width} 
+                  height={height} 
+                />
+              )}
+            </ParentSize>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center space-y-3">
+                <div className="text-6xl opacity-20">📊</div>
+                <p className="text-lg font-semibold" style={{ color: COLORS_CHART.text.secondary }}>
+                  Aucune signature ce mois-ci
+                </p>
+                <p className="text-sm" style={{ color: COLORS_CHART.text.muted }}>
+                  Les données apparaîtront dès la première signature
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Composant graphique avec interactions
+function FinancialChart({ 
+  data, 
+  width, 
+  height 
+}: { 
+  data: DataPoint[]; 
+  width: number; 
+  height: number;
+}) {
+  const {
+    showTooltip,
+    hideTooltip,
+    tooltipData,
+    tooltipLeft = 0,
+    tooltipTop = 0,
+  } = useTooltip<DataPoint>();
+
+  // Marges
+  const margin = { top: 20, right: 30, bottom: 40, left: 70 };
+  const xMax = width - margin.left - margin.right;
+  const yMax = height - margin.top - margin.bottom;
+
+  // Scales
+  const dateScale = useMemo(
+    () =>
+      scaleTime({
+        range: [0, xMax],
+        domain: [Math.min(...data.map(d => getDate(d).getTime())), Math.max(...data.map(d => getDate(d).getTime()))],
+      }),
+    [xMax, data]
+  );
+
+  const valueScale = useMemo(
+    () =>
+      scaleLinear({
+        range: [yMax, 0],
+        domain: [0, Math.max(...data.map(getValue)) * 1.1], // +10% pour l'espace en haut
+        nice: true,
+      }),
+    [yMax, data]
+  );
+
+  // Gestion du tooltip
+  const handleTooltip = (event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>) => {
+    const { x } = localPoint(event) || { x: 0 };
+    const x0 = dateScale.invert(x - margin.left);
+    const index = bisectDate(data, x0, 1);
+    const d0 = data[index - 1];
+    const d1 = data[index];
+    let d = d0;
+    if (d1 && getDate(d1)) {
+      if (!d0 || x0.valueOf() - getDate(d0).valueOf() > getDate(d1).valueOf() - x0.valueOf()) {
+        d = d1;
+      }
+    }
+    showTooltip({
+      tooltipData: d,
+      tooltipLeft: dateScale(getDate(d)),
+      tooltipTop: valueScale(getValue(d)),
+    });
+  };
+
+  return (
+    <div className="relative">
+      <svg width={width} height={height}>
+        <defs>
+          <LinearGradient id="area-gradient" from={COLORS_CHART.gradient.primary[0]} to={COLORS_CHART.gradient.primary[1]} vertical={false} />
+          <LinearGradient id="area-fill" from={COLORS_CHART.gradient.primary[0]} fromOpacity={0.4} to={COLORS_CHART.gradient.primary[1]} toOpacity={0.1} vertical />
+        </defs>
+        
+        <rect width={width} height={height} fill="transparent" />
+        
+        <g transform={`translate(${margin.left},${margin.top})`}>
+          {/* Grid */}
+          <GridRows
+            scale={valueScale}
+            width={xMax}
+            strokeDasharray="3,3"
+            stroke={COLORS_CHART.border}
+            strokeOpacity={0.3}
+            pointerEvents="none"
+          />
+
+          {/* Area chart */}
+          <AreaClosed
+            data={data}
+            x={(d) => dateScale(getDate(d)) ?? 0}
+            y={(d) => valueScale(getValue(d)) ?? 0}
+            yScale={valueScale}
+            strokeWidth={0}
+            fill="url(#area-fill)"
+            curve={curveMonotoneX}
+          />
+
+          {/* Line */}
+          <LinePath
+            data={data}
+            x={(d) => dateScale(getDate(d)) ?? 0}
+            y={(d) => valueScale(getValue(d)) ?? 0}
+            stroke="url(#area-gradient)"
+            strokeWidth={3}
+            curve={curveMonotoneX}
+            strokeLinecap="round"
+          />
+
+          {/* Points */}
+          {data.map((d, i) => (
+            <circle
+              key={i}
+              cx={dateScale(getDate(d))}
+              cy={valueScale(getValue(d))}
+              r={4}
+              fill={COLORS_CHART.background.card}
+              stroke={COLORS_CHART.primary}
+              strokeWidth={2}
+              style={{
+                filter: 'drop-shadow(0 0 6px rgba(0, 217, 255, 0.6))',
+              }}
+            />
+          ))}
+
+          {/* Axes */}
+          <AxisBottom
+            top={yMax}
+            scale={dateScale}
+            stroke={COLORS_CHART.border}
+            tickStroke={COLORS_CHART.border}
+            tickLabelProps={() => ({
+              fill: COLORS_CHART.text.muted,
+              fontSize: 11,
+              fontFamily: FONTS_CHART.body,
+              textAnchor: 'middle',
+            })}
+          />
+          
+          <AxisLeft
+            scale={valueScale}
+            stroke={COLORS_CHART.border}
+            tickStroke={COLORS_CHART.border}
+            tickFormat={(value) => `${(value as number / 1000).toFixed(0)}K€`}
+            tickLabelProps={() => ({
+              fill: COLORS_CHART.text.muted,
+              fontSize: 11,
+              fontFamily: FONTS_CHART.mono,
+              textAnchor: 'end',
+              dx: -4,
+            })}
+          />
+
+          {/* Tooltip trigger */}
+          <Bar
+            x={0}
+            y={0}
+            width={xMax}
+            height={yMax}
+            fill="transparent"
+            onTouchStart={handleTooltip}
+            onTouchMove={handleTooltip}
+            onMouseMove={handleTooltip}
+            onMouseLeave={() => hideTooltip()}
+          />
+
+          {/* Tooltip line */}
+          {tooltipData && (
+            <g>
+              <Line
+                from={{ x: tooltipLeft, y: 0 }}
+                to={{ x: tooltipLeft, y: yMax }}
+                stroke={COLORS_CHART.primary}
+                strokeWidth={1}
+                strokeDasharray="4,4"
+                pointerEvents="none"
+                strokeOpacity={0.5}
+              />
+              <circle
+                cx={tooltipLeft}
+                cy={tooltipTop}
+                r={6}
+                fill={COLORS_CHART.primary}
+                stroke={COLORS_CHART.background.card}
+                strokeWidth={3}
+                style={{
+                  filter: 'drop-shadow(0 0 8px rgba(0, 217, 255, 0.8))',
+                }}
+                pointerEvents="none"
+              />
+            </g>
+          )}
+        </g>
+      </svg>
+
+      {/* Tooltip */}
+      {tooltipData && (
+        <TooltipWithBounds
+          key={Math.random()}
+          top={tooltipTop + margin.top}
+          left={tooltipLeft + margin.left}
+          style={{
+            ...defaultStyles,
+            background: COLORS_CHART.background.overlay,
+            border: `1px solid ${COLORS_CHART.border}`,
+            borderRadius: '12px',
+            padding: '12px 16px',
+            backdropFilter: 'blur(12px)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div style={{ fontFamily: FONTS_CHART.body, color: COLORS_CHART.text.primary }}>
+            <div style={{ fontSize: '11px', color: COLORS_CHART.text.muted, marginBottom: '6px', fontWeight: 600 }}>
+              {tooltipData.label}
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: 900, fontFamily: FONTS_CHART.mono, marginBottom: '4px' }}>
+              {(tooltipData.cumulative / 1000).toFixed(1)} K€
+            </div>
+            <div style={{ fontSize: '12px', color: COLORS_CHART.text.secondary }}>
+              +{(tooltipData.daily / 1000).toFixed(1)} K€ ce jour
+            </div>
+          </div>
+        </TooltipWithBounds>
+      )}
+    </div>
+  );
+}
 
 export function CockpitScreen({ system }: CockpitScreenProps) {
   // 🟢 LOGIQUE EXISTANTE (DÉBRANCHÉE DE L'AFFICHAGE PRINCIPAL MAIS PRÉSENTE)
@@ -276,76 +774,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
 
       {/* ANCIEN CONTENU MASQUÉ OU MODIFIÉ SI DEMANDÉ, MAIS ICI ON LAISSE LE RESTE DU JSX QUI SUIT LE HEADER */}
 
-      {/* 2️⃣ FINANCIAL RISK PROOF (Graphe HERO PREMIUM) */}
-      <div className="relative overflow-visible rounded-3xl border border-white/10 shadow-2xl">
-        <div className="absolute inset-0 bg-[#0F1629]/80 backdrop-blur-xl z-0" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20 pointer-events-none z-0" />
-        
-        <div className="relative z-10 p-8 space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/5 pb-8">
-                <div>
-                    <h2 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
-                           Protection du Chiffre d’Affaires
-                        </span>
-                    </h2>
-                    <p className="text-slate-500 text-xs font-medium italic mt-2">
-                        "Vérité absolue sur la dérive entre CA sécurisé et CA à risque (30j)."
-                    </p>
-                </div>
-
-                {/* MONTHLY REVENUE METRICS PREMIUM */}
-                <div className="flex items-center gap-4 bg-white/[0.03] p-2 pr-6 rounded-2xl border border-white/5 shadow-inner backdrop-blur-md">
-                     <div className="flex flex-col px-6 py-2 border-r border-white/5">
-                        <div className="flex items-center gap-2 mb-1">
-                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)] animate-pulse" />
-                           <span className="text-[9px] font-bold text-emerald-400/80 uppercase tracking-widest">
-                              {new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase()}
-                           </span>
-                        </div>
-                        <span className="text-2xl font-black text-white tracking-tighter font-mono">
-                           {Math.round(studies
-                             .filter((s:any) => s.total_price && !['cancelled', 'refused'].includes(s.status) && s.signed_at && new Date(s.signed_at).getMonth() === new Date().getMonth() && new Date(s.signed_at).getFullYear() === new Date().getFullYear())
-                             .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
-                           ).toLocaleString('fr-FR')} K€
-                        </span>
-                     </div>
-                     
-                     <div className="flex flex-col px-4 py-2 opacity-60">
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Mois Dernier</span>
-                        <span className="text-xl font-black text-white/60 tracking-tighter font-mono">
-                           {Math.round(studies
-                             .filter((s:any) => {
-                                if (!s.signed_at || ['cancelled', 'refused'].includes(s.status) || !s.total_price) return false;
-                                const d = new Date(s.signed_at);
-                                const now = new Date();
-                                // Robust First Day of Month Calculation
-                                const firstDayCurrent = new Date(now.getFullYear(), now.getMonth(), 1);
-                                const firstDayLast = new Date(firstDayCurrent);
-                                firstDayLast.setMonth(firstDayLast.getMonth() - 1);
-                                
-                                return d.getMonth() === firstDayLast.getMonth() && d.getFullYear() === firstDayLast.getFullYear();
-                             })
-                             .reduce((acc:any, s:any) => acc + (s.total_price || 0), 0) / 1000
-                           ).toLocaleString('fr-FR')} K€
-                        </span>
-                     </div>
-                </div>
-            </div>
-
-            <div className="pt-4 h-[500px] w-full">
-                <ParentSize>
-                  {({ width, height }) => (
-                    <FinancialRiskProofVisx 
-                      data={financialRiskData} 
-                      width={width} 
-                      height={height} 
-                    />
-                  )}
-                </ParentSize>
-            </div>
-        </div>
-      </div>
+      <FinancialDashboard studies={studies} />
 
       {/* ✅ AUDIT FIX ID: KPI_OVERLOAD -> CLUSTERS SÉMANTIQUES (PATTERN UX-ORG-001) */}
       <KPIClusters 
