@@ -257,14 +257,14 @@ const FinancialRiskProofInner = ({ data, width, height }: Props) => {
                     </div>
                     
                     <div className="flex justify-between items-center gap-4">
-                        <span className="text-xs text-red-300 font-medium">À Risque</span>
+                        <span className="text-xs text-red-300 font-medium">Sans Solaire</span>
                         <span className="text-sm font-black text-red-400">
                             {getExposed(tooltipData).toLocaleString()} €
                         </span>
                     </div>
 
                     <div className="flex justify-between items-center gap-4">
-                         <span className="text-xs text-emerald-300 font-medium">Sécurisé</span>
+                         <span className="text-xs text-emerald-300 font-medium">Avec Solaire</span>
                          <span className="text-sm font-black text-emerald-400">
                             {getSecured(tooltipData).toLocaleString()} €
                         </span>

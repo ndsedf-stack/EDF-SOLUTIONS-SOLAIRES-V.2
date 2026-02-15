@@ -54,9 +54,21 @@ Le module GuestView permet à un client de voir son étude sans se connecter. C'
 
 ---
 
-## 4. Politique de Log & Audit
+## 3. Architecture GuestView (Architecture Sentinel)
 
-Le système maintient une traçabilité forte (`decision_logs`) pour :
-*   Prouver la validité d'une signature (timestamp, IP, consenti).
-*   Justifier les actions automatiques (pourquoi ce dossier est passé en War Room).
-*   Ces logs sont **immutables** (INSERT only, pas de DELETE autorisé pour les logs).
+Le module GuestView permet à un client de voir son étude sans se connecter. C'est un point d'entrée critique désormais protégé par l'**Architecture Sentinel**.
+
+**Mesures de Durcissement (Février 2026) :**
+1.  **UUID v4 Natif** : Le `guest_view_token` est généré via `uuid_generate_v4()` pour garantir une entropie maximale.
+2.  **Expiration SQL** : La fonction `get_study_by_token` vérifie la date `expires_at` directement au niveau de la base de données.
+3.  **Légal** : Toutes les pages GuestView incluent désormais un footer légal standardisé avec liens vers les CGU et la Politique de Confidentialité.
+
+---
+
+## 5. Centralisation Légale & Compliance
+
+Tous les documents contractuels et politiques de données sont centralisés dans le dossier :
+`[docs/COMPLIANCE/](file:///Users/nicolasdistefano/Desktop/EDF-DASHBOARD-TEST/docs/COMPLIANCE/)`
+- **CGU** : [CGU.md](file:///Users/nicolasdistefano/Desktop/EDF-DASHBOARD-TEST/docs/COMPLIANCE/CGU.md)
+- **Mentions Légales** : [LEGAL_MENTIONS.md](file:///Users/nicolasdistefano/Desktop/EDF-DASHBOARD-TEST/docs/COMPLIANCE/LEGAL_MENTIONS.md)
+- **RGPD** : [PRIVACY_POLICY.md](file:///Users/nicolasdistefano/Desktop/EDF-DASHBOARD-TEST/docs/COMPLIANCE/PRIVACY_POLICY.md)

@@ -168,8 +168,11 @@ const PageLoader = () => (
   </div>
 );
 
+import ScrollToTop from "./components/ScrollToTop";
+
 const App = () => (
   <BrowserRouter>
+    <ScrollToTop />
     <React.Suspense fallback={<PageLoader />}>
       <Routes>
         <Route path="/" element={

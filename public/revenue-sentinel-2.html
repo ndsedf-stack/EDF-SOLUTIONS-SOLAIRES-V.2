@@ -504,6 +504,52 @@
 
         .comparison-section { background: rgba(255,255,255,0.02); border-radius: 12px; padding: 32px; border: 1px solid var(--border-subtle); }
         .comparison-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 24px; text-align: center; }
+        footer.legal-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-xl) 0;
+            margin-top: var(--space-xl);
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: var(--accent);
+        }
+        footer.legal-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: var(--space-xl) 0;
+            margin-top: var(--space-xl);
+            text-align: center;
+            color: var(--text-muted);
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.3s;
+        }
+        .footer-links a:hover {
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -1087,14 +1133,16 @@
         </section>
 
 
-        <footer style="border-top: 1px solid var(--border-subtle); padding: var(--space-2xl) 0; margin-top: var(--space-3xl); text-align: center; color: var(--text-muted);">
-            <div style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-main); font-size: 1.1rem; margin-bottom: 8px;">
+        <footer class="legal-footer">
+            <div class="logo" style="margin-bottom: 20px; opacity: 0.5; font-size: 0.9rem;">
                 ⚡ REVENUE SENTINEL
             </div>
-            <div style="margin-bottom: 8px; font-size: 0.95rem;">Système de Revenue Assurance pour Ventes Complexes</div>
-            <div style="font-size: 0.85rem; opacity: 0.6;">© 2026 REVENUE SENTINEL — DOCUMENT CONFIDENTIEL — PARTIE 2/2</div>
-            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-subtle); font-size: 0.75rem;">
-                Une solution logicielle dédiée à la sécurisation du chiffre d’affaires post-signature
+            <div style="font-size: 0.8rem; opacity: 0.6;">© 2026 REVENUE SENTINEL — DOCUMENT CONFIDENTIEL — TOUS DROITS RÉSERVÉS</div>
+            <div class="footer-links">
+                <a href="#">Mentions Légales</a>
+                <a href="#">Politique de Confidentialité</a>
+                <a href="#">CGU / CGV</a>
+                <a href="#">Contact Support</a>
             </div>
         </footer>
     </div>
@@ -1114,7 +1162,8 @@
             if (!wasActive) { item.classList.add('active'); }
         }
     </script>
-    <!-- TRACKING & ANIMATION SCRIPT -->
+    <!-- CONFIG & TRACKING -->
+    <script src="js/config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // Intersection Observer for Reveal animations
@@ -1129,8 +1178,8 @@
         document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
         // Supabase Tracking
-        const supabaseUrl = 'https://ugwqfvwclwctzgtxcakp.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnd3FmdndjbHdjdHpndHhjYWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNDg4OTgsImV4cCI6MjA4MTgyNDg5OH0.sx9z3p3svG5V6djfzUXtzdOwbUU3wjIVaAyIjRoFzaE';
+        const supabaseUrl = window.CONFIG?.SUPABASE_URL || 'https://fallback.supabase.co';
+        const supabaseKey = window.CONFIG?.SUPABASE_ANON_KEY || '';
         const DEMO_STUDY_ID = 'bbc7c2fd-0b75-43f9-9f11-99d919383387';
         
         let supabaseClient = null;

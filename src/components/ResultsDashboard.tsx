@@ -5633,12 +5633,12 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 <p className="text-slate-500 text-xs mt-1">
                   Non consommé, vendu automatiquement. <br></br>Contrat
                   d'Obligation d'Achat 20 ans — cadre légal. <br></br>Tarif
-                  réglementé : 0.04€ / Watt
+                  réglementé : {buybackRate}€ / kWh
                 </p>
 
                 <div className="mt-3 pt-3 border-t border-white/5 text-blue-400 text-sm font-bold">
-                  {/* FIX DEMANDE PAR USER : 0.04€ / Watt */}
-                  ≈ {formatMoney((data?.params?.installedPower || 0) * 1000 * 0.04)} / an
+                  {/* FIX : Affichage cohérent avec le volume de surplus calculé */}
+                  ≈ {formatMoney(calculationResult.surplusRevenuePerYear)} / an
                 </div>
               </div>
             </div>

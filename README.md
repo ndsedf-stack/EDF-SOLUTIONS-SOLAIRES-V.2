@@ -61,3 +61,15 @@ A "Certified" badge appears only if:
 - `src/ops-agent/`: Audit Logic & PDF Generation.
 - `src/ops-ux-audit/`: UX Rules & Charts Audits.
 - `src/components/territories/Cockpit/`: UI Integration.
+
+## 🏰 Architecture Sentinel
+Le projet est désormais doté d’une protection multicouche :
+- **Storage Layer** : Utilisation du `danger_score` pour la traçabilité des risques.
+- **Security Layer** : Tokens UUID v4 et vérification d'expiration SQL native.
+- **Compliance Layer** : Footers légaux et scripts de purge RGPD.
+
+## ⚖️ Compliance & Légal
+Tous les documents de conformité (RGPD, Mentions Légales, CGU) sont centralisés dans le dossier `docs/COMPLIANCE/`.
+- [Politique de Confidentialité](./docs/COMPLIANCE/PRIVACY_POLICY.md)
+- [Mentions Légales](./docs/COMPLIANCE/LEGAL_MENTIONS.md)
+- [CGU](./docs/COMPLIANCE/CGU.md)

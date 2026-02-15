@@ -1111,3 +1111,26 @@ A.4 — MODULE EXTENSION (Module 4)
 | **Senior** | 🛡️ Protection dans le temps | ☀️ Production surveillée | 🧩 Matériel protégé |
 | **Banquier** | 📑 Cadre de garantie | 📊 Garantie de performance | — |
 | **Standard** | 🔒 Vous êtes couvert | ⚡ Production garantie | — |
+---
+
+## 🏰 CHAPITRE 15 — ARCHITECTURE SENTINEL (SÉCURITÉ INFRASTRUCTURELLE)
+
+L'"Architecture Sentinel" est le bouclier physique et logique qui protège les données et la rentabilité du système. Elle a été déployée en Février 2026 suite à l'audit de sécurité complet.
+
+### 🛡️ 15.1 — LE STOCKAGE : INTEGRITY LAYER
+La colonne `danger_score` dans la table `studies` est désormais le réceptacle central des décisions du Brain.
+- **Rôle** : Permet au Brain de "marquer" physiquement un dossier comme étant à risque dans la base de données.
+- **Usage** : Utilisée par les vues SQL de pilotage pour isoler le CA à risque du CA sécurisé.
+
+### 🧭 15.2 — LE PILOTAGE : ARCHITECTURE DÉCISIONNELLE
+Le pilotage n'est plus une simple visualisation, c'est une aide à la décision stratégique.
+- **Requêtes de Stats** : Implémentation de calculs temps réel comparant le CA brut vs CA à risque (Basé sur le `danger_score`).
+- **War Room Integration** : Les dossiers dépassant un certain seuil de `danger_score` sont automatiquement aspirés dans la War Room pour action immédiate.
+
+### 🔐 15.3 — LA SÉCURITÉ : TOKEN HARDENING
+Protection contre l'exfiltration de données et l'accès non autorisé aux études clients.
+- **UUID v4 Mandatory** : La colonne `guest_view_token` utilise désormais exclusivement des UUID v4 générés par le serveur (`uuid_generate_v4()`).
+- **Enforcement d'Expiration** : La fonction SQL `get_study_by_token` vérifie systématiquement la date `expires_at`.
+- **Backward Compatibility** : La logique accepte les anciens IDs pour ne pas briser les liens existants, tout en forçant le passage aux tokens pour tout nouveau dossier.
+
+---
