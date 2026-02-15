@@ -161,8 +161,14 @@ export function PilotageScreen({ system }: PilotageScreenProps) {
               <div className="flex items-center gap-6 mt-4">
                  <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] animate-pulse" />
-                    <span className="text-lg font-bold text-white/70">60% Sécurisé</span>
-                    <span className="text-sm font-bold text-emerald-400">(+3.2 pts)</span>
+                     <span className="text-lg font-bold text-white/70">
+                       {(() => {
+                         const total = verdictData.securedCA + verdictData.exposedCA + verdictData.cancelledCA;
+                         const pct = total > 0 ? (verdictData.securedCA / total) * 100 : 0;
+                         return `${Math.round(pct)}% Sécurisé`;
+                       })()}
+                     </span>
+                     {/* <span className="text-sm font-bold text-emerald-400">(+3.2 pts)</span> */}
                  </div>
                  <div className="h-6 w-[2px] bg-white/5" />
                  <div className="flex items-center gap-2">

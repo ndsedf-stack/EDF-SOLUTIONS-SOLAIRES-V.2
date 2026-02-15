@@ -51,7 +51,7 @@ export const PipelineMomentum: React.FC<PipelineMomentumProps> = ({
   const convTreso = signed ? (secured / signed) * 100 : 0;
   
   const bottleneck = Math.min(convQualif, convVente, convTreso) === convQualif ? "Qualification" : 
-                    Math.min(convQualif, convVente, convTreso) === convVente ? "Closing" : "Administratif";
+                    Math.min(convQualif, convVente, convTreso) === convVente ? "Transformation" : "Administratif";
 
   return (
     <div className="w-full space-y-12">
@@ -163,12 +163,12 @@ export const PipelineMomentum: React.FC<PipelineMomentumProps> = ({
                 subLabel="Dossiers / Total Leads"
               />
               <ConversionCard 
-                label="Conversion Totale" 
-                rate={globalPerformance} 
-                lostLabel="Dossiers non signés"
-                loss={nonContactes + enAttenteSignature}
+                label="Transformation Leads" 
+                rate={tauxPenetration} 
+                lostLabel="Leads non transformés"
+                loss={nonContactes}
                 color="text-white"
-                subLabel="Signés / Total Leads"
+                subLabel="RDV Réalisé / Lead Contacté"
               />
             </div>
           </>
