@@ -401,8 +401,21 @@ export function useSystemBrain() {
         (clickEvents || []).forEach(e => { if (!lastClickByStudyId[e.study_id]) lastClickByStudyId[e.study_id] = e.created_at; });
       }
 
+      // ✅ NOUVEAU : Count réel d'emails envoyés par client depuis email_queue
+      const sentCountByClientId: Record<string, number> = {};
+      if (clientIds.length > 0) {
+        const { data: sentEmails } = await supabase
+          .from("email_queue")
+          .select("client_id, status")
+          .in("client_id", clientIds)
+          .in("status", ["sent", "SUCCESS", "success", "delivered", "processed"]);
+        (sentEmails || []).forEach((e: any) => {
+          if (e.client_id) sentCountByClientId[e.client_id] = (sentCountByClientId[e.client_id] || 0) + 1;
+        });
+      }
+
       // Utilisation du helper local pour map
-      const mappedLeads = (data || []).map(l => mapEmailLeadToDisplayInternal(l, studyIdByClientId, lastOpenByStudyId, lastClickByStudyId));
+      const mappedLeads = (data || []).map(l => mapEmailLeadToDisplayInternal(l, studyIdByClientId, lastOpenByStudyId, lastClickByStudyId, sentCountByClientId));
       setEmailLeads(mappedLeads);
 
       const flowByClient: Record<string, any> = {};
@@ -423,7 +436,7 @@ export function useSystemBrain() {
   }, []);
 
   // HELPER INTERNAL
-  function mapEmailLeadToDisplayInternal(l: any, studyIdByClientId: any, lastOpenByStudyId: any, lastClickByStudyId: any): EmailLead {
+  function mapEmailLeadToDisplayInternal(l: any, studyIdByClientId: any, lastOpenByStudyId: any, lastClickByStudyId: any, sentCountByClientId: Record<string, number> = {}): EmailLead {
     const studyId = studyIdByClientId[l.client_id] || null;
     return {
       id: l.id,
@@ -437,6 +450,7 @@ export function useSystemBrain() {
       next_email_date: l.next_email_scheduled_at,
       total_opens: l.total_opens || 0,
       total_clicks: l.total_clicks || 0,
+      emails_sent_count: sentCountByClientId[l.client_id] || 0,
       last_opened_at: studyId ? lastOpenByStudyId[studyId] : l.last_opened_at,
       last_clicked_at: studyId ? lastClickByStudyId[studyId] : l.last_clicked_at,
       created_at: l.created_at,

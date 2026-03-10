@@ -171,8 +171,11 @@ export const EmailLeads: React.FC<EmailLeadsProps> = ({
 
                     {/* Badges Container */}
                     <div className="flex flex-wrap items-center gap-2">
-                      {/* BADGE SEQUENCE (Comme status axe A) */}
+                      {/* BADGE EMAILS ENVOYÉS (vrai count depuis email_queue) */}
                       <span className="px-2 py-0.5 bg-blue-900/40 border border-blue-500/30 text-blue-300 rounded text-[10px] font-bold uppercase flex items-center gap-1">
+                        <span>📧</span> {lead.emails_sent_count} email{lead.emails_sent_count > 1 ? 's' : ''} envoyé{lead.emails_sent_count > 1 ? 's' : ''}
+                      </span>
+                      <span className="px-2 py-0.5 bg-slate-800/60 border border-slate-700/30 text-slate-400 rounded text-[10px] font-bold uppercase flex items-center gap-1">
                         <span>🔄</span> ÉTAPE {lead.email_sequence_step}
                       </span>
 

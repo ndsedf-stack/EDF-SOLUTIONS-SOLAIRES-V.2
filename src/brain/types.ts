@@ -89,6 +89,7 @@ export interface EmailLead {
     next_email_date: string | null;
     total_opens: number;
     total_clicks: number;
+    emails_sent_count: number; // Vrai count depuis email_queue (status=sent)
     last_opened_at: string | null;
     last_clicked_at: string | null;
     created_at: string;
