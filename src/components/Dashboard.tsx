@@ -110,6 +110,11 @@ export default function Dashboard() {
   // ============================================
   
   // No longer forcing section switch on urgency to let user navigate freely
+  
+  // Reset scroll to top on section change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeSection]);
 
   // Scroll to War Room helper (Legacy - keeping for compatibility if referenced)
   const scrollToWarRoom = useCallback(() => {
@@ -197,7 +202,7 @@ export default function Dashboard() {
   // ============================================
   // GLOBAL DATE FILTER (NEW 🔥)
   // ============================================
-  const [globalDateFilter, setGlobalDateFilter] = useState<'current_month' | 'all_time'>('current_month');
+  const [globalDateFilter, setGlobalDateFilter] = useState<'current_month' | 'all_time'>('all_time');
 
   // Filter Logic wrapped in useMemo to prevent unnecessary rebuilds
   const { filteredStudies, filteredLeads, filteredMetrics, filteredFinancialStats } = useMemo(() => {

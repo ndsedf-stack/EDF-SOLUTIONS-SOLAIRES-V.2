@@ -68,20 +68,26 @@ export function SalesActivityScreen({ system }: SalesActivityScreenProps) {
     const additionalConversions = Math.round(worst.input * (gapPercentage / 100));
     
     // Calculate realistic downstream conversion from this stage to signature
+    // Safe division helper – returns 0 when denominator is 0 (avoids Infinity)
+    const safeDivide = (num: number, den: number) => (den > 0 ? num / den : 0);
+
     let downstreamToSignature = 1.0;
     if (worst.label === "QUALIF") {
       // From Dossiers to Signed: (Opens/Dossiers) * (Clicks/Opens) * (Signed/Clicks)
-      downstreamToSignature = (totalOpens / totalDossiers || 0) * (totalClicks / totalOpens || 0) * (totalSigned / totalClicks || 0);
+      downstreamToSignature = safeDivide(totalOpens, totalDossiers) * safeDivide(totalClicks, totalOpens) * safeDivide(totalSigned, totalClicks);
     } else if (worst.label === "OUVERTURE") {
       // From Opens to Signed: (Clicks/Opens) * (Signed/Clicks)
-      downstreamToSignature = (totalClicks / totalOpens || 0) * (totalSigned / totalClicks || 0);
+      downstreamToSignature = safeDivide(totalClicks, totalOpens) * safeDivide(totalSigned, totalClicks);
     } else if (worst.label === "CLIC") {
       // From Clicks to Signed: (Signed/Clicks)
-      downstreamToSignature = (totalSigned / totalClicks || 0);
+      downstreamToSignature = safeDivide(totalSigned, totalClicks);
     }
     
-    // Potential monthly gain if we improve the worst stage to benchmark
-    const monthlyPotentialGain = Math.round(additionalConversions * downstreamToSignature * avgBasket);
+    // Potential monthly gain – clamped to a finite value to guard against edge cases
+    const monthlyPotentialGain = Math.min(
+      Math.round(additionalConversions * downstreamToSignature * avgBasket),
+      9_999_999
+    );
     
     // Executive Line: Constructive and accurate
     const executiveLine = monthlyPotentialGain > 15000
@@ -181,7 +187,7 @@ export function SalesActivityScreen({ system }: SalesActivityScreenProps) {
                 <div className="flex items-baseline gap-4">
                    <span className="text-sm font-bold text-white/30 uppercase tracking-widest">Impact:</span>
                    <span className="text-5xl font-black text-[#FF6B6B] font-mono tracking-tighter">
-                     {Math.round(analysis.monthlyRecoveryPotential/1000)}k€
+                     {isFinite(analysis.monthlyRecoveryPotential) ? `${Math.round(analysis.monthlyRecoveryPotential/1000)}k€` : '—'}
                    </span>
                    <span className="text-xs font-bold text-white/20 uppercase tracking-widest">/ mois non captés</span>
                 </div>
