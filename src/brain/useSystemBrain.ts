@@ -404,13 +404,15 @@ export function useSystemBrain() {
 
       // ✅ NOUVEAU : Count réel d'emails envoyés par client depuis email_queue
       const sentCountByClientId: Record<string, number> = {};
+      let leadsSentResults: any[] = [];
       if (clientIds.length > 0) {
-        const { data: sentEmails } = await supabase
+        const { data: results } = await supabase
           .from("email_queue")
-          .select("client_id, status")
+          .select("client_id, status, sent_at")
           .in("client_id", clientIds)
           .in("status", ["sent", "SUCCESS", "success", "delivered", "processed"]);
-        (sentEmails || []).forEach((e: any) => {
+        leadsSentResults = results || [];
+        leadsSentResults.forEach((e: any) => {
           if (e.client_id) sentCountByClientId[e.client_id] = (sentCountByClientId[e.client_id] || 0) + 1;
         });
       }
@@ -445,29 +447,41 @@ export function useSystemBrain() {
         leadsDailyStats.set(dk, { date: dk, count: 0, opened: 0, clicked: 0 });
       }
 
-      // Count sent emails from email_queue by client_id (not study_id)
-      if (clientIds.length > 0) {
-        const { data: leadsSent } = await supabase
-          .from('email_queue')
-          .select('client_id, sent_at, status')
-          .in('client_id', clientIds)
-          .in('status', ['sent', 'SUCCESS', 'success', 'delivered', 'processed']);
-        (leadsSent || []).forEach((e: any) => {
-          if (!e.sent_at) return;
-          const dk = new Date(e.sent_at).toISOString().split('T')[0];
-          if (leadsDailyStats.has(dk)) leadsDailyStats.get(dk)!.count++;
-        });
-      }
+      // 1. Count from email_queue (Source primaire)
+      const leadsSentForTraffic = (leadsSentResults || []);
+      leadsSentForTraffic.forEach((e: any) => {
+        if (!e.sent_at) return;
+        const dk = new Date(e.sent_at).toISOString().split('T')[0];
+        if (leadsDailyStats.has(dk)) leadsDailyStats.get(dk)!.count++;
+      });
 
-      // Count opens/clicks from email_leads fields (total_opens / total_clicks sont agrégés par lead)
-      // On utilise last_email_sent_at comme date proxy pour les ouvertures
+      // 2. Fallback on last_email_sent_at from email_leads (Source de secours si queue incomplète)
+      mappedLeads.forEach((l) => {
+        if (!l.last_email_sent) return;
+        const dk = new Date(l.last_email_sent).toISOString().split('T')[0];
+        if (!leadsDailyStats.has(dk)) return;
+
+        // Si on n'a pas déjà compté un email dans la queue pour ce client ce jour-là, on l'ajoute
+        const alreadyCounted = leadsSentForTraffic.some(e => 
+          e.client_id === l.client_id && 
+          e.sent_at && 
+          new Date(e.sent_at).toISOString().split('T')[0] === dk
+        );
+
+        if (!alreadyCounted) {
+          leadsDailyStats.get(dk)!.count++;
+        }
+      });
+
+      // 3. Opens/Clicks (basé sur tracking_events ou total_opens si possible)
       mappedLeads.forEach((l) => {
         if (!l.last_email_sent) return;
         const dk = new Date(l.last_email_sent).toISOString().split('T')[0];
         if (!leadsDailyStats.has(dk)) return;
         const stat = leadsDailyStats.get(dk)!;
-        if (l.total_opens > 0) stat.opened = Math.max(stat.opened, l.total_opens > 0 ? stat.opened + 1 : 0);
-        if (l.total_clicks > 0) stat.clicked = Math.max(stat.clicked, l.total_clicks > 0 ? stat.clicked + 1 : 0);
+        // On incrémente si le lead a des ouvertures (approximation pour le graphe Axe C)
+        if (l.total_opens > 0) stat.opened++;
+        if (l.total_clicks > 0) stat.clicked++;
       });
 
       setLeadsTrafficData(Array.from(leadsDailyStats.values()).sort((a, b) => a.date.localeCompare(b.date)));
@@ -489,7 +503,7 @@ export function useSystemBrain() {
       next_email_date: l.next_email_scheduled_at,
       total_opens: l.total_opens || 0,
       total_clicks: l.total_clicks || 0,
-      emails_sent_count: sentCountByClientId[l.client_id] || 0,
+      emails_sent_count: Math.max(sentCountByClientId[l.client_id] || 0, l.email_step || 0),
       last_opened_at: studyId ? lastOpenByStudyId[studyId] : l.last_opened_at,
       last_clicked_at: studyId ? lastClickByStudyId[studyId] : l.last_clicked_at,
       created_at: l.created_at,
