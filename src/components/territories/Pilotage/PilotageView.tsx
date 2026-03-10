@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { PilotageContainer } from './ui/PilotageContainer';
 import { FinancialRiskVerdict } from './screens/FinancialRiskVerdict';
 import { PipelineMomentum } from './screens/PipelineMomentum';
@@ -28,6 +28,11 @@ const NavTab = ({ active, onClick, label, icon }: { active: boolean; onClick: ()
 export const PilotageView: React.FC<PilotageViewProps> = ({ system }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'drift' | 'pipeline' | 'projection' | 'roi' | 'warroom' | 'leads'>('overview');
   const [zenMode, setZenMode] = useState(false);
+
+  // Reset scroll to top on tab change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
 
   // Toggle Zen Mode
   const toggleZen = () => setZenMode(prev => !prev);

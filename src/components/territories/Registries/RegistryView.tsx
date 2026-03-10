@@ -15,6 +15,7 @@ export const RegistryView: React.FC<RegistryViewProps> = ({ system }) => {
     metrics, 
     emailLeads, 
     trafficData,
+    leadsTrafficData,
     antiAnnulationByStudy,
     postRefusByStudy,
     emailFlowByClient,
@@ -85,8 +86,8 @@ export const RegistryView: React.FC<RegistryViewProps> = ({ system }) => {
       {/* AXE C - EMAIL LEADS */}
       <div className="mt-16">
           <EmailLeads
-              leads={emailLeads.filter((l: any) => !studies.some((s: any) => s.client_id === l.client_id))} // ✅ FIX: Exclude converted studies from Leads Axis
-              trafficData={trafficData}
+              leads={emailLeads.filter((l: any) => !studies.some((s: any) => s.client_id === l.client_id))}
+              trafficData={leadsTrafficData || []} 
               globalFilters={filters}
               onSetOptOut={setOptOut}
               onDeleteLead={deleteLeadPermanently}

@@ -40,6 +40,7 @@ export default function Dashboard() {
     loadingStep,
     error,
     trafficData,
+    leadsTrafficData,
     emailFlowByClient,
     antiAnnulationByStudy,
     postRefusByStudy,
@@ -269,7 +270,8 @@ export default function Dashboard() {
       emailFlowByClient, 
       antiAnnulationByStudy, 
       postRefusByStudy, 
-      trafficData, // Traffic data is complex to filter day-by-day, keeping as is for trend context or TODO: filter trafficData needs deep dive
+      trafficData,
+      leadsTrafficData, // ✅ Axe C: traffic basé sur client_id
       zenMode, 
       setActiveSection, 
       
@@ -296,7 +298,7 @@ export default function Dashboard() {
   }), [
     // Dépendances critiques pour le re-render
     filteredStudies, filteredLeads, logs, filteredMetrics, filteredFinancialStats, loading, 
-    emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData, 
+    emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData, leadsTrafficData,
     zenMode, refresh, logForceAction
   ]);
 

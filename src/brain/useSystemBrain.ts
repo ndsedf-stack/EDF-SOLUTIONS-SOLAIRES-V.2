@@ -35,6 +35,7 @@ export function useSystemBrain() {
   const [antiAnnulationByStudy, setAntiAnnulationByStudy] = useState<Record<string, any>>({});
   const [postRefusByStudy, setPostRefusByStudy] = useState<Record<string, any>>({});
   const [trafficData, setTrafficData] = useState<any[]>([]);
+  const [leadsTrafficData, setLeadsTrafficData] = useState<any[]>([]); // ✅ Axe C traffic séparé
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingStep, setLoadingStep] = useState("");
 
@@ -432,6 +433,44 @@ export function useSystemBrain() {
         };
       });
       setEmailFlowByClient(flowByClient);
+
+      // ✅ LEADS TRAFFIC DATA (Axe C — basé sur client_id, 14 jours)
+      const TRAFFIC_DAYS = 14;
+      const leadsDailyStats = new Map<string, { date: string; count: number; opened: number; clicked: number }>();
+      const todayL = new Date();
+      for (let i = TRAFFIC_DAYS - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(todayL.getDate() - i);
+        const dk = d.toISOString().split('T')[0];
+        leadsDailyStats.set(dk, { date: dk, count: 0, opened: 0, clicked: 0 });
+      }
+
+      // Count sent emails from email_queue by client_id (not study_id)
+      if (clientIds.length > 0) {
+        const { data: leadsSent } = await supabase
+          .from('email_queue')
+          .select('client_id, sent_at, status')
+          .in('client_id', clientIds)
+          .in('status', ['sent', 'SUCCESS', 'success', 'delivered', 'processed']);
+        (leadsSent || []).forEach((e: any) => {
+          if (!e.sent_at) return;
+          const dk = new Date(e.sent_at).toISOString().split('T')[0];
+          if (leadsDailyStats.has(dk)) leadsDailyStats.get(dk)!.count++;
+        });
+      }
+
+      // Count opens/clicks from email_leads fields (total_opens / total_clicks sont agrégés par lead)
+      // On utilise last_email_sent_at comme date proxy pour les ouvertures
+      mappedLeads.forEach((l) => {
+        if (!l.last_email_sent) return;
+        const dk = new Date(l.last_email_sent).toISOString().split('T')[0];
+        if (!leadsDailyStats.has(dk)) return;
+        const stat = leadsDailyStats.get(dk)!;
+        if (l.total_opens > 0) stat.opened = Math.max(stat.opened, l.total_opens > 0 ? stat.opened + 1 : 0);
+        if (l.total_clicks > 0) stat.clicked = Math.max(stat.clicked, l.total_clicks > 0 ? stat.clicked + 1 : 0);
+      });
+
+      setLeadsTrafficData(Array.from(leadsDailyStats.values()).sort((a, b) => a.date.localeCompare(b.date)));
     } catch (err) { console.error(err); }
   }, []);
 
@@ -602,7 +641,7 @@ export function useSystemBrain() {
 
   return {
     studies, emailLeads, logs, metrics, financialStats, loading, systemInitialized, loadingProgress, loadingStep, error,
-    emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData,
+    emailFlowByClient, antiAnnulationByStudy, postRefusByStudy, trafficData, leadsTrafficData,
     actions: { updateStudyStatus, signStudy, cancelStudy, markDepositPaid, markRibSent, setOptOut, deleteLeadPermanently, deleteStudy, logForceAction, refresh }
   };
 }

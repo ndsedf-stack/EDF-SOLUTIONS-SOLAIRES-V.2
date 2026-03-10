@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Sub-modules
@@ -15,6 +15,11 @@ type AdminSection = 'kpi' | 'users' | 'engine' | 'agents' | 'audit' | 'crm' | 'm
 const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
     const [activeSection, setActiveSection] = useState<AdminSection>('kpi');
+
+    // Reset scroll to top on section change
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [activeSection]);
 
     const MenuButton = ({ section, icon, label }: { section: AdminSection, icon: string, label: string }) => (
         <button
