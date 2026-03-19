@@ -163,7 +163,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 sm:mb-10 gap-4">
         <div className="flex flex-col">
           <img
-            src="/edf-logo.png"
+            src="/logo_edf_blanc.png"
             alt="EDF"
             className="h-10 sm:h-12 w-auto object-contain mb-1"
           />

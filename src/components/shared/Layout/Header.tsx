@@ -90,7 +90,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div className="hidden xl:block ml-1">
               <h1 className="text-base font-black text-white tracking-widest leading-none whitespace-nowrap">
-                REVENUE <span className="text-blue-400">SENTINEL</span>
+                REVENUE <span className="text-orange-500">SENTINEL</span>
               </h1>
               <div className="text-[9px] text-zinc-500 font-bold uppercase tracking-tight mt-0.5 truncate">
                 Clients: {totalClients} <span className="mx-0.5 opacity-30">•</span> Dossiers: {totalStudies}

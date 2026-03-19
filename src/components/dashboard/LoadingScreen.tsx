@@ -50,8 +50,8 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
         {/* Titre */}
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-black text-white tracking-tight neon-text-blue flex items-center gap-3">
-             REVENUE <span className="text-blue-500">SENTINEL</span>
+          <h1 className="text-4xl font-black text-white tracking-tight neon-text-orange flex items-center gap-3">
+             REVENUE <span className="text-orange-500">SENTINEL</span>
           </h1>
           <div className="text-sm text-slate-400 uppercase tracking-[0.3em] font-mono">
             Initialisation du Système
