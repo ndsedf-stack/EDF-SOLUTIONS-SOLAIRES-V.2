@@ -3,25 +3,184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rendez-vous Confirmé</title>
+    <title>Rendez-vous Confirmé — AutoPilote Solaire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f0fdf4; color: #14532d; }
-        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); text-align: center; max-width: 500px; width: 90%; }
-        .icon { font-size: 4em; margin-bottom: 20px; display: block; }
-        h1 { margin: 0 0 10px 0; color: #166534; }
-        p { margin-bottom: 30px; color: #4b5563; }
-        .btn { display: inline-block; background: #16a34a; color: white; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; }
-        .btn:hover { background: #15803d; }
+        :root {
+            --bg:           #060608;
+            --bg-card:      rgba(18,18,22,0.82);
+            --border:       rgba(255,255,255,0.06);
+            --text:         #f5f5f7;
+            --text-muted:   #78787e;
+            --text-faint:   #3a3a40;
+            --accent:       #f97316;
+            --accent-dim:   rgba(249,115,22,0.1);
+            --green:        #34d399;
+            --green-dim:    rgba(52,211,153,0.08);
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-ui:      'Outfit', sans-serif;
+            --font-mono:    'JetBrains Mono', monospace;
+        }
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            overflow: hidden;
+        }
+
+        /* ── GRAIN ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+            opacity: 0.025; mix-blend-mode: overlay;
+        }
+
+        /* ── RADIAL GLOW ── */
+        .glow {
+            position: fixed; z-index: 0; pointer-events: none;
+            width: 600px; height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(52,211,153,0.06) 0%, transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+
+        /* ── CARD ── */
+        .card {
+            position: relative; z-index: 1;
+            background: var(--bg-card);
+            border: 1px solid rgba(52,211,153,0.15);
+            border-radius: 24px; padding: 60px 56px;
+            max-width: 520px; width: calc(100% - 40px);
+            text-align: center;
+            box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(52,211,153,0.06);
+            animation: appear 0.7s cubic-bezier(0.2,0.8,0.2,1) both;
+        }
+
+        @keyframes appear {
+            from { opacity: 0; transform: translateY(32px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ── CHECK ICON ── */
+        .check-wrap {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: var(--green-dim); border: 1px solid rgba(52,211,153,0.2);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 32px;
+            animation: pop 0.5s cubic-bezier(0.2,0.8,0.2,1) 0.3s both;
+        }
+
+        @keyframes pop {
+            from { transform: scale(0.6); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+        }
+
+        .check-svg { width: 32px; height: 32px; stroke: var(--green); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+
+        .check-path {
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            animation: draw 0.5s ease-out 0.6s forwards;
+        }
+
+        @keyframes draw { to { stroke-dashoffset: 0; } }
+
+        /* ── TYPOGRAPHY ── */
+        h1 {
+            font-family: var(--font-display);
+            font-size: 2.8rem; font-weight: 300; line-height: 1.15;
+            letter-spacing: -0.02em; margin-bottom: 16px; color: var(--text);
+        }
+
+        .tagline {
+            font-family: var(--font-mono); font-size: 0.62rem; color: var(--green);
+            letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 28px;
+        }
+
+        p {
+            color: var(--text-muted); font-size: 1rem; line-height: 1.75;
+            font-weight: 300; margin-bottom: 16px;
+        }
+
+        strong { color: var(--text); font-weight: 600; }
+
+        /* ── INFO ROW ── */
+        .info-row {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            margin: 32px 0;
+            font-family: var(--font-mono); font-size: 0.65rem;
+            color: var(--text-muted); letter-spacing: 0.08em;
+        }
+
+        .info-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+
+        /* ── BUTTON ── */
+        .btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            height: 50px; padding: 0 32px;
+            background: var(--text); color: #000;
+            font-family: var(--font-ui); font-weight: 700; font-size: 0.88rem;
+            border-radius: 8px; text-decoration: none; letter-spacing: 0.02em;
+            transition: all 0.3s; border: none; cursor: pointer; margin-top: 8px;
+        }
+
+        .btn:hover { background: #e8e8e8; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,0.4); }
+
+        /* ── LOGO ── */
+        .logo {
+            position: fixed; top: 28px; left: 50%; transform: translateX(-50%);
+            z-index: 10; display: flex; align-items: center; gap: 12px;
+        }
+
+        .logo-mark { width: 28px; height: 28px; border: 1px solid rgba(249,115,22,0.28); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--accent); background: var(--accent-dim); }
+        .logo-name { font-family: var(--font-ui); font-weight: 700; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); opacity: 0.7; }
+
+        @media (max-width: 480px) {
+            .card { padding: 44px 28px; }
+            h1 { font-size: 2.2rem; }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <span class="icon">✅</span>
-        <h1>C'est validé !</h1>
-        <p>Votre demande de rendez-vous technique a bien été prise en compte.</p>
-        <p>Un expert <strong>Solutions Solaires</strong> vous contactera sous 24h ouvrées pour préparer votre dossier.</p>
-        
-        <a href="/" class="btn">Retour au Tableau de Bord</a>
+<div class="glow"></div>
+
+<div class="logo">
+    <div class="logo-mark">⚡</div>
+    <div class="logo-name">AutoPilote Solaire</div>
+</div>
+
+<div class="card">
+    <div class="check-wrap">
+        <svg class="check-svg" viewBox="0 0 32 32">
+            <path class="check-path" d="M6 16 L13 23 L26 10"/>
+        </svg>
     </div>
+
+    <div class="tagline">Demande confirmée</div>
+    <h1>C'est validé.</h1>
+
+    <p>
+        Votre demande de rendez-vous technique a bien été prise en compte.
+    </p>
+    <p>
+        Un expert <strong>Solutions Solaires</strong> vous contactera dans les prochaines <strong>24h ouvrées</strong> pour préparer votre dossier et définir les prochaines étapes.
+    </p>
+
+    <div class="info-row">
+        <span class="info-dot"></span>
+        <span>Réponse garantie sous 24h ouvrées</span>
+    </div>
+
+    <a href="/" class="btn">Retour au Tableau de Bord →</a>
+</div>
 </body>
 </html>

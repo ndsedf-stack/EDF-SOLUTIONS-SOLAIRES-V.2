@@ -3,44 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>La Fin du Bouclier Tarifaire</title>
+    <title>La Fin du Bouclier Tarifaire — Actualité Énergie</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; }
-        header { background: #1e3a8a; color: white; padding: 40px 20px; border-radius: 8px; margin-bottom: 30px; }
-        h1 { margin: 0; font-size: 2.5em; }
-        .date { opacity: 0.8; font-size: 0.9em; }
-        .content { font-size: 1.1em; }
-        .highlight { background: #fef3c7; padding: 2px 5px; border-radius: 4px; }
-        .cta { display: inline-block; background: #2563eb; color: white; text-decoration: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; margin-top: 30px; transition: transform 0.2s; }
-        .cta:hover { transform: scale(1.05); background: #1d4ed8; }
-        footer { margin-top: 50px; border-top: 1px solid #ddd; padding-top: 20px; color: #666; font-size: 0.9em; }
+        :root {
+            --bg:           #060608;
+            --bg-card:      rgba(18,18,22,0.82);
+            --border:       rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.14);
+            --text:         #f5f5f7;
+            --text-muted:   #78787e;
+            --accent:       #f97316;
+            --accent-dim:   rgba(249,115,22,0.1);
+            --red:          #f87171;
+            --red-dim:      rgba(248,113,113,0.08);
+            --font-display: 'Cormorant Garamond', Georgia, serif;
+            --font-ui:      'Outfit', sans-serif;
+            --font-mono:    'JetBrains Mono', monospace;
+            --radius-lg:    20px;
+        }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: var(--font-ui);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ── GRAIN OVERLAY ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+            opacity: 0.028; mix-blend-mode: overlay;
+        }
+
+        /* ── AMBIENT GRADIENT ── */
+        .ambient {
+            position: fixed; top: 0; left: 0; right: 0; height: 100vh; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 60% 60% at 50% -10%, rgba(248,113,113,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 80% 100%, rgba(249,115,22,0.03) 0%, transparent 50%);
+        }
+
+        .container {
+            position: relative; z-index: 1;
+            max-width: 860px; margin: 0 auto; padding: 0 48px 120px;
+        }
+
+        /* ── NAV ── */
+        nav {
+            margin: 0 auto 64px; padding: 28px 0;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo { display: flex; align-items: center; gap: 12px; }
+        .logo-mark { width: 32px; height: 32px; border: 1px solid rgba(249,115,22,0.28); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--accent); background: var(--accent-dim); }
+        .logo-text { font-family: var(--font-ui); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); opacity: 0.88; }
+
+        /* ── HEADER ── */
+        header { text-align: left; margin-bottom: 64px; animation: fadeUp 0.8s ease-out both; }
+
+        .tag {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: var(--font-mono); font-size: 0.65rem; color: var(--red);
+            font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
+            padding: 6px 14px; border-radius: 100px;
+            background: var(--red-dim); border: 1px solid rgba(248,113,113,0.15);
+            margin-bottom: 32px;
+        }
+        .tag-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); }
+
+        h1 {
+            font-family: var(--font-display);
+            font-size: clamp(3rem, 5vw, 4.5rem);
+            font-weight: 300; line-height: 1.05;
+            letter-spacing: -0.02em; margin-bottom: 24px;
+        }
+        h1 i { color: var(--accent); font-style: italic; }
+
+        .lead {
+            font-size: 1.25rem; font-weight: 300; color: var(--text-muted);
+            line-height: 1.7; max-width: 720px;
+        }
+
+        /* ── CONTENT ── */
+        .article-content { animation: fadeUp 0.8s ease-out 0.1s both; }
+
+        p { margin-bottom: 28px; font-size: 1.05rem; color: #a1a1aa; font-weight: 300; }
+        strong { color: var(--text); font-weight: 500; }
+
+        h2 {
+            font-family: var(--font-display); font-size: 2.2rem;
+            font-weight: 400; margin: 64px 0 32px; color: var(--text);
+            padding-bottom: 16px; border-bottom: 1px solid var(--border);
+        }
+
+        ul { list-style: none; margin-bottom: 48px; }
+        li {
+            padding: 24px 0; border-bottom: 1px solid var(--border);
+            display: flex; gap: 24px;
+            font-size: 1.05rem; color: #a1a1aa; font-weight: 300;
+        }
+        li::before {
+            content: '✕'; font-family: var(--font-mono);
+            color: var(--red); display: block; font-size: 0.9rem; margin-top: 2px;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(18,18,22,0.6));
+            border: 1px solid var(--border); border-left: 2px solid var(--accent);
+            border-radius: var(--radius-lg); padding: 40px; margin: 56px 0;
+            font-size: 1.15rem; color: var(--text); line-height: 1.6; font-weight: 300;
+        }
+
+        .highlight-box strong { color: var(--accent); }
+
+        /* ── CTA ── */
+        .cta-wrap { margin-top: 80px; text-align: left; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 12px;
+            height: 54px; padding: 0 40px;
+            background: var(--text); color: #000;
+            font-family: var(--font-ui); font-weight: 700; font-size: 0.95rem;
+            border-radius: 8px; text-decoration: none;
+            transition: all 0.3s;
+            letter-spacing: 0.02em; border: none; cursor: pointer;
+        }
+
+        .btn:hover { background: #e8e8e8; transform: translateY(-2px); box-shadow: 0 16px 32px rgba(0,0,0,0.4); }
+
+        /* ── FOOTER ── */
+        footer {
+            margin-top: 100px; padding-top: 40px; border-top: 1px solid var(--border);
+            font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-muted);
+            letter-spacing: 0.08em; text-transform: uppercase;
+            display: flex; justify-content: space-between;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 0 24px 80px; }
+            h1 { font-size: 2.6rem; }
+            li { flex-direction: column; gap: 12px; padding: 20px 0; }
+        }
     </style>
 </head>
 <body>
+<div class="ambient"></div>
+<div class="container">
+
+    <nav>
+        <div class="logo">
+            <div class="logo-mark">⚡</div>
+            <div class="logo-text">AutoPilote Solaire</div>
+        </div>
+        <div style="font-family:var(--font-mono); font-size:0.6rem; color:var(--text-faint); letter-spacing:0.1em;">DOCUMENT PUBLIC</div>
+    </nav>
+
     <header>
-        <span class="date">ACTUALITÉ ÉNERGIE</span>
-        <h1>Pourquoi 2026 marque la fin de l'électricité bon marché</h1>
+        <div class="tag"><span class="tag-dot"></span>Actualité Énergie</div>
+        <h1>Pourquoi 2026 marque la fin de l'électricité <i>bon marché.</i></h1>
+        <p class="lead">
+            C'est une nouvelle qui était attendue, mais qui fait tout de même l'effet d'une bombe 
+            pour les ménages français. Le Bouclier Tarifaire est officiellement levé.
+        </p>
     </header>
 
-    <div class="content">
-        <p>C'est une nouvelle qui était attendue, mais qui fait tout de même l'effet d'une bombe pour les ménages français.</p>
-        
-        <p>Le <strong>Bouclier Tarifaire</strong>, qui protégeait artificiellement le prix du kWh depuis la crise de 2022, est officiellement levé. Pour des millions de foyers, cela signifie une exposition directe aux fluctuations du marché européen.</p>
+    <div class="article-content">
+        <p>
+            Le <strong>Bouclier Tarifaire</strong>, qui protégeait artificiellement le prix du kWh 
+            depuis la crise énergétique de 2022, n'est plus en vigueur. Pour des millions de foyers, 
+            cela signifie une exposition directe et immédiate aux fluctuations du marché européen 
+            et aux décisions fiscales.
+        </p>
 
         <h2>Les 3 conséquences immédiates</h2>
         <ul>
-            <li><strong>Hausse mécanique</strong> : +15% attendus sur les factures réglementées.</li>
-            <li><strong>Taxes</strong> : Retour de la TICFE à taux plein.</li>
-            <li><strong>Volatilité</strong> : Le prix ne sera plus garanti sur l'année.</li>
+            <li>
+                <strong>Hausse mécanique</strong>
+                <span>Une augmentation de +15% attendue rapidement sur les factures réglementées de base, sans compter les variations futures du marché.</span>
+            </li>
+            <li>
+                <strong>Pression Fiscale</strong>
+                <span>Retour complet de la TICFE (Taxe Intérieure sur la Consommation Finale d'Électricité) à son taux plein, alourdissant mécaniquement la facture globale.</span>
+            </li>
+            <li>
+                <strong>Volatilité Permanente</strong>
+                <span>Le prix de l'électricité ne sera plus jamais garanti sur l'année. Les ménages deviennent dépendants des marchés boursiers de l'énergie.</span>
+            </li>
         </ul>
 
-        <p>Pour les propriétaires de maisons individuelles, <span class="highlight">l'autoconsommation devient la seule assurance-vie financière</span> viable à long terme.</p>
+        <div class="highlight-box">
+            Pour les propriétaires de maisons individuelles exposés à cette explosion structurelle des coûts, 
+            <strong>l'autoconsommation solaire devient la seule assurance-vie financière</strong> 
+            réellement viable sur le long terme.
+        </div>
 
-        <a href="/" class="cta">Simuler mon Autonomie Solaire →</a>
+        <div class="cta-wrap">
+            <a href="/" class="btn">Simuler mon Autonomie Solaire →</a>
+            <p style="margin-top:20px; font-family:var(--font-mono); font-size:0.65rem; letter-spacing:0.04em; color:var(--text-faint);">
+                Simulation gratuite et anonyme. Réponse immédiate.
+            </p>
+        </div>
     </div>
 
     <footer>
-        <p>&copy; 2026 EDF Solutions Solaires - Document pédagogique.</p>
+        <div>© 2026 EDF Solutions Solaires</div>
+        <div>Document pédagogique</div>
     </footer>
+
+</div>
 </body>
 </html>
