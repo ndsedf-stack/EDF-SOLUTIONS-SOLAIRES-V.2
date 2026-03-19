@@ -166,6 +166,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             src="/logo_edf_blanc.png"
             alt="EDF"
             className="h-10 sm:h-12 w-auto object-contain mb-1"
+            style={{ filter: "grayscale(1) invert(1) brightness(2)", mixBlendMode: "screen" }}
           />
           <span className="text-[9px] sm:text-[10px] text-blue-500 font-black uppercase tracking-tighter">
             Solutions Solaires
