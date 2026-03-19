@@ -13,12 +13,11 @@ export const Screen03_Momentum: React.FC<PilotagePipelineProps> = ({ system }) =
   const { studies } = system;
 
   // --- LOGIQUE DE MOMENTUM (INERTIE) ---
-  const signedLast7Days = studies.filter((s: any) => 
-    s.status === 'signed' && 
-    new Date().getTime() - new Date(s.signed_date || s.signed_at).getTime() < 7 * 24 * 60 * 60 * 1000
+  const totalSignatures = studies.filter((s: any) => 
+    s.status === 'signed' || s.deposit_paid
   ).length;
 
-  const velocity = Math.min(0.9, (signedLast7Days / 5) * 0.8);
+  const velocity = Math.min(0.9, (totalSignatures / 10) * 0.8);
   const friction = 0.38;
   const isSlowingDown = velocity < 0.5;
   const level = isSlowingDown ? 'tension' : 'stable';
@@ -30,7 +29,7 @@ export const Screen03_Momentum: React.FC<PilotagePipelineProps> = ({ system }) =
       <section className="px-12 pt-10">
         <AlertBanner
           status={level}
-          count={signedLast7Days}
+          count={totalSignatures}
           onCtaClick={() => console.log('Optimiser le flux')}
         />
       </section>
@@ -87,7 +86,7 @@ export const Screen03_Momentum: React.FC<PilotagePipelineProps> = ({ system }) =
           >
             <SliceRow label="Vélocité" value={`${Math.round(velocity * 100)}%`} tone="info" />
             <SliceRow label="Friction" value={`${Math.round(friction * 100)}%`} tone="warning" />
-            <SliceRow label="Conversions" value={signedLast7Days.toString()} tone="success" />
+            <SliceRow label="Conversions" value={totalSignatures.toString()} tone="success" />
             
             <div className="my-8 h-px bg-white/5 w-full" />
             <div className="bg-white/5 rounded-lg p-4 border border-white/5">
@@ -105,7 +104,7 @@ export const Screen03_Momentum: React.FC<PilotagePipelineProps> = ({ system }) =
         <div className="grid grid-cols-4 gap-6">
           <KpiStrip title="Leads actifs" value="177" label="Volume entrée" icon={<span className="text-xl text-[#00D9FF]">⚡</span>} accentColor="cyan" progress={70} />
           <KpiStrip title="Conversion" value="34%" label="Taux global" icon={<span className="text-xl text-[#FF9F40]">🔄</span>} accentColor="warning" progress={34} />
-          <KpiStrip title="Signatures" value={signedLast7Days.toString()} label="7 derniers jours" icon={<span className="text-xl text-[#00E676]">✍️</span>} accentColor="success" progress={80} />
+          <KpiStrip title="Signatures" value={totalSignatures.toString()} label="Total validé" icon={<span className="text-xl text-[#00E676]">✍️</span>} accentColor="success" progress={80} />
           <KpiStrip title="Goulot" value="Prospects" label="Point de friction" icon={<span className="text-xl text-[#FF4757]">🛑</span>} accentColor="danger" progress={90} />
         </div>
       </section>
