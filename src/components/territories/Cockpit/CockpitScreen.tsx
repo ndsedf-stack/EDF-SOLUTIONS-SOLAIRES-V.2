@@ -147,36 +147,19 @@ function FinancialDashboard({ studies }: FinancialDashboardProps) {
       })
       .sort((a, b) => new Date(a.signed_at!).getTime() - new Date(b.signed_at!).getTime());
 
-    // Grouper par jour et calculer le cumulatif
-    const dailyData: Map<string, { cumulative: number; daily: number; date: Date }> = new Map();
+    // On map CHAQUE vente individuellement pour avoir exactement le nombre de points = nombre de ventes.
+    // L'heure de signature permet de dessiner 2 points distincts le même jour s'il y a des doublons journaliers.
     let cumulative = 0;
-
-    monthStudies.forEach((study) => {
-      const date = new Date(study.signed_at!);
-      const dateKey = date.toISOString().split('T')[0];
-      
+    return monthStudies.map((study) => {
       cumulative += study.total_price || 0;
-      
-      if (dailyData.has(dateKey)) {
-        const existing = dailyData.get(dateKey)!;
-        existing.daily += study.total_price || 0;
-        existing.cumulative = cumulative;
-      } else {
-        dailyData.set(dateKey, {
-          date: new Date(date.getFullYear(), date.getMonth(), date.getDate()),
-          cumulative,
-          daily: study.total_price || 0,
-        });
-      }
+      const date = new Date(study.signed_at!);
+      return {
+        date, // Heure conservée (séparation visuelle si 2 ventes/jour)
+        cumulative,
+        daily: study.total_price || 0,
+        label: date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(':', 'h'),
+      };
     });
-
-    // Convertir en array et ajouter les labels
-    return Array.from(dailyData.values())
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .map((d) => ({
-        ...d,
-        label: d.date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }),
-      }));
   }, [studies]);
 
   // Calcul de la progression
@@ -525,7 +508,7 @@ function FinancialChart({
               {(tooltipData.cumulative / 1000).toFixed(1)} K€
             </div>
             <div style={{ fontSize: '12px', color: COLORS_CHART.text.secondary }}>
-              +{(tooltipData.daily / 1000).toFixed(1)} K€ ce jour
+              +{(tooltipData.daily / 1000).toFixed(1)} K€ ({tooltipData.label})
             </div>
           </div>
         </TooltipWithBounds>
