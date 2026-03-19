@@ -549,7 +549,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       .filter((s: any) => {
           // 1. FILTRE TEMPOREL (DEMANDE UTILISATEUR: "Mois passé doit disparaitre")
           // On se base sur la date de création ou de signature si elle existe
-          const d = new Date(s.created_at);
+          const d = new Date(s.signed_at || s.created_at);
           const now = new Date();
           const isCurrentMonth = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
           
