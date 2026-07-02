@@ -100,67 +100,99 @@ const FONTS_CHART = {
 };
 
 // Composant principal
-function FinancialDashboard({ studies }: FinancialDashboardProps) {
-  // CALCUL CORRECT DU CA MENSUEL
+interface FinancialDashboardProps {
+  studies: any[];
+  globalDateFilter?: string;
+  unfilteredStudies?: any[];
+}
+
+function FinancialDashboard({ studies, globalDateFilter = 'all_time', unfilteredStudies = [] }: FinancialDashboardProps) {
+  // CALCUL CORRECT DU CA DE LA PÉRIODE SÉLECTIONNÉE
   const currentMonthCA = useMemo(() => {
-    const now = new Date();
     return studies
       .filter((s) => {
         if (!s.signed_at || !s.total_price || ['cancelled', 'refused'].includes(s.status)) return false;
-        const signedDate = new Date(s.signed_at);
-        return (
-          signedDate.getMonth() === now.getMonth() &&
-          signedDate.getFullYear() === now.getFullYear()
-        );
+        return true;
       })
       .reduce((acc, s) => acc + (s.total_price || 0), 0);
   }, [studies]);
 
-  // CALCUL CORRECT DU MOIS DERNIER
+  // CALCUL CORRECT DU COMPARATIF MOIS DERNIER (OU PÉRIODE PRÉCÉDENTE)
   const lastMonthCA = useMemo(() => {
+    const list = unfilteredStudies.length > 0 ? unfilteredStudies : studies;
     const now = new Date();
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     
-    return studies
+    let targetStartDate: Date;
+    let targetEndDate: Date;
+    
+    if (globalDateFilter === 'all_time') {
+      return 0; // Pas de comparaison pertinente
+    } else if (globalDateFilter === 'current_month') {
+      targetStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      targetEndDate = new Date(now.getFullYear(), now.getMonth(), 0);
+    } else if (globalDateFilter.startsWith('range:')) {
+      return 0; // Pas de comparaison simple de plage
+    } else {
+      // mois spécifique YYYY-MM
+      const [year, month] = globalDateFilter.split('-').map(Number);
+      targetStartDate = new Date(year, month - 2, 1); // mois précédent
+      targetEndDate = new Date(year, month - 1, 0);
+    }
+    
+    return list
       .filter((s) => {
         if (!s.signed_at || !s.total_price || ['cancelled', 'refused'].includes(s.status)) return false;
         const signedDate = new Date(s.signed_at);
-        return (
-          signedDate.getMonth() === lastMonth.getMonth() &&
-          signedDate.getFullYear() === lastMonth.getFullYear()
-        );
+        return signedDate >= targetStartDate && signedDate <= targetEndDate;
       })
       .reduce((acc, s) => acc + (s.total_price || 0), 0);
-  }, [studies]);
+  }, [unfilteredStudies, studies, globalDateFilter]);
 
   // CALCUL CORRECT DES DONNÉES DU GRAPHE (CA CUMULÉ PAR JOUR)
   const chartData = useMemo(() => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    // Filtrer et trier les dossiers signés ce mois
-    const monthStudies = studies
+    // Trier tous les dossiers signés de la période
+    const periodStudies = studies
       .filter((s) => {
         if (!s.signed_at || !s.total_price || ['cancelled', 'refused'].includes(s.status)) return false;
-        const signedDate = new Date(s.signed_at);
-        return signedDate >= startOfMonth && signedDate <= now;
+        return true;
       })
       .sort((a, b) => new Date(a.signed_at!).getTime() - new Date(b.signed_at!).getTime());
 
     // On map CHAQUE vente individuellement pour avoir exactement le nombre de points = nombre de ventes.
-    // L'heure de signature permet de dessiner 2 points distincts le même jour s'il y a des doublons journaliers.
     let cumulative = 0;
-    return monthStudies.map((study) => {
+    return periodStudies.map((study) => {
       cumulative += study.total_price || 0;
       const date = new Date(study.signed_at!);
       return {
-        date, // Heure conservée (séparation visuelle si 2 ventes/jour)
+        date, 
         cumulative,
         daily: study.total_price || 0,
         label: date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(':', 'h'),
       };
     });
   }, [studies]);
+
+  // Label dynamique de la période sélectionnée
+  const selectedPeriodLabel = useMemo(() => {
+    if (globalDateFilter === 'all_time') return 'TOUT LE TEMPS';
+    if (globalDateFilter === 'current_month') {
+      return new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase();
+    }
+    if (globalDateFilter.startsWith('range:')) {
+      const parts = globalDateFilter.split(':');
+      if (parts.length === 3) {
+        const formatLabelShort = (ymStr: string) => {
+          const [y, m] = ymStr.split('-');
+          const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+          return d.toLocaleDateString('fr-FR', { month: 'short' }).toUpperCase() + ' ' + y;
+        };
+        return `${formatLabelShort(parts[1])} - ${formatLabelShort(parts[2])}`;
+      }
+    }
+    const [year, month] = globalDateFilter.split('-').map(Number);
+    const d = new Date(year, month - 1, 1);
+    return d.toLocaleString('fr-FR', { month: 'long' }).toUpperCase() + ' ' + year;
+  }, [globalDateFilter]);
 
   // Calcul de la progression
   const progression = lastMonthCA > 0 ? ((currentMonthCA - lastMonthCA) / lastMonthCA) * 100 : 0;
@@ -218,7 +250,7 @@ function FinancialDashboard({ studies }: FinancialDashboardProps) {
                      }} />
                 <span className="text-[10px] font-bold uppercase tracking-widest" 
                       style={{ color: COLORS_CHART.text.secondary, fontFamily: FONTS_CHART.body }}>
-                  {new Date().toLocaleString('fr-FR', { month: 'long' }).toUpperCase()}
+                  {selectedPeriodLabel}
                 </span>
               </div>
               <div className="flex items-baseline gap-2">
@@ -519,33 +551,19 @@ function FinancialChart({
 
 export function CockpitScreen({ system }: CockpitScreenProps) {
   // 🟢 LOGIQUE EXISTANTE (DÉBRANCHÉE DE L'AFFICHAGE PRINCIPAL MAIS PRÉSENTE)
-  const { studies, metrics, financialStats, logs } = system;
+  const { studies, metrics, financialStats, logs, globalDateFilter = 'all_time', unfilteredStudies } = system;
 
   // 🔴 CALCUL D'INTELLIGENCE OPS (HOOK PURE - LIVE DATA)
   // REMPLACEMENT: On dérive les données Ops directement de `system.studies` (Live) au lieu de `ops_snapshot` (Static/Stale)
-  // Cela corrige:
-  // 1. La persistance des vieux dossiers (car on filtre ici)
-  // 2. Le manque de mise à jour des clics/vues (car `studies` est live via useSystemBrain)
-
+  // Déjà filtré par le parent selon la période.
   const filteredOpsData = useMemo(() => {
     return studies
       .filter((s: any) => {
-          // 1. FILTRE TEMPOREL (DEMANDE UTILISATEUR: "Mois passé doit disparaitre")
-          // On se base sur la date de création ou de signature si elle existe
-          const d = new Date(s.signed_at || s.created_at);
-          const now = new Date();
-          const isCurrentMonth = d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-          
-          // DEBUG
-          if (!isCurrentMonth) {
-             console.log(`[Cockpit] Cleaning old study: ${s.id} (${s.created_at})`);
-          }
           if (s.status === 'archived' || s.archived) {
              console.log(`[Cockpit] Cleaning archived study: ${s.id}`);
              return false;
           }
-          
-          return isCurrentMonth;
+          return true;
       })
       .map((s: any) => {
           // MAPPING LIVE STUDY -> OPS ROW
@@ -610,15 +628,49 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
   // --- FIN ANCIEN CALCUL ---
 
 
-  const financialRiskData: FinancialPoint[] = useMemo(() => {
-    // SCOPE FIX: Align Chart with "Current Month" (Février) to match the KP Box (202k).
+  const periodRange = useMemo(() => {
     const now = new Date();
-    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    
-    const days = Array.from({ length: daysInMonth }).map((_, i) => {
-      const d = new Date(now.getFullYear(), now.getMonth(), i + 1);
-      return d.toISOString().split('T')[0];
-    });
+    let startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    let endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    if (globalDateFilter === 'all_time') {
+      let minTime = now.getTime();
+      studies.forEach((s: any) => {
+        const d = new Date(s.signed_at || s.created_at);
+        if (!isNaN(d.getTime()) && d.getTime() < minTime) {
+          minTime = d.getTime();
+        }
+      });
+      startDate = new Date(minTime);
+      startDate.setDate(1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (globalDateFilter === 'current_month') {
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (globalDateFilter.startsWith('range:')) {
+      const parts = globalDateFilter.split(':');
+      if (parts.length === 3) {
+        const [sYear, sMonth] = parts[1].split('-').map(Number);
+        const [eYear, eMonth] = parts[2].split('-').map(Number);
+        startDate = new Date(sYear, sMonth - 1, 1);
+        endDate = new Date(eYear, eMonth, 0);
+      }
+    } else {
+      const [year, month] = globalDateFilter.split('-').map(Number);
+      startDate = new Date(year, month - 1, 1);
+      endDate = new Date(year, month, 0);
+    }
+
+    return { startDate, endDate };
+  }, [globalDateFilter, studies]);
+
+  const financialRiskData: FinancialPoint[] = useMemo(() => {
+    const days: string[] = [];
+    let current = new Date(periodRange.startDate);
+    while (current <= periodRange.endDate) {
+      days.push(current.toISOString().split('T')[0]);
+      current.setDate(current.getDate() + 1);
+    }
 
     return days.map(dayStr => {
       const dayEndOfDay = new Date(dayStr);
@@ -628,15 +680,9 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
       let exposed = 0;
 
       studies.forEach((s: any) => {
-         // SCOPE: Only studies signed THIS MONTH
          if (!s.signed_at || ['cancelled', 'refused'].includes(s.status)) return;
          
          const signedDate = new Date(s.signed_at);
-         
-         // 1. Must be signed in the Current Month (Strict Match with "Février" Metric)
-         if (signedDate.getMonth() !== now.getMonth() || signedDate.getFullYear() !== now.getFullYear()) return;
-
-         // 2. Must be visible by this date in the chart
          if (signedDate > dayEndOfDay) return; 
 
          const paidAt = s.deposit_paid_at ? new Date(s.deposit_paid_at) : null;
@@ -651,7 +697,7 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
 
       return { date: dayStr, securedCA: secured, exposedCA: exposed };
     });
-  }, [studies]);
+  }, [periodRange, studies]);
 
   const activityFeed: ActivityEvent[] = useMemo(() => {
     const recentLogs = (logs || []).slice(0, 10).map((l: any) => ({
@@ -757,7 +803,11 @@ export function CockpitScreen({ system }: CockpitScreenProps) {
 
       {/* ANCIEN CONTENU MASQUÉ OU MODIFIÉ SI DEMANDÉ, MAIS ICI ON LAISSE LE RESTE DU JSX QUI SUIT LE HEADER */}
 
-      <FinancialDashboard studies={studies} />
+      <FinancialDashboard 
+        studies={studies} 
+        globalDateFilter={globalDateFilter} 
+        unfilteredStudies={unfilteredStudies} 
+      />
 
       {/* ✅ AUDIT FIX ID: KPI_OVERLOAD -> CLUSTERS SÉMANTIQUES (PATTERN UX-ORG-001) */}
       <KPIClusters 

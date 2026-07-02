@@ -292,6 +292,8 @@ export default function Dashboard() {
   const systemSnapshot = useMemo(() => ({
       studies: filteredStudies, 
       emailLeads: filteredLeads, 
+      unfilteredStudies: studies,
+      globalDateFilter,
       logs, 
       metrics: filteredMetrics, 
       financialStats: filteredFinancialStats, 
@@ -304,7 +306,7 @@ export default function Dashboard() {
       antiAnnulationByStudy, 
       postRefusByStudy, 
       trafficData,
-      leadsTrafficData, // ✅ Axe C: traffic basé sur client_id
+      leadsTrafficData, 
       zenMode, 
       setActiveSection, 
       
