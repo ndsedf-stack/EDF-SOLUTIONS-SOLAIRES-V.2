@@ -18,8 +18,9 @@ interface HeaderProps {
   unsubscribeRate?: number;
   activeSection: "dashboard" | "cockpit" | "leads" | "war_room" | "pilotage" | "registry" | "sales" | "roi";
   setActiveSection: (section: "dashboard" | "cockpit" | "leads" | "war_room" | "pilotage" | "registry" | "sales" | "roi") => void;
-  globalDateFilter?: 'current_month' | 'all_time'; // Optional to avoid breaking tests/other uses
-  onSetDateFilter?: (filter: 'current_month' | 'all_time') => void;
+  globalDateFilter?: string; 
+  onSetDateFilter?: (filter: string) => void;
+  availableMonths?: string[];
 }
 
 // ✅ NavButton Component
@@ -60,9 +61,55 @@ export const Header: React.FC<HeaderProps> = ({
   unsubscribeRate = 0,
   activeSection,
   setActiveSection,
-  globalDateFilter = 'current_month', // Default safe
-  onSetDateFilter
+  globalDateFilter = 'all_time',
+  onSetDateFilter,
+  availableMonths = []
 }) => {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+  
+  const [rangeStart, setRangeStart] = React.useState('');
+  const [rangeEnd, setRangeEnd] = React.useState('');
+
+  React.useEffect(() => {
+    if (availableMonths && availableMonths.length > 0) {
+      if (!rangeStart) setRangeStart(availableMonths[availableMonths.length - 1]);
+      if (!rangeEnd) setRangeEnd(availableMonths[0]);
+    }
+  }, [availableMonths]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const formatMonthLabel = (ymStr: string) => {
+    if (!ymStr) return '';
+    const [year, month] = ymStr.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    if (isNaN(date.getTime())) return ymStr;
+    const monthName = date.toLocaleDateString('fr-FR', { month: 'short' });
+    return `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${year}`;
+  };
+
+  const getFilterLabel = () => {
+    if (globalDateFilter === 'all_time') return 'Tout';
+    if (globalDateFilter === 'current_month') return 'Ce mois';
+    if (globalDateFilter?.startsWith('range:')) {
+      const parts = globalDateFilter.split(':');
+      if (parts.length === 3) {
+        const start = formatMonthLabel(parts[1]);
+        const end = formatMonthLabel(parts[2]);
+        return `${start} - ${end}`;
+      }
+    }
+    return formatMonthLabel(globalDateFilter || '');
+  };
   const conversionRate =
     totalClients > 0 ? Math.round((signedClients / totalClients) * 100) : 0;
 
@@ -147,27 +194,130 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* DATE FILTER */}
-          <div className="hidden md:flex bg-black/40 p-0.5 rounded-lg border border-white/10">
-              <button
-                onClick={() => onSetDateFilter?.("current_month")}
-                className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
-                  globalDateFilter === "current_month" 
-                    ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" 
-                    : "text-slate-500 hover:text-slate-300"
-                }`}
-              >
-                Mois
-              </button>
-              <button
-                onClick={() => onSetDateFilter?.("all_time")}
-                className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-wider transition-all ${
-                  globalDateFilter === "all_time" 
-                    ? "bg-violet-600 text-white shadow-lg shadow-violet-600/20" 
-                    : "text-slate-500 hover:text-slate-300"
-                }`}
-              >
-                Tout
-              </button>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-black/40 hover:bg-white/5 hover:border-white/20 transition-all text-[9px] font-black uppercase tracking-wider text-slate-300"
+            >
+              <span>📅</span>
+              <span>{getFilterLabel()}</span>
+              <span className="text-[7px] text-slate-500">▼</span>
+            </button>
+
+            {isOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-[#090b11]/95 border border-white/10 rounded-xl p-4 shadow-2xl z-50 text-[11px] backdrop-blur-xl space-y-4 text-slate-300">
+                {/* 1. SHORTCUTS */}
+                <div className="space-y-2">
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Raccourcis</div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        onSetDateFilter?.("all_time");
+                        setIsOpen(false);
+                      }}
+                      className={`flex-1 py-1.5 rounded-md font-bold text-center border transition-all ${
+                        globalDateFilter === "all_time"
+                          ? "bg-violet-600 border-violet-500 text-white"
+                          : "bg-white/5 border-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Tout le temps
+                    </button>
+                    <button
+                      onClick={() => {
+                        onSetDateFilter?.("current_month");
+                        setIsOpen(false);
+                      }}
+                      className={`flex-1 py-1.5 rounded-md font-bold text-center border transition-all ${
+                        globalDateFilter === "current_month"
+                          ? "bg-emerald-600 border-emerald-500 text-white"
+                          : "bg-white/5 border-white/5 hover:bg-white/10 text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Mois en cours
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-px bg-white/5"></div>
+
+                {/* 2. DYNAMIC MONTHS */}
+                {availableMonths && availableMonths.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Mois spécifiques</div>
+                    <div className="grid grid-cols-2 gap-1.5 max-h-24 overflow-y-auto pr-1 scrollbar-thin">
+                      {availableMonths.map((ym) => (
+                        <button
+                          key={ym}
+                          onClick={() => {
+                            onSetDateFilter?.(ym);
+                            setIsOpen(false);
+                          }}
+                          className={`py-1 rounded px-2 font-medium text-left border transition-all truncate ${
+                            globalDateFilter === ym
+                              ? "bg-blue-600 border-blue-500 text-white"
+                              : "bg-black/20 border-white/5 hover:bg-white/5 text-slate-400 hover:text-slate-200"
+                          }`}
+                        >
+                          {formatMonthLabel(ym)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="h-px bg-white/5"></div>
+
+                {/* 3. MONTH RANGE */}
+                <div className="space-y-2">
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Sélection de période</div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 space-y-1">
+                      <div className="text-[8px] text-slate-500 uppercase">Début</div>
+                      <select
+                        value={rangeStart}
+                        onChange={(e) => setRangeStart(e.target.value)}
+                        className="w-full bg-[#030408]/90 border border-white/10 rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-blue-500"
+                      >
+                        {(availableMonths || []).map((ym) => (
+                          <option key={ym} value={ym}>
+                            {formatMonthLabel(ym)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-slate-600 self-end mb-1">à</div>
+                    <div className="flex-1 space-y-1">
+                      <div className="text-[8px] text-slate-500 uppercase">Fin</div>
+                      <select
+                        value={rangeEnd}
+                        onChange={(e) => setRangeEnd(e.target.value)}
+                        className="w-full bg-[#030408]/90 border border-white/10 rounded px-2 py-1 text-slate-300 focus:outline-none focus:border-blue-500"
+                      >
+                        {(availableMonths || []).map((ym) => (
+                          <option key={ym} value={ym}>
+                            {formatMonthLabel(ym)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (rangeStart && rangeEnd) {
+                        const start = rangeStart <= rangeEnd ? rangeStart : rangeEnd;
+                        const end = rangeStart <= rangeEnd ? rangeEnd : rangeStart;
+                        onSetDateFilter?.(`range:${start}:${end}`);
+                        setIsOpen(false);
+                      }
+                    }}
+                    className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-all text-center mt-2 shadow-[0_0_12px_rgba(59,130,246,0.3)]"
+                  >
+                    Valider la période
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="hidden sm:block h-4 w-px bg-white/10 mx-1"></div>

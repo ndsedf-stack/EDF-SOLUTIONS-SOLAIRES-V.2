@@ -203,7 +203,24 @@ export default function Dashboard() {
   // ============================================
   // GLOBAL DATE FILTER (NEW 🔥)
   // ============================================
-  const [globalDateFilter, setGlobalDateFilter] = useState<'current_month' | 'all_time'>('all_time');
+  const [globalDateFilter, setGlobalDateFilter] = useState<string>('all_time');
+
+  // Dynamically extract all available months (YYYY-MM) from studies to display in selector
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    studies.forEach(s => {
+      const dates = [s.created_at, s.signed_at, s.deposit_paid_at].filter(Boolean) as string[];
+      dates.forEach(dStr => {
+        const d = new Date(dStr);
+        if (!isNaN(d.getTime())) {
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, '0');
+          months.add(`${y}-${m}`);
+        }
+      });
+    });
+    return Array.from(months).sort().reverse(); // Show newest months first
+  }, [studies]);
 
   // Filter Logic wrapped in useMemo to prevent unnecessary rebuilds
   const { filteredStudies, filteredLeads, filteredMetrics, filteredFinancialStats } = useMemo(() => {
@@ -217,30 +234,46 @@ export default function Dashboard() {
       };
     }
 
-    // 2. Filter for "current_month"
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const isCurrentMonth = (dateStr?: string | null) => {
+    const checkDate = (dateStr?: string | null) => {
       if (!dateStr) return false;
       const d = new Date(dateStr);
-      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      if (isNaN(d.getTime())) return false;
+      
+      if (globalDateFilter === 'current_month') {
+        const now = new Date();
+        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+      }
+      
+      if (globalDateFilter.startsWith('range:')) {
+        const parts = globalDateFilter.split(':');
+        if (parts.length === 3) {
+          const start = parts[1]; // YYYY-MM
+          const end = parts[2]; // YYYY-MM
+          const dYear = d.getFullYear();
+          const dMonth = String(d.getMonth() + 1).padStart(2, '0');
+          const dYM = `${dYear}-${dMonth}`;
+          return dYM >= start && dYM <= end;
+        }
+      }
+      
+      // otherwise, globalDateFilter is a specific YYYY-MM
+      const dYear = d.getFullYear();
+      const dMonth = String(d.getMonth() + 1).padStart(2, '0');
+      const dYM = `${dYear}-${dMonth}`;
+      return dYM === globalDateFilter;
     };
 
-    // Filter Studies (Created OR Signed OR Paid in current month - Activity based)
-    // STRICT REQUEST: "Dossiers du mois en cours" => Created At OR Signed At to capture new business closed this month from old leads.
+    // Filter Studies (Created OR Signed OR Paid in target period - Activity based)
     const fStudies = studies.filter(s => 
-      isCurrentMonth(s.created_at) || 
-      (s.signed_at && isCurrentMonth(s.signed_at)) || 
-      (s.deposit_paid_at && isCurrentMonth(s.deposit_paid_at))
+      checkDate(s.created_at) || 
+      (s.signed_at && checkDate(s.signed_at)) || 
+      (s.deposit_paid_at && checkDate(s.deposit_paid_at))
     );
 
-    // Filter Leads (Created this month)
-    const fLeads = leads.filter(l => isCurrentMonth(l.created_at));
+    // Filter Leads (Created in target period)
+    const fLeads = leads.filter(l => checkDate(l.created_at));
 
     // 3. Re-calculate Brain (Metrics & Financials)
-    // We import buildSystemBrain to get consistent stats
     const newBrain = buildSystemBrain(fStudies);
 
     return {
@@ -337,6 +370,7 @@ export default function Dashboard() {
         signedClients={systemMetrics.signedStudies}
         globalDateFilter={globalDateFilter}
         onSetDateFilter={setGlobalDateFilter}
+        availableMonths={availableMonths}
       />
 
       <main className="max-w-[1600px] mx-auto px-6 py-8 space-y-12 mt-20">
