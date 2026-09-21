@@ -58,6 +58,16 @@ export const LeadsEmailEngine: React.FC<{ system: any }> = ({ system }) => {
   const caSauve = system.financialStats?.cashSecured || 0;
   const dossiersRecuperes = system.metrics?.healthy?.length || 0;
   const tempsEco = (system.logs?.length || 0) * 15 / 60; // 15 min par action
+
+  // 4. KPIs LEADS — BRANCHÉS SUR SUPABASE (system.emailLeads)
+  const leadsStats = useMemo(() => {
+    const leads = system.emailLeads || [];
+    const total = leads.length;
+    const qualified = leads.filter((l: any) => (l.email_sequence_step || 0) > 2).length;
+    const lost = leads.filter((l: any) => l.opted_out === true).length;
+    const toFollow = leads.filter((l: any) => !l.opted_out && (l.email_sequence_step || 0) <= 2).length;
+    return { total, qualified, toFollow, lost };
+  }, [system.emailLeads]);
   return (
     <section className="screen-analysis p-12 bg-[#0A0E27] min-h-screen text-white flex flex-col gap-16 font-sans overflow-x-hidden">
       
@@ -84,10 +94,10 @@ export const LeadsEmailEngine: React.FC<{ system: any }> = ({ system }) => {
             </div>
 
             <div className="grid grid-cols-4 gap-4">
-                <KPIMini label="Leads Détectés" value="124" />
-                <KPIMini label="Qualifiés" value="38" color="#4ADE80" />
-                <KPIMini label="À relancer" value="12" color="#FB923C" />
-                <KPIMini label="Perdus" value="19" color="#64748B" />
+                <KPIMini label="Leads Détectés" value={String(leadsStats.total)} />
+                <KPIMini label="Qualifiés" value={String(leadsStats.qualified)} color="#4ADE80" />
+                <KPIMini label="À relancer" value={String(leadsStats.toFollow)} color="#FB923C" />
+                <KPIMini label="Perdus" value={String(leadsStats.lost)} color="#64748B" />
             </div>
 
             <div className="h-[240px] w-full bg-[#0A0E27]/30 rounded-2xl border border-white/5 p-4 flex items-center justify-center">
@@ -97,7 +107,7 @@ export const LeadsEmailEngine: React.FC<{ system: any }> = ({ system }) => {
             <div className="pt-6 border-t border-white/5">
                 <p className="text-xs text-white/40 leading-relaxed italic">
                     Le moteur détecte et qualifie les opportunités à fort potentiel avant intervention humaine. 
-                    <span className="text-[#FF4757]"> 19 perdus</span> par dette commerciale immédiate.
+                    <span className="text-[#FF4757]"> {leadsStats.lost} perdus</span> par dette commerciale immédiate.
                 </p>
             </div>
         </div>
