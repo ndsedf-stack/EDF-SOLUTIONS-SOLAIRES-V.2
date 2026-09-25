@@ -664,7 +664,7 @@ export default function GuestView() {
           id="securite-juridique"
           title="Sécurité EDF — Groupe d'État"
           icon={<Shield className="text-blue-400" />}
-          defaultOpen={false}
+          defaultOpen={true}
         >
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-blue-950/40 to-indigo-950/40 border-2 border-blue-500/30 rounded-xl p-6">
@@ -1528,7 +1528,7 @@ export default function GuestView() {
           id="financial-context"
           title="Comment lire les chiffres qui suivent"
           icon={<Info className="text-blue-400" />}
-          defaultOpen={false}
+          defaultOpen={true}
         >
           <div className="space-y-4">
             <div className="bg-blue-950/40 border-l-4 border-blue-500 rounded-r-lg p-5">
