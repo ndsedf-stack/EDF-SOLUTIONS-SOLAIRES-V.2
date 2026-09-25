@@ -3379,6 +3379,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
         elecPrice: electricityPrice || 0.25,
         installedPower: installedPower || 3.5,
         projectionYears,
+        py: projectionYears,
         mode: "financing",
         warrantyMode: warrantyMode ? "performance" : "essential",
 
@@ -3985,20 +3986,47 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
 
                 {/* Row 1bis: Autoconsommation */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <ParamCard
-                    label="Taux d'Autoconsommation (%)"
-                    value={selfConsumptionRate}
-                    setValue={setSelfConsumptionRate}
-                    step={1}
-                    min={0}
-                    unit="%"
-                    icon={<TrendingUp size={14} className="text-emerald-400" />}
-                    sublabel={`${Math.round(
-                      yearlyProduction * (selfConsumptionRate / 100)
-                    )} kWh autoconsommés sur ${formatNum(
-                      yearlyProduction
-                    )} kWh produits`}
-                  />
+                  <div>
+                    <ParamCard
+                      label="Taux d'Autoconsommation (%)"
+                      value={selfConsumptionRate}
+                      setValue={setSelfConsumptionRate}
+                      step={1}
+                      min={0}
+                      max={100}
+                      unit="%"
+                      icon={<TrendingUp size={14} className="text-emerald-400" />}
+                      sublabel={`${Math.round(
+                        yearlyProduction * (selfConsumptionRate / 100)
+                      )} kWh autoconsommés sur ${formatNum(
+                        yearlyProduction
+                      )} kWh produits`}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelfConsumptionRate(50)}
+                        className={`px-3 py-1.5 text-xs rounded-xl border transition-all ${
+                          selfConsumptionRate === 50
+                            ? "bg-amber-500/20 border-amber-500 text-amber-300 font-bold shadow"
+                            : "bg-slate-800/60 border-slate-700/80 text-slate-400 hover:text-white hover:bg-slate-700/50"
+                        }`}
+                      >
+                        50% (Sans batterie)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelfConsumptionRate(100)}
+                        className={`px-3 py-1.5 text-xs rounded-xl border transition-all ${
+                          selfConsumptionRate === 100
+                            ? "bg-emerald-500/20 border-emerald-500 text-emerald-300 font-bold shadow"
+                            : "bg-slate-800/60 border-slate-700/80 text-slate-400 hover:text-white hover:bg-slate-700/50"
+                        }`}
+                      >
+                        100% (Avec batterie 6,9 kWh)
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="bg-black/20 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
                     <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-400">

@@ -36,6 +36,13 @@ import {
   CheckCircle,
   Calendar,
   Clock,
+  Gift,
+  Heart,
+  Smartphone,
+  Battery,
+  Monitor,
+  Droplets,
+  HardHat,
 } from "lucide-react";
 import {
   AreaChart,
@@ -125,6 +132,26 @@ const ModuleSection: React.FC<{
     </div>
   );
 };
+
+const SolarPanelIcon = ({ className = "w-5 h-5 text-blue-400" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="5" width="20" height="14" rx="2" />
+    <line x1="2" y1="12" x2="22" y2="12" />
+    <line x1="8" y1="5" x2="8" y2="19" />
+    <line x1="16" y1="5" x2="16" y2="19" />
+  </svg>
+);
+
+const InverterIcon = ({ className = "w-5 h-5 text-blue-400" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="3" width="16" height="18" rx="2" />
+    <circle cx="8" cy="7" r="1.2" fill="currentColor" />
+    <circle cx="12" cy="7" r="1.2" fill="currentColor" />
+    <circle cx="16" cy="7" r="1.2" fill="currentColor" />
+    <line x1="7" y1="13" x2="17" y2="13" />
+    <line x1="7" y1="17" x2="13" y2="17" />
+  </svg>
+);
 
 export default function GuestView() {
   const [data, setData] = useState<any>(null);
@@ -310,6 +337,18 @@ export default function GuestView() {
       </div>
     );
   }
+  const detectedYears = Number(
+    data.projectionYears ||
+    data.py ||
+    data.params?.projectionYears ||
+    (data.details && data.details.length > 0 ? data.details.length : 20)
+  );
+
+  const safeProjectionYears = Math.min(
+    detectedYears > 0 ? detectedYears : 20,
+    data.details && data.details.length > 0 ? data.details.length : 25
+  );
+
   const safeData = {
     n: data.n || "Client",
     e: data.e || 0,
@@ -323,7 +362,7 @@ export default function GuestView() {
     selfCons: data.selfCons || data.a || 0,
     installedPower: data.installedPower || data.kWc || 0,
     elecPrice: data.elecPrice || data.pe || 0.25,
-    projectionYears: data.projectionYears || data.py || 25,
+    projectionYears: safeProjectionYears,
     ga: data.ga || [],
     mode: data.mode || "financement",
     warrantyMode: data.warrantyMode || "performance",
@@ -340,9 +379,13 @@ export default function GuestView() {
   const rows =
     tableScenario === "financement" ? safeData.details : safeData.detailsCash;
 
+  const finalGainProjected =
+    rows && rows.length > 0 && rows[safeData.projectionYears - 1]?.cumulativeSavings != null
+      ? rows[safeData.projectionYears - 1].cumulativeSavings
+      : Number(safeData.e || 0);
+
   const certifiedBreakEvenYear = safeData.breakEven;
-  const certifiedFinalGain =
-    rows[safeData.projectionYears - 1]?.cumulativeSavings || null;
+  const certifiedFinalGain = finalGainProjected;
   const certifiedROI = safeData.roiPercent || null;
   const certifiedAverageGain = safeData.averageYearlyGain || null;
   const certifiedTotalNoSolar = safeData.totalSpendNoSolar || null;
@@ -409,6 +452,36 @@ export default function GuestView() {
 
   const phone = "0683623329";
   const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
+  // --- Devis & Composition de l'installation ---
+  const totalTTC = Number(safeData.installCost) || 23980;
+  const selfConsRate = Number(safeData.selfCons ?? 70);
+  const hasBattery = selfConsRate >= 90;
+
+  let batteryPrice = 0;
+  let installLaborPrice = 0;
+  let panelsPrice = 0;
+
+  if (hasBattery) {
+    batteryPrice = 5990;
+    installLaborPrice = 2360;
+    if (totalTTC < batteryPrice + installLaborPrice + 2000) {
+      batteryPrice = Math.round(totalTTC * 0.28);
+      installLaborPrice = Math.round(totalTTC * 0.12);
+      panelsPrice = totalTTC - batteryPrice - installLaborPrice;
+    } else {
+      panelsPrice = totalTTC - batteryPrice - installLaborPrice;
+    }
+  } else {
+    batteryPrice = 0;
+    installLaborPrice = totalTTC > 6000 ? 2360 : Math.round(totalTTC * 0.15);
+    panelsPrice = totalTTC - installLaborPrice;
+  }
+
+  const panelCount =
+    safeData.installedPower > 0
+      ? Math.round(safeData.installedPower / 0.5)
+      : 12;
 
   if (isExpired) {
     return (
@@ -516,7 +589,12 @@ export default function GuestView() {
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">
                 Prix TTC
               </span>
-
+              <a
+                href="#devis-installation"
+                className="text-[9px] text-emerald-300 hover:text-emerald-200 underline font-semibold mt-1"
+              >
+                Voir le devis détaillé ↓
+              </a>
             </div>
           </div>
         )}
@@ -564,7 +642,7 @@ export default function GuestView() {
                 Gain Net Projeté
               </span>
               <span className="text-xs text-slate-500">
-                Sur {data?.projectionYears || 20} ans
+                Sur {safeData.projectionYears} ans
               </span>
             </div>
             <div className="p-3 bg-emerald-500/10 rounded-2xl">
@@ -572,8 +650,8 @@ export default function GuestView() {
             </div>
           </div>
           <div className="text-6xl font-black text-emerald-400 text-center mb-6">
-            {safeData.e > 0 ? "+" : ""}
-            {Number(safeData.e).toLocaleString("fr-FR")}€
+            {finalGainProjected > 0 ? "+" : ""}
+            {formatNumber(Math.round(finalGainProjected))}€
           </div>
         </div>
         {/* 🔵 BLOC 1 — SÉCURITÉ & CADRE */}
@@ -956,6 +1034,242 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
+
+        {/* 📦 MODULE DEVIS : VOTRE INSTALLATION SOLAIRE & SERVICES INCLUS */}
+        <div id="devis-installation">
+          <ModuleSection
+            id="devis-installation-section"
+            title="Détail de votre installation & Services inclus"
+            icon={<FileText className="text-blue-400" />}
+            defaultOpen={true}
+          >
+            <div className="bg-zinc-950/80 rounded-[28px] p-4 sm:p-6 md:p-8 text-white shadow-2xl border border-blue-500/20">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+                
+                {/* ☀️ COLONNE GAUCHE : Votre installation solaire */}
+                <div className="flex flex-col">
+                  {/* Header Pill Charte EDF */}
+                  <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold py-2.5 px-6 rounded-2xl flex items-center justify-center gap-2 mb-4 text-sm sm:text-base tracking-wide shadow-lg shadow-blue-900/30 border border-blue-400/20">
+                    <Sun className="w-5 h-5 text-white" />
+                    <span>Votre installation solaire</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Panneaux solaires (sans référence constructeur) */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <SolarPanelIcon className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                            Panneaux solaires
+                          </h4>
+                          <p className="text-xs font-semibold text-blue-400 mt-0.5 leading-tight">
+                            {panelCount}x modules photovoltaïques 500 Wc
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+
+                    {/* Onduleur (sans Huawei et sans puissance) */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <InverterIcon className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                            Onduleur
+                          </h4>
+                          <p className="text-xs font-semibold text-blue-400 mt-0.5 leading-tight">
+                            Onduleur hybride intelligent
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+
+                    {/* Gestionnaire d'autoconsommation YUZE */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <Home className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                            Gestionnaire d'autoconsommation YUZE
+                          </h4>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+
+                    {/* Afficheur */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <Monitor className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                            Afficheur
+                          </h4>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+
+                    {/* Installation (prix enlevé -> Inclus) */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <HardHat className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                            Installation
+                          </h4>
+                          <p className="text-xs font-semibold text-blue-400 mt-0.5 leading-tight">
+                            Pose, mise en service, paramétrage
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+
+                    {/* 🔋 Batterie (prix enlevé -> Inclus, masquée si autoconso != 100%) */}
+                    {hasBattery && (
+                      <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                            <Battery className="w-5 h-5 text-blue-400" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                              Batterie
+                            </h4>
+                            <p className="text-xs font-semibold text-blue-400 mt-0.5 leading-tight">
+                              6,9 kWh
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                          Inclus
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Option pilotage ECS */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between gap-3 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <Droplets className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                            Option pilotage de l'eau chaude sanitaire (ECS)
+                          </h4>
+                        </div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TOTAL TTC BANNER */}
+                  <div className="flex justify-center mt-6">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-extrabold text-sm sm:text-base py-3.5 px-8 rounded-2xl shadow-xl shadow-blue-900/40 border border-blue-400/30 flex items-center justify-center gap-3">
+                      <span className="tracking-wider uppercase text-blue-200">TOTAL TTC :</span>
+                      <span className="text-xl sm:text-2xl font-black text-white">{formatMoney(totalTTC)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 🎁 COLONNE DROITE : Vos services inclus */}
+                <div className="flex flex-col">
+                  {/* Header Pill Charte EDF */}
+                  <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold py-2.5 px-6 rounded-2xl flex items-center justify-center gap-2 mb-4 text-sm sm:text-base tracking-wide shadow-lg shadow-indigo-900/30 border border-indigo-400/20">
+                    <Gift className="w-5 h-5 text-white" />
+                    <span>Vos services inclus</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Mes avantages sérénité (sans CGV et sans *) */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl p-4 sm:p-5 shadow-sm transition-all">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <Heart className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                          Mes avantages sérénité
+                        </h4>
+                      </div>
+                      <div className="space-y-2.5 text-slate-300 text-[11px] sm:text-xs leading-relaxed font-normal pl-1">
+                        <p className="flex items-start gap-2">
+                          <span className="text-blue-400 font-bold">•</span>
+                          <span>
+                            <strong className="text-white font-semibold">“Garantie Matériel” à vie</strong> portant sur l'onduleur, les modules photovoltaïques et la structure assurant l'étanchéité, comprenant pièces, main d'oeuvre et déplacement.
+                          </span>
+                        </p>
+                        <p className="flex items-start gap-2">
+                          <span className="text-blue-400 font-bold">•</span>
+                          <span>
+                            <strong className="text-white font-semibold">Service "Bilan de consommation"</strong> : trois sessions de coaching personnalisé avec un conseiller à certaines dates anniversaire de la mise en service de votre installation.
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Application pour le suivi */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3.5 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <Smartphone className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                          Application pour le suivi de votre autoconsommation
+                        </h4>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+
+                    {/* Démarches administratives */}
+                    <div className="bg-zinc-900/70 border border-white/10 hover:border-blue-500/30 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4 flex items-center justify-between gap-3.5 shadow-sm transition-all">
+                      <div className="flex items-center gap-3.5">
+                        <div className="w-10 h-10 rounded-xl border border-blue-500/30 bg-blue-500/10 flex items-center justify-center flex-shrink-0 text-blue-400">
+                          <FileCheck className="w-5 h-5 text-blue-400" />
+                        </div>
+                        <h4 className="text-sm sm:text-base font-bold text-white leading-tight">
+                          Démarches administratives
+                        </h4>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-lg uppercase tracking-wider whitespace-nowrap">
+                        Inclus
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </ModuleSection>
+        </div>
+
         {/* Module 3: Projet sécurisé */}
         <ModuleSection
           id="projet-securise"
@@ -1374,7 +1688,7 @@ export default function GuestView() {
                   Gain net {safeData.projectionYears} ans
                 </div>
                 <div className="text-2xl font-bold text-blue-400 mb-1">
-                  {formatMoney(safeData.e || 0)}
+                  {formatMoney(finalGainProjected)}
                 </div>
                 <div className="text-slate-500 text-[10px]">
                   Après remboursement crédit
@@ -1829,7 +2143,7 @@ export default function GuestView() {
         {/* Module 9: Tableau détaillé */}
         <ModuleSection
           id="tableau-detaille"
-          title="Projection Financière — 25 ans"
+          title={`Projection Financière — ${safeData.projectionYears} ans`}
           icon={<Table2 className="text-slate-400" />}
           defaultOpen={false}
         >
