@@ -55,6 +55,7 @@ import {
 } from "recharts";
 import { createClient } from "@supabase/supabase-js";
 import { useParams } from "react-router-dom";
+import GarantiesComparativeTable from "./GarantiesComparativeTable";
 
 // ⚙️ CONFIGURATION
 const STUDY_CONFIG = {
@@ -696,8 +697,9 @@ export default function GuestView() {
                   </h4>
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed">
-                  Minimum 87% de rendement garanti après 30 ans d'exploitation.
-                  Remplacement gratuit en cas de non-conformité.
+                  {isPerformanceWarranty
+                    ? "Garantie de rendement 30 ans. Remplacement gratuit du matériel en cas de sous-performance."
+                    : "Garantie de rendement 25 ans. Remplacement gratuit du matériel en cas de sous-performance."}
                 </p>
               </div>
 
@@ -705,18 +707,21 @@ export default function GuestView() {
                 <div className="flex items-start gap-3 mb-3">
                   <Zap className="w-6 h-6 text-purple-400 flex-shrink-0 mt-1" />
                   <h4 className="font-bold text-white">
-                    Garantie panneaux, onduleur à vie, piéces, main d'oeuvre et
-                    déplacement
+                    {isPerformanceWarranty
+                      ? "Garantie matériel à vie, pièces, main-d'œuvre & déplacement"
+                      : "Garantie matériel Essentiel+ (25 ans onduleur & modules)"}
                   </h4>
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed">
-                  Remplacement ou réparation gratuite à vie
+                  {isPerformanceWarranty
+                    ? "Remplacement ou réparation gratuite à vie de l'onduleur, de l'étanchéité et des modules."
+                    : "Prise en charge contractuelle : onduleur 25 ans, étanchéité 10 ans, modules 25 ans."}
                 </p>
               </div>
 
-              <div className="bg-black/40 border-2 border-orange-500/30 rounded-lg p-5 hover:border-orange-400 transition-colors">
+              <div className="bg-black/40 border-2 border-indigo-500/30 rounded-lg p-5 hover:border-indigo-400 transition-colors">
                 <div className="flex items-start gap-3 mb-3">
-                  <FileCheck className="w-6 h-6 text-orange-400 flex-shrink-0 mt-1" />
+                  <FileCheck className="w-6 h-6 text-indigo-400 flex-shrink-0 mt-1" />
                   <h4 className="font-bold text-white">
                     Garantie de rachat État
                   </h4>
@@ -2440,46 +2445,68 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-        {/* 🟣 BLOC 5 — PREUVE SOCIALE */}
-        {/* Module 11: Garanties (ancien doublon conservé) */}
+        {/* Module 11: Garanties & Équipements */}
         <ModuleSection
           id="garanties"
-          title="Garanties de Sécurité"
+          title="Garanties & Équipements"
           icon={<Shield className="text-emerald-500" />}
           defaultOpen={false}
         >
           <div className="space-y-6">
-            <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/30">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-semibold mb-1">
-                    Garantie totale à vie
-                  </h4>
-                  <p className="text-slate-300 text-sm">
-                    Matériel, main-d'œuvre et déplacements garantis{" "}
-                    <span className="text-white font-semibold">à vie</span>.
-                  </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl">
+              <div>
+                <span className="text-xs text-slate-400 font-medium">Formule appliquée à votre projet :</span>
+                <div className="text-base font-bold text-white flex items-center gap-2 mt-0.5">
+                  {isPerformanceWarranty ? "Option Performance" : "Option Essentiel+"}
+                  <span className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border ${
+                    isPerformanceWarranty
+                      ? "bg-blue-500/20 border-blue-400 text-blue-300"
+                      : "bg-amber-500/20 border-amber-400 text-amber-300"
+                  }`}>
+                    Sélectionnée
+                  </span>
                 </div>
               </div>
-            </div>
-            <div className="p-4 bg-blue-500/10 rounded-lg border border-blue-500/30">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5" />
-                <div>
-                  <h4 className="text-white font-semibold mb-1">
-                    Garantie de performance 30 ans
-                  </h4>
-                  <p className="text-slate-300 text-sm">
-                    Production contractuelle. Si non atteinte,{" "}
-                    <span className="text-white font-semibold">
-                      EDF rembourse la différence
-                    </span>
-                    .
-                  </p>
-                </div>
+              <div className="text-xs text-slate-400 font-medium">
+                {isPerformanceWarranty
+                  ? "Protection intégrale à vie (pièces, main-d'œuvre & déplacement)"
+                  : "Protection 25 ans & étanchéité 10 ans"}
               </div>
             </div>
+
+            {/* TABLEAU COMPARATIF */}
+            <GarantiesComparativeTable activeMode={isPerformanceWarranty} interactive={false} />
+
+            {/* DÉTAIL DE LA FORMULE ACTIVE */}
+            {isPerformanceWarranty ? (
+              <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/30">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-white font-semibold mb-1">
+                      Garantie totale à vie (Performance)
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Onduleur centralisé, structure d'étanchéité et modules photovoltaïques couverts <strong className="text-white font-semibold">à vie</strong> (matériel, main-d'œuvre et déplacement inclus), ainsi qu'une garantie de rendement matériel de <strong className="text-white font-semibold">30 ans</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/30">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-white font-semibold mb-1">
+                      Garantie contractuelle Essentiel+
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Onduleur centralisé garanti <strong className="text-white font-semibold">25 ans</strong> (pièces, main-d'œuvre et déplacement), étanchéité garantie <strong className="text-white font-semibold">10 ans</strong>, et modules photovoltaïques garantis <strong className="text-white font-semibold">25 ans</strong> matériel et rendement.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </ModuleSection>
         {/* Module 12: Réalisations */}

@@ -41,6 +41,7 @@ import { formatCurrency, formatPercent } from "../../utils/format";
 import { InfoBubble } from "../components/ui/InfoBubble";
 import ModuleTransition from "@/components/ModuleTransition";
 import StudyStatusBadge from "./StudyStatusBadge";
+import GarantiesComparativeTable from "./GarantiesComparativeTable";
 
 // 🧠 AGENT ZERO HELPER
 // 🧠 AGENT ZERO HELPER REMOVED - MOVED INSIDE COMPONENT FOR DYNAMIC URL
@@ -3115,63 +3116,63 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       ? [
           {
             years: "À VIE",
-            label: "PANNEAUX",
-            tag: "Pièces + M.O. + Déplacement",
-            icon: Sun,
-            description:
-              "Garantie matériel, main d'œuvre et déplacement à vie.",
-          },
-          {
-            years: "À VIE",
-            label: "ONDULEURS",
-            tag: "Pièces + M.O. + Déplacement",
+            label: "ONDULEUR CENTRALISÉ",
+            tag: "Matériel, main-d'œuvre et déplacement",
             icon: Zap,
             description:
-              "Remplacement à neuf, main d'œuvre et déplacement à vie.",
+              "Garantie totale à vie pièces, main-d'œuvre et déplacement.",
           },
           {
             years: "À VIE",
-            label: "STRUCTURE",
-            tag: "Pièces + M.O. + Déplacement",
+            label: "STRUCTURE ÉTANCHÉITÉ",
+            tag: "Matériel, main-d'œuvre et déplacement",
             icon: Wrench,
-            description: "Garantie à vie sur le système de fixation.",
+            description: "Garantie à vie assurant l'étanchéité de la structure.",
           },
           {
             years: "À VIE",
-            label: "MATÉRIEL",
-            tag: "Remplacement à neuf",
+            label: "MODULES (DÉFAILLANCE)",
+            tag: "Matériel, main-d'œuvre et déplacement",
+            icon: Sun,
+            description:
+              "Garantie totale à vie pièces, main-d'œuvre et déplacement.",
+          },
+          {
+            years: "30 ANS",
+            label: "MODULES (RENDEMENT)",
+            tag: "Matériel",
             icon: ShieldCheck,
-            description: "Garantie matérielle complète à vie.",
+            description: "Garantie matérielle de 30 ans contre la sous-performance.",
           },
         ]
       : [
           {
-            years: 25,
-            label: "PANNEAUX",
-            tag: "Performance standard",
-            icon: Sun,
-            description: "Garantie performance 25 ans.",
-          },
-          {
-            years: 25,
-            label: "ONDULEURS",
-            tag: "Pièces + M.O. + Déplacement",
+            years: "25 ANS",
+            label: "ONDULEUR CENTRALISÉ",
+            tag: "Matériel, main-d'œuvre et déplacement",
             icon: Zap,
-            description: "Garantie totale 25 ans.",
+            description: "Garantie 25 ans pièces, main-d'œuvre et déplacement.",
           },
           {
-            years: 10,
-            label: "STRUCTURE",
-            tag: "Matériel + M.O. + Déplacement",
+            years: "10 ANS",
+            label: "STRUCTURE ÉTANCHÉITÉ",
+            tag: "Matériel, main-d'œuvre et déplacement",
             icon: Wrench,
-            description: "Garantie 10 ans.",
+            description: "Garantie 10 ans assurant l'étanchéité de la structure.",
           },
           {
-            years: 25,
-            label: "PANNEAUX",
+            years: "25 ANS",
+            label: "MODULES (DÉFAILLANCE)",
             tag: "Matériel",
             icon: Sun,
-            description: "Garantie matérielle 25 ans.",
+            description: "Garantie matérielle 25 ans en cas de défaillance.",
+          },
+          {
+            years: "25 ANS",
+            label: "MODULES (RENDEMENT)",
+            tag: "Matériel",
+            icon: ShieldCheck,
+            description: "Garantie matérielle de 25 ans contre la sous-performance.",
           },
         ];
   }, [warrantyMode]);
@@ -4182,12 +4183,12 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           : "text-amber-400 bg-amber-500/10 border-amber-500/30"
                       }`}
                     >
-                      {warrantyMode ? "Option Performance" : "Option Essentiel"}
+                      {warrantyMode ? "Option Performance" : "Option Essentiel+"}
                     </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Option Essentiel */}
+                    {/* Option Essentiel+ */}
                     <button
                       type="button"
                       onClick={() => setWarrantyMode(false)}
@@ -4205,7 +4206,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       />
                       <div>
                         <div className="font-bold text-sm text-white flex items-center gap-2">
-                          Essentiel
+                          Essentiel+
                           {!warrantyMode && (
                             <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold">
                               Sélectionné
@@ -4213,7 +4214,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           )}
                         </div>
                         <p className="text-xs text-slate-400 mt-1 leading-snug">
-                          Service bilan de consommation (sans garantie matériel à vie).
+                          Onduleur 25 ans, étanchéité 10 ans, modules 25 ans + Service bilan.
                         </p>
                       </div>
                     </button>
@@ -4244,7 +4245,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           )}
                         </div>
                         <p className="text-xs text-slate-400 mt-1 leading-snug">
-                          Garantie Matériel à vie intégrale + Service bilan de consommation.
+                          À vie (onduleur, étanchéité, défaillance modules) + 30 ans rendement + Bilan.
                         </p>
                       </div>
                     </button>
@@ -5295,34 +5296,26 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
             </>
           )}
 
-          {/* BANNERS */}
-          {!warrantyMode ? (
-            <div className="bg-[#021c15] border border-emerald-500/30 rounded-xl p-4">
-              <strong className="text-emerald-400 text-sm">
-                {garantiesContent.bannerEssentielle?.title}
-              </strong>
-              <ul className="mt-2 space-y-1 text-xs text-slate-300">
-                {garantiesContent.bannerEssentielle?.items?.map(
-                  (item, i) => (
-                    <li key={i}>• {item}</li>
-                  )
-                )}
-              </ul>
+          {/* TABLEAU COMPARATIF PERFORMANCE VS ESSENTIEL+ */}
+          <div className="bg-black/60 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider">
+                Tableau comparatif des garanties
+              </span>
+              <span className={`text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border ${
+                warrantyMode
+                  ? "text-blue-300 bg-blue-500/20 border-blue-400"
+                  : "text-amber-300 bg-amber-500/20 border-amber-400"
+              }`}>
+                {warrantyMode ? "Option Performance active" : "Option Essentiel+ active"}
+              </span>
             </div>
-          ) : (
-            <div className="bg-black/60 border border-blue-900/30 rounded-xl p-4">
-              <strong className="text-blue-200 text-sm">
-                {garantiesContent.bannerPerformance?.title}
-              </strong>
-              <ul className="mt-2 space-y-1 text-xs text-slate-300">
-                {garantiesContent.bannerPerformance?.items?.map(
-                  (item, i) => (
-                    <li key={i}>• {item}</li>
-                  )
-                )}
-              </ul>
-            </div>
-          )}
+            <GarantiesComparativeTable
+              activeMode={warrantyMode}
+              onSelectMode={setWarrantyMode}
+              interactive={true}
+            />
+          </div>
 
           {/* SECTIONS STRUCTURANTES */}
           {garantiesContent.sections?.length > 0 && (
