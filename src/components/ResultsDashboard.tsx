@@ -2536,9 +2536,20 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [installedPower, setInstalledPower] = useState<number>(
     data?.params?.installedPower || 3.5
   );
+  const [primeRatePerWatt, setPrimeRatePerWatt] = useState<number>(0.08);
+  const [primeAmount, setPrimeAmount] = useState<number>(
+    data?.params?.primeAmount ??
+      Math.round((data?.params?.installedPower || 3.5) * 1000 * 0.08)
+  );
   const [houseSize, setHouseSize] = useState<number>(
     data?.params?.houseSize || 120
   );
+
+  useEffect(() => {
+    if (installedPower) {
+      setPrimeAmount(Math.round(installedPower * 1000 * primeRatePerWatt));
+    }
+  }, [installedPower, primeRatePerWatt]);
 
   const [creditMonthlyPayment, setCreditMonthlyPayment] =
     useState<number>(147.8);
@@ -2839,6 +2850,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       taxRate,
       buybackRate,
       interestRate,
+      primeAmount,
     });
 
     if (!result) return null;
@@ -2889,6 +2901,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
       monthlySavings: year1.monthlySavings,
       totalWithSolar: year1.totalWithSolar,
       remainingBill: year1.edfResidue,
+      primeAmount,
     };
   }, [
     data,
@@ -2907,6 +2920,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     buybackRate,
     greenValueData,
     interestRate,
+    primeAmount,
   ]);
 
   useEffect(() => {
@@ -4048,6 +4062,47 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                         )}{" "}
                         kWh vendus
                       </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Prime à l'Autoconsommation (0,08 €/Wc versé à 12 mois) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <ParamCard
+                    label="Taux Prime Autoconsommation (€/Wc)"
+                    value={primeRatePerWatt}
+                    setValue={(val) => {
+                      setPrimeRatePerWatt(val);
+                      setPrimeAmount(Math.round((installedPower || 0) * 1000 * val));
+                    }}
+                    unit="€/Wc"
+                    sublabel="0,08 € / Wc (versé à 12 mois)"
+                    icon={<Coins size={14} className="text-emerald-400" />}
+                    step={0.01}
+                    min={0}
+                  />
+
+                  <div className="bg-black/20 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-400">
+                        <Wallet size={20} />
+                      </div>
+                      <div>
+                        <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">
+                          Prime versée (à 12 mois)
+                        </p>
+                        <p className="text-2xl font-black text-white">
+                          {formatMoney(primeAmount)}
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          {((installedPower || 0) * 1000).toLocaleString("fr-FR")} Wc × {primeRatePerWatt.toFixed(2)} €/Wc
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[9px] uppercase font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                        Mois 12
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -6032,7 +6087,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                   <div className="bg-blue-950/50 border border-blue-500/40 px-4 py-4 rounded-xl mb-6">
                     <div className="flex items-center justify-between text-[12px] font-black uppercase">
                       <div className="text-slate-400">LIVRET A</div>
-                      <div className="text-slate-500">1,50%</div>
+                      <div className="text-slate-500">1,70%</div>
                     </div>
                     <div className="h-px bg-white/10 my-3"></div>
                     <div className="flex items-center justify-between text-[11px] font-black uppercase">
@@ -8251,7 +8306,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                         </div>
                       </div>
                       <div className="text-3xl sm:text-4xl font-black text-blue-500 mb-2 break-words">
-                        1.5%
+                        1.7%
                       </div>
                       <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         PERFORMANCE ANNUELLE
@@ -8263,7 +8318,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </div>
                       <div className="text-lg sm:text-xl font-black text-blue-400 break-words">
                         {formatMoney(
-                          (installCost || 0) * Math.pow(1.015, projectionYears || 20) -
+                          (installCost || 0) * Math.pow(1.017, projectionYears || 20) -
                             (installCost || 0)
                         )}
                       </div>
@@ -8290,7 +8345,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                         </div>
                       </div>
                       <div className="text-3xl sm:text-4xl font-black text-purple-500 mb-2 break-words">
-                        3.5%
+                        2.7%
                       </div>
                       <div className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         PERFORMANCE ANNUELLE
@@ -8302,7 +8357,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </div>
                       <div className="text-lg sm:text-xl font-black text-purple-400 break-words">
                         {formatMoney(
-                          installCost * Math.pow(1.035, projectionYears) -
+                          installCost * Math.pow(1.027, projectionYears) -
                             installCost
                         )}
                       </div>
@@ -8903,6 +8958,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       <th className="py-2 sm:py-3 px-2 sm:px-4 text-white whitespace-nowrap">
                         Avec Solaire
                       </th>
+                      <th className="py-2 sm:py-3 px-2 sm:px-4 text-emerald-400 whitespace-nowrap">
+                        Prime (12 mois)
+                      </th>
                       <th className="py-2 sm:py-3 px-2 sm:px-4 text-slate-300 whitespace-nowrap">
                         Différence {tableMode === "annuel" ? "/an" : "/mois"}
                       </th>
@@ -8938,6 +8996,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                             ? cashApport
                             : installCost
                         )}
+                      </td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-slate-600 whitespace-nowrap font-mono">
+                        -
                       </td>
                       {/* ✅ CORRIGÉ : Pas de division par 12 */}
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-red-400 font-bold whitespace-nowrap">
@@ -9009,6 +9070,15 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                             <td className="py-2 sm:py-3 px-2 sm:px-4 font-bold text-white whitespace-nowrap">
                               {formatMoney(totalWithSolar)}
                             </td>
+                            <td className="py-2 sm:py-3 px-2 sm:px-4 whitespace-nowrap font-bold">
+                              {row.prime && row.prime > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px] font-black tracking-wide">
+                                  +{formatMoney(row.prime)}
+                                </span>
+                              ) : (
+                                <span className="text-slate-600">-</span>
+                              )}
+                            </td>
                             <td
                               className={`py-2 sm:py-3 px-2 sm:px-4 font-bold whitespace-nowrap ${
                                 eff > 0 ? "text-white" : "text-emerald-400"
@@ -9036,7 +9106,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     <tr>
                       {/* ✅ CORRIGÉ : colspan adapté */}
                       <td
-                        colSpan={showDetails ? 6 : 5}
+                        colSpan={showDetails ? 7 : 6}
                         className="py-2 sm:py-3 px-2 sm:px-4 text-right text-xs sm:text-sm font-bold text-slate-400 uppercase"
                       >
                         Gain total sur {projectionYears} ans

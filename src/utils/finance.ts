@@ -71,6 +71,7 @@ export const calculateSolarProjection = (
     taxRate?: number;
     buybackRate?: number;
     interestRate?: number;
+    primeAmount?: number;
   }
 ): CalculationOutput => {
   const currentAnnualBill = safeParseFloat(params.currentAnnualBill, 0);
@@ -89,6 +90,7 @@ export const calculateSolarProjection = (
     buybackRate = 0.04,
     cashApport = 0,
     interestRate: overrideInterestRate,
+    primeAmount = 0,
   } = overrides;
 
   const localInflation = round2(inflationRate);
@@ -186,8 +188,11 @@ export const calculateSolarProjection = (
           )
         : 0;
 
+    // --- PRIME (payée dans 12 mois = année 1) ---
+    const primeReceived = i === 0 ? round2(primeAmount || 0) : 0;
+
     // --- CREDIT ---
-    const totalWithSolar = round2(residuaryBill + creditCost - surplusRevenue);
+    const totalWithSolar = round2(residuaryBill + creditCost - surplusRevenue - primeReceived);
 
     cumulativeNoSolar += billWithoutSolar;
     cumulativeSolar += totalWithSolar;
@@ -197,16 +202,17 @@ export const calculateSolarProjection = (
       edfBillWithoutSolar: billWithoutSolar,
       creditPayment: creditCost,
       edfResidue: residuaryBill,
+      prime: primeReceived,
       totalWithSolar,
       cumulativeSavings: round2(cumulativeNoSolar - cumulativeSolar),
       cumulativeSpendNoSolar: round2(cumulativeNoSolar),
       cumulativeSpendSolar: round2(cumulativeSolar),
       cashflowDiff: round2(billWithoutSolar - totalWithSolar),
-      solarSavingsValue: round2(savingsValue + surplusRevenue),
+      solarSavingsValue: round2(savingsValue + surplusRevenue + primeReceived),
     });
 
     // --- CASH ---
-    const totalWithSolarCash = round2(residuaryBill - surplusRevenue);
+    const totalWithSolarCash = round2(residuaryBill - surplusRevenue - primeReceived);
 
     cumulativeNoSolarCash += billWithoutSolar;
     cumulativeSolarCash += totalWithSolarCash;
@@ -216,12 +222,13 @@ export const calculateSolarProjection = (
       edfBillWithoutSolar: billWithoutSolar,
       creditPayment: 0,
       edfResidue: residuaryBill,
+      prime: primeReceived,
       totalWithSolar: totalWithSolarCash,
       cumulativeSavings: round2(cumulativeNoSolarCash - cumulativeSolarCash),
       cumulativeSpendNoSolar: round2(cumulativeNoSolarCash),
       cumulativeSpendSolar: round2(cumulativeSolarCash),
       cashflowDiff: round2(billWithoutSolar - totalWithSolarCash),
-      solarSavingsValue: round2(savingsValue + surplusRevenue),
+      solarSavingsValue: round2(savingsValue + surplusRevenue + primeReceived),
     });
   }
 
@@ -311,10 +318,10 @@ export const calculateSolarProjection = (
         : 0,
 
     bankEquivalentCapital: round2(
-      Math.max(0, totalSavingsProjected / projectionYears / 0.015)
+      Math.max(0, totalSavingsProjected / projectionYears / 0.017)
     ),
     bankEquivalentCapitalCash: round2(
-      Math.max(0, totalSavingsProjectedCash / projectionYears / 0.015)
+      Math.max(0, totalSavingsProjectedCash / projectionYears / 0.017)
     ),
 
     savingsRatePercent,
@@ -324,6 +331,7 @@ export const calculateSolarProjection = (
     surplusRevenuePerYear: surplusRevenueBase,
     interestRate:
       overrideInterestRate ?? safeParseFloat(params.creditInterestRate || 0),
+    primeAmount,
     year1,
   };
 };

@@ -8,21 +8,22 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
       rel="stylesheet"
     />
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "https://aistudiocdn.com/react@^19.2.1",
-          "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-          "react/": "https://aistudiocdn.com/react@^19.2.1/",
-          "xlsx": "https://aistudiocdn.com/xlsx@^0.18.5",
-          "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-          "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-          "recharts": "https://aistudiocdn.com/recharts@^3.5.1"
-        }
-      }
-    </script>
   </head>
   <body>
+    <script>
+      window.addEventListener('error', function(event) {
+        var root = document.getElementById('root');
+        if (root) {
+          root.innerHTML = '<div style="padding:40px;color:#ef4444;background:#09090b;font-family:sans-serif;min-height:100vh;box-sizing:border-box;">' +
+            '<h2 style="margin-bottom:12px;">⚠️ Erreur au chargement du script</h2>' +
+            '<div style="background:#18181b;padding:16px;border-radius:8px;border:1px solid #ef4444;color:#fca5a5;font-family:monospace;font-size:14px;word-break:break-all;">' +
+            (event.message || 'Erreur inconnue') +
+            '</div>' +
+            '<p style="color:#71717a;font-size:12px;margin-top:8px;">' + (event.filename || '') + ':' + (event.lineno || '') + '</p>' +
+            '</div>';
+        }
+      });
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
 

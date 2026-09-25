@@ -5,8 +5,10 @@ import { FileUpload } from "./components/FileUpload";
 import { SpeechView } from "./components/SpeechView";
 import { supabase } from "./lib/supabase";
 import GuestView from "./components/GuestView";
-import { calculateGreenPositioningFromAddress } from "./greenValueEngine.ts";
+import { calculateGreenPositioningFromAddress } from "./greenValueEngine";
 import { OpsAuditApi } from "./pages/api/_mock/OpsAuditApi";
+import { AuthGuard } from "./components/AuthGuard";
+import ScrollToTop from "./components/ScrollToTop";
 
 const MainApp: React.FC = () => {
   const [hasData, setHasData] = useState(false);
@@ -153,8 +155,6 @@ const MainApp: React.FC = () => {
   );
 };
 
-import { AuthGuard } from "./components/AuthGuard";
-
 const AdminDashboard = React.lazy(() => import("./pages/admin/AdminDashboard"));
 const Dashboard = React.lazy(() => import("./components/Dashboard"));
 
@@ -167,8 +167,6 @@ const PageLoader = () => (
     </div>
   </div>
 );
-
-import ScrollToTop from "./components/ScrollToTop";
 
 const App = () => (
   <BrowserRouter>

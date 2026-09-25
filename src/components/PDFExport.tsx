@@ -641,7 +641,7 @@ export const PDFExport = ({
                     Cet écart correspond à l'équivalent d'un capital de <strong class="text-yellow-600">${f(
                       safeCalc.equivalent
                     )}</strong> 
-                    placé sur un Livret A à 1,5%. <strong class="text-gray-900">Avec le solaire, vous ne bloquez aucun capital</strong>.
+                    placé sur un Livret A à 1,7%. <strong class="text-gray-900">Avec le solaire, vous ne bloquez aucun capital</strong>.
                   </p>
                   <p class="text-lg font-bold text-gray-900">
                     La question n'est plus "Est-ce que je dois le faire ?", mais 

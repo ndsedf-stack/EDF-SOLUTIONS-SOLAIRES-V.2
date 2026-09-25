@@ -407,7 +407,7 @@ export default function GuestView() {
   const clientCity = "Cannes";
   const projectionYears = safeData.projectionYears;
 
-  const phone = "+336683623329";
+  const phone = "0683623329";
   const isMobile = /iPhone|Android/i.test(navigator.userAgent);
 
   if (isExpired) {
@@ -474,6 +474,53 @@ export default function GuestView() {
             {safeData.n}
           </span>
         </p>
+        {/* ☀️ INSTALLATION SUMMARY */}
+        {safeData.installedPower > 0 && (
+          <div className="grid grid-cols-3 gap-3 mb-8">
+            {/* Nombre de panneaux */}
+            <div className="bg-gradient-to-br from-blue-950/60 to-blue-900/40 border border-blue-500/30 rounded-[24px] p-5 flex flex-col items-center text-center">
+              <div className="p-2 bg-blue-500/15 rounded-xl mb-3">
+                <Sun className="w-5 h-5 text-blue-400" />
+              </div>
+              <span className="text-3xl font-black text-white leading-none">
+                {Math.round(safeData.installedPower / 0.5)}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mt-1">
+                Panneaux
+              </span>
+              <span className="text-[9px] text-slate-500 mt-0.5">500 Wc / panneau</span>
+            </div>
+
+            {/* Puissance installée */}
+            <div className="bg-gradient-to-br from-orange-950/60 to-orange-900/40 border border-orange-500/30 rounded-[24px] p-5 flex flex-col items-center text-center">
+              <div className="p-2 bg-orange-500/15 rounded-xl mb-3">
+                <Zap className="w-5 h-5 text-orange-400" />
+              </div>
+              <span className="text-3xl font-black text-white leading-none">
+                {safeData.installedPower.toLocaleString("fr-FR")}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mt-1">
+                kWc installés
+              </span>
+              <span className="text-[9px] text-slate-500 mt-0.5">Puissance crête totale</span>
+            </div>
+
+            {/* Prix */}
+            <div className="bg-gradient-to-br from-emerald-950/60 to-emerald-900/40 border border-emerald-500/30 rounded-[24px] p-5 flex flex-col items-center text-center">
+              <div className="p-2 bg-emerald-500/15 rounded-xl mb-3">
+                <Wallet className="w-5 h-5 text-emerald-400" />
+              </div>
+              <span className="text-2xl font-black text-white leading-none">
+                {formatMoney(safeData.installCost)}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">
+                Prix TTC
+              </span>
+
+            </div>
+          </div>
+        )}
+
         {/* COMPTE À REBOURS */}
         <div className="bg-gradient-to-br from-orange-950/60 to-orange-900/40 border border-orange-500/40 rounded-[32px] p-6 mb-8">
           <div className="flex items-center gap-2 mb-4">
@@ -1854,6 +1901,7 @@ export default function GuestView() {
                     </>
                   )}
                   <th className="py-3 px-4 text-white">Avec Solaire</th>
+                  <th className="py-3 px-4 text-emerald-400">Prime (12 mois)</th>
                   <th className="py-3 px-4 text-slate-300">
                     Différence {tableMode === "annuel" ? "/an" : "/mois"}
                   </th>
@@ -1879,6 +1927,7 @@ export default function GuestView() {
                         : safeData.installCost
                     )}
                   </td>
+                  <td className="py-4 px-4 text-slate-600 opacity-50">-</td>
                   <td className="py-4 px-4 text-red-400 font-bold">
                     {formatMoney(
                       (tableScenario === "financement"
@@ -1935,6 +1984,15 @@ export default function GuestView() {
                         <td className="py-3 px-4 font-bold text-white">
                           {formatMoney(totalWithSolar)}
                         </td>
+                        <td className="py-3 px-4 font-bold">
+                          {row.prime && row.prime > 0 ? (
+                            <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px] font-black">
+                              +{formatMoney(row.prime)}
+                            </span>
+                          ) : (
+                            <span className="text-slate-600">-</span>
+                          )}
+                        </td>
                         <td
                           className={`py-3 px-4 font-bold ${
                             eff > 0 ? "text-white" : "text-emerald-400"
@@ -1960,7 +2018,7 @@ export default function GuestView() {
               <tfoot className="sticky bottom-0 bg-black/95 backdrop-blur-xl border-t-2 border-emerald-500/30">
                 <tr>
                   <td
-                    colSpan={showDetails ? 6 : 4}
+                    colSpan={showDetails ? 7 : 5}
                     className="py-3 px-4 text-right text-xs font-bold text-slate-400 uppercase"
                   >
                     Gain total sur {safeData.projectionYears} ans

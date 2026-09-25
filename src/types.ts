@@ -3,6 +3,7 @@ export interface YearlyDetail {
   edfBillWithoutSolar: number;
   creditPayment: number;
   edfResidue: number;
+  prime?: number;
   totalWithSolar: number;
   cumulativeSavings: number;
   cumulativeSpendNoSolar: number;
