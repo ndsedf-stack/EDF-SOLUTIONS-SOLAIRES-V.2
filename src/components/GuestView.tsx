@@ -526,8 +526,8 @@ export default function GuestView() {
   }
 
   return (
-    <div className="min-h-screen bg-[#020202] text-white p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#020202] text-white p-4 sm:p-6 md:p-8 lg:p-10">
+      <div className="w-full max-w-[1600px] mx-auto">
         {/* HEADER */}
         <div className="flex justify-between items-start mb-8">
           <div className="text-xl font-black italic text-white/20 uppercase">
@@ -541,7 +541,7 @@ export default function GuestView() {
           </div>
         </div>
         {/* TITRE */}
-        <h1 className="text-5xl font-black italic uppercase leading-none mb-2">
+        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black italic uppercase leading-none mb-2">
           VOTRE ÉTUDE SOLAIRE.
         </h1>
         <div className="h-1.5 w-20 bg-blue-600 mb-6" />
@@ -551,111 +551,83 @@ export default function GuestView() {
             {safeData.n}
           </span>
         </p>
-        {/* ☀️ INSTALLATION SUMMARY */}
-        {safeData.installedPower > 0 && (
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            {/* Nombre de panneaux */}
-            <div className="bg-gradient-to-br from-blue-950/60 to-blue-900/40 border border-blue-500/30 rounded-[24px] p-5 flex flex-col items-center text-center">
-              <div className="p-2 bg-blue-500/15 rounded-xl mb-3">
-                <Sun className="w-5 h-5 text-blue-400" />
-              </div>
-              <span className="text-3xl font-black text-white leading-none">
-                {Math.round(safeData.installedPower / 0.5)}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-blue-400 mt-1">
-                Panneaux
-              </span>
-              <span className="text-[9px] text-slate-500 mt-0.5">500 Wc / panneau</span>
-            </div>
 
-            {/* Puissance installée */}
-            <div className="bg-gradient-to-br from-orange-950/60 to-orange-900/40 border border-orange-500/30 rounded-[24px] p-5 flex flex-col items-center text-center">
-              <div className="p-2 bg-orange-500/15 rounded-xl mb-3">
-                <Zap className="w-5 h-5 text-orange-400" />
-              </div>
-              <span className="text-3xl font-black text-white leading-none">
-                {safeData.installedPower.toLocaleString("fr-FR")}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mt-1">
-                kWc installés
-              </span>
-              <span className="text-[9px] text-slate-500 mt-0.5">Puissance crête totale</span>
-            </div>
-
-            {/* Prix */}
-            <div className="bg-gradient-to-br from-emerald-950/60 to-emerald-900/40 border border-emerald-500/30 rounded-[24px] p-5 flex flex-col items-center text-center">
-              <div className="p-2 bg-emerald-500/15 rounded-xl mb-3">
-                <Wallet className="w-5 h-5 text-emerald-400" />
-              </div>
-              <span className="text-2xl font-black text-white leading-none">
-                {formatMoney(safeData.installCost)}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mt-1">
-                Prix TTC
-              </span>
-              <a
-                href="#devis-installation"
-                className="text-[9px] text-emerald-300 hover:text-emerald-200 underline font-semibold mt-1"
-              >
-                Voir le devis détaillé ↓
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* COMPTE À REBOURS */}
-        <div className="bg-gradient-to-br from-orange-950/60 to-orange-900/40 border border-orange-500/40 rounded-[32px] p-6 mb-8">
-          <div className="flex items-center gap-2 mb-4">
-            <AlertTriangle className="text-orange-400" size={20} />
-            <span className="text-orange-300 text-xs font-black uppercase">
-              Validité du cadre tarifaire
-            </span>
-          </div>
-          <div className="text-white text-sm font-medium mb-6">
-            Conditions actuelles valables jusqu'au :
-          </div>
-          <div className="grid grid-cols-4 gap-2 mb-4">
-            {[
-              { val: days, label: "JOURS" },
-              { val: hours, label: "H" },
-              { val: minutes, label: "MIN" },
-              { val: seconds, label: "SEC" },
-            ].map((unit, i) => (
-              <div
-                key={i}
-                className="bg-black/60 border border-orange-500/20 rounded-xl p-3 text-center"
-              >
-                <div className="text-3xl font-black text-orange-400">
-                  {String(unit.val).padStart(2, "0")}
+        {/* ☀️ SYNTHÈSE DE L'INSTALLATION & GAIN NET (RESPONSIVE PLEINE LARGEUR) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 mb-8 items-stretch">
+          {/* Cartes Installation */}
+          {safeData.installedPower > 0 && (
+            <div className="lg:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+              {/* Nombre de panneaux */}
+              <div className="bg-gradient-to-br from-blue-950/60 to-blue-900/40 border border-blue-500/30 rounded-[28px] p-5 lg:p-6 flex flex-col items-center justify-center text-center shadow-lg">
+                <div className="p-3 bg-blue-500/15 rounded-2xl mb-3">
+                  <Sun className="w-6 h-6 text-blue-400" />
                 </div>
-                <div className="text-[8px] text-slate-500 uppercase font-bold mt-1">
-                  {unit.label}
-                </div>
+                <span className="text-3xl lg:text-4xl font-black text-white leading-none">
+                  {Math.round(safeData.installedPower / 0.5)}
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-blue-400 mt-2">
+                  Panneaux
+                </span>
+                <span className="text-[10px] text-slate-400 mt-1">500 Wc / panneau</span>
               </div>
-            ))}
-          </div>
-          <div className="text-xs text-orange-200/70 italic text-center">
-            Paramètres tarifaires garantis dans ce cadre
-          </div>
-        </div>
-        {/* GAIN NET */}
-        <div className="bg-gradient-to-br from-zinc-900 to-black border border-white/20 rounded-[40px] p-8 mb-8">
-          <div className="flex justify-between items-start mb-6">
-            <div>
-              <span className="text-[10px] font-black uppercase text-emerald-400 block mb-2">
-                Gain Net Projeté
-              </span>
-              <span className="text-xs text-slate-500">
-                Sur {safeData.projectionYears} ans
-              </span>
+
+              {/* Puissance installée */}
+              <div className="bg-gradient-to-br from-indigo-950/60 to-indigo-900/40 border border-indigo-500/30 rounded-[28px] p-5 lg:p-6 flex flex-col items-center justify-center text-center shadow-lg">
+                <div className="p-3 bg-indigo-500/15 rounded-2xl mb-3">
+                  <Zap className="w-6 h-6 text-indigo-400" />
+                </div>
+                <span className="text-3xl lg:text-4xl font-black text-white leading-none">
+                  {safeData.installedPower.toLocaleString("fr-FR")}
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-indigo-400 mt-2">
+                  kWc installés
+                </span>
+                <span className="text-[10px] text-slate-400 mt-1">Puissance crête totale</span>
+              </div>
+
+              {/* Prix */}
+              <div className="bg-gradient-to-br from-emerald-950/60 to-emerald-900/40 border border-emerald-500/30 rounded-[28px] p-5 lg:p-6 flex flex-col items-center justify-center text-center shadow-lg">
+                <div className="p-3 bg-emerald-500/15 rounded-2xl mb-3">
+                  <Wallet className="w-6 h-6 text-emerald-400" />
+                </div>
+                <span className="text-2xl lg:text-3xl font-black text-white leading-none">
+                  {formatMoney(safeData.installCost)}
+                </span>
+                <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400 mt-2">
+                  Prix TTC
+                </span>
+                <a
+                  href="#devis-installation"
+                  className="text-[10px] text-emerald-300 hover:text-emerald-200 underline font-semibold mt-1.5"
+                >
+                  Voir le devis détaillé ↓
+                </a>
+              </div>
             </div>
-            <div className="p-3 bg-emerald-500/10 rounded-2xl">
-              <TrendingUp className="text-emerald-400" size={24} />
+          )}
+
+          {/* GAIN NET PROJETÉ */}
+          <div className={`${safeData.installedPower > 0 ? "lg:col-span-4" : "lg:col-span-12"} bg-gradient-to-br from-zinc-900/90 to-black border border-white/20 rounded-[32px] p-6 lg:p-8 flex flex-col justify-between shadow-2xl`}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <span className="text-[11px] font-black uppercase text-emerald-400 block mb-1">
+                  Gain Net Projeté
+                </span>
+                <span className="text-xs text-slate-400">
+                  Sur {safeData.projectionYears} ans
+                </span>
+              </div>
+              <div className="p-3 bg-emerald-500/10 rounded-2xl">
+                <TrendingUp className="text-emerald-400" size={24} />
+              </div>
             </div>
-          </div>
-          <div className="text-6xl font-black text-emerald-400 text-center mb-6">
-            {finalGainProjected > 0 ? "+" : ""}
-            {formatNumber(Math.round(finalGainProjected))}€
+            <div className="text-4xl lg:text-6xl font-black text-emerald-400 text-center my-auto py-3 tracking-tight">
+              {finalGainProjected > 0 ? "+" : ""}
+              {formatNumber(Math.round(finalGainProjected))}€
+            </div>
+            <div className="text-xs text-slate-400 text-center italic mt-2">
+              Économies nettes certifiées sur la durée de l'étude
+            </div>
           </div>
         </div>
         {/* 🔵 BLOC 1 — SÉCURITÉ & CADRE */}
