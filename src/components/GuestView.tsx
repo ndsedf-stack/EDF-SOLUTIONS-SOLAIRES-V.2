@@ -160,7 +160,6 @@ export default function GuestView() {
   const [error, setError] = useState<string | null>(null);
   const [isExpired, setIsExpired] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
-  const [wastedCash, setWastedCash] = useState(0.5);
   const [gouffreMode, setGouffreMode] = useState<"financement" | "cash">(
     "financement"
   );
@@ -266,18 +265,6 @@ export default function GuestView() {
 
     return () => clearInterval(timer);
   }, [study?.expires_at]);
-
-  useEffect(() => {
-    if (!data?.conso || !data?.elecPrice) return;
-
-    const costPerSecond = (data.conso * data.elecPrice) / 365 / 24 / 3600;
-
-    const interval = setInterval(() => {
-      setWastedCash((prev) => prev + costPerSecond);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [data?.conso, data?.elecPrice]);
 
   if (loading) {
     return (
@@ -457,6 +444,11 @@ export default function GuestView() {
   const totalTTC = Number(safeData.installCost) || 23980;
   const selfConsRate = Number(safeData.selfCons ?? 70);
   const hasBattery = selfConsRate >= 90;
+  const isPerformanceWarranty =
+    safeData.warrantyMode === "performance" ||
+    safeData.warrantyMode === true ||
+    data?.warrantyMode === "performance" ||
+    data?.warrantyMode === true;
 
   let batteryPrice = 0;
   let installLaborPrice = 0;
@@ -1218,12 +1210,14 @@ export default function GuestView() {
                         </h4>
                       </div>
                       <div className="space-y-2.5 text-slate-300 text-[11px] sm:text-xs leading-relaxed font-normal pl-1">
-                        <p className="flex items-start gap-2">
-                          <span className="text-blue-400 font-bold">•</span>
-                          <span>
-                            <strong className="text-white font-semibold">“Garantie Matériel” à vie</strong> portant sur l'onduleur, les modules photovoltaïques et la structure assurant l'étanchéité, comprenant pièces, main d'oeuvre et déplacement.
-                          </span>
-                        </p>
+                        {isPerformanceWarranty && (
+                          <p className="flex items-start gap-2">
+                            <span className="text-blue-400 font-bold">•</span>
+                            <span>
+                              <strong className="text-white font-semibold">“Garantie Matériel” à vie</strong> portant sur l'onduleur, les modules photovoltaïques et la structure assurant l'étanchéité, comprenant pièces, main d'oeuvre et déplacement.
+                            </span>
+                          </p>
+                        )}
                         <p className="flex items-start gap-2">
                           <span className="text-blue-400 font-bold">•</span>
                           <span>

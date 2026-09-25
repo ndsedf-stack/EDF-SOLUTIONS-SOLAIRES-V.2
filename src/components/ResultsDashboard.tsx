@@ -4166,6 +4166,91 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                   />
                 </div>
 
+                {/* Niveau de Garanties */}
+                <div className="bg-black/20 border border-blue-500/20 rounded-2xl p-5 mb-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <ShieldCheck size={18} className="text-blue-400" />
+                      <span className="text-xs font-black uppercase text-blue-400 tracking-wider">
+                        Garanties
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                        warrantyMode
+                          ? "text-blue-400 bg-blue-500/10 border-blue-500/30"
+                          : "text-amber-400 bg-amber-500/10 border-amber-500/30"
+                      }`}
+                    >
+                      {warrantyMode ? "Option Performance" : "Option Essentiel"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Option Essentiel */}
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode(false)}
+                      className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
+                        !warrantyMode
+                          ? "bg-amber-500/15 border-amber-500 text-white shadow-lg shadow-amber-950/20"
+                          : "bg-black/30 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!warrantyMode}
+                        onChange={() => setWarrantyMode(false)}
+                        className="mt-1 w-4 h-4 accent-amber-500 cursor-pointer"
+                      />
+                      <div>
+                        <div className="font-bold text-sm text-white flex items-center gap-2">
+                          Essentiel
+                          {!warrantyMode && (
+                            <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold">
+                              Sélectionné
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1 leading-snug">
+                          Service bilan de consommation (sans garantie matériel à vie).
+                        </p>
+                      </div>
+                    </button>
+
+                    {/* Option Performance */}
+                    <button
+                      type="button"
+                      onClick={() => setWarrantyMode(true)}
+                      className={`p-4 rounded-xl border text-left transition-all flex items-start gap-3 cursor-pointer ${
+                        warrantyMode
+                          ? "bg-blue-600/20 border-blue-500 text-white shadow-lg shadow-blue-950/20"
+                          : "bg-black/30 border-white/10 text-slate-400 hover:border-white/20 hover:text-slate-200"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={warrantyMode}
+                        onChange={() => setWarrantyMode(true)}
+                        className="mt-1 w-4 h-4 accent-blue-500 cursor-pointer"
+                      />
+                      <div>
+                        <div className="font-bold text-sm text-white flex items-center gap-2">
+                          Performance
+                          {warrantyMode && (
+                            <span className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded font-semibold">
+                              Sélectionné
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1 leading-snug">
+                          Garantie Matériel à vie intégrale + Service bilan de consommation.
+                        </p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Credit Section */}
                 <div className="bg-black/20 border border-indigo-500/20 rounded-xl p-6 relative">
                   <div className="flex items-center gap-3 mb-8">
@@ -9489,154 +9574,6 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
             <p>✅ Orchestration interne : aide à la décision conseiller.</p>
           </div>
         </div>
-        {/* ============================================
-   💼 WIDGET COMPTEUR - AVEC INFO-BULLE
-   ============================================ */}
-        {showWastedCashWidget && (
-          <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="relative group">
-              {/* LUEUR SUBTILE */}
-              <div className="absolute inset-0 bg-slate-700/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-              {/* CARTE PRINCIPALE */}
-              <div className="relative bg-black/80 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-2xl max-w-[280px]">
-                {/* HEADER */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                    <span className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
-                      Temps réel
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                    {/* BOUTON INFO */}
-                    <button
-                      onClick={() =>
-                        setShowCompteurExplanation(!showCompteurExplanation)
-                      }
-                      className="p-1 bg-slate-700/40 rounded-full hover:bg-slate-700/60 transition-colors"
-                    >
-                      <Info size={12} className="text-slate-400" />
-                    </button>
-
-                    {/* BOUTON FERMER */}
-                    <button
-                      onClick={() => setShowWastedCashWidget(false)}
-                      className="text-slate-600 hover:text-slate-400 transition-colors p-0.5"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* COMPTEUR */}
-                <div className="mb-3">
-                  <div className="text-[9px] text-slate-500 font-medium uppercase mb-1 tracking-wide">
-                    Coût énergétique cumulé
-                  </div>
-                  <div className="text-3xl font-black text-orange-400 tabular-nums tracking-tight">
-                    {new Intl.NumberFormat("fr-FR", {
-                      style: "currency",
-                      currency: "EUR",
-                      minimumFractionDigits: 4,
-                    }).format(wastedCash)}
-                  </div>
-                  <div className="text-[9px] text-slate-600 mt-1">
-                    depuis l'ouverture
-                  </div>
-                </div>
-
-                {/* INFO-BULLE DÉPLIABLE */}
-                {showCompteurExplanation && (
-                  <div className="mb-3 bg-slate-900/60 border border-slate-700/30 rounded-lg p-3 text-left animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="text-[9px] text-slate-300 space-y-2">
-                      <p className="font-bold text-slate-200 text-[10px]">
-                        💡 Comment est calculé ce compteur ?
-                      </p>
-                      <div className="bg-black/40 p-2 rounded font-mono text-[8px] space-y-1">
-                        <div className="text-slate-400">
-                          Consommation :{" "}
-                          <span className="text-white">
-                            {formatNum(yearlyConsumption)} kWh/an
-                          </span>
-                        </div>
-                        <div className="text-slate-400">
-                          Prix kWh :{" "}
-                          <span className="text-white">
-                            {electricityPrice.toFixed(4)}€
-                          </span>
-                        </div>
-                        <div className="border-t border-slate-700/50 mt-1.5 pt-1.5 space-y-0.5">
-                          <div className="text-slate-400">
-                            Par an :{" "}
-                            <span className="text-orange-400 font-bold">
-                              {formatMoney(
-                                yearlyConsumption * electricityPrice
-                              )}
-                            </span>
-                          </div>
-                          <div className="text-slate-400">
-                            Par jour :{" "}
-                            <span className="text-white">
-                              {formatMoney(
-                                (yearlyConsumption * electricityPrice) / 365
-                              )}
-                            </span>
-                          </div>
-                          <div className="text-slate-400">
-                            Par seconde :{" "}
-                            <span className="text-white">
-                              {(
-                                (yearlyConsumption * electricityPrice) /
-                                365 /
-                                24 /
-                                3600
-                              ).toFixed(6)}
-                              €
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-[8px] text-slate-500 italic leading-relaxed">
-                        Ce compteur représente l'argent dépensé en électricité
-                        pendant votre consultation, basé sur votre consommation
-                        actuelle.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* PROJECTIONS */}
-                <div className="border-t border-white/5 pt-3 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-[9px] font-medium uppercase tracking-wide">
-                      Projection annuelle
-                    </span>
-                    <span className="text-sm font-bold text-white tabular-nums">
-                      {formatMoney(calculationResult.oldMonthlyBillYear1 * 12)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-slate-500 text-[9px] font-medium uppercase tracking-wide">
-                      Sur {projectionYears} ans
-                    </span>
-                    <span className="text-base font-bold text-orange-400 tabular-nums">
-                      {formatMoney(calculationResult.totalSpendNoSolar)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* MESSAGE FINAL */}
-                <div className="mt-3 pt-3 border-t border-white/5">
-                  <p className="text-slate-400 text-[9px] leading-relaxed text-center italic">
-                    Sans action, ce coût continue indéfiniment
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {isSigned && (
           <div className="w-full mt-10 p-10 rounded-[28px] bg-emerald-500/10 border border-emerald-400/30 text-center">
