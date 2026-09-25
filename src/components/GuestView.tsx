@@ -1428,76 +1428,7 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-        {/* Module 4: Sécurisation administrative */}
-        <ModuleSection
-          id="securisation"
-          title="Administratif pris en charge — Vous n'avez rien à gérer"
-          icon={<FileCheck className="text-blue-400" />}
-          defaultOpen={false}
-        >
-          <div className="space-y-6">
-            <div className="bg-blue-950/40 border-2 border-blue-500/30 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-blue-400" />
-                Zéro démarche administrative de votre côté
-              </h3>
-              <p className="text-slate-300 leading-relaxed mb-4">
-                EDF SOLUTIONS SOLAIRES prend en charge l'intégralité des
-                démarches administratives, de la déclaration préalable de
-                travaux jusqu'au raccordement Enedis.
-              </p>
-            </div>
 
-            <div className="space-y-3">
-              {[
-                {
-                  label: "Déclaration préalable mairie",
-                  status: "EDF SOLUTIONS SOLAIRES",
-                },
-                {
-                  label: "Dossier raccordement Enedis",
-                  status: "EDF SOLUTIONS SOLAIRES",
-                },
-                {
-                  label: "Convention autoconsommation",
-                  status: "EDF SOLUTIONS SOLAIRES",
-                },
-                {
-                  label: "Contrat obligation d'achat",
-                  status: "EDF SOLUTIONS SOLAIRES",
-                },
-                {
-                  label: "Certificat Consuel",
-                  status: "EDF SOLUTIONS SOLAIRES",
-                },
-                { label: "Mise en service compteur", status: "Automatique" },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between bg-black/40 border border-slate-700 rounded-lg p-4 hover:border-blue-500/50 transition-colors"
-                >
-                  <span className="text-slate-300 font-medium">
-                    {item.label}
-                  </span>
-                  <span className="px-3 py-1 bg-blue-500/20 text-blue-400 text-sm font-semibold rounded-full border border-blue-500/30">
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-lg p-4">
-              <p className="text-sm text-slate-300 leading-relaxed">
-                <span className="font-semibold text-emerald-400">
-                  Important :
-                </span>{" "}
-                Vous recevrez uniquement les notifications de suivi par email.
-                Aucune signature, aucun déplacement, aucun appel administratif
-                requis de votre part.
-              </p>
-            </div>
-          </div>
-        </ModuleSection>
         {/* 🟢 BLOC 2 — CADRAGE FINANCIER */}
         {/* Module 5: Contexte financier */}
         <ModuleSection
