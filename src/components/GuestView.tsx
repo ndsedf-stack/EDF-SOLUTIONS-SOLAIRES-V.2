@@ -677,7 +677,7 @@ export default function GuestView() {
                     Vous êtes accompagné par EDF SOLUTIONS SOLAIRES
                   </h3>
                   <p className="text-slate-300 leading-relaxed">
-                    Filiale à 100% du groupe EDF, entreprise publique française.
+                    Filiale à 100% du groupe EDF, entreprise publique française 100% d'État.
                     Capital social de 36 millions d'euros, garanties
                     institutionnelles, pérennité assurée par l'État français.
                   </p>
