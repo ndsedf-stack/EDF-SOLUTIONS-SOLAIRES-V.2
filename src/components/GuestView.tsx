@@ -664,7 +664,7 @@ export default function GuestView() {
           id="securite-juridique"
           title="Sécurité EDF — Groupe d'État"
           icon={<Shield className="text-blue-400" />}
-          defaultOpen={true}
+          defaultOpen={false}
         >
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-blue-950/40 to-indigo-950/40 border-2 border-blue-500/30 rounded-xl p-6">
@@ -976,7 +976,7 @@ export default function GuestView() {
           id="synthese"
           title="Vue d'ensemble — Votre projet en 10 secondes"
           icon={<FileText className="text-indigo-400" />}
-          defaultOpen={true}
+          defaultOpen={false}
         >
           <div className="space-y-6">
             <div className="bg-gradient-to-br from-indigo-950/40 to-purple-950/40 border-2 border-indigo-500/30 rounded-xl p-6">
@@ -1049,7 +1049,7 @@ export default function GuestView() {
             id="devis-installation-section"
             title="Détail de votre installation & Services inclus"
             icon={<FileText className="text-blue-400" />}
-            defaultOpen={true}
+            defaultOpen={false}
           >
             <div className="bg-zinc-950/80 rounded-[28px] p-4 sm:p-6 md:p-8 text-white shadow-2xl border border-blue-500/20">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
@@ -1280,12 +1280,77 @@ export default function GuestView() {
           </ModuleSection>
         </div>
 
+        {/* Module: Garanties & Équipements */}
+        <ModuleSection
+          id="garanties"
+          title="Garanties & Équipements"
+          icon={<Shield className="text-emerald-500" />}
+          defaultOpen={false}
+        >
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl">
+              <div>
+                <span className="text-xs text-slate-400 font-medium">Formule appliquée à votre projet :</span>
+                <div className="text-base font-bold text-white flex items-center gap-2 mt-0.5">
+                  {isPerformanceWarranty ? "Option Performance" : "Option Essentiel+"}
+                  <span className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border ${
+                    isPerformanceWarranty
+                      ? "bg-blue-500/20 border-blue-400 text-blue-300"
+                      : "bg-amber-500/20 border-amber-400 text-amber-300"
+                  }`}>
+                    Sélectionnée
+                  </span>
+                </div>
+              </div>
+              <div className="text-xs text-slate-400 font-medium">
+                {isPerformanceWarranty
+                  ? "Protection intégrale à vie (pièces, main-d'œuvre & déplacement)"
+                  : "Protection 25 ans & étanchéité 10 ans"}
+              </div>
+            </div>
+
+            {/* TABLEAU COMPARATIF */}
+            <GarantiesComparativeTable activeMode={isPerformanceWarranty} interactive={false} />
+
+            {/* DÉTAIL DE LA FORMULE ACTIVE */}
+            {isPerformanceWarranty ? (
+              <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/30">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-white font-semibold mb-1">
+                      Garantie totale à vie (Performance)
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Onduleur centralisé, structure d'étanchéité et modules photovoltaïques couverts <strong className="text-white font-semibold">à vie</strong> (matériel, main-d'œuvre et déplacement inclus), ainsi qu'une garantie de rendement matériel de <strong className="text-white font-semibold">30 ans</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/30">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h4 className="text-white font-semibold mb-1">
+                      Garantie contractuelle Essentiel+
+                    </h4>
+                    <p className="text-slate-300 text-sm leading-relaxed">
+                      Onduleur centralisé garanti <strong className="text-white font-semibold">25 ans</strong> (pièces, main-d'œuvre et déplacement), étanchéité garantie <strong className="text-white font-semibold">10 ans</strong>, et modules photovoltaïques garantis <strong className="text-white font-semibold">25 ans</strong> matériel et rendement.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </ModuleSection>
+
         {/* Module 3: Projet sécurisé */}
         <ModuleSection
           id="projet-securise"
           title="Votre projet solaire est sécurisé — Zéro risque client"
           icon={<ShieldCheck className="text-blue-400" />}
-          defaultOpen={true}
+          defaultOpen={false}
         >
           <div className="space-y-6">
             <div className="bg-black/40 border border-white/10 rounded-xl p-6">
@@ -1392,7 +1457,7 @@ export default function GuestView() {
           id="securisation"
           title="Administratif pris en charge — Vous n'avez rien à gérer"
           icon={<FileCheck className="text-blue-400" />}
-          defaultOpen={true}
+          defaultOpen={false}
         >
           <div className="space-y-6">
             <div className="bg-blue-950/40 border-2 border-blue-500/30 rounded-xl p-6">
@@ -1463,7 +1528,7 @@ export default function GuestView() {
           id="financial-context"
           title="Comment lire les chiffres qui suivent"
           icon={<Info className="text-blue-400" />}
-          defaultOpen={true}
+          defaultOpen={false}
         >
           <div className="space-y-4">
             <div className="bg-blue-950/40 border-l-4 border-blue-500 rounded-r-lg p-5">
@@ -1710,533 +1775,6 @@ export default function GuestView() {
                 </div>
               </div>
             </div>
-          </div>
-        </ModuleSection>
-        <ModuleSection
-          id="calendrier"
-          title="Calendrier de Mise en Service"
-          icon={<Calendar className="text-blue-400" />}
-          defaultOpen={false}
-        >
-          <div className="bg-black/40 border border-white/10 rounded-[32px] p-6 sm:p-8">
-            {/* HEADER */}
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-blue-500/10 rounded-xl">
-                <Calendar className="text-blue-400" size={24} />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">
-                  Délai de mise en route — Installation sous 6-8 semaines
-                </h2>
-                <p className="text-xs text-slate-500 mt-1 italic">
-                  À partir de cette date, l'installation est opérationnelle.
-                </p>
-              </div>
-            </div>
-
-            {/* 4 CARTES */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              {/* Card 1 - Coût énergétique actuel */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-xl p-5">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Coût énergétique actuel
-                </div>
-                <div className="text-2xl font-bold text-white mb-1">
-                  {formatMoney(safeData.totalSpendNoSolar || 0)}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Sur {safeData.projectionYears} ans
-                </div>
-              </div>
-
-              {/* Card 2 - Économie BRUTE disponible année 1 */}
-              <div className="bg-slate-900/40 border border-white/10 rounded-xl p-5">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Production année 1
-                </div>
-                <div className="text-2xl font-bold text-emerald-400 mb-1">
-                  {formatMoney(
-                    (safeData.prod || 0) * (safeData.elecPrice || 0.25)
-                  )}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Valeur de l'électricité produite
-                </div>
-              </div>
-
-              {/* Card 3 - Économie BRUTE période */}
-              <div className="bg-slate-900/40 border border-emerald-500/20 rounded-xl p-5">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Production {safeData.projectionYears} ans
-                </div>
-                <div className="text-2xl font-bold text-emerald-400 mb-1">
-                  {formatMoney(
-                    (safeData.prod || 0) *
-                      (safeData.elecPrice || 0.25) *
-                      safeData.projectionYears
-                  )}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Énergie produite totale
-                </div>
-              </div>
-
-              {/* Card 4 - Gain NET période */}
-              <div className="bg-slate-900/40 border border-blue-500/20 rounded-xl p-5">
-                <div className="text-slate-400 text-[10px] font-medium mb-2 uppercase tracking-wider">
-                  Gain net {safeData.projectionYears} ans
-                </div>
-                <div className="text-2xl font-bold text-blue-400 mb-1">
-                  {formatMoney(finalGainProjected)}
-                </div>
-                <div className="text-slate-500 text-[10px]">
-                  Après remboursement crédit
-                </div>
-              </div>
-            </div>
-
-            {/* MESSAGE FACTUEL */}
-            <div className="bg-blue-950/20 border-l-4 border-blue-500 p-4 rounded-xl mb-6">
-              <p className="text-slate-300 text-[11px] leading-relaxed italic">
-                Une fois le dossier validé, le projet entre dans le processus de
-                mise en service. Les délais observés sont en moyenne de six à
-                huit semaines.
-              </p>
-              <p className="text-slate-300 text-[11px] leading-relaxed italic mt-2">
-                Durant cette période, l'ensemble des démarches techniques,
-                administratives et de planification est pris en charge par EDF
-                et ses partenaires.
-              </p>
-            </div>
-
-            {/* VISUALISATION TEMPORELLE */}
-            <div className="p-5 bg-black/30 rounded-xl border border-white/5">
-              <div className="flex items-center gap-2 text-[10px] text-slate-400 mb-4 uppercase tracking-wider">
-                <Clock className="w-4 h-4" />
-                Impact du calendrier sur le début des économies :
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {formatMoney(
-                      (safeData.prod || 0) * (safeData.elecPrice || 0.25)
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
-                    Production année 1
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {formatMoney(
-                      (safeData.prod || 0) * (safeData.elecPrice || 0.25) * 3
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
-                    Cumul 3 ans
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-300 font-bold text-lg">
-                    {formatMoney(
-                      (safeData.prod || 0) * (safeData.elecPrice || 0.25) * 5
-                    )}
-                  </div>
-                  <div className="text-slate-500 text-[10px] mt-1">
-                    Cumul 5 ans
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* PHRASE FINALE */}
-            <p className="text-[10px] text-slate-500 italic mt-6 text-center">
-              C'est juste du calendrier. La décision vous appartient.
-            </p>
-          </div>
-        </ModuleSection>
-        <ModuleSection
-          id="effet-calendrier"
-          title="Lecture du Temps"
-          icon={<Calendar className="text-slate-400" />}
-          defaultOpen={false}
-        >
-          <div className="bg-[#0b0d10] border border-white/10 rounded-2xl p-6 md:p-8">
-            {/* TITRE */}
-            <h3 className="text-xl font-black text-white mb-2">
-              Impact d'une mise en service différée de 6 mois
-            </h3>
-            <p className="text-sm text-slate-400 mb-8">
-              Comparaison objective de deux calendriers de démarrage.
-            </p>
-
-            {/* 2 SCÉNARIOS */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              {/* SCÉNARIO A — DÉMARRAGE MAINTENANT */}
-              <div className="bg-black/40 border border-emerald-500/20 p-6 rounded-xl">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-4 h-4 text-emerald-400" />
-                  <span className="text-xs text-emerald-400 uppercase font-bold tracking-wider">
-                    Scénario A — Validation immédiate
-                  </span>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase mb-1">
-                      Mise en service
-                    </div>
-                    <div className="text-lg font-black text-white">
-                      6-8 semaines
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      délai administratif + installation
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/5">
-                    <div className="text-[10px] text-slate-400 uppercase mb-1">
-                      Production active sur les 6 mois
-                    </div>
-                    <div className="text-3xl font-black text-emerald-400">
-                      ~4-5 mois
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      d'économies générées
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/5">
-                    <div className="text-[10px] text-slate-400 uppercase mb-1">
-                      Production valorisée sur 6 mois
-                    </div>
-                    <div className="text-3xl font-black text-white">
-                      {formatMoney(
-                        ((safeData.prod || 0) * (safeData.elecPrice || 0.25)) /
-                          2
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SCÉNARIO B — DÉMARRAGE DANS 6 MOIS */}
-              <div className="bg-black/40 border border-slate-500/20 p-6 rounded-xl">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar className="w-4 h-4 text-slate-400" />
-                  <span className="text-xs text-slate-400 uppercase font-bold tracking-wider">
-                    Scénario B — Validation différée de 6 mois
-                  </span>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-[10px] text-slate-400 uppercase mb-1">
-                      Mise en service
-                    </div>
-                    <div className="text-lg font-black text-white">
-                      6 mois + 6-8 semaines
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      attente + délai administratif + installation
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/5">
-                    <div className="text-[10px] text-slate-400 uppercase mb-1">
-                      Production active sur les 6 mois
-                    </div>
-                    <div className="text-3xl font-black text-slate-400">
-                      0 mois
-                    </div>
-                    <div className="text-[10px] text-slate-500 mt-1">
-                      installation pas encore lancée
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-white/5">
-                    <div className="text-[10px] text-slate-400 uppercase mb-1">
-                      Production valorisée sur 6 mois
-                    </div>
-                    <div className="text-3xl font-black text-white">0 €</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* DIFFÉRENTIEL */}
-            <div className="bg-black/60 border border-white/10 p-6 rounded-xl">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                <div className="md:col-span-2">
-                  <div className="text-xs text-slate-400 uppercase tracking-wider mb-2">
-                    Différentiel économique entre les deux scénarios
-                  </div>
-                  <p className="text-sm text-slate-300 leading-relaxed">
-                    Le scénario A permet d'activer la production pendant ~4-5
-                    mois sur cette période, générant de la valeur. Le scénario B
-                    maintient la situation actuelle pendant 6 mois
-                    supplémentaires.
-                  </p>
-                </div>
-                <div className="text-center md:text-right">
-                  <div className="text-4xl font-black text-white">
-                    {formatMoney(
-                      ((safeData.prod || 0) * (safeData.elecPrice || 0.25)) / 2
-                    )}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    d'écart sur 6 mois
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* NOTE FINALE */}
-            <div className="mt-6 bg-black/40 border-l-2 border-slate-600 p-5 rounded-r-xl">
-              <p className="text-xs text-slate-300 leading-relaxed">
-                <strong className="text-white">Lecture :</strong> les deux
-                scénarios sont viables. La seule variable est le calendrier de
-                mise en service.
-                <br />
-                <br />
-                Dans le scénario A, l'installation est active après 6-8
-                semaines, puis produit pendant ~4-5 mois sur les 6 mois
-                observés.
-                <br />
-                <br />
-                Dans le scénario B, ces 6 mois maintiennent la situation
-                actuelle, avant de démarrer le processus.
-              </p>
-            </div>
-          </div>
-        </ModuleSection>
-        {/* Module 7: Impact budget */}
-        <ModuleSection
-          id="impact"
-          title="Impact sur votre budget mensuel"
-          icon={<Wallet className="text-blue-400" />}
-          defaultOpen={false}
-        >
-          <div className="space-y-6">
-            {/* PHRASE D'INTRODUCTION */}
-            <div className="text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
-              Voici comment votre budget mensuel se réorganise la première
-              année.
-              <br />
-              <span className="text-slate-400">
-                On ne parle pas d'un coût, mais d'une phase de transition avant
-                un modèle durablement plus léger.
-              </span>
-            </div>
-
-            {/* 3 CARDS - RESPONSIVE */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {/* CARD 1 - FACTURE ACTUELLE */}
-              <div className="bg-gradient-to-br from-red-950/30 to-black/40 border border-red-500/20 rounded-xl p-4 sm:p-5">
-                <div className="text-red-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 rounded-full bg-red-400 flex-shrink-0"></span>
-                  <span>Facture actuelle</span>
-                </div>
-                <div className="text-white text-2xl sm:text-3xl font-black break-words">
-                  {(
-                    ((data?.conso || 0) * (data?.elecPrice || 0.25)) /
-                    12
-                  ).toLocaleString("fr-FR", {
-                    style: "currency",
-                    currency: "EUR",
-                    maximumFractionDigits: 0,
-                  })}
-                </div>
-                <div className="text-slate-500 text-[10px] sm:text-xs mt-1">
-                  /mois
-                </div>
-              </div>
-
-              {/* CARD 2 - AVEC INSTALLATION */}
-              <div className="bg-gradient-to-br from-blue-950/30 to-black/40 border border-blue-500/20 rounded-xl p-4 sm:p-5">
-                <div className="text-blue-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0"></span>
-                  <span>Vous payez</span>
-                </div>
-                <div className="text-white text-2xl sm:text-3xl font-black break-words">
-                  {(
-                    (data?.m || 0) +
-                    (((data?.conso || 0) -
-                      (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                      (data?.elecPrice || 0.25)) /
-                      12
-                  ).toLocaleString("fr-FR", {
-                    style: "currency",
-                    currency: "EUR",
-                    maximumFractionDigits: 0,
-                  })}
-                </div>
-                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
-                  /mois (crédit + reste facture)
-                </div>
-              </div>
-
-              {/* CARD 3 - DIFFÉRENCE */}
-              <div className="bg-gradient-to-br from-slate-950/30 to-black/40 border border-slate-600/20 rounded-xl p-4 sm:p-5 sm:col-span-2 lg:col-span-1">
-                <div className="text-slate-400 text-[9px] sm:text-[10px] uppercase font-bold tracking-wide flex items-center gap-2 mb-2">
-                  <span className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
-                  <span>Différence — 1ère année</span>
-                </div>
-                <div
-                  className={`text-2xl sm:text-3xl font-black break-words ${
-                    (data?.m || 0) +
-                      (((data?.conso || 0) -
-                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                        (data?.elecPrice || 0.25)) /
-                        12 -
-                      ((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12 >
-                    0
-                      ? "text-orange-400"
-                      : "text-emerald-400"
-                  }`}
-                >
-                  {(data?.m || 0) +
-                    (((data?.conso || 0) -
-                      (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                      (data?.elecPrice || 0.25)) /
-                      12 -
-                    ((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12 >
-                  0
-                    ? "+"
-                    : ""}
-                  {(
-                    (data?.m || 0) +
-                    (((data?.conso || 0) -
-                      (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                      (data?.elecPrice || 0.25)) /
-                      12 -
-                    ((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12
-                  ).toLocaleString("fr-FR", {
-                    style: "currency",
-                    currency: "EUR",
-                    maximumFractionDigits: 0,
-                  })}
-                </div>
-                <div className="text-slate-500 text-[10px] sm:text-xs mt-1 leading-tight">
-                  Puis → économies dès fin crédit
-                </div>
-              </div>
-            </div>
-
-            {/* SLIDER VISUEL */}
-            <div className="bg-black/40 border border-white/10 rounded-xl p-4 sm:p-5">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0 text-[9px] sm:text-[10px] text-slate-500 uppercase mb-3">
-                <span>Alignement avec votre budget actuel</span>
-                <span className="text-white font-bold text-sm sm:text-base">
-                  {(
-                    (((data?.m || 0) +
-                      (((data?.conso || 0) -
-                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                        (data?.elecPrice || 0.25)) /
-                        12) /
-                      (((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12)) *
-                    100
-                  ).toFixed(0)}
-                  %
-                </span>
-              </div>
-              <div className="h-3 sm:h-4 bg-slate-800/40 rounded-full overflow-hidden border border-white/10">
-                <div
-                  className={`h-full transition-all duration-700 ${
-                    ((data?.m || 0) +
-                      (((data?.conso || 0) -
-                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                        (data?.elecPrice || 0.25)) /
-                        12) /
-                      (((data?.conso || 0) * (data?.elecPrice || 0.25)) / 12) >
-                    1
-                      ? "bg-gradient-to-r from-orange-500 to-orange-600"
-                      : "bg-gradient-to-r from-emerald-500 to-emerald-600"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      (((data?.m || 0) +
-                        (((data?.conso || 0) -
-                          (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                          (data?.elecPrice || 0.25)) /
-                          12) /
-                        (((data?.conso || 0) * (data?.elecPrice || 0.25)) /
-                          12)) *
-                        100,
-                      100
-                    )}%`,
-                  }}
-                ></div>
-              </div>
-              <div className="flex justify-between text-[9px] sm:text-[10px] text-slate-600 mt-2">
-                <span>0%</span>
-                <span className="text-slate-500">Budget actuel</span>
-                <span>150%</span>
-              </div>
-            </div>
-
-            {/* ÉVOLUTION APRÈS CRÉDIT */}
-            <div className="bg-gradient-to-br from-emerald-950/20 to-black/40 border border-emerald-500/20 rounded-xl p-4 sm:p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <TrendingDown className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-sm sm:text-base font-bold text-emerald-400 uppercase">
-                  Après remboursement du crédit
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[10px] text-slate-500 mb-1">
-                    Facture mensuelle
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-400">
-                    {(
-                      (((data?.conso || 0) -
-                        (data?.prod || 0) * ((data?.selfCons || 0) / 100)) *
-                        (data?.elecPrice || 0.25)) /
-                      12
-                    ).toLocaleString("fr-FR", {
-                      style: "currency",
-                      currency: "EUR",
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Seulement le résiduel EDF
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-slate-500 mb-1">
-                    Économie mensuelle
-                  </div>
-                  <div className="text-2xl sm:text-3xl font-black text-white">
-                    {(
-                      ((data?.prod || 0) *
-                        ((data?.selfCons || 0) / 100) *
-                        (data?.elecPrice || 0.25)) /
-                      12
-                    ).toLocaleString("fr-FR", {
-                      style: "currency",
-                      currency: "EUR",
-                      maximumFractionDigits: 0,
-                    })}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-1">
-                    Par rapport à votre facture actuelle
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 text-[10px] text-slate-400 italic leading-relaxed">
-                À ce stade, le financement disparaît.
-                <br />
-                Ce qu'il reste, c'est un système qui travaille pour votre
-                budget.
-              </div>
-            </div>
-
-            {/* FOOTER */}
-            <p className="text-center text-[10px] sm:text-[11px] text-slate-500 italic leading-relaxed">
-              Ces montants sont ceux de la 1ère année.
-            </p>
           </div>
         </ModuleSection>
         {/* Module 9: Tableau détaillé */}
@@ -2545,71 +2083,8 @@ export default function GuestView() {
             </div>
           </div>
         </ModuleSection>
-        {/* Module 11: Garanties & Équipements */}
-        <ModuleSection
-          id="garanties"
-          title="Garanties & Équipements"
-          icon={<Shield className="text-emerald-500" />}
-          defaultOpen={false}
-        >
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-slate-900/60 border border-slate-800 rounded-2xl">
-              <div>
-                <span className="text-xs text-slate-400 font-medium">Formule appliquée à votre projet :</span>
-                <div className="text-base font-bold text-white flex items-center gap-2 mt-0.5">
-                  {isPerformanceWarranty ? "Option Performance" : "Option Essentiel+"}
-                  <span className={`text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full border ${
-                    isPerformanceWarranty
-                      ? "bg-blue-500/20 border-blue-400 text-blue-300"
-                      : "bg-amber-500/20 border-amber-400 text-amber-300"
-                  }`}>
-                    Sélectionnée
-                  </span>
-                </div>
-              </div>
-              <div className="text-xs text-slate-400 font-medium">
-                {isPerformanceWarranty
-                  ? "Protection intégrale à vie (pièces, main-d'œuvre & déplacement)"
-                  : "Protection 25 ans & étanchéité 10 ans"}
-              </div>
-            </div>
 
-            {/* TABLEAU COMPARATIF */}
-            <GarantiesComparativeTable activeMode={isPerformanceWarranty} interactive={false} />
-
-            {/* DÉTAIL DE LA FORMULE ACTIVE */}
-            {isPerformanceWarranty ? (
-              <div className="p-4 bg-blue-500/10 rounded-2xl border border-blue-500/30">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-white font-semibold mb-1">
-                      Garantie totale à vie (Performance)
-                    </h4>
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                      Onduleur centralisé, structure d'étanchéité et modules photovoltaïques couverts <strong className="text-white font-semibold">à vie</strong> (matériel, main-d'œuvre et déplacement inclus), ainsi qu'une garantie de rendement matériel de <strong className="text-white font-semibold">30 ans</strong>.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/30">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-amber-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <h4 className="text-white font-semibold mb-1">
-                      Garantie contractuelle Essentiel+
-                    </h4>
-                    <p className="text-slate-300 text-sm leading-relaxed">
-                      Onduleur centralisé garanti <strong className="text-white font-semibold">25 ans</strong> (pièces, main-d'œuvre et déplacement), étanchéité garantie <strong className="text-white font-semibold">10 ans</strong>, et modules photovoltaïques garantis <strong className="text-white font-semibold">25 ans</strong> matériel et rendement.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </ModuleSection>
-        {/* Module 12: Réalisations */}
+        {/* Module: Réalisations */}
         <ModuleSection
           id="realisations"
           title="Réalisations EDF — Familles accompagnées"
