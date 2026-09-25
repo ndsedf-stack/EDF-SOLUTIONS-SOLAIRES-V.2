@@ -679,7 +679,10 @@ export default function GuestView() {
                   <p className="text-slate-300 leading-relaxed">
                     Filiale à 100% du groupe EDF, entreprise publique française 100% d'État.
                     <span className="block mt-1 text-slate-300/90">
-                      Capital social de 36 millions d'euros, garanties institutionnelles, pérennité assurée par l'État français.
+                      Capital social de 36 millions d'euros, garanties institutionnelles.
+                    </span>
+                    <span className="block mt-1 text-slate-300/90">
+                      Pérennité assurée par l'État français.
                     </span>
                   </p>
                 </div>
