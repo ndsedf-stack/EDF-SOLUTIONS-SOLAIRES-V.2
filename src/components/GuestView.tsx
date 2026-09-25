@@ -402,28 +402,39 @@ export default function GuestView() {
   const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
 
+  const isStudyCash =
+    safeData.mode === "cash" ||
+    safeData.mode === "cash_payment" ||
+    (Number(safeData.cashApport) >= Number(safeData.installCost) && Number(safeData.installCost) > 0);
+
+  const isCashScenario = tableScenario === "cash" || isStudyCash;
+
+  const targetDetails =
+    (isCashScenario ? safeData.detailsCash : safeData.details) || [];
   const firstYearRow =
-    (tableScenario === "financement"
-      ? safeData.details
-      : safeData.detailsCash)?.[0] || null;
+    targetDetails.find((d: any) => d.edfBillWithoutSolar > 0) ||
+    targetDetails[0] ||
+    null;
 
   const monthlyBill = firstYearRow
     ? firstYearRow.edfBillWithoutSolar / 12
-    : null;
+    : Number(safeData.monthlyBill) || 0;
 
-  const monthlyCredit = firstYearRow?.creditPayment
+  const monthlyCredit = isCashScenario
+    ? 0
+    : firstYearRow?.creditPayment
     ? firstYearRow.creditPayment / 12
     : 0;
 
-  const monthlyResidue = firstYearRow ? firstYearRow.edfResidue / 12 : null;
+  const monthlyResidue = firstYearRow ? firstYearRow.edfResidue / 12 : 0;
 
-  const totalMensuel = firstYearRow
-    ? tableScenario === "cash"
-      ? firstYearRow.totalWithSolar / 12
-      : monthlyCredit + monthlyResidue
-    : null;
+  const monthlySavings = Math.max(0, (monthlyBill || 0) - (monthlyResidue || 0));
 
-  const diffMensuel = firstYearRow ? totalMensuel - monthlyBill : null;
+  const totalMensuel = isCashScenario
+    ? monthlyResidue
+    : monthlyCredit + monthlyResidue;
+
+  const diffMensuel = firstYearRow ? totalMensuel - monthlyBill : 0;
 
   const gouffreChartData = rows?.map((r) => ({
     year: r.year,
@@ -1495,15 +1506,39 @@ export default function GuestView() {
             </div>
 
             {/* HEADER */}
-            <div className="flex items-center justify-between mb-10">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8 sm:mb-10">
               <div className="flex items-center gap-3">
                 <Scale className="text-slate-400 w-6 h-6" />
                 <h2 className="text-xl font-black text-white uppercase tracking-tight">
                   STRUCTURE DU BUDGET (MENSUEL)
                 </h2>
               </div>
-              <div className="bg-black/60 backdrop-blur-md px-4 py-1.5 rounded text-[10px] font-bold text-slate-400 border border-white/10 uppercase">
-                Année 1 — Comparatif
+              <div className="flex items-center gap-2">
+                <div className="bg-black/60 p-1 rounded-xl border border-white/10 flex gap-1">
+                  <button
+                    onClick={() => setTableScenario("financement")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-all ${
+                      !isCashScenario
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-900/30"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Financement
+                  </button>
+                  <button
+                    onClick={() => setTableScenario("cash")}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-all ${
+                      isCashScenario
+                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-900/30"
+                        : "text-slate-400 hover:text-white"
+                    }`}
+                  >
+                    Comptant (Cash)
+                  </button>
+                </div>
+                <div className="bg-black/60 backdrop-blur-md px-3 sm:px-4 py-1.5 rounded-lg text-[10px] font-bold text-slate-400 border border-white/10 uppercase">
+                  Année 1
+                </div>
               </div>
             </div>
 
@@ -1514,99 +1549,164 @@ export default function GuestView() {
                   <span className="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
                     Situation actuelle
                   </span>
-                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                  <span className="text-4xl sm:text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                     {formatMoney(monthlyBill || 0)}{" "}
                     <span className="text-2xl opacity-50">/MOIS</span>
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 italic mb-4 max-w-2xl">
-                  Concrètement, on ne rajoute rien dans votre budget. On ne paie
-                  rien en plus : on remplace une dépense existante par quelque
-                  chose qui vous reste.
+                  Aujourd’hui, cette somme est entièrement consommée sans création de valeur durable.
                 </p>
-                <div className="relative h-28 bg-gradient-to-r from-[#e14d4d] via-[#d92d2d] to-[#b32424] rounded-2xl shadow-2xl overflow-hidden flex items-center px-8 border border-white/10">
+                <div className="relative h-24 sm:h-28 bg-gradient-to-r from-[#e14d4d] via-[#d92d2d] to-[#b32424] rounded-2xl shadow-2xl overflow-hidden flex items-center px-6 sm:px-8 border border-white/10">
                   <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent"></div>
-                  <span className="relative text-white font-black text-2xl uppercase tracking-wider">
+                  <span className="relative text-white font-black text-xl sm:text-2xl uppercase tracking-wider">
                     FACTURE ACTUELLE
                   </span>
-                  <span className="ml-auto relative text-white/30 font-black text-xl uppercase tracking-tight">
+                  <span className="ml-auto relative text-white/30 font-black text-sm sm:text-xl uppercase tracking-tight">
                     100% DÉPENSES — SANS RETOUR
                   </span>
                 </div>
               </div>
 
-              {/* --- BLOC GRIS : INSTALLATION EDF --- */}
+              {/* --- BLOC AVEC INSTALLATION EDF --- */}
               <div>
-                <div className="flex justify-between items-end mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 sm:gap-0 mb-6">
                   <span className="text-[13px] font-bold text-slate-400 uppercase tracking-widest">
                     Installation EDF — Mise en place
                   </span>
-                  <span className="text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                    {formatMoney(totalMensuel || 0)}{" "}
-                    <span className="text-2xl opacity-50">/MOIS</span>
-                  </span>
+                  <div className="flex flex-col items-start sm:items-end">
+                    <span className="text-4xl sm:text-5xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+                      {formatMoney(totalMensuel || 0)}{" "}
+                      <span className="text-2xl opacity-50">/MOIS</span>
+                    </span>
+                    {isCashScenario && (
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full mt-1.5">
+                        Paiement comptant : 0 € de crédit (+{formatMoney(monthlySavings)}/mois d'économies)
+                      </span>
+                    )}
+                  </div>
                 </div>
+
                 <p className="text-[11px] text-slate-500 italic mb-4">
-                  Montant fixe — identique à ce que vous validez déjà
-                  aujourd'hui. Rien ne change dans votre quotidien : c'est
-                  simplement organisé autrement.
+                  {isCashScenario
+                    ? "En paiement comptant, vous ne payez aucune mensualité de crédit. Votre facture mensuelle chute drastiquement au seul reste à charge réseau."
+                    : "Montant fixe — identique à ce que vous validez déjà aujourd'hui. Rien ne change dans votre quotidien : c'est simplement organisé autrement."}
                 </p>
 
-                {/* LA BARRE DOUBLE GRIS (Look Capture) */}
-                <div className="relative h-28 bg-[#1a1f2e] rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
-                  {/* Bloc Financement (Gris plus clair / bleuté) */}
-                  <div
-                    className="relative bg-gradient-to-b from-[#3a445e] to-[#232a3d] flex flex-col justify-center px-6 transition-all duration-700"
-                    style={{
-                      width: `${
-                        ((monthlyCredit || 0) / (totalMensuel || 1)) * 100
-                      }%`,
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
-                    <span className="relative text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">
-                      Financement EDF
-                    </span>
-                    <span className="relative text-white font-black text-2xl">
-                      {formatMoney(monthlyCredit || 0)}
-                    </span>
-                  </div>
+                {/* Double barre */}
+                {isCashScenario ? (
+                  /* BARRE CASH : Reste à charge + Économie nette directe */
+                  <div className="relative h-24 sm:h-28 bg-[#1a1f2e] rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
+                    {/* RESTE À CHARGE */}
+                    <div
+                      className="relative bg-gradient-to-b from-[#1e2536] to-[#141a26] flex flex-col justify-center px-4 sm:px-6 transition-all duration-700"
+                      style={{
+                        width: `${Math.max(15, Math.min(85, monthlyBill > 0 ? (monthlyResidue / monthlyBill) * 100 : 30))}%`,
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
+                      <span className="relative text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        Reste à charge
+                      </span>
+                      <span className="relative text-white font-black text-xl sm:text-2xl break-words">
+                        {formatMoney(monthlyResidue || 0)}
+                      </span>
+                    </div>
 
-                  {/* Séparateur noir épais comme sur la capture */}
-                  <div className="w-1.5 bg-black/60 shadow-[1px_0_0_rgba(255,255,255,0.1)]"></div>
+                    {/* Séparateur */}
+                    <div className="w-1.5 bg-black/60 shadow-[1px_0_0_rgba(255,255,255,0.1)]"></div>
 
-                  {/* Bloc Reste à Charge (Gris plus sombre) */}
-                  <div className="relative bg-gradient-to-b from-[#1e2536] to-[#141a26] flex-1 flex flex-col justify-center px-6 transition-all duration-700">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
-                    <span className="relative text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-                      Reste à charge
-                    </span>
-                    <span className="relative text-slate-300 font-black text-2xl">
-                      {formatMoney(monthlyResidue || 0)}
-                    </span>
+                    {/* ÉCONOMIE IMMÉDIATE */}
+                    <div className="relative bg-gradient-to-b from-emerald-600 via-emerald-700 to-teal-800 flex-1 flex flex-col justify-center px-4 sm:px-6 transition-all duration-700">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/10"></div>
+                      <span className="relative text-[9px] font-black text-emerald-200 uppercase tracking-widest mb-1">
+                        Économie immédiate conservée
+                      </span>
+                      <span className="relative text-white font-black text-xl sm:text-2xl break-words">
+                        +{formatMoney(monthlySavings || 0)} /mois
+                      </span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* BARRE FINANCEMENT : Financement EDF + Reste à charge */
+                  <div className="relative h-24 sm:h-28 bg-[#1a1f2e] rounded-2xl border border-white/10 overflow-hidden shadow-2xl flex">
+                    {/* Bloc Financement */}
+                    <div
+                      className="relative bg-gradient-to-b from-[#3a445e] to-[#232a3d] flex flex-col justify-center px-4 sm:px-6 transition-all duration-700"
+                      style={{
+                        width: `${
+                          totalMensuel > 0
+                            ? ((monthlyCredit || 0) / (totalMensuel || 1)) * 100
+                            : 70
+                        }%`,
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
+                      <span className="relative text-[9px] font-bold text-slate-300 uppercase tracking-widest mb-1">
+                        Financement EDF
+                      </span>
+                      <span className="relative text-white font-black text-xl sm:text-2xl break-words">
+                        {formatMoney(monthlyCredit || 0)}
+                      </span>
+                    </div>
+
+                    {/* Séparateur */}
+                    <div className="w-1.5 bg-black/60 shadow-[1px_0_0_rgba(255,255,255,0.1)]"></div>
+
+                    {/* Bloc Reste à Charge */}
+                    <div className="relative bg-gradient-to-b from-[#1e2536] to-[#141a26] flex-1 flex flex-col justify-center px-4 sm:px-6 transition-all duration-700">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-white/5"></div>
+                      <span className="relative text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                        Reste à charge
+                      </span>
+                      <span className="relative text-slate-300 font-black text-xl sm:text-2xl break-words">
+                        {formatMoney(monthlyResidue || 0)}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* LÉGENDES EN BAS */}
-                <div className="grid grid-cols-2 gap-12 mt-10 px-2">
-                  <div className="border-l-[3px] border-slate-500 pl-5">
-                    <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">
-                      Patrimoine personnel
-                    </h4>
-                    <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                      C'est de l'épargne : cet argent rembourse votre matériel
-                      et valorise votre maison.
-                    </p>
-                  </div>
-                  <div className="border-l-[3px] border-slate-700 pl-5">
-                    <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Service réseau
-                    </h4>
-                    <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                      La part minime versée à EDF pour l'abonnement et la
-                      sécurité du réseau.
-                    </p>
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-12 mt-8 sm:mt-10 px-2">
+                  {isCashScenario ? (
+                    <>
+                      <div className="border-l-[3px] border-emerald-500 pl-4 sm:pl-5">
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">
+                          Gain de pouvoir d'achat immédiat
+                        </h4>
+                        <p className="text-[10px] text-slate-400 leading-relaxed italic">
+                          Vous conservez {formatMoney(monthlySavings)} chaque mois sur votre compte bancaire. Aucun emprunt ni mensualité de crédit.
+                        </p>
+                      </div>
+                      <div className="border-l-[3px] border-slate-700 pl-4 sm:pl-5">
+                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          Service réseau résiduel
+                        </h4>
+                        <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                          Seuls {formatMoney(monthlyResidue)} /mois restent dus à EDF pour l'abonnement et la sécurité du réseau.
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="border-l-[3px] border-slate-500 pl-4 sm:pl-5">
+                        <h4 className="text-[11px] font-black text-white uppercase tracking-widest mb-2">
+                          Patrimoine personnel
+                        </h4>
+                        <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                          C'est de l'épargne : cet argent rembourse votre matériel et valorise votre maison.
+                        </p>
+                      </div>
+                      <div className="border-l-[3px] border-slate-700 pl-4 sm:pl-5">
+                        <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          Service réseau
+                        </h4>
+                        <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                          La part minime versée à EDF pour l'abonnement et la sécurité du réseau.
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

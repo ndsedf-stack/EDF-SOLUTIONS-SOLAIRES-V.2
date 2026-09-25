@@ -236,25 +236,31 @@ export const calculateSolarProjection = (
   // KPI FINALS
   // --------------------------------------------------------------------------
 
-  const slicedDetails = details.slice(0, projectionYears);
-  const slicedDetailsCash = detailsCash.slice(0, projectionYears);
+  const hasYear0Financing = details.length > 0 && details[0].edfBillWithoutSolar === 0;
+  const hasYear0Cash = detailsCash.length > 0 && detailsCash[0].edfBillWithoutSolar === 0;
+
+  const slicedDetails = details.slice(0, (hasYear0Financing ? 1 : 0) + projectionYears);
+  const slicedDetailsCash = detailsCash.slice(0, (hasYear0Cash ? 1 : 0) + projectionYears);
 
   const totalSavingsProjected = slicedDetails.at(-1)?.cumulativeSavings ?? 0;
-
   const totalSavingsProjectedCash =
     slicedDetailsCash.at(-1)?.cumulativeSavings ?? 0;
 
-  const breakEvenIndex = details.findIndex((d) => d.cumulativeSavings > 0);
+  const operationalDetails = details.filter((d) => d.edfBillWithoutSolar > 0);
+  const operationalDetailsCash = detailsCash.filter((d) => d.edfBillWithoutSolar > 0);
 
+  const breakEvenIndex = operationalDetails.findIndex((d) => d.cumulativeSavings > 0);
   const breakEvenPoint = breakEvenIndex === -1 ? 30 : breakEvenIndex + 1;
 
-  const breakEvenIndexCash = detailsCash.findIndex(
+  const breakEvenIndexCash = operationalDetailsCash.findIndex(
     (d) => d.cumulativeSavings > 0
   );
   const breakEvenPointCash =
     breakEvenIndexCash === -1 ? projectionYears : breakEvenIndexCash + 1;
 
-  const year1 = details[0];
+  // ✅ Année 1 opérationnelle (avec facturation et production solaire)
+  const year1 = operationalDetails[0] || details[0];
+  const year1Cash = operationalDetailsCash[0] || detailsCash[0];
 
   return {
     details,
@@ -296,6 +302,15 @@ export const calculateSolarProjection = (
         year1.edfBillWithoutSolar / 12
     ),
 
+    newMonthlyBillYear1Cash: round2(year1Cash.edfResidue / 12),
+    oldMonthlyBillYear1Cash: round2(year1Cash.edfBillWithoutSolar / 12),
+    monthlyEffortYear1Cash: round2(
+      year1Cash.edfResidue / 12 - year1Cash.edfBillWithoutSolar / 12
+    ),
+
+    year1,
+    year1Cash,
+
     roiPercentage:
       localInstallCost > 0
         ? round2(
@@ -332,7 +347,6 @@ export const calculateSolarProjection = (
     interestRate:
       overrideInterestRate ?? safeParseFloat(params.creditInterestRate || 0),
     primeAmount,
-    year1,
   };
 };
 
