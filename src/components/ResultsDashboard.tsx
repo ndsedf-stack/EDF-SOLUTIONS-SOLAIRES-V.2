@@ -9137,9 +9137,10 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                             : installCost
                         )}
                       </td>
-                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-slate-600 whitespace-nowrap font-mono">
+                      {/* 🚫 Cellule Prime Année 0 masquée — alignement colonne */}
+                      {/* <td className="py-3 sm:py-4 px-2 sm:px-4 text-slate-600 whitespace-nowrap font-mono">
                         -
-                      </td>
+                      </td> */}
                       {/* ✅ CORRIGÉ : Pas de division par 12 */}
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-red-400 font-bold whitespace-nowrap">
                         -

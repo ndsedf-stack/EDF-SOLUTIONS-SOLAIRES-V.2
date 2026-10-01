@@ -1759,7 +1759,8 @@ export default function GuestView() {
                     </>
                   )}
                   <th className="py-3 px-4 text-white">Avec Solaire</th>
-                  <th className="py-3 px-4 text-emerald-400">Prime (12 mois)</th>
+                  {/* 🚫 Colonne Prime masquée — à réactiver si prime autoconsommation revient */}
+                  {/* <th className="py-3 px-4 text-emerald-400">Prime (12 mois)</th> */}
                   <th className="py-3 px-4 text-slate-300">
                     Différence {tableMode === "annuel" ? "/an" : "/mois"}
                   </th>
@@ -1785,7 +1786,8 @@ export default function GuestView() {
                         : safeData.installCost
                     )}
                   </td>
-                  <td className="py-4 px-4 text-slate-600 opacity-50">-</td>
+                  {/* 🚫 Cellule Prime Année 0 masquée — alignement colonne */}
+                  {/* <td className="py-4 px-4 text-slate-600 opacity-50">-</td> */}
                   <td className="py-4 px-4 text-red-400 font-bold">
                     {formatMoney(
                       (tableScenario === "financement"
@@ -1842,7 +1844,8 @@ export default function GuestView() {
                         <td className="py-3 px-4 font-bold text-white">
                           {formatMoney(totalWithSolar)}
                         </td>
-                        <td className="py-3 px-4 font-bold">
+                        {/* 🚫 Cellule Prime masquée — à réactiver si prime revient */}
+                        {/* <td className="py-3 px-4 font-bold">
                           {row.prime && row.prime > 0 ? (
                             <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px] font-black">
                               +{formatMoney(row.prime)}
@@ -1850,7 +1853,7 @@ export default function GuestView() {
                           ) : (
                             <span className="text-slate-600">-</span>
                           )}
-                        </td>
+                        </td> */}
                         <td
                           className={`py-3 px-4 font-bold ${
                             eff > 0 ? "text-white" : "text-emerald-400"
