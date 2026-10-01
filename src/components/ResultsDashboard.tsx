@@ -2279,7 +2279,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [showCash, setShowCash] = useState(false);
 
   const [electricityPrice, setElectricityPrice] = useState<number>(
-    data?.params?.electricityPrice || 0.25
+    data?.params?.electricityPrice || 0
   );
   const [yearlyProduction, setYearlyProduction] = useState<number>(
     data?.params?.yearlyProduction || 7000
@@ -2581,7 +2581,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [creditMonthlyPayment, setCreditMonthlyPayment] =
     useState<number>(147.8);
   const [insuranceMonthlyPayment, setInsuranceMonthlyPayment] =
-    useState<number>(4.7);
+    useState<number>(0); // 🚫 Assurance masquée — forcée à 0
   const [creditDurationMonths, setCreditDurationMonths] = useState<number>(180);
   const [cashApport, setCashApport] = useState<number>(0);
   const [remainingToFinance, setRemainingToFinance] = useState<number>(18799);
@@ -4157,7 +4157,8 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 </div>
 
                 {/* Prime à l'Autoconsommation (Supprimée / 0 €) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {/* 🚫 MASQUÉ — dispositif clos, à réactiver si la prime revient */}
+                {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <ParamCard
                     label="Prime Autoconsommation (€/Wc)"
                     value={primeRatePerWatt}
@@ -4201,7 +4202,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </span>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Row 2: Costs */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -4369,7 +4370,8 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       }
                       disabled={autoCalculate}
                     />
-                    <ParamCard
+                    {/* 🚫 Assurance masquée — à réactiver si besoin */}
+                    {/* <ParamCard
                       label="Assurance (€/Mois)"
                       value={
                         autoCalculate
@@ -4388,7 +4390,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           : "Assurance emprunteur mensuelle"
                       }
                       disabled={autoCalculate}
-                    />
+                    /> */}
                   </div>
 
                   {/* DURATION SLIDER */}
@@ -4508,7 +4510,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           </div>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="grid grid-cols-1 gap-6 mb-6">
                         <ParamCard
                           label="Taux d'intérêt (%)"
                           value={interestRate}
@@ -4526,7 +4528,8 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                           }
                           sublabel="Taux annuel du crédit"
                         />
-                        <ParamCard
+                        {/* 🚫 Taux Assurance masqué — à réactiver si besoin */}
+                        {/* <ParamCard
                           label="Taux Assurance (%)"
                           value={insuranceRate}
                           setValue={setInsuranceRate}
@@ -4539,7 +4542,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                             />
                           }
                           sublabel="Taux annuel"
-                        />
+                        /> */}
                       </div>
 
                       {/* Green Apply Box */}
@@ -4562,14 +4565,15 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                                   {formatMoney(projectedMonthlyLoan)}
                                 </p>
                               </div>
-                              <div>
+                              {/* 🚫 Assurance masquée — à réactiver si besoin */}
+                              {/* <div>
                                 <p className="text-[10px] text-emerald-200/60 uppercase font-bold text-left">
                                   Assurance
                                 </p>
                                 <p className="text-xl font-black text-white">
                                   {formatMoney(projectedMonthlyInsurance)}
                                 </p>
-                              </div>
+                              </div> */}
                             </div>
                           </div>
                         </div>
@@ -9093,9 +9097,10 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       <th className="py-2 sm:py-3 px-2 sm:px-4 text-white whitespace-nowrap">
                         Avec Solaire
                       </th>
-                      <th className="py-2 sm:py-3 px-2 sm:px-4 text-emerald-400 whitespace-nowrap">
-                        Prime (12 mois)
-                      </th>
+                      {/* 🚫 Colonne Prime masquée — à réactiver si prime autoconsommation revient */}
+                      {/* <th className="py-2 sm:py-3 px-2 sm:px-4 text-emerald-400 whitespace-nowrap">
+                         Prime (12 mois)
+                       </th> */}
                       <th className="py-2 sm:py-3 px-2 sm:px-4 text-slate-300 whitespace-nowrap">
                         Différence {tableMode === "annuel" ? "/an" : "/mois"}
                       </th>
@@ -9205,7 +9210,8 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                             <td className="py-2 sm:py-3 px-2 sm:px-4 font-bold text-white whitespace-nowrap">
                               {formatMoney(totalWithSolar)}
                             </td>
-                            <td className="py-2 sm:py-3 px-2 sm:px-4 whitespace-nowrap font-bold">
+                            {/* 🚫 Cellule Prime masquée — à réactiver si prime autoconsommation revient */}
+                            {/* <td className="py-2 sm:py-3 px-2 sm:px-4 whitespace-nowrap font-bold">
                               {row.prime && row.prime > 0 ? (
                                 <span className="inline-flex items-center gap-1 text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded text-[11px] font-black tracking-wide">
                                   +{formatMoney(row.prime)}
@@ -9213,7 +9219,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                               ) : (
                                 <span className="text-slate-600">-</span>
                               )}
-                            </td>
+                            </td> */}
                             <td
                               className={`py-2 sm:py-3 px-2 sm:px-4 font-bold whitespace-nowrap ${
                                 eff > 0 ? "text-white" : "text-emerald-400"
