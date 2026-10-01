@@ -94,13 +94,13 @@ const MainApp: React.FC = () => {
           onTextSubmit={handleUploadSuccess}
           isLoading={false}
         />
-      ) : !profileDetected ? (
-        <SpeechView onProfileDetected={applyProfile} />
       ) : isLoading ? (
         <div className="flex items-center justify-center min-h-screen text-white text-xl">
           ⏳ Chargement du cockpit...
         </div>
       ) : (
+        // 🚫 SPEECHVIEW (questionnaire) MIS EN STANDBY — à réactiver si besoin
+        // était : !profileDetected ? <SpeechView onProfileDetected={applyProfile} /> : (
         <ResultsDashboard
           data={{
             profile: profileDetected,

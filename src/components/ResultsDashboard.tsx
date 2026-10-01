@@ -9072,7 +9072,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
               <div className="inline-block min-w-full align-middle px-4 sm:px-0">
                 <table
                   id="detailed-finance-table"
-                  className="w-full text-left border-collapse"
+                  className="table-auto text-left border-collapse min-w-full"
                 >
                   <thead>
                     <tr className="border-b border-white/10 text-[12px] sm:text-[13px] uppercase text-slate-500 font-bold tracking-wider">

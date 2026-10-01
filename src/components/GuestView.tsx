@@ -1745,7 +1745,7 @@ export default function GuestView() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="table-auto text-left border-collapse min-w-full">
               <thead>
                 <tr className="border-b border-white/10 text-[10px] uppercase text-slate-500 font-bold tracking-wider">
                   <th className="py-3 px-4">Année</th>
