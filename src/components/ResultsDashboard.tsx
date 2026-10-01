@@ -2291,7 +2291,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     data?.params?.yearlyConsumption || 14000
   );
   const [installCost, setInstallCost] = useState<number>(
-    data?.params?.installCost || 18799
+    data?.params?.installCost || 0
   );
 
   const [showCompteurExplanation, setShowCompteurExplanation] = useState(false);
@@ -2584,7 +2584,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     useState<number>(0); // 🚫 Assurance masquée — forcée à 0
   const [creditDurationMonths, setCreditDurationMonths] = useState<number>(180);
   const [cashApport, setCashApport] = useState<number>(0);
-  const [remainingToFinance, setRemainingToFinance] = useState<number>(18799);
+  const [remainingToFinance, setRemainingToFinance] = useState<number>(0);
   const [taxRate, setTaxRate] = useState<number>(0);
   const [autoCalculate, setAutoCalculate] = useState<boolean>(false);
   const [interestRate, setInterestRate] = useState<number>(3.89);
