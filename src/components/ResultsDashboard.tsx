@@ -284,9 +284,11 @@ const ParamCard = ({
   min = 0,
   step = 1,
   disabled = false,
+  required = false,
+  onChangeRaw,
 }: {
   label: string;
-  value: number;
+  value: number | "";
   setValue: (v: number) => void;
   unit?: string;
   sublabel?: string;
@@ -294,12 +296,17 @@ const ParamCard = ({
   min?: number;
   step?: number;
   disabled?: boolean;
+  required?: boolean;
+  onChangeRaw?: (v: number | "") => void;
 }) => {
+  const isEmpty = required && (value === "" || value === 0);
   return (
     <div
-      className={`bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] ${
-        disabled ? "opacity-50 pointer-events-none" : ""
-      }`}
+      className={`bg-black/40 backdrop-blur-xl border rounded-2xl p-4 flex flex-col justify-between relative overflow-hidden group transition-all duration-300 ${
+        isEmpty
+          ? "border-red-500 shadow-[0_0_16px_rgba(239,68,68,0.4)]"
+          : "border-white/10 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+      } ${disabled ? "opacity-50 pointer-events-none" : ""}`}
     >
       {/* Grid pattern background */}
       <div
@@ -318,14 +325,34 @@ const ParamCard = ({
             {label}
           </span>
         </div>
+        {isEmpty && (
+          <span className="text-[9px] font-bold text-red-400 uppercase tracking-widest animate-pulse">
+            Obligatoire
+          </span>
+        )}
       </div>
 
       <div className="relative z-10 flex items-end gap-2">
         <input
           type="number"
           value={value}
-          onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
-          className="bg-transparent text-2xl font-bold text-white outline-none w-full appearance-none m-0 p-0 leading-none placeholder-slate-700"
+          onChange={(e) => {
+            if (onChangeRaw) {
+              const raw = e.target.value;
+              if (raw === "" || raw === "-") {
+                onChangeRaw("");
+              } else {
+                const parsed = parseFloat(raw);
+                if (!isNaN(parsed)) onChangeRaw(parsed);
+              }
+            } else {
+              setValue(parseFloat(e.target.value) || 0);
+            }
+          }}
+          placeholder={required ? "ex: 3.5" : undefined}
+          className={`bg-transparent text-2xl font-bold outline-none w-full appearance-none m-0 p-0 leading-none ${
+            isEmpty ? "text-red-400 placeholder-red-900" : "text-white placeholder-slate-700"
+          }`}
           step={step}
           min={min}
           disabled={disabled}
@@ -334,17 +361,17 @@ const ParamCard = ({
           <span className="text-slate-500 font-bold text-sm mb-1">{unit}</span>
         )}
 
-        {!disabled && (
+        {!disabled && value !== "" && (
           <div className="flex flex-col gap-0.5 absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 p-1 rounded border border-white/10">
             <button
-              onClick={() => setValue(parseFloat((value + step).toFixed(2)))}
+              onClick={() => setValue(parseFloat(((value as number) + step).toFixed(2)))}
               className="text-slate-500 hover:text-white"
             >
               <ChevronUp size={16} />
             </button>
             <button
               onClick={() =>
-                setValue(parseFloat(Math.max(min, value - step).toFixed(2)))
+                setValue(parseFloat(Math.max(min, (value as number) - step).toFixed(2)))
               }
               className="text-slate-500 hover:text-white"
             >
@@ -2534,8 +2561,8 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     }
   };
 
-  const [installedPower, setInstalledPower] = useState<number>(
-    data?.params?.installedPower || 3.5
+  const [installedPower, setInstalledPower] = useState<number | "">(
+    data?.params?.installedPower || ""
   );
   const [primeRatePerWatt, setPrimeRatePerWatt] = useState<number>(0);
   const [primeAmount, setPrimeAmount] = useState<number>(
@@ -2547,7 +2574,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
 
   useEffect(() => {
     if (installedPower) {
-      setPrimeAmount(Math.round(installedPower * 1000 * primeRatePerWatt));
+      setPrimeAmount(Math.round((installedPower as number) * 1000 * primeRatePerWatt));
     }
   }, [installedPower, primeRatePerWatt]);
 
@@ -3949,12 +3976,27 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     Paramètres Financiers
                   </h2>
                 </div>
-                <button
-                  onClick={() => setShowParamsEditor(false)}
-                  className="text-slate-500 hover:text-white transition-colors"
-                >
-                  <X size={24} />
-                </button>
+                <div className="relative group/close">
+                  <button
+                    onClick={() => {
+                      if (installedPower === "" || installedPower === 0) return;
+                      setShowParamsEditor(false);
+                    }}
+                    disabled={installedPower === "" || installedPower === 0}
+                    className={`transition-colors ${
+                      installedPower === "" || installedPower === 0
+                        ? "text-slate-700 cursor-not-allowed"
+                        : "text-slate-500 hover:text-white"
+                    }`}
+                  >
+                    <X size={24} />
+                  </button>
+                  {(installedPower === "" || installedPower === 0) && (
+                    <div className="absolute right-8 top-0 bg-red-900/90 text-red-200 text-[10px] font-bold px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/close:opacity-100 transition-opacity pointer-events-none">
+                      Renseignez la puissance kWc
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Content */}
@@ -3965,8 +4007,10 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     label="Puissance Installée (kWc)"
                     value={installedPower}
                     setValue={setInstalledPower}
+                    onChangeRaw={setInstalledPower}
                     step={0.1}
                     unit="kWc"
+                    required={true}
                     icon={<Zap size={14} className="text-blue-500" />}
                     sublabel="Puissance des panneaux"
                   />
