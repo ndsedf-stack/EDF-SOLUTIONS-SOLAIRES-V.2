@@ -714,8 +714,8 @@ export default function GuestView() {
                   </h4>
                 </div>
                 <p className="text-sm text-slate-300 leading-relaxed">
-                  Obligation d'achat par EDF OA pendant 20 ans, tarif fixe
-                  garanti par arrêté ministériel.
+                  Obligation d'achat par EDF OA pendant 20 ans, tarif de 1,1 c€/kWh
+                  garanti par arrêté ministériel (+2 %/an à chaque date anniversaire).
                 </p>
               </div>
             </div>
@@ -899,7 +899,7 @@ export default function GuestView() {
                 <p className="text-slate-500 text-xs mt-1">
                   Non consommé, vendu automatiquement. <br />
                   Contrat d'Obligation d'Achat 20 ans — cadre légal. <br />
-                  Tarif réglementé : 0.04€/kWh
+                  Tarif de rachat : 1,1 c€/kWh (0,011 €/kWh) revalorisé de +2%/an
                 </p>
 
                 <div className="mt-3 pt-3 border-t border-white/5 text-blue-400 text-sm font-bold">
@@ -907,13 +907,13 @@ export default function GuestView() {
                   {(
                     (data?.prod || 0) *
                     (1 - (data?.selfCons || 0) / 100) *
-                    0.04
+                    0.011
                   ).toLocaleString("fr-FR", {
                     style: "currency",
                     currency: "EUR",
                     maximumFractionDigits: 0,
                   })}{" "}
-                  / an
+                  / an (Année 1)
                 </div>
               </div>
             </div>

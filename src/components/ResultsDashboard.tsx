@@ -2537,10 +2537,9 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [installedPower, setInstalledPower] = useState<number>(
     data?.params?.installedPower || 3.5
   );
-  const [primeRatePerWatt, setPrimeRatePerWatt] = useState<number>(0.08);
+  const [primeRatePerWatt, setPrimeRatePerWatt] = useState<number>(0);
   const [primeAmount, setPrimeAmount] = useState<number>(
-    data?.params?.primeAmount ??
-      Math.round((data?.params?.installedPower || 3.5) * 1000 * 0.08)
+    data?.params?.primeAmount ?? 0
   );
   const [houseSize, setHouseSize] = useState<number>(
     data?.params?.houseSize || 120
@@ -2570,7 +2569,7 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
   const [showTransition, setShowTransition] = useState(false);
 
   const [insuranceRate, setInsuranceRate] = useState<number>(0);
-  const [buybackRate, setBuybackRate] = useState<number>(0.04);
+  const [buybackRate, setBuybackRate] = useState<number>(0.011);
   const [showQRCode, setShowQRCode] = useState(false);
   const [showSignature, setShowSignature] = useState(false);
   const [encodedUrl, setEncodedUrl] = useState("");
@@ -3660,7 +3659,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
         id: "fiscal",
         label: "Conformité fiscale (TVA & Aides)",
         status: "valid",
-        detail: "TVA 5.5% & Prime Autoconsommation 2025",
+        detail: "TVA 5.5% & Contrat EDF OA 20 ans (1,1 c€/kWh)",
       },
       {
         id: "roi",
@@ -4073,16 +4072,16 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                   </div>
                 </div>
 
-                {/* Prix de rachat EDF */}
+                {/* Prix de rachat EDF (1,1 c€/kWh) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <ParamCard
-                    label="Prix rachat EDF"
+                    label="Tarif rachat EDF (1,1 c€/kWh)"
                     value={buybackRate}
                     setValue={setBuybackRate}
                     unit="€/kWh"
-                    sublabel="Tarif réglementé actuel"
+                    sublabel="1,1 c€/kWh garanti 20 ans (+2%/an)"
                     icon={<Coins size={14} className="text-yellow-400" />}
-                    step={0.01}
+                    step={0.001}
                     min={0}
                   />
 
@@ -4092,7 +4091,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     </div>
                     <div>
                       <p className="text-xs text-yellow-400 font-bold uppercase tracking-wider mb-1">
-                        Revenu Surplus
+                        Revenu Surplus (Année 1)
                       </p>
                       <p className="text-2xl font-black text-white">
                         {formatMoney(
@@ -4107,48 +4106,54 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                         {Math.round(
                           yearlyProduction * (1 - selfConsumptionRate / 100)
                         )}{" "}
-                        kWh vendus
+                        kWh vendus (1,1 c€/kWh, +2%/an)
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Prime à l'Autoconsommation (0,08 €/Wc versé à 12 mois) */}
+                {/* Prime à l'Autoconsommation (Supprimée / 0 €) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <ParamCard
-                    label="Taux Prime Autoconsommation (€/Wc)"
+                    label="Prime Autoconsommation (€/Wc)"
                     value={primeRatePerWatt}
                     setValue={(val) => {
                       setPrimeRatePerWatt(val);
                       setPrimeAmount(Math.round((installedPower || 0) * 1000 * val));
                     }}
                     unit="€/Wc"
-                    sublabel="0,08 € / Wc (versé à 12 mois)"
-                    icon={<Coins size={14} className="text-emerald-400" />}
+                    sublabel="Dispositif clos (0 € / Wc)"
+                    icon={<Coins size={14} className="text-slate-400" />}
                     step={0.01}
                     min={0}
                   />
 
-                  <div className="bg-black/20 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between">
+                  <div className="bg-black/20 border border-slate-700/40 rounded-2xl p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-400">
+                      <div className="p-2 rounded-full bg-slate-800 text-slate-400">
                         <Wallet size={20} />
                       </div>
                       <div>
-                        <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">
-                          Prime versée (à 12 mois)
+                        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">
+                          Prime Autoconsommation
                         </p>
                         <p className="text-2xl font-black text-white">
                           {formatMoney(primeAmount)}
                         </p>
                         <p className="text-[10px] text-slate-500">
-                          {((installedPower || 0) * 1000).toLocaleString("fr-FR")} Wc × {primeRatePerWatt.toFixed(2)} €/Wc
+                          {primeRatePerWatt > 0
+                            ? `${((installedPower || 0) * 1000).toLocaleString("fr-FR")} Wc × ${primeRatePerWatt.toFixed(2)} €/Wc`
+                            : "Plus de prime applicable (0 €)"}
                         </p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
-                      <span className="text-[9px] uppercase font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                        Mois 12
+                      <span className={`text-[9px] uppercase font-bold px-2.5 py-1 rounded-full border ${
+                        primeAmount > 0
+                          ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                          : "text-slate-400 bg-slate-800/60 border-slate-700"
+                      }`}>
+                        {primeAmount > 0 ? "Personnalisée" : "Supprimée"}
                       </span>
                     </div>
                   </div>
@@ -4666,7 +4671,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       label: "Conformité Fiscale & Éligibilité Aides",
                       val: "TVA 5.5%",
                       detail:
-                        "Validation Prime à l'autoconsommation et cadre Loi de Finance 2025.",
+                        "Validation cadre tarifaire EDF OA 20 ans (1,1 c€/kWh) et TVA 5.5%.",
                       testStatus: "✓ Modules admin",
                       testDetail: "Budget & Process",
                     },
@@ -4944,23 +4949,23 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 <ul className="space-y-3 text-sm text-slate-300">
                   <li>✔ Contrat EDF OA garanti 20 ans</li>
                   <li>✔ Inscription registre ENEDIS</li>
-                  <li>✔ Prix de rachat fixé par l'État</li>
+                  <li>✔ Tarif revalorisé de +2%/an</li>
                 </ul>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-black/60 p-6">
                 <h4 className="mb-4 flex items-center gap-3 font-black uppercase text-white">
                   <Coins size={22} className="text-emerald-400" />
-                  Aides sécurisées
+                  Cadre & Rachat garanti
                   <InfoPopup title={INFO_MODULE1.aides[activeProfile].title}>
                     {INFO_MODULE1.aides[activeProfile].body}
                   </InfoPopup>
                 </h4>
 
                 <ul className="space-y-3 text-sm text-slate-300">
-                  <li>✔ Versement direct par l'État</li>
-                  <li>✔ Prime autoconsommation garantie</li>
-                  <li>✔ Payable 12 mois après l'installation</li>
+                  <li>✔ Tarif de rachat fixé à 1,1 c€/kWh</li>
+                  <li>✔ Indexation annuelle (+2 % / an)</li>
+                  <li>✔ TVA réduite à 5,5%</li>
                 </ul>
               </div>
             </div>
@@ -5663,7 +5668,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
 
                 <p className="text-3xl font-black text-blue-400">
                   {formatNum(
-                    calculationResult.surplusRevenuePerYear / buybackRate
+                    Math.round(yearlyProduction * (1 - selfConsumptionRate / 100))
                   )}{" "}
                   kWh/an
                 </p>
@@ -5685,12 +5690,12 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 <p className="text-slate-500 text-xs mt-1">
                   Non consommé, vendu automatiquement. <br></br>Contrat
                   d'Obligation d'Achat 20 ans — cadre légal. <br></br>Tarif
-                  réglementé : {buybackRate}€ / kWh
+                  réglementé : 1,1 c€/kWh ({buybackRate}€/kWh) (+2%/an)
                 </p>
 
                 <div className="mt-3 pt-3 border-t border-white/5 text-blue-400 text-sm font-bold">
                   {/* FIX : Affichage cohérent avec le volume de surplus calculé */}
-                  ≈ {formatMoney(calculationResult.surplusRevenuePerYear)} / an
+                  ≈ {formatMoney(calculationResult.surplusRevenuePerYear)} / an (Année 1)
                 </div>
               </div>
             </div>
@@ -9456,8 +9461,8 @@ Objectif : faire apparaître la bascule comme un constat, pas comme une vente
                   { label: "Audit Énergétique", sub: "Analysé" },
                   { label: "Étude Solaire", sub: "Gisement OK" },
                   {
-                    label: "Éligibilité Aides",
-                    sub: "Prime Auto-Consommation 0.08cts/W",
+                    label: "Contrat de Rachat",
+                    sub: "EDF OA 20 ans (1,1 c€/kWh)",
                   },
                   { label: "Synthèse Projet", sub: "Validé" },
                 ].map((step, i) => (

@@ -87,7 +87,7 @@ export const calculateSolarProjection = (
     creditMonthlyPayment = 0,
     insuranceMonthlyPayment = 0,
     creditDurationMonths = 0,
-    buybackRate = 0.04,
+    buybackRate = 0.011,
     cashApport = 0,
     interestRate: overrideInterestRate,
     primeAmount = 0,
@@ -168,7 +168,10 @@ export const calculateSolarProjection = (
     const year = startYear + i;
     const inflationCoef = Math.pow(1 + localInflation / 100, i);
     const price = electricityPrice * inflationCoef;
-    const surplusRevenue = round2(surplusRevenueBase * inflationCoef);
+
+    // ⚡ TARIF DE RACHAT : 1,1 c€/kWh garanti 20 ans avec revalorisation de +2% par an à chaque date anniversaire
+    const currentBuybackRate = i < 20 ? buybackRate * Math.pow(1.02, i) : 0;
+    const surplusRevenue = round2(surplusKwh * currentBuybackRate);
 
     const billWithoutSolar = round2(baseConsumptionKwh * price);
     const savingsValue = round2(selfConsumedKwh * price);
