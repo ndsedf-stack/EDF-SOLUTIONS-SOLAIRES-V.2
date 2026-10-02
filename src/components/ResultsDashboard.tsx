@@ -9280,11 +9280,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                       </td>
                       <td className="py-2 sm:py-3 px-2 sm:px-4 text-right text-lg sm:text-xl font-black text-emerald-400 whitespace-nowrap">
                         {formatMoney(
-                          (tableScenario === "financing"
-                            ? calculationResult.details
-                            : calculationResult.detailsCash)[
-                            projectionYears - 1
-                          ]?.cumulativeSavings || 0
+                          tableScenario === "financing"
+                            ? (calculationResult.details[projectionYears - 1]?.cumulativeSavings || 0)
+                            : (calculationResult.detailsCash[projectionYears]?.cumulativeSavings || 0)
                         )}
                       </td>
                     </tr>

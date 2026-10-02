@@ -1885,10 +1885,9 @@ export default function GuestView() {
                   </td>
                   <td className="py-3 px-4 text-right text-xl font-black text-emerald-400">
                     {formatMoney(
-                      (tableScenario === "financement"
-                        ? safeData.details
-                        : safeData.detailsCash)[safeData.projectionYears - 1]
-                        ?.cumulativeSavings || 0
+                      tableScenario === "financement"
+                        ? (safeData.details[safeData.projectionYears - 1]?.cumulativeSavings || 0)
+                        : (safeData.detailsCash[safeData.projectionYears]?.cumulativeSavings || 0)
                     )}
                   </td>
                 </tr>
