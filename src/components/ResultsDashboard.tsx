@@ -9187,10 +9187,9 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     </tr>
 
                     {(tableScenario === "financing"
-                      ? calculationResult.details
-                      : calculationResult.detailsCash
+                      ? calculationResult.details.slice(0, projectionYears)
+                      : calculationResult.slicedDetailsCash
                     )
-                      .slice(0, projectionYears)
                       .map((row, i) => {
                         const isCreditActive =
                           i < creditDurationMonths / 12 &&

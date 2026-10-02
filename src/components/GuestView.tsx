@@ -1807,10 +1807,9 @@ export default function GuestView() {
                 </tr>
 
                 {(tableScenario === "financement"
-                  ? safeData.details
-                  : safeData.detailsCash
+                  ? safeData.details.slice(0, safeData.projectionYears)
+                  : safeData.detailsCash.slice(0, safeData.projectionYears + 1)
                 )
-                  .slice(0, safeData.projectionYears)
                   .map((row) => {
                     const divider = tableMode === "mensuel" ? 12 : 1;
                     const noSolar = row.edfBillWithoutSolar / divider;
