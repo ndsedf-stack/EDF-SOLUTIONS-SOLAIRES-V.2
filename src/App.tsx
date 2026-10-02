@@ -109,32 +109,32 @@ const MainApp: React.FC = () => {
             params: {
               // ✅ MAPPING CORRECT FileUpload → ResultsDashboard
               inflationRate: parseFloat(simulationData.inflation) || 5,
-              electricityPrice: parseFloat(simulationData.pricePerKwh) || 0.25,
-              yearlyProduction: parseFloat(simulationData.production) || 7000,
+              electricityPrice: parseFloat(simulationData.pricePerKwh) || 0,
+              yearlyProduction: parseFloat(simulationData.production) || 0,
               selfConsumptionRate:
                 parseFloat(simulationData.selfConsumption) || 70,
               yearlyConsumption:
-                parseFloat(simulationData.yearlyConsumption) || 10000,
-              installCost: parseFloat(simulationData.installPrice) || 18990,
+                parseFloat(simulationData.yearlyConsumption) || 0,
+              installCost: parseFloat(simulationData.installPrice) || 0,
               creditMonthlyPayment:
-                parseFloat(simulationData.creditMonthly) || 147.8,
+                parseFloat(simulationData.creditMonthly) || 0,
               insuranceMonthlyPayment:
-                parseFloat(simulationData.insuranceMonthly) || 4.7,
+                parseFloat(simulationData.insuranceMonthly) || 0,
               creditDurationMonths:
                 parseFloat(simulationData.creditDuration) || 180,
-              creditInterestRate: parseFloat(simulationData.creditRate) || 5.89,
+              creditInterestRate: parseFloat(simulationData.creditRate) || 0,
               address: simulationData.address || "",
               houseSize: parseFloat(simulationData.houseSize) || 120,
               installedPower:
-                parseFloat(simulationData.puissanceInstallee) || 3,
+                parseFloat(simulationData.puissanceInstallee) || 0,
               currentBillYear:
-                parseFloat(simulationData.currentBillYear) || 2500,
-              annualBill: parseFloat(simulationData.currentBillYear) || 2500,
+                parseFloat(simulationData.currentBillYear) || 0,
+              annualBill: parseFloat(simulationData.currentBillYear) || 0,
               monthlyBill:
-                parseFloat(simulationData.currentBillYear) / 12 || 208,
-              cashApport: 0, // Par défaut
-              taxRate: 0, // Par défaut
-              buybackRate: 0.04, // Par défaut
+                parseFloat(simulationData.currentBillYear) / 12 || 0,
+              cashApport: 0,
+              taxRate: 0,
+              buybackRate: 0.011,
             },
           }}
           studyId={study?.id}

@@ -33,23 +33,23 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const [isPvgisLoading, setIsPvgisLoading] = useState(false);
   const [formData, setFormData] = useState({
-    currentBillYear: "2500",
+    currentBillYear: "0",
     houseSize: "120",
-    yearlyConsumption: "10000",
+    yearlyConsumption: "0",
     inflation: "5",
-    pricePerKwh: "0.2500",
+    pricePerKwh: "0",
     address: "",
-    puissanceInstallee: "3",
+    puissanceInstallee: "0",
     inclination: "25",
     azimuth: "0",
     production: "0",
     selfConsumption: "100",
     ratioLocal: "",
-    installPrice: "18990",
+    installPrice: "0",
     creditMonthly: "0",
     insuranceMonthly: "0",
     creditDuration: "180",
-    creditRate: "5.89",
+    creditRate: "0",
   });
 
   // --- TON CALCUL DE MENSUALITÉ AUTO ---

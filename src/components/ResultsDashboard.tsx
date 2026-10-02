@@ -2282,13 +2282,13 @@ export const ResultsDashboard: React.FC<ResultsDashboardProps> = ({
     data?.params?.electricityPrice || 0
   );
   const [yearlyProduction, setYearlyProduction] = useState<number>(
-    data?.params?.yearlyProduction || 7000
+    data?.params?.yearlyProduction || 0
   );
   const [selfConsumptionRate, setSelfConsumptionRate] = useState<number>(
     data?.params?.selfConsumptionRate || 70
   );
   const [yearlyConsumption, setYearlyConsumption] = useState<number>(
-    data?.params?.yearlyConsumption || 14000
+    data?.params?.yearlyConsumption || 0
   );
   const [installCost, setInstallCost] = useState<number>(
     data?.params?.installCost || 0
