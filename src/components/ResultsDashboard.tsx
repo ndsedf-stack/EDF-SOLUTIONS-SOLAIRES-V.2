@@ -4117,7 +4117,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                 </div>
 
                 {/* Prix de rachat EDF (1,1 c€/kWh) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <ParamCard
                     label="Tarif rachat EDF (1,1 c€/kWh)"
                     value={buybackRate}
@@ -4129,6 +4129,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                     min={0}
                   />
 
+                  {/* Revenu Surplus Année 1 */}
                   <div className="bg-black/20 border border-yellow-500/20 rounded-2xl p-4 flex items-center gap-3">
                     <div className="p-2 rounded-full bg-yellow-500/10 text-yellow-400">
                       <TrendingUp size={20} />
@@ -4150,7 +4151,32 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
                         {Math.round(
                           yearlyProduction * (1 - selfConsumptionRate / 100)
                         )}{" "}
-                        kWh vendus (1,1 c€/kWh, +2%/an)
+                        kWh vendus · {buybackRate.toFixed(3)} €/kWh
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Revenu Surplus Année 20 (+2%/an × 19 ans) */}
+                  <div className="bg-black/20 border border-emerald-500/20 rounded-2xl p-4 flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-emerald-500/10 text-emerald-400">
+                      <TrendingUp size={20} />
+                    </div>
+                    <div>
+                      <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">
+                        Revenu Surplus (Année 20)
+                      </p>
+                      <p className="text-2xl font-black text-white">
+                        {formatMoney(
+                          Math.round(
+                            yearlyProduction *
+                              (1 - selfConsumptionRate / 100) *
+                              buybackRate *
+                              Math.pow(1.02, 19)
+                          )
+                        )}
+                      </p>
+                      <p className="text-[10px] text-slate-500">
+                        Tarif revalorisé ×{Math.pow(1.02, 19).toFixed(3)} · {(buybackRate * Math.pow(1.02, 19)).toFixed(4)} €/kWh
                       </p>
                     </div>
                   </div>
