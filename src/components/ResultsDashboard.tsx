@@ -5830,7 +5830,7 @@ Expire le: ${expiresAt.toLocaleDateString("fr-FR")}
               <div className="lg:col-span-8 bg-[#050505] border border-white/10 rounded-[40px] p-8 shadow-2xl">
                 <div className="flex gap-2 mb-6">
                   <div className="bg-black border border-blue-500/30 text-blue-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
-                    <Lock size={18} /> PROJECTION 20 ANS
+                    <Lock size={18} /> PROJECTION {projectionYears} ANS
                   </div>
                   <div className="bg-[#062c1e] border border-emerald-500/30 text-emerald-400 px-3 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2">
                     <TrendingUp size={18} /> 0€ D'APPORT
